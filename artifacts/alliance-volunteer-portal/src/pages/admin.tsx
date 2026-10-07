@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, Search, Users } from 'lucide-react';
 import {
   getGetVolunteerOnboardingQueryKey, getListTeamUsersQueryKey, useGetVolunteerOnboarding, useListTeamUsers, type AdminInviteResult, type ListTeamUsersParams, type Me, type PublicUser,
 } from '@workspace/api-client-react';
@@ -38,6 +38,15 @@ function AdminHomeBody({ me }: { me: Me }) {
         <span className="min-w-0">
           <span className="block font-bold">Team accounts</span>
           <span className="block text-sm">Invite admins, and activate or deactivate admin and volunteer accounts.</span>
+        </span>
+        <ChevronRight size={20} aria-hidden="true" className="ml-auto shrink-0" />
+      </Link>
+      <Link href="/admin/volunteers" data-testid="link-admin-roster"
+        className="alliance-card mt-4 flex items-center gap-4 hover:shadow-md focus-visible:outline-2 focus-visible:outline-teal">
+        <ClipboardList size={26} aria-hidden="true" className="shrink-0 text-teal-text" />
+        <span className="min-w-0">
+          <span className="block font-bold">Roster</span>
+          <span className="block text-sm">Search volunteers, see who needs attention, and export the roster.</span>
         </span>
         <ChevronRight size={20} aria-hidden="true" className="ml-auto shrink-0" />
       </Link>

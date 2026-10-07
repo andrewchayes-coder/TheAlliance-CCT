@@ -11,6 +11,67 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/volunteers:
+    get:
+      operationId: listVolunteerRoster
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: county, in: query, schema: { type: string } }
+        - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
+        - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200":
+          description: Filtered, paginated volunteer roster and unfiltered summary counts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VolunteerRoster" }
+  /admin/volunteers/{userId}:
+    get:
+      operationId: getAdminVolunteer
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Read-only volunteer detail, including internal admin notes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVolunteerDetail" }
+  /admin/volunteers/roster.csv:
+    get:
+      operationId: exportVolunteerRoster
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: county, in: query, schema: { type: string } }
+        - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
+        - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+      responses:
+        "200":
+          description: All matching volunteers, not only the visible page
+          content:
+            text/csv:
+              schema: { type: string }
+  /admin/volunteers/schedule.csv:
+    get:
+      operationId: exportVolunteerSchedule
+      parameters:
+        - { name: search, in: query, schema: { type: string, maxLength: 200 } }
+        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: county, in: query, schema: { type: string } }
+        - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
+        - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+      responses:
+        "200":
+          description: Active standing assignments belonging to matching volunteers
+          content:
+            text/csv:
+              schema: { type: string }
   /volunteer/dashboard:
     get:
       operationId: getVolunteerDashboard
@@ -371,6 +432,54 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    AttentionReason:
+      type: string
+      enum: [no_shift, certification_expiring, background_pending, onboarding_incomplete]
+    AdminAssignedShift:
+      type: object
+      required: [assignmentId, dayOfWeek, startTime, endTime, label, startDate, endDate, upcomingSkipDates]
+      properties:
+        assignmentId: { type: string, format: uuid }
+        dayOfWeek: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+        label: { type: [string, "null"] }
+        startDate: { type: string }
+        endDate: { type: [string, "null"] }
+        upcomingSkipDates: { type: array, items: { type: string } }
+    VolunteerRosterEntry:
+      type: object
+      required: [user, profile, shiftCount, attention]
+      properties:
+        user: { $ref: "#/components/schemas/PublicUser" }
+        profile: { $ref: "#/components/schemas/PublicVolunteerProfile" }
+        shiftCount: { type: integer }
+        attention: { type: array, items: { $ref: "#/components/schemas/AttentionReason" } }
+    RosterSummary:
+      type: object
+      required: [applicant, in_training, active, inactive, needsAttention]
+      properties:
+        applicant: { type: integer }
+        in_training: { type: integer }
+        active: { type: integer }
+        inactive: { type: integer }
+        needsAttention: { type: integer }
+    VolunteerRoster:
+      type: object
+      required: [volunteers, total, limit, offset, summary]
+      properties:
+        volunteers: { type: array, items: { $ref: "#/components/schemas/VolunteerRosterEntry" } }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+        summary: { $ref: "#/components/schemas/RosterSummary" }
+    AdminVolunteerDetail:
+      type: object
+      required: [entry, adminNotes, shifts]
+      properties:
+        entry: { $ref: "#/components/schemas/VolunteerRosterEntry" }
+        adminNotes: { type: [string, "null"] }
+        shifts: { type: array, items: { $ref: "#/components/schemas/AdminAssignedShift" } }
     VolunteerProfileInput:
       type: object
       required: [firstName, lastName, phone, county, availabilityNotes, answers]

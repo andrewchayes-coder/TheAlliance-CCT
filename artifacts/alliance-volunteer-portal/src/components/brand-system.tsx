@@ -5,7 +5,7 @@ import { useAuth } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export { Button } from '@/components/ui/button';
 export { Input } from '@/components/ui/input';
@@ -66,22 +66,41 @@ const volunteerNav = [
   { label: 'Profile', href: '/profile', icon: UserRound },
 ];
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
+const adminItems: { label: string; href?: string }[] = [
+  { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Team', href: '/admin/team' },
+  { label: 'Master schedule' }, { label: 'Messages' }, { label: 'Resources' },
+];
+const adminActive = (loc: string, href: string) => href === '/admin' ? loc === '/admin' : loc === href || loc.startsWith(`${href}/`);
 
-function AdminMenu({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
+function AdminMenu({ alwaysVisible = false, live = false }: { alwaysVisible?: boolean; live?: boolean }) {
+  const [location] = useLocation();
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button type="button" aria-label="Open admin navigation preview" data-testid="button-admin-menu"
+        <button type="button" aria-label={live ? 'Open admin navigation' : 'Open admin navigation preview'} data-testid="button-admin-menu"
           className={`rounded-lg p-3 text-white focus-visible:outline-2 focus-visible:outline-white ${alwaysVisible ? '' : 'md:hidden'}`}>
           <Menu size={22} aria-hidden="true" />
         </button>
       </SheetTrigger>
       <SheetContent className="bg-white text-navy">
         <SheetHeader><SheetTitle className="alliance-display text-base text-navy">Admin navigation</SheetTitle></SheetHeader>
-        <p className="mt-3 text-sm">Layout preview only. Portal features are not built yet.</p>
-        <nav aria-label="Admin navigation preview" className="mt-6 space-y-3">
-          {adminNav.map(label => <div key={label} className="rounded-lg bg-gray px-4 py-3">{label}</div>)}
-        </nav>
+        {live ? (
+          <nav aria-label="Admin navigation" className="mt-6 space-y-3">
+            {adminItems.map(({ label, href }) => href ? (
+              <SheetClose asChild key={label}>
+                <Link href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
+                  className={`block rounded-lg px-4 py-3 font-bold ${adminActive(location, href) ? 'bg-navy text-white' : 'bg-gray'}`}>{label}</Link>
+              </SheetClose>
+            ) : (
+              <div key={label} aria-disabled="true" className="flex items-center justify-between rounded-lg bg-gray px-4 py-3 opacity-60">{label}<span className="text-xs">Coming later</span></div>
+            ))}
+          </nav>
+        ) : (<>
+          <p className="mt-3 text-sm">Layout preview only. Portal features are not built yet.</p>
+          <nav aria-label="Admin navigation preview" className="mt-6 space-y-3">
+            {adminNav.map(label => <div key={label} className="rounded-lg bg-gray px-4 py-3">{label}</div>)}
+          </nav>
+        </>)}
       </SheetContent>
     </Sheet>
   );
@@ -112,8 +131,13 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 md:px-6">
           <BrandMark />
-          <nav className="hidden items-center gap-1 text-sm text-white md:flex" aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : `${role} navigation preview`}>
-            {role === 'admin' || !live
+          <nav className="hidden items-center gap-1 text-sm text-white md:flex" aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : live ? 'Admin navigation' : `${role} navigation preview`}>
+            {role === 'admin' && live
+              ? adminItems.map(({ label, href }) => href ? (
+                <Link key={label} href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
+                  className={`rounded-lg px-3 py-2 font-semibold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white ${adminActive(location, href) ? 'bg-white/15 underline decoration-teal decoration-2 underline-offset-8' : ''}`}>{label}</Link>
+              ) : <span key={label} aria-disabled="true" title="Coming later" className="hidden px-3 opacity-60 xl:inline">{label} <span className="text-[10px] uppercase">soon</span></span>)
+              : role === 'admin' || !live
               ? (role === 'admin' ? adminNav : volunteerNav.map(i => i.label)).map(label => <span key={label} className="px-3">{label}</span>)
               : volunteerNav.map(({ label, href }) => (
                 <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`nav-${href.slice(1)}`}
@@ -121,7 +145,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
               ))}
           </nav>
           <div className="flex items-center gap-2">
-            {role === 'admin' && <AdminMenu />}
+            {role === 'admin' && <AdminMenu live={live} />}
             <details className="relative text-white">
               <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/40" aria-label={live ? 'Open user menu' : 'Open user menu preview'} data-testid="button-user-menu"><UserRound size={20} /></summary>
               <div className="absolute right-0 z-20 mt-2 w-60 rounded-xl bg-white p-2 text-sm text-navy shadow-lg">

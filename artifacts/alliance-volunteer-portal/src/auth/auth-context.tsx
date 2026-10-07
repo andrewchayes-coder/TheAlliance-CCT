@@ -44,7 +44,7 @@ function useAuthValue() {
     qc.removeQueries({ queryKey: getGetMeQueryKey() });
     qc.removeQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
     qc.removeQueries({ predicate: query => typeof query.queryKey[0] === 'string' &&
-      (query.queryKey[0].startsWith('/api/admin/volunteers/') || query.queryKey[0].startsWith('/api/volunteer/')) });
+      (query.queryKey[0].startsWith('/api/admin/') || query.queryKey[0].startsWith('/api/volunteer/')) });
     const s = await qc.fetchQuery({ queryKey: getGetAuthSessionQueryKey(), queryFn: () => getAuthSession(FETCH_CREDS), staleTime: 0 });
     csrfRef.current = s.csrfToken;
     return s;

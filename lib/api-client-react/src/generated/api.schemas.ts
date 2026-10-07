@@ -5,6 +5,143 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type AttentionReason = typeof AttentionReason[keyof typeof AttentionReason];
+
+
+export const AttentionReason = {
+  no_shift: 'no_shift',
+  certification_expiring: 'certification_expiring',
+  background_pending: 'background_pending',
+  onboarding_incomplete: 'onboarding_incomplete',
+} as const;
+
+export interface AdminAssignedShift {
+  assignmentId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  /** @nullable */
+  label: string | null;
+  startDate: string;
+  /** @nullable */
+  endDate: string | null;
+  upcomingSkipDates: string[];
+}
+
+export type PublicUserRole = typeof PublicUserRole[keyof typeof PublicUserRole];
+
+
+export const PublicUserRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone: string | null;
+  role: PublicUserRole;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  isActive: boolean;
+  /** @nullable */
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[keyof typeof PublicVolunteerProfileStatus];
+
+
+export const PublicVolunteerProfileStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type PublicVolunteerProfileCertificationStatus = typeof PublicVolunteerProfileCertificationStatus[keyof typeof PublicVolunteerProfileCertificationStatus];
+
+
+export const PublicVolunteerProfileCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type PublicVolunteerProfileBackgroundCheckStatus = typeof PublicVolunteerProfileBackgroundCheckStatus[keyof typeof PublicVolunteerProfileBackgroundCheckStatus];
+
+
+export const PublicVolunteerProfileBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export type PublicVolunteerProfileOnboardingAnswers = { [key: string]: unknown };
+
+export interface PublicVolunteerProfile {
+  id: string;
+  userId: string;
+  county: string;
+  status: PublicVolunteerProfileStatus;
+  onboardingAnswers: PublicVolunteerProfileOnboardingAnswers;
+  /** @nullable */
+  onboardingCompletedAt: string | null;
+  /** @nullable */
+  availabilityNotes: string | null;
+  certificationStatus: PublicVolunteerProfileCertificationStatus;
+  /** @nullable */
+  certificationCompletedAt: string | null;
+  /** @nullable */
+  certificationExpiresAt: string | null;
+  backgroundCheckStatus: PublicVolunteerProfileBackgroundCheckStatus;
+  /** @nullable */
+  backgroundCheckSubmittedAt: string | null;
+  /** @nullable */
+  backgroundCheckClearedAt: string | null;
+  /** @nullable */
+  agreementAcknowledgedAt: string | null;
+  /** @nullable */
+  agreementVersion: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VolunteerRosterEntry {
+  user: PublicUser;
+  profile: PublicVolunteerProfile;
+  shiftCount: number;
+  attention: AttentionReason[];
+}
+
+export interface RosterSummary {
+  applicant: number;
+  in_training: number;
+  active: number;
+  inactive: number;
+  needsAttention: number;
+}
+
+export interface VolunteerRoster {
+  volunteers: VolunteerRosterEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+  summary: RosterSummary;
+}
+
+export interface AdminVolunteerDetail {
+  entry: VolunteerRosterEntry;
+  /** @nullable */
+  adminNotes: string | null;
+  shifts: AdminAssignedShift[];
+}
+
 export type VolunteerProfileInputAnswers = { [key: string]: unknown };
 
 export interface VolunteerProfileInput {
@@ -171,31 +308,6 @@ export interface AccountStatusInput {
   isActive: boolean;
 }
 
-export type PublicUserRole = typeof PublicUserRole[keyof typeof PublicUserRole];
-
-
-export const PublicUserRole = {
-  admin: 'admin',
-  volunteer: 'volunteer',
-} as const;
-
-export interface PublicUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  /** @nullable */
-  phone: string | null;
-  role: PublicUserRole;
-  /** @nullable */
-  emailVerifiedAt: string | null;
-  isActive: boolean;
-  /** @nullable */
-  lastLoginAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface TeamUsersResponse {
   users: PublicUser[];
   total: number;
@@ -310,65 +422,6 @@ export const MeRole = {
   volunteer: 'volunteer',
 } as const;
 
-export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[keyof typeof PublicVolunteerProfileStatus];
-
-
-export const PublicVolunteerProfileStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
-  active: 'active',
-  inactive: 'inactive',
-} as const;
-
-export type PublicVolunteerProfileCertificationStatus = typeof PublicVolunteerProfileCertificationStatus[keyof typeof PublicVolunteerProfileCertificationStatus];
-
-
-export const PublicVolunteerProfileCertificationStatus = {
-  not_started: 'not_started',
-  in_progress: 'in_progress',
-  complete: 'complete',
-} as const;
-
-export type PublicVolunteerProfileBackgroundCheckStatus = typeof PublicVolunteerProfileBackgroundCheckStatus[keyof typeof PublicVolunteerProfileBackgroundCheckStatus];
-
-
-export const PublicVolunteerProfileBackgroundCheckStatus = {
-  not_started: 'not_started',
-  pending: 'pending',
-  cleared: 'cleared',
-  not_cleared: 'not_cleared',
-} as const;
-
-export type PublicVolunteerProfileOnboardingAnswers = { [key: string]: unknown };
-
-export interface PublicVolunteerProfile {
-  id: string;
-  userId: string;
-  county: string;
-  status: PublicVolunteerProfileStatus;
-  onboardingAnswers: PublicVolunteerProfileOnboardingAnswers;
-  /** @nullable */
-  onboardingCompletedAt: string | null;
-  /** @nullable */
-  availabilityNotes: string | null;
-  certificationStatus: PublicVolunteerProfileCertificationStatus;
-  /** @nullable */
-  certificationCompletedAt: string | null;
-  /** @nullable */
-  certificationExpiresAt: string | null;
-  backgroundCheckStatus: PublicVolunteerProfileBackgroundCheckStatus;
-  /** @nullable */
-  backgroundCheckSubmittedAt: string | null;
-  /** @nullable */
-  backgroundCheckClearedAt: string | null;
-  /** @nullable */
-  agreementAcknowledgedAt: string | null;
-  /** @nullable */
-  agreementVersion: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Me {
   user: PublicUser;
   role: MeRole;
@@ -403,6 +456,171 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type ListVolunteerRosterParams = {
+/**
+ * @maxLength 200
+ */
+search?: string;
+status?: ListVolunteerRosterStatus;
+county?: string;
+certificationStatus?: ListVolunteerRosterCertificationStatus;
+backgroundCheckStatus?: ListVolunteerRosterBackgroundCheckStatus;
+needsAttention?: ListVolunteerRosterNeedsAttention;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListVolunteerRosterStatus = typeof ListVolunteerRosterStatus[keyof typeof ListVolunteerRosterStatus];
+
+
+export const ListVolunteerRosterStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type ListVolunteerRosterCertificationStatus = typeof ListVolunteerRosterCertificationStatus[keyof typeof ListVolunteerRosterCertificationStatus];
+
+
+export const ListVolunteerRosterCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type ListVolunteerRosterBackgroundCheckStatus = typeof ListVolunteerRosterBackgroundCheckStatus[keyof typeof ListVolunteerRosterBackgroundCheckStatus];
+
+
+export const ListVolunteerRosterBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export type ListVolunteerRosterNeedsAttention = typeof ListVolunteerRosterNeedsAttention[keyof typeof ListVolunteerRosterNeedsAttention];
+
+
+export const ListVolunteerRosterNeedsAttention = {
+  any: 'any',
+  no_shift: 'no_shift',
+  certification_expiring: 'certification_expiring',
+  background_pending: 'background_pending',
+  onboarding_incomplete: 'onboarding_incomplete',
+} as const;
+
+export type ExportVolunteerRosterParams = {
+/**
+ * @maxLength 200
+ */
+search?: string;
+status?: ExportVolunteerRosterStatus;
+county?: string;
+certificationStatus?: ExportVolunteerRosterCertificationStatus;
+backgroundCheckStatus?: ExportVolunteerRosterBackgroundCheckStatus;
+needsAttention?: ExportVolunteerRosterNeedsAttention;
+};
+
+export type ExportVolunteerRosterStatus = typeof ExportVolunteerRosterStatus[keyof typeof ExportVolunteerRosterStatus];
+
+
+export const ExportVolunteerRosterStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type ExportVolunteerRosterCertificationStatus = typeof ExportVolunteerRosterCertificationStatus[keyof typeof ExportVolunteerRosterCertificationStatus];
+
+
+export const ExportVolunteerRosterCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type ExportVolunteerRosterBackgroundCheckStatus = typeof ExportVolunteerRosterBackgroundCheckStatus[keyof typeof ExportVolunteerRosterBackgroundCheckStatus];
+
+
+export const ExportVolunteerRosterBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export type ExportVolunteerRosterNeedsAttention = typeof ExportVolunteerRosterNeedsAttention[keyof typeof ExportVolunteerRosterNeedsAttention];
+
+
+export const ExportVolunteerRosterNeedsAttention = {
+  any: 'any',
+  no_shift: 'no_shift',
+  certification_expiring: 'certification_expiring',
+  background_pending: 'background_pending',
+  onboarding_incomplete: 'onboarding_incomplete',
+} as const;
+
+export type ExportVolunteerScheduleParams = {
+/**
+ * @maxLength 200
+ */
+search?: string;
+status?: ExportVolunteerScheduleStatus;
+county?: string;
+certificationStatus?: ExportVolunteerScheduleCertificationStatus;
+backgroundCheckStatus?: ExportVolunteerScheduleBackgroundCheckStatus;
+needsAttention?: ExportVolunteerScheduleNeedsAttention;
+};
+
+export type ExportVolunteerScheduleStatus = typeof ExportVolunteerScheduleStatus[keyof typeof ExportVolunteerScheduleStatus];
+
+
+export const ExportVolunteerScheduleStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type ExportVolunteerScheduleCertificationStatus = typeof ExportVolunteerScheduleCertificationStatus[keyof typeof ExportVolunteerScheduleCertificationStatus];
+
+
+export const ExportVolunteerScheduleCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type ExportVolunteerScheduleBackgroundCheckStatus = typeof ExportVolunteerScheduleBackgroundCheckStatus[keyof typeof ExportVolunteerScheduleBackgroundCheckStatus];
+
+
+export const ExportVolunteerScheduleBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export type ExportVolunteerScheduleNeedsAttention = typeof ExportVolunteerScheduleNeedsAttention[keyof typeof ExportVolunteerScheduleNeedsAttention];
+
+
+export const ExportVolunteerScheduleNeedsAttention = {
+  any: 'any',
+  no_shift: 'no_shift',
+  certification_expiring: 'certification_expiring',
+  background_pending: 'background_pending',
+  onboarding_incomplete: 'onboarding_incomplete',
+} as const;
 
 export type ListTeamUsersParams = {
 role: ListTeamUsersRole;

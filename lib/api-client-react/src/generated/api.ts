@@ -23,14 +23,18 @@ import type {
   AccountStatusInput,
   AdminInviteInput,
   AdminInviteResult,
+  AdminVolunteerDetail,
   AgreementResource,
   AuthSession,
   AuthSuccessResponse,
   DevEmailCheck,
   DevEmailCheckError,
   EmailInput,
+  ExportVolunteerRosterParams,
+  ExportVolunteerScheduleParams,
   HealthStatus,
   ListTeamUsersParams,
+  ListVolunteerRosterParams,
   Me,
   MessageReadResult,
   OnboardingAgreements,
@@ -46,7 +50,8 @@ import type {
   VolunteerDashboard,
   VolunteerMessage,
   VolunteerProfileInput,
-  VolunteerResource
+  VolunteerResource,
+  VolunteerRoster
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -75,6 +80,311 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListVolunteerRosterUrl = (params?: ListVolunteerRosterParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/volunteers?${stringifiedParams}` : `/api/admin/volunteers`
+}
+
+export const listVolunteerRoster = async (params?: ListVolunteerRosterParams, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerRoster> => {
+
+  return customFetch<VolunteerRoster>(getListVolunteerRosterUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListVolunteerRosterQueryKey = (params?: ListVolunteerRosterParams,) => {
+    return [
+    `/api/admin/volunteers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListVolunteerRosterQueryOptions = <TData = Awaited<ReturnType<typeof listVolunteerRoster>>, TError = ErrorType<unknown>>(params?: ListVolunteerRosterParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVolunteerRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVolunteerRosterQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVolunteerRoster>>> = ({ signal }) => listVolunteerRoster(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listVolunteerRoster>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListVolunteerRosterQueryResult = NonNullable<Awaited<ReturnType<typeof listVolunteerRoster>>>
+export type ListVolunteerRosterQueryError = ErrorType<unknown>
+
+
+
+export function useListVolunteerRoster<TData = Awaited<ReturnType<typeof listVolunteerRoster>>, TError = ErrorType<unknown>>(
+ params?: ListVolunteerRosterParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVolunteerRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListVolunteerRosterQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminVolunteerUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/volunteers/${userId}`
+}
+
+export const getAdminVolunteer = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminVolunteerDetail> => {
+
+  return customFetch<AdminVolunteerDetail>(getGetAdminVolunteerUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminVolunteerQueryKey = (userId: string,) => {
+    return [
+    `/api/admin/volunteers/${userId}`
+    ] as const;
+    }
+
+
+export const getGetAdminVolunteerQueryOptions = <TData = Awaited<ReturnType<typeof getAdminVolunteer>>, TError = ErrorType<unknown>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVolunteer>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminVolunteerQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminVolunteer>>> = ({ signal }) => getAdminVolunteer(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminVolunteer>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminVolunteerQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminVolunteer>>>
+export type GetAdminVolunteerQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminVolunteer<TData = Awaited<ReturnType<typeof getAdminVolunteer>>, TError = ErrorType<unknown>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVolunteer>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminVolunteerQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getExportVolunteerRosterUrl = (params?: ExportVolunteerRosterParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/volunteers/roster.csv?${stringifiedParams}` : `/api/admin/volunteers/roster.csv`
+}
+
+export const exportVolunteerRoster = async (params?: ExportVolunteerRosterParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getExportVolunteerRosterUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportVolunteerRosterQueryKey = (params?: ExportVolunteerRosterParams,) => {
+    return [
+    `/api/admin/volunteers/roster.csv`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportVolunteerRosterQueryOptions = <TData = Awaited<ReturnType<typeof exportVolunteerRoster>>, TError = ErrorType<unknown>>(params?: ExportVolunteerRosterParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportVolunteerRosterQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportVolunteerRoster>>> = ({ signal }) => exportVolunteerRoster(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerRoster>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportVolunteerRosterQueryResult = NonNullable<Awaited<ReturnType<typeof exportVolunteerRoster>>>
+export type ExportVolunteerRosterQueryError = ErrorType<unknown>
+
+
+
+export function useExportVolunteerRoster<TData = Awaited<ReturnType<typeof exportVolunteerRoster>>, TError = ErrorType<unknown>>(
+ params?: ExportVolunteerRosterParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportVolunteerRosterQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getExportVolunteerScheduleUrl = (params?: ExportVolunteerScheduleParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/volunteers/schedule.csv?${stringifiedParams}` : `/api/admin/volunteers/schedule.csv`
+}
+
+export const exportVolunteerSchedule = async (params?: ExportVolunteerScheduleParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getExportVolunteerScheduleUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportVolunteerScheduleQueryKey = (params?: ExportVolunteerScheduleParams,) => {
+    return [
+    `/api/admin/volunteers/schedule.csv`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getExportVolunteerScheduleQueryOptions = <TData = Awaited<ReturnType<typeof exportVolunteerSchedule>>, TError = ErrorType<unknown>>(params?: ExportVolunteerScheduleParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportVolunteerScheduleQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportVolunteerSchedule>>> = ({ signal }) => exportVolunteerSchedule(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerSchedule>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportVolunteerScheduleQueryResult = NonNullable<Awaited<ReturnType<typeof exportVolunteerSchedule>>>
+export type ExportVolunteerScheduleQueryError = ErrorType<unknown>
+
+
+
+export function useExportVolunteerSchedule<TData = Awaited<ReturnType<typeof exportVolunteerSchedule>>, TError = ErrorType<unknown>>(
+ params?: ExportVolunteerScheduleParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportVolunteerScheduleQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetVolunteerDashboardUrl = () => {
 

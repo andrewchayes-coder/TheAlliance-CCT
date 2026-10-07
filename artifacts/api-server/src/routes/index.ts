@@ -6,6 +6,7 @@ import meRouter from "./me";
 import adminRouter from "./admin";
 import onboardingRouter from "./onboarding";
 import volunteerRouter from "./volunteer";
+import adminRosterRouter from "./admin-roster";
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
@@ -23,5 +24,6 @@ router.use(meRouter);
 router.use(onboardingRouter);
 router.use('/volunteer', volunteerRouter);
 router.use('/admin', adminRouter);
+router.use('/admin', adminRosterRouter);
 
 export default router;

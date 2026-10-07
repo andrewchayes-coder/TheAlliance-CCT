@@ -128,6 +128,16 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Messages are limited to the current user's recipient rows; opening a message marks only that recipient read. Resources are read-only published content, with quick links hidden from nonactive volunteers. Resource management, sending messages, and shift booking are separate later modules.
 - Checks: `pnpm --filter @workspace/api-server run test:volunteer`; fixtures are development-only and cleaned up. Private volunteer query caches are removed when authentication state is refreshed.
 
+## Admin volunteer roster and exports
+
+- `/admin/volunteers` uses a desktop table and mobile cards, with name/email/normalized-phone search, status/county/certification/background filters, server pagination, and read-only detail links using user IDs. Global summary chips intentionally stay stable while filters change.
+- Attention means active profile with zero held shifts; a certification expiration from today through 30 days ahead inclusive; pending background checks submitted more than 14 calendar days ago; or incomplete onboarding. Dates and report filenames use the Pacific calendar. Expired certifications are not silently reclassified as “expiring within 30 days.”
+- A held/active assignment has an active slot and no end date before today. Future-start reservations count as held; end dates are inclusive. Rosters include all volunteer-profile statuses and account activation states; inactive profiles with assignments remain visible to staff.
+- Both CSV downloads are generated server-side and require an active, verified admin session. Exports respect current filters but ignore pagination and bulk selection. The roster includes every profile field, raw answer JSON (preserving legacy answers), one column per configured question, contact/verification/login metadata, and formatted held shifts. It includes internal admin notes: share only with authorized staff. Authentication secrets/hashes are never exported.
+- The schedule CSV has one row per held assignment, local weekday/time, start/end dates, and sorted future skip dates within that assignment's date range. All CSV cells are quoted/escaped and formula-neutralized; files use UTF-8 BOM and dated download filenames.
+- Bulk selection retains volunteer user IDs across pages and clears on filter changes. “Message selected” calls the messaging hook and shows an explicit coming-later notice; no messages are sent in this step.
+- Validation: `pnpm --filter @workspace/api-server run test:roster`, with owned, development-only fixtures and cleanup.
+
 ## Optional brand assets
 
 Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.
