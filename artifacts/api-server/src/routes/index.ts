@@ -3,18 +3,21 @@ import healthRouter from "./health";
 import devEmailRouter from "./dev-email";
 import authRouter from "./auth";
 import meRouter from "./me";
-import { csrfGuard, requireVerifiedUser } from "../auth/session";
+import adminRouter from "./admin";
+import { csrfGuard } from "../auth/session";
+import { apiAccessPolicy } from "../auth/access-policy";
 
 const router: IRouter = Router();
 
+router.use(apiAccessPolicy);
 router.use(healthRouter);
 if (process.env.NODE_ENV === 'development') {
   router.use(devEmailRouter);
 }
 router.use('/auth', authRouter);
 
-// Keep all present and future resource routes BELOW this verification gate.
-router.use(requireVerifiedUser, csrfGuard);
+router.use(csrfGuard);
 router.use(meRouter);
+router.use('/admin', adminRouter);
 
 export default router;

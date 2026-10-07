@@ -169,6 +169,114 @@ export const SignoutResponse = zod.object({
 })
 
 
+export const acceptAdminInviteBodyTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+export const acceptAdminInviteBodyPasswordMin = 8;
+export const acceptAdminInviteBodyPasswordMax = 72;
+
+export const acceptAdminInviteBodyConfirmPasswordMin = 8;
+export const acceptAdminInviteBodyConfirmPasswordMax = 72;
+
+
+
+export const AcceptAdminInviteBody = zod.object({
+  "token": zod.string().regex(acceptAdminInviteBodyTokenRegExp),
+  "password": zod.string().min(acceptAdminInviteBodyPasswordMin).max(acceptAdminInviteBodyPasswordMax),
+  "confirmPassword": zod.string().min(acceptAdminInviteBodyConfirmPasswordMin).max(acceptAdminInviteBodyConfirmPasswordMax)
+})
+
+export const AcceptAdminInviteResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Admin-only account directory
+ */
+export const listTeamUsersQueryQMax = 100;
+
+export const listTeamUsersQueryLimitDefault = 25;
+export const listTeamUsersQueryLimitMax = 100;
+
+export const listTeamUsersQueryOffsetDefault = 0;
+export const listTeamUsersQueryOffsetMin = 0;
+
+
+
+export const ListTeamUsersQueryParams = zod.object({
+  "role": zod.enum(['admin', 'volunteer']),
+  "q": zod.coerce.string().max(listTeamUsersQueryQMax).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listTeamUsersQueryLimitMax).default(listTeamUsersQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listTeamUsersQueryOffsetMin).default(listTeamUsersQueryOffsetDefault)
+})
+
+export const ListTeamUsersResponse = zod.object({
+  "users": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})),
+  "total": zod.number().int(),
+  "limit": zod.number().int(),
+  "offset": zod.number().int()
+})
+
+
+export const inviteAdminBodyFirstNameMax = 100;
+
+export const inviteAdminBodyLastNameMax = 100;
+
+export const inviteAdminBodyEmailMax = 254;
+
+
+
+export const InviteAdminBody = zod.object({
+  "firstName": zod.string().min(1).max(inviteAdminBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(inviteAdminBodyLastNameMax),
+  "email": zod.string().email().max(inviteAdminBodyEmailMax)
+})
+
+export const InviteAdminResponse = zod.object({
+  "ok": zod.boolean(),
+  "email": zod.string(),
+  "delivery": zod.enum(['sent', 'logged', 'failed']),
+  "message": zod.string()
+})
+
+
+export const SetUserActiveStatusParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const SetUserActiveStatusBody = zod.object({
+  "isActive": zod.boolean()
+})
+
+export const SetUserActiveStatusResponse = zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
 /**
  * Requires an active, verified session. Returns no password, Google subject, session version, or admin notes. Authentication failures are JSON with error and code.
  */

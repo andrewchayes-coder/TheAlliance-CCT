@@ -10,6 +10,7 @@ import Signin from '@/pages/signin';
 import { ForgotPassword, ResetPassword } from '@/pages/recovery';
 import { VerifyEmailPage, VerifyTokenPage } from '@/pages/verify';
 import { Dashboard, Onboarding } from '@/pages/account';
+import { AdminHome, AdminTeam, AcceptInvite } from '@/pages/admin';
 import { AuthProvider } from '@/auth/auth-context';
 import {
   Route,
@@ -38,6 +39,10 @@ function Router() {
         <Route path="/dashboard/:rest*" component={Dashboard} />
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/onboarding/:rest*" component={Onboarding} />
+        <Route path="/accept-invite" component={AcceptInvite} />
+        <Route path="/admin" component={AdminHome} />
+        <Route path="/admin/team" component={AdminTeam} />
+        <Route path="/admin/:rest*" component={AdminHome} />
         {import.meta.env.DEV && StyleGuide && (
           <Route path="/style-guide">
             <Suspense fallback={<p className="p-6">Loading the style guide…</p>}>

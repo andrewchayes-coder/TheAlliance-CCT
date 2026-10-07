@@ -61,6 +61,9 @@ router.get('/google/callback', async (req, res): Promise<void> => {
       const [existing] = await tx.select().from(usersTable).where(eq(usersTable.email, email)).limit(1).for('update');
       if (existing) {
         if (!existing.isActive) throw new InactiveGoogleAccount();
+        if (existing.role === 'admin' && !existing.emailVerifiedAt) {
+          throw new Error('Accept the administrator invitation before using Google sign-in.');
+        }
         if (existing.googleSubject && existing.googleSubject !== identity.sub) {
           throw new Error('Account cannot be linked.');
         }

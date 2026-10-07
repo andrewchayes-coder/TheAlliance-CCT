@@ -138,6 +138,80 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/AuthSuccess"
+  /auth/accept-invite:
+    post:
+      operationId: acceptAdminInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /admin/users:
+    get:
+      operationId: listTeamUsers
+      summary: Admin-only account directory
+      parameters:
+        - name: role
+          in: query
+          required: true
+          schema: { type: string, enum: [admin, volunteer] }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Matching accounts, visible only to admins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamUsersResponse"
+  /admin/invites:
+    post:
+      operationId: inviteAdmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminInviteInput"
+      responses:
+        "200":
+          description: Pending admin created or invitation renewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminInviteResult"
+  /admin/users/{userId}/status:
+    patch:
+      operationId: setUserActiveStatus
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountStatusInput"
+      responses:
+        "200":
+          description: Updated account status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUser"
   /me:
     get:
       operationId: getMe
@@ -158,6 +232,37 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    AdminInviteInput:
+      type: object
+      required: [firstName, lastName, email]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 254 }
+    AdminInviteResult:
+      type: object
+      required: [ok, email, delivery, message]
+      properties:
+        ok: { type: boolean }
+        email: { type: string }
+        delivery: { type: string, enum: [sent, logged, failed] }
+        message: { type: string }
+    AccountStatusInput:
+      type: object
+      required: [isActive]
+      properties:
+        isActive: { type: boolean }
+    TeamUsersResponse:
+      type: object
+      required: [users, total, limit, offset]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicUser"
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
     SignupInput:
       type: object
       required: [firstName, lastName, email, phone, password, confirmPassword]

@@ -6,7 +6,14 @@ import { AuthHeading, AuthLoading, SessionFailed } from './auth-ui';
 import { FETCH_CREDS, FRESH_MS, useAuth } from './auth-context';
 
 /** Renders children only after session says verified AND /api/me succeeded. */
-export function RequireVerified({ children }: { children: (me: Me) => ReactNode }) {
+function Redirect({ to }: { to: string }) {
+  const [, nav] = useLocation();
+  useEffect(() => { nav(to, { replace: true }); }, [to, nav]);
+  return <AuthLoading label="Taking you to the right place" />;
+}
+
+/** Admins are sent to /admin from volunteer pages; with area="admin", volunteers are sent to /dashboard. */
+export function RequireVerified({ children, area = 'volunteer' }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin' }) {
   const { session, sessionLoading, sessionError, refresh, signout } = useAuth();
   const [, nav] = useLocation();
   const ok = !!session?.authenticated && session.verified;
@@ -33,7 +40,14 @@ export function RequireVerified({ children }: { children: (me: Me) => ReactNode 
   if (sessionLoading) return <AuthLoading label="Checking your account" />;
   if (!session) return sessionError ? <SessionFailed /> : <AuthLoading />;
   if (!ok) return <AuthLoading label="Taking you to sign in" />;
-  if (me.data && me.data.verified) return <>{children(me.data)}</>;
+  // Never render an older privileged /me cache once bootstrap knows the actor's role changed.
+  if (area === 'admin' && session.role !== 'admin') return <Redirect to="/dashboard" />;
+  if (area === 'volunteer' && session.role === 'admin') return <Redirect to="/admin" />;
+  if (me.data && me.data.verified) {
+    if (area === 'admin' && me.data.role !== 'admin') return <Redirect to="/dashboard" />;
+    if (area === 'volunteer' && me.data.role === 'admin') return <Redirect to="/admin" />;
+    return <>{children(me.data)}</>;
+  }
   if (me.isError && (status === 401 || status === 403) && retried.current && !me.isFetching && ok) {
     return (
       <PublicLayout>
@@ -56,3 +70,5 @@ export function RequireVerified({ children }: { children: (me: Me) => ReactNode 
   }
   return <AuthLoading label="Loading your account" />;
 }
+
+export const RequireAdmin = ({ children }: { children: (me: Me) => ReactNode }) => <RequireVerified area="admin">{children}</RequireVerified>;

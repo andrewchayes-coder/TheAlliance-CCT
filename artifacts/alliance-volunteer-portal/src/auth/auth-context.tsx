@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getAuthSession, getGetAuthSessionQueryKey, getGetMeQueryKey, useForgotPassword, useGetAuthSession,
+  getAuthSession, getGetAuthSessionQueryKey, getGetMeQueryKey, getListTeamUsersQueryKey, useAcceptAdminInvite, useInviteAdmin, useSetUserActiveStatus, useForgotPassword, useGetAuthSession,
   useResendVerification, useResetPassword, useSignin, useSignout, useSignup, useVerifyEmail,
   type AuthSession,
 } from '@workspace/api-client-react';
@@ -42,6 +42,7 @@ function useAuthValue() {
 
   const refresh = useCallback(async (): Promise<AuthSession> => {
     qc.removeQueries({ queryKey: getGetMeQueryKey() });
+    qc.removeQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
     const s = await qc.fetchQuery({ queryKey: getGetAuthSessionQueryKey(), queryFn: () => getAuthSession(FETCH_CREDS), staleTime: 0 });
     csrfRef.current = s.csrfToken;
     return s;
@@ -53,6 +54,9 @@ function useAuthValue() {
   const forgotM = useForgotPassword({ request });
   const resetM = useResetPassword({ request });
   const resendM = useResendVerification({ request });
+  const acceptM = useAcceptAdminInvite({ request });
+  const inviteM = useInviteAdmin({ request });
+  const statusM = useSetUserActiveStatus({ request });
   const signoutM = useSignout({ request });
 
   const actions = {
@@ -69,10 +73,24 @@ function useAuthValue() {
     reset: async (data: Parameters<typeof resetM.mutateAsync>[0]['data']) => {
       const r = await resetM.mutateAsync({ data }); await refresh(); return r;
     },
+    acceptInvite: async (data: Parameters<typeof acceptM.mutateAsync>[0]['data']) => {
+      const r = await acceptM.mutateAsync({ data }); await refresh(); return r;
+    },
+    inviteAdmin: async (data: Parameters<typeof inviteM.mutateAsync>[0]['data']) => {
+      const r = await inviteM.mutateAsync({ data });
+      await qc.invalidateQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
+      return r;
+    },
+    setActive: async (userId: string, isActive: boolean) => {
+      const r = await statusM.mutateAsync({ userId, data: { isActive } });
+      await qc.invalidateQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
+      return r;
+    },
     resend: () => resendM.mutateAsync(undefined),
     signout: async () => {
       try { await signoutM.mutateAsync(undefined); } finally {
         qc.removeQueries({ queryKey: getGetMeQueryKey() });
+        qc.removeQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
         await refresh();
       }
     },

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { createServer, type Server } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import {
   db, pool, usersTable, volunteerProfilesTable, authTokensTable, notificationLogTable, sessionsTable, authRateLimitsTable,
@@ -21,6 +21,7 @@ const { default: app } = await import('../app');
 const { appOrigin } = await import('./session');
 const { mintToken } = await import('./accounts');
 const { tokenHash } = await import('./security');
+const { inviteAdministrator, assertDeactivationAllowed, AdminActionError } = await import('./admin-management');
 
 const namespace = randomBytes(6).toString('hex');
 const password = 'LocalAuth-Test123!';
@@ -30,7 +31,7 @@ const rateKeys = new Set<string>();
 let sequence = 0;
 let base: string;
 let server: Server;
-const scopes = ['signup', 'signin', 'reset', 'resend', 'resend-minute', 'resend-hour', 'resend-ip', 'verify-ip', 'reset-apply-ip', 'google-ip'];
+const scopes = ['signup', 'signin', 'reset', 'resend', 'resend-minute', 'resend-hour', 'resend-ip', 'verify-ip', 'reset-apply-ip', 'google-ip', 'admin-invite', 'invite-accept-ip'];
 const trackRate = (identity: string) => scopes.forEach(scope => {
   rateKeys.add(`${scope}:${tokenHash(identity)}`);
   rateKeys.add(`${scope}-ip:${tokenHash(identity)}`);
@@ -49,7 +50,7 @@ class Client {
       headers: {
         'x-forwarded-proto': 'https', 'x-forwarded-for': this.ip,
         origin: appOrigin, ...(this.cookie ? { cookie: this.cookie } : {}),
-        ...(method === 'POST' ? { 'content-type': 'application/json', 'x-csrf-token': this.csrf } : {}),
+        ...(['POST', 'PATCH'].includes(method) ? { 'content-type': 'application/json', 'x-csrf-token': this.csrf } : {}),
         ...extras,
       },
       ...(data === undefined ? {} : { body: JSON.stringify(data) }),
@@ -101,6 +102,20 @@ async function verifyFixture() {
   await fixtureData.client.bootstrap();
   return { ...fixtureData, token };
 }
+async function adminFixture() {
+  const data = await verifyFixture();
+  const [user] = await db.update(usersTable).set({ role: 'admin' }).where(eq(usersTable.id, data.user.id)).returning();
+  await data.client.bootstrap();
+  return { ...data, user: user! };
+}
+async function adminInvitation(actor: Parameters<typeof inviteAdministrator>[1] & { actor: NonNullable<Parameters<typeof inviteAdministrator>[1]['actor']> }) {
+  const email = `admin-check-${namespace}-${++sequence}@example.org`;
+  const invitation = await inviteAdministrator({ firstName: 'Invitation', lastName: 'Check', email }, actor);
+  createdUsers.push(invitation.user.id);
+  trackRate(email);
+  trackRate(invitation.user.id);
+  return { ...invitation, raw: new URL(invitation.inviteUrl).searchParams.get('token')! };
+}
 before(async () => {
   server = createServer(app);
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -119,6 +134,166 @@ after(async () => {
   if (sessionIds.size) await db.delete(sessionsTable).where(inArray(sessionsTable.sid, [...sessionIds]));
   if (rateKeys.size) await db.delete(authRateLimitsTable).where(inArray(authRateLimitsTable.key, [...rateKeys]));
   await pool.end();
+});
+
+test('admin sign-in lands on /admin; undeclared API handlers cannot execute for any role', async () => {
+  const admin = await adminFixture();
+  await admin.client.post('/auth/signout');
+  await admin.client.bootstrap();
+  const signin = await admin.client.post('/auth/signin', { email: admin.user.email, password });
+  assert.equal(signin.body.nextPath, '/admin');
+  await admin.client.bootstrap();
+  assert.equal((await admin.client.request('/admin/users?role=admin')).status, 200);
+  let executed = false;
+  app.get('/api/undeclared-security-check', (_req, res) => { executed = true; res.json({ private: true }); });
+  const volunteer = await verifyFixture();
+  for (const client of [new Client(), volunteer.client, admin.client]) {
+    const denied = await client.request('/undeclared-security-check');
+    assert.equal(denied.status, 403);
+    assert.equal(denied.body.code, 'ROUTE_NOT_DECLARED');
+  }
+  assert.equal(executed, false);
+});
+
+test('volunteers see only their own safe profile and cannot reach any admin or schedule data', async () => {
+  const own = await verifyFixture();
+  const other = await fixture();
+  await db.update(usersTable).set({ firstName: 'PrivateOther', phone: '+12125550999' }).where(eq(usersTable.id, other.user.id));
+  await db.update(volunteerProfilesTable).set({ adminNotes: 'Private administrator note' })
+    .where(eq(volunteerProfilesTable.userId, own.user.id));
+  const me = await own.client.request(`/me?userId=${other.user.id}`);
+  assert.equal(me.status, 200);
+  assert.equal(me.body.user.id, own.user.id);
+  assert.equal(me.body.profile.userId, own.user.id);
+  const serialized = JSON.stringify(me.body);
+  for (const privateValue of [other.user.id, other.user.email, 'PrivateOther', '+12125550999', 'adminNotes', 'Private administrator note']) {
+    assert.ok(!serialized.includes(privateValue));
+  }
+  for (const path of ['/admin/users?role=volunteer', '/admin/users?role=admin', `/schedule?userId=${other.user.id}`]) {
+    const denied = await own.client.request(path);
+    assert.equal(denied.status, 403);
+    assert.ok(!JSON.stringify(denied.body).includes(other.user.email));
+  }
+  assert.equal((await own.client.post('/admin/invites', { firstName: 'No', lastName: 'Access', email: other.user.email })).status, 403);
+  assert.equal((await own.client.request(`/admin/users/${other.user.id}/status`, 'PATCH', { isActive: false })).status, 403);
+  assert.equal((await new Client().request('/admin/users?role=admin')).status, 401);
+  assert.equal((await other.client.request('/admin/users?role=admin')).status, 403);
+});
+
+test('admin directory is paginated and safe; invites create pending admins with logged audit and seven-day hashes', async () => {
+  const admin = await adminFixture();
+  const email = `admin-route-${namespace}-${++sequence}@example.org`;
+  const result = await admin.client.post('/admin/invites', { firstName: 'Pending', lastName: 'Administrator', email });
+  assert.equal(result.status, 200);
+  assert.equal(result.body.delivery, 'logged');
+  assert.ok(!('inviteUrl' in result.body));
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  assert.ok(user);
+  createdUsers.push(user.id); trackRate(email); trackRate(user.id);
+  assert.equal(user.role, 'admin');
+  assert.equal(user.emailVerifiedAt, null);
+  assert.equal(bcrypt.getRounds(user.passwordHash), 12);
+  const [token] = await db.select().from(authTokensTable).where(eq(authTokensTable.userId, user.id));
+  assert.equal(token!.type, 'admin_invite');
+  assert.match(token!.tokenHash, /^[a-f0-9]{64}$/);
+  assert.ok(Math.abs(token!.expiresAt.getTime() - Date.now() - 7 * 24 * 3600_000) < 10_000);
+  const [log] = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, user.id));
+  assert.equal(log!.type, 'invite'); assert.equal(log!.status, 'logged');
+  const list = await admin.client.request(`/admin/users?role=admin&q=${email}&limit=1&offset=0`);
+  assert.equal(list.status, 200); assert.equal(list.body.total, 1);
+  assert.equal(list.body.users[0].id, user.id);
+  for (const field of ['passwordHash', 'googleSubject', 'sessionVersion', 'adminNotes']) {
+    assert.ok(!JSON.stringify(list.body).includes(field));
+  }
+  assert.equal((await admin.client.request('/admin/users?role=admin&limit=101')).status, 400);
+  const volunteer = await fixture();
+  assert.equal((await admin.client.post('/admin/invites', {
+    firstName: 'Cannot', lastName: 'Promote', email: volunteer.user.email,
+  })).status, 409);
+});
+
+test('admin invite acceptance verifies email, sets bcrypt password, signs in and remains single-use', async () => {
+  const admin = await adminFixture();
+  const invitation = await adminInvitation({ actor: admin.user });
+  const client = new Client();
+  const accepted = await client.post('/auth/accept-invite', {
+    token: invitation.raw, password, confirmPassword: password,
+  });
+  assert.equal(accepted.status, 200); assert.equal(accepted.body.nextPath, '/admin');
+  await client.bootstrap();
+  assert.equal((await client.request('/admin/users?role=admin')).status, 200);
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, invitation.user.id));
+  assert.ok(user!.emailVerifiedAt); assert.ok(user!.lastLoginAt);
+  assert.ok(await bcrypt.compare(password, user!.passwordHash));
+  assert.equal(bcrypt.getRounds(user!.passwordHash), 12);
+  const again = await new Client().post('/auth/accept-invite', { token: invitation.raw, password, confirmPassword: password });
+  assert.equal(again.status, 400); assert.equal(again.body.code, 'TOKEN_INVALID');
+});
+
+test('expired and renewed invites fail closed, and pending admins cannot bypass invitation via verification or reset', async () => {
+  const admin = await adminFixture();
+  const invitation = await adminInvitation({ actor: admin.user });
+  await db.update(authTokensTable).set({ expiresAt: new Date(Date.now() - 1000) })
+    .where(eq(authTokensTable.userId, invitation.user.id));
+  const expired = await new Client().post('/auth/accept-invite', { token: invitation.raw, password, confirmPassword: password });
+  assert.equal(expired.status, 400);
+  const renewed = await inviteAdministrator({
+    email: invitation.user.email, firstName: invitation.user.firstName, lastName: invitation.user.lastName,
+  }, { actor: admin.user });
+  assert.notEqual(new URL(renewed.inviteUrl).searchParams.get('token'), invitation.raw);
+  assert.equal((await new Client().post('/auth/accept-invite', {
+    token: invitation.raw, password, confirmPassword: password,
+  })).status, 400);
+  const generic = await new Client().post('/auth/forgot-password', { email: invitation.user.email });
+  assert.equal(generic.status, 200);
+  const resets = await db.select().from(authTokensTable).where(and(
+    eq(authTokensTable.userId, invitation.user.id), eq(authTokensTable.type, 'password_reset'),
+  ));
+  assert.equal(resets.length, 0);
+  const verification = await mintToken(invitation.user.id, 'email_verify');
+  assert.equal((await new Client().post('/auth/verify', { token: verification.raw })).status, 400);
+  const reset = await mintToken(invitation.user.id, 'password_reset');
+  assert.equal((await new Client().post('/auth/reset-password', {
+    token: reset.raw, password, confirmPassword: password,
+  })).status, 400);
+});
+
+test('deactivation revokes sessions and links for admins and volunteers; reactivation does not revive sessions', async () => {
+  const admin = await adminFixture();
+  for (const target of [await adminFixture(), await verifyFixture()]) {
+    await mintToken(target.user.id, 'password_reset');
+    const deactivated = await admin.client.request(`/admin/users/${target.user.id}/status`, 'PATCH', { isActive: false });
+    assert.equal(deactivated.status, 200); assert.equal(deactivated.body.isActive, false);
+    assert.equal((await target.client.request('/me')).status, 401);
+    const sessions = await db.select().from(sessionsTable).where(sql`${sessionsTable.sess}->>'userId' = ${target.user.id}`);
+    assert.equal(sessions.length, 0);
+    const tokens = await db.select().from(authTokensTable).where(eq(authTokensTable.userId, target.user.id));
+    assert.ok(tokens.every(token => token.usedAt));
+    await target.client.bootstrap();
+    const disabled = await target.client.post('/auth/signin', { email: target.user.email, password });
+    assert.equal(disabled.status, 403);
+    assert.equal(disabled.body.error, "Your account isn't active. Please contact The Alliance.");
+    const reactivated = await admin.client.request(`/admin/users/${target.user.id}/status`, 'PATCH', { isActive: true });
+    assert.equal(reactivated.status, 200); assert.equal(reactivated.body.isActive, true);
+    assert.equal((await target.client.request('/me')).status, 401);
+    assert.equal((await target.client.post('/auth/signin', { email: target.user.email, password })).status, 200);
+  }
+});
+
+test('self and last-admin safeguards hold, including two administrators attempting to deactivate each other', async () => {
+  const first = await adminFixture();
+  const second = await adminFixture();
+  const self = await first.client.request(`/admin/users/${first.user.id}/status`, 'PATCH', { isActive: false });
+  assert.equal(self.status, 409); assert.equal(self.body.code, 'SELF_DEACTIVATION');
+  assert.throws(() => assertDeactivationAllowed(second.user.id, first.user, 1),
+    (error: unknown) => error instanceof AdminActionError && error.code === 'LAST_ADMIN');
+  const responses = await Promise.all([
+    first.client.request(`/admin/users/${second.user.id}/status`, 'PATCH', { isActive: false }),
+    second.client.request(`/admin/users/${first.user.id}/status`, 'PATCH', { isActive: false }),
+  ]);
+  assert.equal(responses.filter(response => response.status === 200).length, 1);
+  const users = await db.select().from(usersTable).where(inArray(usersTable.id, [first.user.id, second.user.id]));
+  assert.equal(users.filter(user => user.isActive).length, 1);
 });
 
 test('signup creates bcrypt volunteer/applicant, logs verification, and denies every protected API', async () => {

@@ -20,16 +20,22 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountStatusInput,
+  AdminInviteInput,
+  AdminInviteResult,
   AuthSession,
   AuthSuccessResponse,
   DevEmailCheck,
   DevEmailCheckError,
   EmailInput,
   HealthStatus,
+  ListTeamUsersParams,
   Me,
+  PublicUser,
   ResetInput,
   SigninInput,
   SignupInput,
+  TeamUsersResponse,
   TokenInput
 } from './api.schemas';
 
@@ -834,6 +840,337 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSignoutMutationOptions(options));
+    }
+
+export const getAcceptAdminInviteUrl = () => {
+
+
+
+
+  return `/api/auth/accept-invite`
+}
+
+export const acceptAdminInvite = async (resetInput: ResetInput, options?: Parameters<typeof customFetch>[1]): Promise<AuthSuccessResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AuthSuccessResponse>(getAcceptAdminInviteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resetInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptAdminInviteMutationKey = () => ['acceptAdminInvite'] as const;
+
+export const getAcceptAdminInviteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptAdminInvite>>, TError,AcceptAdminInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptAdminInvite>>, TError,AcceptAdminInviteMutationVariables, TContext> => {
+
+const mutationKey = getAcceptAdminInviteMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptAdminInvite>>, AcceptAdminInviteMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptAdminInvite(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptAdminInviteMutationResult = NonNullable<Awaited<ReturnType<typeof acceptAdminInvite>>>
+    export type AcceptAdminInviteMutationBody = BodyType<ResetInput>
+    export type AcceptAdminInviteMutationError = ErrorType<unknown>
+    export type AcceptAdminInviteMutationVariables = {data: BodyType<ResetInput>}
+
+    export const useAcceptAdminInvite = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptAdminInvite>>, TError,AcceptAdminInviteMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptAdminInvite>>,
+        TError,
+        AcceptAdminInviteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcceptAdminInviteMutationOptions(options));
+    }
+
+export const getListTeamUsersUrl = (params: ListTeamUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/users?${stringifiedParams}` : `/api/admin/users`
+}
+
+/**
+ * @summary Admin-only account directory
+ */
+export const listTeamUsers = async (params: ListTeamUsersParams, options?: Parameters<typeof customFetch>[1]): Promise<TeamUsersResponse> => {
+
+  return customFetch<TeamUsersResponse>(getListTeamUsersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTeamUsersQueryKey = (params?: ListTeamUsersParams,) => {
+    return [
+    `/api/admin/users`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTeamUsersQueryOptions = <TData = Awaited<ReturnType<typeof listTeamUsers>>, TError = ErrorType<unknown>>(params: ListTeamUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeamUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTeamUsersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTeamUsers>>> = ({ signal }) => listTeamUsers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTeamUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTeamUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listTeamUsers>>>
+export type ListTeamUsersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Admin-only account directory
+ */
+
+export function useListTeamUsers<TData = Awaited<ReturnType<typeof listTeamUsers>>, TError = ErrorType<unknown>>(
+ params: ListTeamUsersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTeamUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTeamUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getInviteAdminUrl = () => {
+
+
+
+
+  return `/api/admin/invites`
+}
+
+export const inviteAdmin = async (adminInviteInput: AdminInviteInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminInviteResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminInviteResult>(getInviteAdminUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminInviteInput)
+  }
+);}
+
+
+
+
+
+export const getInviteAdminMutationKey = () => ['inviteAdmin'] as const;
+
+export const getInviteAdminMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteAdmin>>, TError,InviteAdminMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteAdmin>>, TError,InviteAdminMutationVariables, TContext> => {
+
+const mutationKey = getInviteAdminMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteAdmin>>, InviteAdminMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  inviteAdmin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InviteAdminMutationResult = NonNullable<Awaited<ReturnType<typeof inviteAdmin>>>
+    export type InviteAdminMutationBody = BodyType<AdminInviteInput>
+    export type InviteAdminMutationError = ErrorType<unknown>
+    export type InviteAdminMutationVariables = {data: BodyType<AdminInviteInput>}
+
+    export const useInviteAdmin = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteAdmin>>, TError,InviteAdminMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inviteAdmin>>,
+        TError,
+        InviteAdminMutationVariables,
+        TContext
+      > => {
+      return useMutation(getInviteAdminMutationOptions(options));
+    }
+
+export const getSetUserActiveStatusUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/users/${userId}/status`
+}
+
+export const setUserActiveStatus = async (userId: string,
+    accountStatusInput: AccountStatusInput, options?: Parameters<typeof customFetch>[1]): Promise<PublicUser> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PublicUser>(getSetUserActiveStatusUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(accountStatusInput)
+  }
+);}
+
+
+
+
+
+export const getSetUserActiveStatusMutationKey = () => ['setUserActiveStatus'] as const;
+
+export const getSetUserActiveStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserActiveStatus>>, TError,SetUserActiveStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setUserActiveStatus>>, TError,SetUserActiveStatusMutationVariables, TContext> => {
+
+const mutationKey = getSetUserActiveStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setUserActiveStatus>>, SetUserActiveStatusMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  setUserActiveStatus(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetUserActiveStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setUserActiveStatus>>>
+    export type SetUserActiveStatusMutationBody = BodyType<AccountStatusInput>
+    export type SetUserActiveStatusMutationError = ErrorType<unknown>
+    export type SetUserActiveStatusMutationVariables = {userId: string;data: BodyType<AccountStatusInput>}
+
+    export const useSetUserActiveStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserActiveStatus>>, TError,SetUserActiveStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setUserActiveStatus>>,
+        TError,
+        SetUserActiveStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetUserActiveStatusMutationOptions(options));
     }
 
 export const getGetMeUrl = () => {

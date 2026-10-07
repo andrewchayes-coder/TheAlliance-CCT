@@ -83,8 +83,8 @@ export async function sessionUser(req: Request): Promise<User | undefined> {
   return user;
 }
 
-/** Public auth endpoints are mounted before this. Every resource API is behind it. */
-export async function requireVerifiedUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+/** Authentication is always checked against the current database state. */
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const user = await sessionUser(req);
   if (!user) {
     res.status(401).json({ error: 'Please sign in to continue.', code: 'SIGNIN_REQUIRED', nextPath: '/signin' });
@@ -101,6 +101,20 @@ export async function requireVerifiedUser(req: Request, res: Response, next: Nex
   req.authUser = user;
   next();
 }
+
+function requireRole(role: User['role']) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await requireAuth(req, res, () => {
+      if (req.authUser?.role !== role) {
+        res.status(403).json({ error: 'You do not have access to this area.', code: 'ROLE_REQUIRED' });
+        return;
+      }
+      next();
+    });
+  };
+}
+export const requireAdmin = requireRole('admin');
+export const requireVolunteer = requireRole('volunteer');
 
 export function csrfGuard(req: Request, res: Response, next: NextFunction): void {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) { next(); return; }

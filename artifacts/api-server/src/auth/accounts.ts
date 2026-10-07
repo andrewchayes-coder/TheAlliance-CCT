@@ -1,12 +1,30 @@
-import { and, eq, isNull } from 'drizzle-orm';
-import { db, authTokensTable, volunteerProfilesTable, type User } from '@workspace/db';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import { db, usersTable, authTokensTable, volunteerProfilesTable, type User } from '@workspace/db';
 import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin, randomToken } from './session';
 import { tokenHash } from './security';
 
+/** User-before-token lock order also matches account deactivation and invitation renewal. */
+export async function claimToken(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  raw: string, type: 'email_verify' | 'password_reset' | 'admin_invite',
+) {
+  const [candidate] = await tx.select({ userId: authTokensTable.userId }).from(authTokensTable)
+    .where(and(eq(authTokensTable.tokenHash, tokenHash(raw)), eq(authTokensTable.type, type))).limit(1);
+  if (!candidate) return undefined;
+  const [owner] = await tx.select({ id: usersTable.id }).from(usersTable)
+    .where(eq(usersTable.id, candidate.userId)).for('update');
+  if (!owner) return undefined;
+  const [token] = await tx.update(authTokensTable).set({ usedAt: new Date() }).where(and(
+    eq(authTokensTable.tokenHash, tokenHash(raw)), eq(authTokensTable.type, type),
+    isNull(authTokensTable.usedAt), gt(authTokensTable.expiresAt, new Date()),
+  )).returning();
+  return token;
+}
+
 export async function accountPath(user: User): Promise<string> {
   if (!user.emailVerifiedAt) return '/verify-email';
-  if (user.role === 'admin') return '/dashboard';
+  if (user.role === 'admin') return '/admin';
   const [profile] = await db.select({ completed: volunteerProfilesTable.onboardingCompletedAt })
     .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id)).limit(1);
   return profile?.completed ? '/dashboard' : '/onboarding';

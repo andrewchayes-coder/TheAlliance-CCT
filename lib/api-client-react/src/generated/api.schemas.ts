@@ -5,6 +5,73 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AdminInviteInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  firstName: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  lastName: string;
+  /** @maxLength 254 */
+  email: string;
+}
+
+export type AdminInviteResultDelivery = typeof AdminInviteResultDelivery[keyof typeof AdminInviteResultDelivery];
+
+
+export const AdminInviteResultDelivery = {
+  sent: 'sent',
+  logged: 'logged',
+  failed: 'failed',
+} as const;
+
+export interface AdminInviteResult {
+  ok: boolean;
+  email: string;
+  delivery: AdminInviteResultDelivery;
+  message: string;
+}
+
+export interface AccountStatusInput {
+  isActive: boolean;
+}
+
+export type PublicUserRole = typeof PublicUserRole[keyof typeof PublicUserRole];
+
+
+export const PublicUserRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone: string | null;
+  role: PublicUserRole;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  isActive: boolean;
+  /** @nullable */
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamUsersResponse {
+  users: PublicUser[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface SignupInput {
   /**
      * @minLength 1
@@ -112,31 +179,6 @@ export const MeRole = {
   volunteer: 'volunteer',
 } as const;
 
-export type PublicUserRole = typeof PublicUserRole[keyof typeof PublicUserRole];
-
-
-export const PublicUserRole = {
-  admin: 'admin',
-  volunteer: 'volunteer',
-} as const;
-
-export interface PublicUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  /** @nullable */
-  phone: string | null;
-  role: PublicUserRole;
-  /** @nullable */
-  emailVerifiedAt: string | null;
-  isActive: boolean;
-  /** @nullable */
-  lastLoginAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[keyof typeof PublicVolunteerProfileStatus];
 
 
@@ -230,4 +272,29 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type ListTeamUsersParams = {
+role: ListTeamUsersRole;
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListTeamUsersRole = typeof ListTeamUsersRole[keyof typeof ListTeamUsersRole];
+
+
+export const ListTeamUsersRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
 

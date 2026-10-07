@@ -1,10 +1,11 @@
 import { Router, type IRouter } from 'express';
-import { and, eq, gt, isNull, sql } from 'drizzle-orm';
-import { db, usersTable, volunteerProfilesTable, authTokensTable } from '@workspace/db';
+import { and, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { db, usersTable, volunteerProfilesTable, authTokensTable, sessionsTable } from '@workspace/db';
 import {
   GetAuthSessionResponse, SignupBody, SignupResponse, SigninBody, SigninResponse,
   ResendVerificationResponse, VerifyEmailBody, VerifyEmailResponse,
   ForgotPasswordBody, ForgotPasswordResponse, ResetPasswordBody, ResetPasswordResponse, SignoutResponse,
+  AcceptAdminInviteBody, AcceptAdminInviteResponse,
 } from '@workspace/api-zod';
 import {
   csrfGuard, establishSession, endSession, sessionUser, googleEnabled, randomToken,
@@ -12,9 +13,9 @@ import {
 } from '../auth/session';
 import {
   checkPassword, hashPassword, needsPasswordUpgrade, normalizePhone, validNewPassword,
-  ipAndEmailLimit, enforceLimit, takeLimit, remainingCooldown, tokenHash,
+  ipAndEmailLimit, enforceLimit, takeLimit, remainingCooldown,
 } from '../auth/security';
-import { accountPath, passwordResetEmail, verificationEmail } from '../auth/accounts';
+import { accountPath, claimToken, passwordResetEmail, verificationEmail } from '../auth/accounts';
 import googleRouter from './google-auth';
 
 const router: IRouter = Router();
@@ -124,6 +125,9 @@ router.post('/resend-verification', async (req, res): Promise<void> => {
   if (user.emailVerifiedAt) {
     res.json(ResendVerificationResponse.parse({ ok: true, nextPath: await accountPath(user) })); return;
   }
+  if (user.role === 'admin') {
+    res.status(403).json({ error: 'Please accept your admin invitation or ask an administrator to renew it.' }); return;
+  }
   if (!await enforceLimit(req, res, 'resend-ip', req.ip ?? 'unknown', 3600, 20)) return;
   if (!await enforceLimit(req, res, 'resend-minute', user.id, 60, 1)) return;
   if (!await enforceLimit(req, res, 'resend-hour', user.id, 3600, 5)) return;
@@ -145,15 +149,12 @@ router.post('/verify', async (req, res): Promise<void> => {
   if (!parsed.success) { invalid(); return; }
   try {
     const user = await db.transaction(async tx => {
-      const [token] = await tx.update(authTokensTable).set({ usedAt: new Date() }).where(and(
-        eq(authTokensTable.tokenHash, tokenHash(parsed.data.token)), eq(authTokensTable.type, 'email_verify'),
-        isNull(authTokensTable.usedAt), gt(authTokensTable.expiresAt, new Date()),
-      )).returning();
+      const token = await claimToken(tx, parsed.data.token, 'email_verify');
       if (!token) throw new InvalidLink();
       const [verified] = await tx.update(usersTable).set({
         emailVerifiedAt: sql`coalesce(${usersTable.emailVerifiedAt}, now())`,
         lastLoginAt: new Date(), sessionVersion: sql`${usersTable.sessionVersion} + 1`,
-      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.isActive, true))).returning();
+      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.role, 'volunteer'), eq(usersTable.isActive, true))).returning();
       if (!verified) throw new InvalidLink();
       return verified;
     });
@@ -171,7 +172,7 @@ router.post('/forgot-password', async (req, res): Promise<void> => {
   if (!await ipAndEmailLimit(req, res, 'reset', parsed.data.email)) return;
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, parsed.data.email)).limit(1);
   // Never expose existence, deactivation, or provider delivery outcome to this public endpoint.
-  if (user?.isActive) {
+  if (user?.isActive && (user.role !== 'admin' || user.emailVerifiedAt)) {
     try { await passwordResetEmail(user); }
     catch { req.log.warn('A password reset email could not be prepared'); }
   }
@@ -192,14 +193,12 @@ router.post('/reset-password', async (req, res): Promise<void> => {
   const passwordHash = await hashPassword(parsed.data.password);
   try {
     await db.transaction(async tx => {
-      const [token] = await tx.update(authTokensTable).set({ usedAt: new Date() }).where(and(
-        eq(authTokensTable.tokenHash, tokenHash(parsed.data.token)), eq(authTokensTable.type, 'password_reset'),
-        isNull(authTokensTable.usedAt), gt(authTokensTable.expiresAt, new Date()),
-      )).returning();
+      const token = await claimToken(tx, parsed.data.token, 'password_reset');
       if (!token) throw new InvalidLink();
       const [user] = await tx.update(usersTable).set({
         passwordHash, sessionVersion: sql`${usersTable.sessionVersion} + 1`,
-      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.isActive, true))).returning();
+      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.isActive, true),
+        or(eq(usersTable.role, 'volunteer'), isNotNull(usersTable.emailVerifiedAt)))).returning();
       if (!user) throw new InvalidLink();
       await tx.update(authTokensTable).set({ usedAt: new Date() })
         .where(and(eq(authTokensTable.userId, user.id), isNull(authTokensTable.usedAt)));
@@ -217,6 +216,39 @@ router.post('/reset-password', async (req, res): Promise<void> => {
 router.post('/signout', async (req, res): Promise<void> => {
   await endSession(req, res);
   res.json(SignoutResponse.parse({ ok: true, nextPath: '/signin' }));
+});
+
+router.post('/accept-invite', async (req, res): Promise<void> => {
+  if (!await enforceLimit(req, res, 'invite-accept-ip', req.ip ?? 'unknown', 3600, 20)) return;
+  const parsed = AcceptAdminInviteBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Use a valid invitation and a password of at least 8 characters.' }); return; }
+  const passwordError = validNewPassword(parsed.data.password, parsed.data.confirmPassword);
+  if (passwordError) { res.status(400).json({ error: passwordError }); return; }
+  const passwordHash = await hashPassword(parsed.data.password);
+  try {
+    const user = await db.transaction(async tx => {
+      const token = await claimToken(tx, parsed.data.token, 'admin_invite');
+      if (!token) throw new InvalidLink();
+      const [accepted] = await tx.update(usersTable).set({
+        passwordHash, emailVerifiedAt: new Date(), lastLoginAt: new Date(), updatedAt: new Date(),
+        sessionVersion: sql`${usersTable.sessionVersion} + 1`,
+      }).where(and(
+        eq(usersTable.id, token.userId), eq(usersTable.role, 'admin'),
+        eq(usersTable.isActive, true), isNull(usersTable.emailVerifiedAt),
+      )).returning();
+      if (!accepted) throw new InvalidLink();
+      await tx.update(authTokensTable).set({ usedAt: new Date() }).where(and(
+        eq(authTokensTable.userId, accepted.id), isNull(authTokensTable.usedAt),
+      ));
+      await tx.delete(sessionsTable).where(sql`${sessionsTable.sess}->>'userId' = ${accepted.id}`);
+      return accepted;
+    });
+    await establishSession(req, user);
+    res.json(AcceptAdminInviteResponse.parse({ ok: true, email: user.email, nextPath: '/admin' }));
+  } catch (error) {
+    if (!(error instanceof InvalidLink)) throw error;
+    res.status(400).json({ error: 'This invitation is invalid or has expired. Please ask an administrator for a new invitation.', code: 'TOKEN_INVALID' });
+  }
 });
 
 export default router;
