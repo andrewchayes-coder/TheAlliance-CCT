@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import {
-  ListVolunteerRosterQueryParams, ListVolunteerRosterResponse, GetAdminVolunteerParams, GetAdminVolunteerResponse,
+  ListVolunteerRosterQueryParams, ListVolunteerRosterResponse, GetAdminVolunteerParams,
   ExportVolunteerRosterQueryParams, ExportVolunteerScheduleQueryParams,
 } from '@workspace/api-zod';
 import { rosterSnapshot, filterRoster, rosterEntry, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
 import { pacificDay } from '../volunteer-shifts';
+import { loadAdminVolunteerDetail, WorkflowError } from '../admin-volunteer-detail';
 
 const router = Router();
 router.get('/volunteers', async (req, res): Promise<void> => {
@@ -34,10 +35,10 @@ for (const kind of ['roster', 'schedule'] as const) {
 router.get('/volunteers/:userId', async (req, res): Promise<void> => {
   const parsed = GetAdminVolunteerParams.safeParse(req.params);
   if (!parsed.success) { res.status(400).json({ error: 'Choose a valid volunteer.' }); return; }
-  const person = (await rosterSnapshot()).find(row => row.user.id === parsed.data.userId);
-  if (!person) { res.status(404).json({ error: 'Volunteer not found.' }); return; }
-  res.set('Cache-Control', 'no-store').json(GetAdminVolunteerResponse.parse({
-    entry: rosterEntry(person), adminNotes: person.profile.adminNotes, shifts: person.shifts,
-  }));
+  try { res.set('Cache-Control', 'no-store').json(await loadAdminVolunteerDetail(parsed.data.userId)); }
+  catch (error) {
+    if (error instanceof WorkflowError) { res.status(error.status).json({ error: error.message }); return; }
+    throw error;
+  }
 });
 export default router;

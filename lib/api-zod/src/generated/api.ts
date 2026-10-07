@@ -130,6 +130,297 @@ export const GetAdminVolunteerResponse = zod.object({
   "startDate": zod.string(),
   "endDate": zod.string().nullable(),
   "upcomingSkipDates": zod.array(zod.string())
+})),
+  "assignmentsToRelease": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "approvalRequirements": zod.array(zod.object({
+  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "label": zod.string(),
+  "met": zod.boolean()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actorUserId": zod.string().uuid(),
+  "actorName": zod.string(),
+  "action": zod.string(),
+  "details": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const ChangeVolunteerStatusParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const ChangeVolunteerStatusBody = zod.object({
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "expectedUpdatedAt": zod.coerce.date(),
+  "releaseAssignmentIds": zod.array(zod.string().uuid()).optional()
+})
+
+export const ChangeVolunteerStatusResponse = zod.object({
+  "detail": zod.object({
+  "entry": zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "profile": zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "shiftCount": zod.number().int(),
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+}),
+  "adminNotes": zod.string().nullable(),
+  "shifts": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "assignmentsToRelease": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "approvalRequirements": zod.array(zod.object({
+  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "label": zod.string(),
+  "met": zod.boolean()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actorUserId": zod.string().uuid(),
+  "actorName": zod.string(),
+  "action": zod.string(),
+  "details": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+}))
+}),
+  "emailDelivery": zod.object({
+  "ok": zod.boolean(),
+  "error": zod.string().optional(),
+  "skipped": zod.boolean().optional(),
+  "status": zod.enum(['logged', 'sent', 'failed']).optional()
+}).nullable(),
+  "releasedAssignmentCount": zod.number().int()
+})
+
+
+export const UpdateVolunteerTrackingParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const UpdateVolunteerTrackingBody = zod.object({
+  "expectedUpdatedAt": zod.coerce.date(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.coerce.date().nullable(),
+  "certificationExpiresAt": zod.coerce.date().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.coerce.date().nullable(),
+  "backgroundCheckClearedAt": zod.coerce.date().nullable()
+})
+
+export const UpdateVolunteerTrackingResponse = zod.object({
+  "entry": zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "profile": zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "shiftCount": zod.number().int(),
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+}),
+  "adminNotes": zod.string().nullable(),
+  "shifts": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "assignmentsToRelease": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "approvalRequirements": zod.array(zod.object({
+  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "label": zod.string(),
+  "met": zod.boolean()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actorUserId": zod.string().uuid(),
+  "actorName": zod.string(),
+  "action": zod.string(),
+  "details": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const UpdateVolunteerNotesParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const updateVolunteerNotesBodyAdminNotesMax = 20000;
+
+
+
+export const UpdateVolunteerNotesBody = zod.object({
+  "adminNotes": zod.string().max(updateVolunteerNotesBodyAdminNotesMax).nullable(),
+  "expectedAdminNotes": zod.string().nullable()
+})
+
+export const UpdateVolunteerNotesResponse = zod.object({
+  "entry": zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "profile": zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "shiftCount": zod.number().int(),
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+}),
+  "adminNotes": zod.string().nullable(),
+  "shifts": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "assignmentsToRelease": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "upcomingSkipDates": zod.array(zod.string())
+})),
+  "approvalRequirements": zod.array(zod.object({
+  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "label": zod.string(),
+  "met": zod.boolean()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "actorUserId": zod.string().uuid(),
+  "actorName": zod.string(),
+  "action": zod.string(),
+  "details": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.coerce.date()
 }))
 })
 

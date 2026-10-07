@@ -40,6 +40,61 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AdminVolunteerDetail" }
+  /admin/volunteers/{userId}/status:
+    post:
+      operationId: changeVolunteerStatus
+      tags: [admin]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VolunteerStatusUpdate" }
+      responses:
+        "200":
+          description: Status saved and approval email result
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VolunteerStatusResult" }
+        "409": { description: Volunteer or shift confirmation changed; reload before confirming }
+        "422": { description: Approval requirements are missing }
+  /admin/volunteers/{userId}/tracking:
+    patch:
+      operationId: updateVolunteerTracking
+      tags: [admin]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VolunteerTrackingUpdate" }
+      responses:
+        "200":
+          description: Updated volunteer detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVolunteerDetail" }
+        "409": { description: Volunteer changed; reload before saving }
+  /admin/volunteers/{userId}/notes:
+    patch:
+      operationId: updateVolunteerNotes
+      tags: [admin]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VolunteerNotesUpdate" }
+      responses:
+        "200":
+          description: Updated volunteer detail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminVolunteerDetail" }
+        "409": { description: Notes changed; keep your draft and review the staff edit }
   /admin/volunteers/roster.csv:
     get:
       operationId: exportVolunteerRoster
@@ -475,11 +530,69 @@ components:
         summary: { $ref: "#/components/schemas/RosterSummary" }
     AdminVolunteerDetail:
       type: object
-      required: [entry, adminNotes, shifts]
+      required: [entry, adminNotes, shifts, assignmentsToRelease, approvalRequirements, activity]
       properties:
         entry: { $ref: "#/components/schemas/VolunteerRosterEntry" }
         adminNotes: { type: [string, "null"] }
         shifts: { type: array, items: { $ref: "#/components/schemas/AdminAssignedShift" } }
+        assignmentsToRelease: { type: array, items: { $ref: "#/components/schemas/AdminAssignedShift" } }
+        approvalRequirements: { type: array, items: { $ref: "#/components/schemas/ApprovalRequirement" } }
+        activity: { type: array, items: { $ref: "#/components/schemas/VolunteerActivity" } }
+    ApprovalRequirement:
+      type: object
+      required: [key, label, met]
+      properties:
+        key: { type: string, enum: [email_verified, onboarding_complete, agreement_acknowledged, certification_complete, background_cleared] }
+        label: { type: string }
+        met: { type: boolean }
+    VolunteerActivity:
+      type: object
+      required: [id, actorUserId, actorName, action, details, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorUserId: { type: string, format: uuid }
+        actorName: { type: string }
+        action: { type: string }
+        details: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    VolunteerStatusUpdate:
+      type: object
+      required: [status, expectedUpdatedAt]
+      properties:
+        status: { type: string, enum: [applicant, in_training, active, inactive] }
+        expectedUpdatedAt: { type: string, format: date-time }
+        releaseAssignmentIds: { type: array, items: { type: string, format: uuid } }
+    VolunteerTrackingUpdate:
+      type: object
+      required: [expectedUpdatedAt, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt]
+      properties:
+        expectedUpdatedAt: { type: string, format: date-time }
+        certificationStatus: { type: string, enum: [not_started, in_progress, complete] }
+        certificationCompletedAt: { type: [string, "null"], format: date }
+        certificationExpiresAt: { type: [string, "null"], format: date }
+        backgroundCheckStatus: { type: string, enum: [not_started, pending, cleared, not_cleared] }
+        backgroundCheckSubmittedAt: { type: [string, "null"], format: date }
+        backgroundCheckClearedAt: { type: [string, "null"], format: date }
+    VolunteerNotesUpdate:
+      type: object
+      required: [adminNotes, expectedAdminNotes]
+      properties:
+        adminNotes: { type: [string, "null"], maxLength: 20000 }
+        expectedAdminNotes: { type: [string, "null"] }
+    VolunteerStatusResult:
+      type: object
+      required: [detail, emailDelivery, releasedAssignmentCount]
+      properties:
+        detail: { $ref: "#/components/schemas/AdminVolunteerDetail" }
+        emailDelivery:
+          type: [object, "null"]
+          required: [ok]
+          properties:
+            ok: { type: boolean }
+            error: { type: string }
+            skipped: { type: boolean }
+            status: { type: string, enum: [logged, sent, failed] }
+        releasedAssignmentCount: { type: integer }
     VolunteerProfileInput:
       type: object
       required: [firstName, lastName, phone, county, availabilityNotes, answers]

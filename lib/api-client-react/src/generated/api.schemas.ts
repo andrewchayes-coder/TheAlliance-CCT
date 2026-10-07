@@ -135,11 +135,127 @@ export interface VolunteerRoster {
   summary: RosterSummary;
 }
 
+export type ApprovalRequirementKey = typeof ApprovalRequirementKey[keyof typeof ApprovalRequirementKey];
+
+
+export const ApprovalRequirementKey = {
+  email_verified: 'email_verified',
+  onboarding_complete: 'onboarding_complete',
+  agreement_acknowledged: 'agreement_acknowledged',
+  certification_complete: 'certification_complete',
+  background_cleared: 'background_cleared',
+} as const;
+
+export interface ApprovalRequirement {
+  key: ApprovalRequirementKey;
+  label: string;
+  met: boolean;
+}
+
+export type VolunteerActivityDetails = { [key: string]: unknown };
+
+export interface VolunteerActivity {
+  id: string;
+  actorUserId: string;
+  actorName: string;
+  action: string;
+  details: VolunteerActivityDetails;
+  createdAt: string;
+}
+
 export interface AdminVolunteerDetail {
   entry: VolunteerRosterEntry;
   /** @nullable */
   adminNotes: string | null;
   shifts: AdminAssignedShift[];
+  assignmentsToRelease: AdminAssignedShift[];
+  approvalRequirements: ApprovalRequirement[];
+  activity: VolunteerActivity[];
+}
+
+export type VolunteerStatusUpdateStatus = typeof VolunteerStatusUpdateStatus[keyof typeof VolunteerStatusUpdateStatus];
+
+
+export const VolunteerStatusUpdateStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export interface VolunteerStatusUpdate {
+  status: VolunteerStatusUpdateStatus;
+  expectedUpdatedAt: string;
+  releaseAssignmentIds?: string[];
+}
+
+export type VolunteerTrackingUpdateCertificationStatus = typeof VolunteerTrackingUpdateCertificationStatus[keyof typeof VolunteerTrackingUpdateCertificationStatus];
+
+
+export const VolunteerTrackingUpdateCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type VolunteerTrackingUpdateBackgroundCheckStatus = typeof VolunteerTrackingUpdateBackgroundCheckStatus[keyof typeof VolunteerTrackingUpdateBackgroundCheckStatus];
+
+
+export const VolunteerTrackingUpdateBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export interface VolunteerTrackingUpdate {
+  expectedUpdatedAt: string;
+  certificationStatus: VolunteerTrackingUpdateCertificationStatus;
+  /** @nullable */
+  certificationCompletedAt: string | null;
+  /** @nullable */
+  certificationExpiresAt: string | null;
+  backgroundCheckStatus: VolunteerTrackingUpdateBackgroundCheckStatus;
+  /** @nullable */
+  backgroundCheckSubmittedAt: string | null;
+  /** @nullable */
+  backgroundCheckClearedAt: string | null;
+}
+
+export interface VolunteerNotesUpdate {
+  /**
+     * @maxLength 20000
+     * @nullable
+     */
+  adminNotes: string | null;
+  /** @nullable */
+  expectedAdminNotes: string | null;
+}
+
+export type VolunteerStatusResultEmailDeliveryStatus = typeof VolunteerStatusResultEmailDeliveryStatus[keyof typeof VolunteerStatusResultEmailDeliveryStatus];
+
+
+export const VolunteerStatusResultEmailDeliveryStatus = {
+  logged: 'logged',
+  sent: 'sent',
+  failed: 'failed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VolunteerStatusResultEmailDelivery = {
+  ok: boolean;
+  error?: string;
+  skipped?: boolean;
+  status?: VolunteerStatusResultEmailDeliveryStatus;
+} | null;
+
+export interface VolunteerStatusResult {
+  detail: AdminVolunteerDetail;
+  /** @nullable */
+  emailDelivery: VolunteerStatusResultEmailDelivery;
+  releasedAssignmentCount: number;
 }
 
 export type VolunteerProfileInputAnswers = { [key: string]: unknown };

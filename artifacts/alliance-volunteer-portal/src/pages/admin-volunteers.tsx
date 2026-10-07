@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useLocation, useParams } from 'wouter';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronLeft, Download, Search } from 'lucide-react';
+import { Download, Search } from 'lucide-react';
 import {
-  getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useGetAdminVolunteer, useListVolunteerRoster,
-  type ListVolunteerRosterParams, type PublicVolunteerProfile, type VolunteerRosterEntry,
+  getListVolunteerRosterQueryKey, useListVolunteerRoster,
+  type ListVolunteerRosterParams, type VolunteerRosterEntry,
 } from '@workspace/api-client-react';
 import { AppLayout, Button, EmptyState, StatusBadge } from '@/components/brand-system';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ import { RequireAdmin } from '@/auth/guards';
 import { Notice } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
-import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
+import { VolunteerDetail } from '@/components/volunteer-detail/detail';
 import { onMessageSelected as defaultOnMessageSelected } from '@/lib/messaging';
 
 const PAGE = 25;
@@ -33,17 +33,12 @@ const ATTN: Record<string, string> = {
   any: 'Any attention', no_shift: 'No shift', certification_expiring: 'Certification expiring',
   background_pending: 'Background pending', onboarding_incomplete: 'Onboarding incomplete',
 };
-const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 const pacific = (iso: string | null | undefined, withTime = true) => iso
   ? /^\d{4}-\d{2}-\d{2}$/.test(iso) ? calDate(iso) :
     new Date(iso).toLocaleString('en-US', { timeZone: TZ, dateStyle: 'medium', ...(withTime ? { timeStyle: 'short' } : {}) }) + (withTime ? ' PT' : '')
   : null;
 const calDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', dateStyle: 'medium' });
-const clock = (t: string) => {
-  const [h, m] = t.split(':').map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
-};
 const fullName = (e: VolunteerRosterEntry) => `${e.user.firstName} ${e.user.lastName}`;
 
 function Pill({ map, value }: { map: Record<string, [string, Badge]>; value: string }) {
@@ -268,109 +263,4 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
 }
 export const AdminRoster = () => <RequireAdmin>{() => <RosterBody />}</RequireAdmin>;
 
-function Item({ label, children }: { label: string; children: ReactNode }) {
-  return <div><dt className="alliance-label">{label}</dt><dd className="break-words">{children}</dd></div>;
-}
-
-function Profile({ p }: { p: PublicVolunteerProfile }) {
-  return (
-    <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-      <Item label="Certification completed">{pacific(p.certificationCompletedAt, false) ?? 'Not recorded'}</Item>
-      <Item label="Certification expires">{pacific(p.certificationExpiresAt, false) ?? 'Not recorded'}</Item>
-      <Item label="Background check submitted">{pacific(p.backgroundCheckSubmittedAt, false) ?? 'Not recorded'}</Item>
-      <Item label="Background check cleared">{pacific(p.backgroundCheckClearedAt, false) ?? 'Not recorded'}</Item>
-      <Item label="Agreement acknowledged">{pacific(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>
-      <Item label="Agreement version">{p.agreementVersion ?? 'None'}</Item>
-      <Item label="Onboarding completed">{pacific(p.onboardingCompletedAt) ?? 'Not completed'}</Item>
-      <Item label="Availability notes"><span className="whitespace-pre-wrap">{p.availabilityNotes || 'None'}</span></Item>
-    </dl>
-  );
-}
-
-function DetailBody() {
-  const { userId = '' } = useParams<{ userId: string }>();
-  const q = useGetAdminVolunteer(userId, {
-    query: { queryKey: getGetAdminVolunteerQueryKey(userId), enabled: !!userId, staleTime: FRESH_MS, refetchInterval: POLL_MS, refetchOnWindowFocus: 'always', retry: false },
-    request: FETCH_CREDS,
-  });
-  const d = q.data;
-  const e = d?.entry;
-  const p = e?.profile;
-  return (
-    <AppLayout role="admin">
-      <Link href="/admin/volunteers" className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
-      {q.isPending ? <Loading />
-        : q.isError || !d || !e || !p ? <div className="mt-6"><Notice>We couldn't load this volunteer.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
-        : (
-          <>
-            <h1 className="alliance-display text-[22px] md:text-[28px]" data-testid="text-volunteer-name">{fullName(e)}</h1>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Pill map={STATUS} value={p.status} /><Pill map={CERT} value={p.certificationStatus} /><Pill map={BG} value={p.backgroundCheckStatus} />
-              {e.attention.map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold">
-              <Link href={`/admin/volunteers/${e.user.id}/onboarding`} className="text-teal-text underline underline-offset-4" data-testid="link-review-onboarding">Review onboarding</Link>
-              <Link href="/admin/team" className="text-teal-text underline underline-offset-4" data-testid="link-manage-account">Manage account</Link>
-            </div>
-
-            <section className="alliance-card mt-6" aria-labelledby="v-contact">
-              <h2 id="v-contact" className="alliance-display text-[15px]">Contact</h2>
-              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                <Item label="Email">{e.user.email}</Item>
-                <Item label="Phone">{e.user.phone || 'Not provided'}</Item>
-                <Item label="County">{p.county}</Item>
-                <Item label="Email verified">{e.user.emailVerifiedAt ? `Yes, ${pacific(e.user.emailVerifiedAt, false)}` : 'No'}</Item>
-                <Item label="Last login">{pacific(e.user.lastLoginAt) ?? 'Never'}</Item>
-                <Item label="Account">{e.user.isActive ? 'Active' : 'Deactivated'}</Item>
-              </dl>
-            </section>
-
-            <section className="alliance-card mt-6" aria-labelledby="v-profile">
-              <h2 id="v-profile" className="alliance-display text-[15px]">Training and clearance</h2>
-              <Profile p={p} />
-            </section>
-
-            <section className="alliance-card mt-6" aria-labelledby="v-shifts">
-              <h2 id="v-shifts" className="alliance-display text-[15px]">Assigned shifts</h2>
-              {d.shifts.length === 0 ? (
-                <div className="mt-3"><EmptyState title="No shifts assigned" description="This volunteer does not hold a recurring shift." /></div>
-              ) : (
-                <ul className="mt-3 divide-y divide-gray">
-                  {d.shifts.map(s => (
-                    <li key={s.assignmentId} className="py-3 text-sm" data-testid={`shift-${s.assignmentId}`}>
-                      <p className="font-bold">{DAYS[s.dayOfWeek] ?? `Day ${s.dayOfWeek}`}, {clock(s.startTime)} to {clock(s.endTime)}{s.label ? ` · ${s.label}` : ''}</p>
-                      <p>From {calDate(s.startDate)}{s.endDate ? ` until ${calDate(s.endDate)}` : ', ongoing'}</p>
-                      {s.upcomingSkipDates.length > 0 && <p className="mt-1 text-[#785213]">Skipping: {s.upcomingSkipDates.map(calDate).join(', ')}</p>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section className="alliance-card mt-6" aria-labelledby="v-answers">
-              <h2 id="v-answers" className="alliance-display text-[15px]">Onboarding answers</h2>
-              <dl className="mt-3 divide-y divide-gray">
-                {onboardingQuestions.map(qn => {
-                  const v = p.onboardingAnswers?.[qn.id];
-                  const text = v === undefined ? '' : formatOnboardingAnswer(v);
-                  return (
-                    <div key={qn.id} className="py-3" data-testid={`answer-${qn.id}`}>
-                      <dt className="text-sm font-bold">{qn.label}</dt>
-                      <dd className="mt-1 whitespace-pre-wrap break-words">{text || <span className="text-navy-soft">No answer</span>}</dd>
-                    </div>
-                  );
-                })}
-              </dl>
-            </section>
-
-            <section className="alliance-card mt-6" aria-labelledby="v-notes">
-              <h2 id="v-notes" className="alliance-display text-[15px]">Internal admin notes</h2>
-              <p className="mt-1 text-xs text-navy-soft">Visible to admins only.</p>
-              <p className="mt-3 whitespace-pre-wrap break-words" data-testid="text-admin-notes">{d.adminNotes || <span className="text-navy-soft">No notes</span>}</p>
-            </section>
-          </>
-        )}
-    </AppLayout>
-  );
-}
-export const AdminVolunteerDetail = () => <RequireAdmin>{() => <DetailBody />}</RequireAdmin>;
+export const AdminVolunteerDetail = () => <RequireAdmin>{() => <VolunteerDetail />}</RequireAdmin>;

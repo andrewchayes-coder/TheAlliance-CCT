@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, or } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull, ne, or } from 'drizzle-orm';
 import {
   db, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, closedDatesTable, shiftSkipsTable,
   messagesTable, messageRecipientsTable, resourcesTable,
@@ -37,6 +37,7 @@ export async function volunteerDashboard(userId: string) {
     dayOfWeek: shiftSlotsTable.dayOfWeek, startTime: shiftSlotsTable.startTime, endTime: shiftSlotsTable.endTime, label: shiftSlotsTable.label,
   }).from(shiftAssignmentsTable).innerJoin(shiftSlotsTable, eq(shiftSlotsTable.id, shiftAssignmentsTable.shiftSlotId))
     .where(and(eq(shiftAssignmentsTable.volunteerProfileId, profile.id), eq(shiftSlotsTable.isActive, true),
+      or(isNull(shiftAssignmentsTable.endedReason), ne(shiftAssignmentsTable.endedReason, 'admin_removed')),
       or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today)))) : [];
   const [closures, skips, quickLinks, unread, totals] = await Promise.all([
     assignments.length ? db.select({ date: closedDatesTable.date }).from(closedDatesTable).where(gte(closedDatesTable.date, today)) : [],

@@ -3,13 +3,14 @@ import { before, after, test } from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { eq, inArray } from 'drizzle-orm';
-import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, sessionsTable } from '@workspace/db';
+import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, sessionsTable, activityLogTable, notificationLogTable } from '@workspace/db';
 import { onboardingQuestions } from '@workspace/shared/onboardingQuestions';
 import { pacificDay, addCalendarDays } from './volunteer-shifts';
 if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') throw new Error('Roster tests require development.');
 process.env.NODE_ENV = 'development'; process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = '';
 const { attentionReasons } = await import('./admin-roster');
 const { default: app } = await import('./app');
+const { appOrigin } = await import('./auth/session');
 const namespace = randomBytes(5).toString('hex');
 const users: string[] = [], slots: string[] = [], assignmentIds: string[] = [], sessionIds: string[] = [];
 const volunteers: string[] = [];
@@ -24,14 +25,16 @@ async function fixture(role: 'admin' | 'volunteer', index: number, verified = tr
 async function client(userId?: string) {
   const bootstrap = await fetch(`${base}/api/auth/session`, { headers: { 'x-forwarded-proto': 'https' } });
   const cookie = bootstrap.headers.get('set-cookie')!.split(';')[0]!;
+  const bootstrapData = await bootstrap.json() as { csrfToken: string };
   const sid = decodeURIComponent(cookie.split('=').slice(1).join('=')).slice(2).split('.')[0]!;
   sessionIds.push(sid);
   if (userId) {
     const { rows } = await pool.query<{ sess: Record<string, unknown> }>('SELECT sess FROM sessions WHERE sid=$1', [sid]);
     await pool.query('UPDATE sessions SET sess=$1 WHERE sid=$2', [JSON.stringify({ ...rows[0]!.sess, userId, authVersion: 0 }), sid]);
   }
-  return async (path: string) => {
-    const response = await fetch(`${base}/api${path}`, { headers: { cookie, 'x-forwarded-proto': 'https' } });
+  return async (path: string, method = 'GET', body?: unknown) => {
+    const response = await fetch(`${base}/api${path}`, { method, headers: { cookie, 'x-forwarded-proto': 'https',
+      Origin: appOrigin, 'X-CSRF-Token': bootstrapData.csrfToken, 'Content-Type': 'application/json' }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
     const text = await response.text();
     let data: any; try { data = JSON.parse(text); } catch { data = text; }
     return { status: response.status, data, headers: response.headers };
@@ -75,6 +78,9 @@ after(async () => {
   if (slots.length) await db.delete(shiftSlotsTable).where(inArray(shiftSlotsTable.id, slots));
   if (sessionIds.length) await db.delete(sessionsTable).where(inArray(sessionsTable.sid, sessionIds));
   if (users.length) {
+    const profiles = await db.select({ id: volunteerProfilesTable.id }).from(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, users));
+    if (profiles.length) await db.delete(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profiles.map(row => row.id)));
+    await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientUserId, users));
     await db.delete(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, users));
     await db.delete(usersTable).where(inArray(usersTable.id, users));
   }
@@ -151,4 +157,87 @@ test('CSV exports include all fields/config answers, safe cells, all filtered pa
   assert.ok(!schedule.data.includes(addCalendarDays(today, -7))); assert.ok(!schedule.data.includes(assignmentIds[2]!));
   assert.equal((schedule.data.match(new RegExp(`roster-${namespace}-1@example.org`, 'g')) ?? []).length, 2);
   assert.ok(!(await request(`/admin/volunteers/schedule.csv?search=${namespace}&status=inactive`)).data.includes(`roster-${namespace}-1@example.org`));
+});
+test('workflow mutations are admin-only and approval reports exactly all five missing checks with no override', async () => {
+  for (const actor of [undefined, volunteers[0], unverified, deactivated]) {
+    const request = await client(actor);
+    for (const [suffix, method, body] of [['status', 'POST', { status: 'active' }], ['notes', 'PATCH', { adminNotes: 'forbidden' }], ['tracking', 'PATCH', {}]] as const) {
+      assert.equal((await request(`/admin/volunteers/${volunteers[3]}/${suffix}`, method, body)).status, actor ? 403 : 401);
+    }
+  }
+  await db.update(volunteerProfilesTable).set({ agreementAcknowledgedAt: null }).where(eq(volunteerProfilesTable.userId, volunteers[3]!));
+  const request = await client(admin), detail = (await request(`/admin/volunteers/${volunteers[3]}`)).data;
+  const blocked = await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+  assert.equal(blocked.status, 422);
+  assert.deepEqual(blocked.data.missing.map((check: { key: string }) => check.key),
+    ['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']);
+  assert.equal((await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt, overrideBackgroundCheck: true })).status, 400);
+  assert.equal((await request(`/admin/volunteers/${volunteers[3]}`)).data.entry.profile.status, 'applicant');
+});
+test('inactive release is atomic, confirms every seat including future reservations and removes seats immediately', async () => {
+  const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!));
+  const [futureSlot] = await db.insert(shiftSlotsTable).values({ dayOfWeek: 5, startTime: '09:00', endTime: '11:00', isActive: false }).returning();
+  slots.push(futureSlot!.id);
+  await assert.rejects(db.insert(shiftAssignmentsTable).values({ volunteerProfileId: profile!.id, shiftSlotId: futureSlot!.id,
+    startDate: addCalendarDays(today, 14), endDate: today, createdByUserId: admin }), error =>
+      error instanceof Error && (error.cause as { constraint?: string } | undefined)?.constraint === 'shift_assignments_date_order');
+  const [future] = await db.insert(shiftAssignmentsTable).values({ volunteerProfileId: profile!.id, shiftSlotId: futureSlot!.id,
+    startDate: addCalendarDays(today, 14), createdByUserId: admin }).returning(); assignmentIds.push(future!.id);
+  const request = await client(admin), detail = (await request(`/admin/volunteers/${volunteers[1]}`)).data;
+  assert.equal(detail.assignmentsToRelease.length, 3);
+  const payload = { status: 'inactive', expectedUpdatedAt: detail.entry.profile.updatedAt,
+    releaseAssignmentIds: detail.assignmentsToRelease.map((shift: { assignmentId: string }) => shift.assignmentId) };
+  assert.equal((await request(`/admin/volunteers/${volunteers[1]}/status`, 'POST', { ...payload, releaseAssignmentIds: payload.releaseAssignmentIds.slice(0, 2) })).status, 409);
+  const saved = await request(`/admin/volunteers/${volunteers[1]}/status`, 'POST', payload);
+  assert.equal(saved.status, 200); assert.equal(saved.data.releasedAssignmentCount, 3);
+  assert.equal(saved.data.detail.entry.profile.status, 'inactive'); assert.equal(saved.data.detail.entry.shiftCount, 0);
+  assert.deepEqual(saved.data.detail.assignmentsToRelease, []); assert.deepEqual(saved.data.detail.shifts, []);
+  const released = await db.select().from(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.id, payload.releaseAssignmentIds));
+  assert.ok(released.every(row => row.endDate === today && row.endedReason === 'admin_removed'));
+  assert.equal(saved.data.detail.activity[0].actorUserId, admin);
+  assert.deepEqual([saved.data.detail.activity[0].details.from, saved.data.detail.activity[0].details.to], ['active', 'inactive']);
+});
+test('tracking persists calendar days/nulls, rejects invalid dates/stale saves, then Active logs one approval email', async () => {
+  const request = await client(admin), path = `/admin/volunteers/${volunteers[1]}`;
+  const before = (await request(path)).data;
+  const fields = { certificationStatus: 'complete', certificationCompletedAt: today, certificationExpiresAt: addCalendarDays(today, 30),
+    backgroundCheckStatus: 'cleared', backgroundCheckSubmittedAt: addCalendarDays(today, -15), backgroundCheckClearedAt: today,
+    expectedUpdatedAt: before.entry.profile.updatedAt };
+  assert.equal((await request(`${path}/tracking`, 'PATCH', { ...fields, certificationCompletedAt: '2026-02-30' })).status, 400);
+  assert.equal((await request(`${path}/tracking`, 'PATCH', { ...fields, certificationExpiresAt: addCalendarDays(today, -1) })).status, 400);
+  const saved = await request(`${path}/tracking`, 'PATCH', fields);
+  assert.equal(saved.status, 200);
+  const [raw] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!));
+  assert.equal(raw!.certificationCompletedAt, today); assert.equal(raw!.backgroundCheckClearedAt, today);
+  assert.equal((await request(`${path}/tracking`, 'PATCH', fields)).status, 409);
+  const approved = await request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: saved.data.entry.profile.updatedAt });
+  assert.equal(approved.status, 200); assert.equal(approved.data.detail.entry.profile.status, 'active');
+  assert.equal(approved.data.emailDelivery.ok, true);
+  const approvals = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, volunteers[1]!));
+  assert.equal(approvals.length, 1); assert.equal(approvals[0]!.status, 'logged'); assert.equal(approvals[0]!.type, 'welcome');
+  assert.equal(approvals[0]!.subject, "You're approved! Choose your weekly shift");
+  assert.ok(approved.data.detail.activity.some((event: { id: string }) => event.id === approvals[0]!.relatedId));
+  const duplicate = await request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: approved.data.detail.entry.profile.updatedAt });
+  assert.equal(duplicate.status, 200); assert.equal(duplicate.data.emailDelivery, null);
+  assert.equal((await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, volunteers[1]!))).length, 1);
+  const cleared = await request(`${path}/tracking`, 'PATCH', { ...fields, certificationExpiresAt: null, expectedUpdatedAt: approved.data.detail.entry.profile.updatedAt });
+  assert.equal(cleared.status, 200);
+  assert.equal((await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!)))[0]!.certificationExpiresAt, null);
+  const moved = await request(`${path}/status`, 'POST', { status: 'applicant', expectedUpdatedAt: cleared.data.entry.profile.updatedAt });
+  assert.equal(moved.status, 200); assert.equal(moved.data.detail.entry.profile.status, 'applicant');
+});
+test('notes compare-and-set protects another staff edit, clearing works, and volunteer responses never include notes', async () => {
+  const request = await client(admin), path = `/admin/volunteers/${volunteers[0]}`;
+  const original = (await request(path)).data.adminNotes;
+  assert.equal((await request(`${path}/notes`, 'PATCH', { expectedAdminNotes: original, adminNotes: 'First staff draft' })).status, 200);
+  assert.equal((await request(`${path}/notes`, 'PATCH', { expectedAdminNotes: original, adminNotes: 'Stale overwrite' })).status, 409);
+  assert.equal((await request(path)).data.adminNotes, 'First staff draft');
+  const outcomes = await Promise.all(['Second A', 'Second B'].map(adminNotes => request(`${path}/notes`, 'PATCH', { expectedAdminNotes: 'First staff draft', adminNotes })));
+  assert.deepEqual(outcomes.map(row => row.status).sort(), [200, 409]);
+  const latest = (await request(path)).data.adminNotes;
+  assert.equal((await request(`${path}/notes`, 'PATCH', { expectedAdminNotes: latest, adminNotes: null })).status, 200);
+  assert.equal((await request(path)).data.adminNotes, null);
+  const volunteer = await client(volunteers[0]);
+  assert.equal((await volunteer('/me')).data.profile.adminNotes, undefined);
+  assert.equal((await request(`${path}/notes`, 'PATCH', { expectedAdminNotes: null, adminNotes: 'a'.repeat(20001) })).status, 400);
 });

@@ -71,6 +71,18 @@ export const volunteerProfilesTable = pgTable('volunteer_profiles', {
   index('volunteer_profiles_status_county_idx').on(table.status, table.county),
 ]);
 
+export const activityLogTable = pgTable('activity_log', {
+  id: primaryKey(),
+  volunteerProfileId: uuid('volunteer_profile_id').notNull().references(() => volunteerProfilesTable.id, { onDelete: 'restrict' }),
+  actorUserId: uuid('actor_user_id').notNull().references(() => usersTable.id, { onDelete: 'restrict' }),
+  action: text('action').notNull(),
+  details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [index('activity_log_profile_created_idx').on(table.volunteerProfileId, table.createdAt)]);
+export const insertActivityLogSchema = createInsertSchema(activityLogTable).omit({ id: true, createdAt: true });
+export type ActivityLog = typeof activityLogTable.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+
 export const shiftSlotsTable = pgTable('shift_slots', {
   id: primaryKey(),
   dayOfWeek: integer('day_of_week').notNull(),
@@ -103,7 +115,8 @@ export const shiftAssignmentsTable = pgTable('shift_assignments', {
   index('shift_assignments_slot_idx').on(table.shiftSlotId, table.startDate, table.endDate),
   index('shift_assignments_volunteer_idx').on(table.volunteerProfileId, table.startDate, table.endDate),
   uniqueIndex('shift_assignments_standing_unique').on(table.volunteerProfileId, table.shiftSlotId, table.startDate),
-  check('shift_assignments_date_order', sql`${table.endDate} is null or ${table.endDate} >= ${table.startDate}`),
+  // An admin can cancel a future reservation today, before its first occurrence.
+  check('shift_assignments_date_order', sql`${table.endDate} is null or ${table.endDate} >= ${table.startDate} or coalesce(${table.endedReason} = 'admin_removed', false)`),
 ]);
 
 export const shiftSkipsTable = pgTable('shift_skips', {

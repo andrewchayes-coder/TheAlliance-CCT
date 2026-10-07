@@ -4,3 +4,4 @@
 - [Questionnaire scope](onboarding-question-scope.md) — the client is still finalizing onboarding questions; supplied questions are placeholders, not approved final copy.
 - [New-tab links](new-tab-links.md) — use native anchors for documents; this router intercepts clicks even with target=_blank.
 - [Animated screenshots](animated-screenshot-verification.md) — wait for drawer/dialog animations to settle before treating clipped screenshots as layout bugs.
+- [Drizzle check constraints](drizzle-check-constraints.md) — a successful push may leave an existing named CHECK unchanged; verify the live definition.

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminAssignedShift } from './adminAssignedShift';
+import type { ApprovalRequirement } from './approvalRequirement';
+import type { VolunteerActivity } from './volunteerActivity';
 import type { VolunteerRosterEntry } from './volunteerRosterEntry';
 
 export interface AdminVolunteerDetail {
@@ -13,4 +15,7 @@ export interface AdminVolunteerDetail {
   /** @nullable */
   adminNotes: string | null;
   shifts: AdminAssignedShift[];
+  assignmentsToRelease: AdminAssignedShift[];
+  approvalRequirements: ApprovalRequirement[];
+  activity: VolunteerActivity[];
 }

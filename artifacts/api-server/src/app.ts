@@ -28,7 +28,7 @@ app.use(
   }),
 );
 app.use(cors({ origin: appOrigin, credentials: true }));
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '128kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(sessionMiddleware());
 app.use('/api', (_req, res, next) => {
@@ -40,7 +40,14 @@ app.use('/api', (_req, res, next) => {
 app.use("/api", router);
 app.use((error: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
   req.log.error({ errorName: error instanceof Error ? error.name : 'Error' }, 'API request failed');
-  if (!res.headersSent) res.status(500).json({ error: 'Something went wrong. Please try again in a moment.' });
+  if (!res.headersSent) {
+    const status = typeof error === 'object' && error !== null && 'status' in error ? Number(error.status) : 500;
+    res.status(status === 413 ? 413 : status === 400 ? 400 : 500).json({
+      error: status === 413 ? 'This request is too large. Please shorten the text and try again.' :
+        status === 400 ? 'This request could not be read. Please check the fields and try again.' :
+          'Something went wrong. Please try again in a moment.',
+    });
+  }
 });
 
 export default app;

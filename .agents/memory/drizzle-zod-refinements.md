@@ -14,3 +14,9 @@ The schema package needs Node typings when using Drizzle-Zod, even though its sc
 **Why:** Drizzle-Zod's conditional types reference the global Buffer type. With Node types excluded and skipLibCheck enabled, unresolved Buffer caused string columns to be emitted as Buffer validators in generated declarations, although runtime string validation was correct.
 
 **How to apply:** include @types/node for the schema package and Node in its compiler types. If exported insert types unexpectedly contain Buffer for text columns, fix the missing type context instead of hiding it with individual casts.
+
+Compose a generated API schema with validators from the same Zod entrypoint/version as that schema, not automatically the entrypoint used by shared database validators.
+
+**Why:** this project has generated API validators using root Zod v3 alongside shared Drizzle validators using Zod v4. Extending the generated object with v4 fields produced incompatible internal-parser types rather than a usable boundary validator.
+
+**How to apply:** inspect the generated schema import before extending/refining it. Keep API boundary overrides version-compatible; do not cast away version mismatches.

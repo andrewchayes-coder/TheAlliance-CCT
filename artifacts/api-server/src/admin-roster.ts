@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, or, getTableColumns } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, ne, or, getTableColumns } from 'drizzle-orm';
 import {
   db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable, userPublicSchema,
 } from '@workspace/db';
@@ -31,7 +31,8 @@ export async function rosterSnapshot(now = new Date()) {
       label: shiftSlotsTable.label, startDate: shiftAssignmentsTable.startDate, endDate: shiftAssignmentsTable.endDate,
     }).from(shiftAssignmentsTable).innerJoin(shiftSlotsTable, eq(shiftSlotsTable.id, shiftAssignmentsTable.shiftSlotId))
       .where(and(inArray(shiftAssignmentsTable.volunteerProfileId, people.map(row => row.profile.id)),
-        eq(shiftSlotsTable.isActive, true), or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today))))
+        eq(shiftSlotsTable.isActive, true), or(isNull(shiftAssignmentsTable.endedReason), ne(shiftAssignmentsTable.endedReason, 'admin_removed')),
+        or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today))))
       .orderBy(shiftSlotsTable.dayOfWeek, shiftSlotsTable.startTime, shiftAssignmentsTable.startDate, shiftAssignmentsTable.id);
     const skips = assignments.length ? await tx.select({ assignmentId: shiftSkipsTable.shiftAssignmentId, date: shiftSkipsTable.skipDate })
       .from(shiftSkipsTable).where(and(inArray(shiftSkipsTable.shiftAssignmentId, assignments.map(row => row.assignmentId)), gte(shiftSkipsTable.skipDate, today)))

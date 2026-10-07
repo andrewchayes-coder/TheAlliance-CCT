@@ -49,9 +49,13 @@ import type {
   TokenInput,
   VolunteerDashboard,
   VolunteerMessage,
+  VolunteerNotesUpdate,
   VolunteerProfileInput,
   VolunteerResource,
-  VolunteerRoster
+  VolunteerRoster,
+  VolunteerStatusResult,
+  VolunteerStatusUpdate,
+  VolunteerTrackingUpdate
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -229,6 +233,255 @@ export function useGetAdminVolunteer<TData = Awaited<ReturnType<typeof getAdminV
 
 
 
+
+export const getChangeVolunteerStatusUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/volunteers/${userId}/status`
+}
+
+export const changeVolunteerStatus = async (userId: string,
+    volunteerStatusUpdate: VolunteerStatusUpdate, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerStatusResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerStatusResult>(getChangeVolunteerStatusUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerStatusUpdate)
+  }
+);}
+
+
+
+
+
+export const getChangeVolunteerStatusMutationKey = () => ['changeVolunteerStatus'] as const;
+
+export const getChangeVolunteerStatusMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerStatus>>, TError,ChangeVolunteerStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerStatus>>, TError,ChangeVolunteerStatusMutationVariables, TContext> => {
+
+const mutationKey = getChangeVolunteerStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeVolunteerStatus>>, ChangeVolunteerStatusMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  changeVolunteerStatus(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeVolunteerStatusMutationResult = NonNullable<Awaited<ReturnType<typeof changeVolunteerStatus>>>
+    export type ChangeVolunteerStatusMutationBody = BodyType<VolunteerStatusUpdate>
+    export type ChangeVolunteerStatusMutationError = ErrorType<void>
+    export type ChangeVolunteerStatusMutationVariables = {userId: string;data: BodyType<VolunteerStatusUpdate>}
+
+    export const useChangeVolunteerStatus = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerStatus>>, TError,ChangeVolunteerStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeVolunteerStatus>>,
+        TError,
+        ChangeVolunteerStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeVolunteerStatusMutationOptions(options));
+    }
+
+export const getUpdateVolunteerTrackingUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/volunteers/${userId}/tracking`
+}
+
+export const updateVolunteerTracking = async (userId: string,
+    volunteerTrackingUpdate: VolunteerTrackingUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminVolunteerDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminVolunteerDetail>(getUpdateVolunteerTrackingUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerTrackingUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateVolunteerTrackingMutationKey = () => ['updateVolunteerTracking'] as const;
+
+export const getUpdateVolunteerTrackingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerTracking>>, TError,UpdateVolunteerTrackingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerTracking>>, TError,UpdateVolunteerTrackingMutationVariables, TContext> => {
+
+const mutationKey = getUpdateVolunteerTrackingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVolunteerTracking>>, UpdateVolunteerTrackingMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  updateVolunteerTracking(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVolunteerTrackingMutationResult = NonNullable<Awaited<ReturnType<typeof updateVolunteerTracking>>>
+    export type UpdateVolunteerTrackingMutationBody = BodyType<VolunteerTrackingUpdate>
+    export type UpdateVolunteerTrackingMutationError = ErrorType<void>
+    export type UpdateVolunteerTrackingMutationVariables = {userId: string;data: BodyType<VolunteerTrackingUpdate>}
+
+    export const useUpdateVolunteerTracking = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerTracking>>, TError,UpdateVolunteerTrackingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVolunteerTracking>>,
+        TError,
+        UpdateVolunteerTrackingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateVolunteerTrackingMutationOptions(options));
+    }
+
+export const getUpdateVolunteerNotesUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/volunteers/${userId}/notes`
+}
+
+export const updateVolunteerNotes = async (userId: string,
+    volunteerNotesUpdate: VolunteerNotesUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminVolunteerDetail> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminVolunteerDetail>(getUpdateVolunteerNotesUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerNotesUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateVolunteerNotesMutationKey = () => ['updateVolunteerNotes'] as const;
+
+export const getUpdateVolunteerNotesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerNotes>>, TError,UpdateVolunteerNotesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerNotes>>, TError,UpdateVolunteerNotesMutationVariables, TContext> => {
+
+const mutationKey = getUpdateVolunteerNotesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVolunteerNotes>>, UpdateVolunteerNotesMutationVariables> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  updateVolunteerNotes(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVolunteerNotesMutationResult = NonNullable<Awaited<ReturnType<typeof updateVolunteerNotes>>>
+    export type UpdateVolunteerNotesMutationBody = BodyType<VolunteerNotesUpdate>
+    export type UpdateVolunteerNotesMutationError = ErrorType<void>
+    export type UpdateVolunteerNotesMutationVariables = {userId: string;data: BodyType<VolunteerNotesUpdate>}
+
+    export const useUpdateVolunteerNotes = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerNotes>>, TError,UpdateVolunteerNotesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVolunteerNotes>>,
+        TError,
+        UpdateVolunteerNotesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateVolunteerNotesMutationOptions(options));
+    }
 
 export const getExportVolunteerRosterUrl = (params?: ExportVolunteerRosterParams,) => {
   const normalizedParams = new URLSearchParams();
