@@ -37,12 +37,14 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Shared email service: `artifacts/api-server/src/email.ts` (the managed server equivalent of `server/email.ts`).
 - Branded HTML/plain-text wrapper: `artifacts/api-server/src/email-template.ts`, re-exported by the email service.
 - PostgreSQL connection and Drizzle configuration: `lib/db/`.
-- API contract: `lib/api-spec/openapi.yaml`; currently health check only.
+- API contract: `lib/api-spec/openapi.yaml`; health check and development-only email check.
 - Brand CSS tokens: `artifacts/alliance-volunteer-portal/src/index.css`.
 - Themed shadcn controls: `artifacts/alliance-volunteer-portal/src/components/ui/`.
 - Brand layouts, status badges, and empty states: `artifacts/alliance-volunteer-portal/src/components/brand-system.tsx`.
 
 ## Architecture decisions
+
+- Development email check: `POST /api/dev/email-test`. Uses only the shared email service, fixed example.org recipient/content, and a fresh test key. Returns the ID of a confirmed `logged` notification row. Not mounted outside development and refuses to run with both live Postmark settings present. Test audit rows remain available for inspection.
 
 - Client and server remain separate managed artifact packages rather than literal root `client/` and `server/` directories; shared files live in the requested root `shared/` directory.
   **Why:** retain Replit's managed service routing and the existing pnpm workspace conventions without duplicating app code.

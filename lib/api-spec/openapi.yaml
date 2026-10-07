@@ -24,6 +24,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dev/email-test:
+    post:
+      operationId: testDevEmail
+      tags: [health]
+      summary: Check console-only email delivery in development
+      description: Available only in development. Uses a fixed example.org recipient and refuses to run when live Postmark delivery is configured.
+      responses:
+        "200":
+          description: Email printed to the server console and its logged audit row confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevEmailCheck"
+        "404":
+          description: Not available outside development
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevEmailCheckError"
+        "409":
+          description: Live delivery is configured; console-only check refused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevEmailCheckError"
+        "500":
+          description: Email or audit verification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevEmailCheckError"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +64,30 @@ components:
           type: string
       required:
         - status
+    DevEmailCheck:
+      type: object
+      additionalProperties: false
+      required: [ok, status, logId, relatedId]
+      properties:
+        ok:
+          type: boolean
+          const: true
+        status:
+          type: string
+          enum: [logged]
+        logId:
+          type: string
+          format: uuid
+        relatedId:
+          type: string
+    DevEmailCheckError:
+      type: object
+      additionalProperties: false
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          const: false
+        error:
+          type: string
 
