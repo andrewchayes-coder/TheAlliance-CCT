@@ -1,1 +1,3 @@
 - [Drizzle-Zod pitfalls](drizzle-zod-refinements.md) — preserve direct-override wrappers and include Node types so Buffer-related conditionals infer string columns correctly.
+- [Development cookie proxy](development-cookie-proxy.md) — direct API cookie attributes can differ from the development edge; compare both before changing session settings.
+- [Auth navigation](auth-navigation.md) — explicit post-signout destinations need fresh client state or coordinated guards; verify the actual destination, not only logout success.

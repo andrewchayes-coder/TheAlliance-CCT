@@ -29,3 +29,184 @@ export const TestDevEmailResponse = zod.object({
 })
 
 
+/**
+ * @summary Public authentication state and CSRF bootstrap
+ */
+export const GetAuthSessionResponse = zod.object({
+  "csrfToken": zod.string(),
+  "authenticated": zod.boolean(),
+  "verified": zod.boolean(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "role": zod.union([zod.literal('admin'),zod.literal('volunteer'),zod.literal(null)]).nullable(),
+  "googleEnabled": zod.boolean(),
+  "nextPath": zod.string(),
+  "resendAfterSeconds": zod.number().int(),
+  "notice": zod.string().optional()
+})
+
+
+export const signupBodyFirstNameMax = 100;
+
+export const signupBodyLastNameMax = 100;
+
+export const signupBodyEmailMax = 254;
+
+export const signupBodyPhoneMin = 10;
+export const signupBodyPhoneMax = 30;
+
+export const signupBodyPasswordMin = 8;
+export const signupBodyPasswordMax = 72;
+
+export const signupBodyConfirmPasswordMin = 8;
+export const signupBodyConfirmPasswordMax = 72;
+
+
+
+export const SignupBody = zod.object({
+  "firstName": zod.string().min(1).max(signupBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(signupBodyLastNameMax),
+  "email": zod.string().email().max(signupBodyEmailMax),
+  "phone": zod.string().min(signupBodyPhoneMin).max(signupBodyPhoneMax),
+  "password": zod.string().min(signupBodyPasswordMin).max(signupBodyPasswordMax),
+  "confirmPassword": zod.string().min(signupBodyConfirmPasswordMin).max(signupBodyConfirmPasswordMax)
+})
+
+export const SignupResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const signinBodyEmailMax = 254;
+
+export const signinBodyPasswordMax = 1000;
+
+
+
+export const SigninBody = zod.object({
+  "email": zod.string().email().max(signinBodyEmailMax),
+  "password": zod.string().min(1).max(signinBodyPasswordMax)
+})
+
+export const SigninResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const ResendVerificationResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const verifyEmailBodyTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const VerifyEmailBody = zod.object({
+  "token": zod.string().regex(verifyEmailBodyTokenRegExp)
+})
+
+export const VerifyEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const forgotPasswordBodyEmailMax = 254;
+
+
+
+export const ForgotPasswordBody = zod.object({
+  "email": zod.string().email().max(forgotPasswordBodyEmailMax)
+})
+
+export const ForgotPasswordResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const resetPasswordBodyTokenRegExp = new RegExp('^[a-f0-9]{64}$');
+export const resetPasswordBodyPasswordMin = 8;
+export const resetPasswordBodyPasswordMax = 72;
+
+export const resetPasswordBodyConfirmPasswordMin = 8;
+export const resetPasswordBodyConfirmPasswordMax = 72;
+
+
+
+export const ResetPasswordBody = zod.object({
+  "token": zod.string().regex(resetPasswordBodyTokenRegExp),
+  "password": zod.string().min(resetPasswordBodyPasswordMin).max(resetPasswordBodyPasswordMax),
+  "confirmPassword": zod.string().min(resetPasswordBodyConfirmPasswordMin).max(resetPasswordBodyConfirmPasswordMax)
+})
+
+export const ResetPasswordResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+export const SignoutResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * Requires an active, verified session. Returns no password, Google subject, session version, or admin notes. Authentication failures are JSON with error and code.
+ */
+export const GetMeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "role": zod.enum(['admin', 'volunteer']),
+  "verified": zod.boolean(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()])
+})
+
+

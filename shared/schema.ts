@@ -1,6 +1,6 @@
 import { getTableColumns, sql } from 'drizzle-orm';
 import {
-  boolean, check, date, index, integer, jsonb, pgEnum, pgTable,
+  boolean, check, date, index, integer, json, jsonb, pgEnum, pgTable,
   text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -38,9 +38,12 @@ export const usersTable = pgTable('users', {
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   isActive: boolean('is_active').notNull().default(true),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  googleSubject: text('google_subject'),
+  sessionVersion: integer('session_version').notNull().default(0),
   ...timestamps(),
 }, table => [
   uniqueIndex('users_email_unique').on(table.email),
+  uniqueIndex('users_google_subject_unique').on(table.googleSubject),
   check('users_email_normalized', sql`${table.email} = lower(btrim(${table.email}))`),
 ]);
 
@@ -303,8 +306,21 @@ export const volunteerProfilePublicColumns = {
   createdAt: profileColumns.createdAt, updatedAt: profileColumns.updatedAt,
 };
 export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true });
-export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true });
+export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true });
 export function toVolunteerProfilePublic(profile: VolunteerProfile) {
   return volunteerProfilePublicSchema.parse(profile);
 }
 export type VolunteerProfilePublic = z.infer<typeof volunteerProfilePublicSchema>;
+
+// Internal authentication infrastructure, never returned by public profile APIs.
+export const sessionsTable = pgTable('sessions', {
+  sid: text('sid').primaryKey(),
+  sess: json('sess').notNull(),
+  expire: timestamp('expire', { withTimezone: true, precision: 6 }).notNull(),
+}, table => [index('sessions_expire_idx').on(table.expire)]);
+
+export const authRateLimitsTable = pgTable('auth_rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+}, table => [index('auth_rate_limits_window_idx').on(table.windowStart)]);

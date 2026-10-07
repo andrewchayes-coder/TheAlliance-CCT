@@ -10,10 +10,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "catalog:",
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
     "drizzle-orm": "catalog:",
-    "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0"
   }
 }

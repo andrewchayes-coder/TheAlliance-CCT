@@ -55,8 +55,212 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DevEmailCheckError"
+  /auth/session:
+    get:
+      operationId: getAuthSession
+      summary: Public authentication state and CSRF bootstrap
+      responses:
+        "200":
+          description: Current authentication state; no protected profile data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /auth/signup:
+    post:
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/signin:
+    post:
+      operationId: signin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SigninInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/resend-verification:
+    post:
+      operationId: resendVerification
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/verify:
+    post:
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetInput"
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /auth/signout:
+    post:
+      operationId: signout
+      responses:
+        "200":
+          $ref: "#/components/responses/AuthSuccess"
+  /me:
+    get:
+      operationId: getMe
+      description: Requires an active, verified session. Returns no password, Google subject, session version, or admin notes. Authentication failures are JSON with error and code.
+      responses:
+        "200":
+          description: Verified account and safe volunteer profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
 components:
+  responses:
+    AuthSuccess:
+      description: Authentication operation completed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthResult"
   schemas:
+    SignupInput:
+      type: object
+      required: [firstName, lastName, email, phone, password, confirmPassword]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 254 }
+        phone: { type: string, minLength: 10, maxLength: 30 }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        confirmPassword: { type: string, minLength: 8, maxLength: 72 }
+    SigninInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 1000 }
+    EmailInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+    TokenInput:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, pattern: "^[a-f0-9]{64}$" }
+    ResetInput:
+      type: object
+      required: [token, password, confirmPassword]
+      properties:
+        token: { type: string, pattern: "^[a-f0-9]{64}$" }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        confirmPassword: { type: string, minLength: 8, maxLength: 72 }
+    AuthResult:
+      type: object
+      required: [ok, nextPath]
+      properties:
+        ok: { type: boolean }
+        nextPath: { type: string }
+        email: { type: string }
+        message: { type: string }
+    AuthSession:
+      type: object
+      required: [csrfToken, authenticated, verified, email, firstName, role, googleEnabled, nextPath, resendAfterSeconds]
+      properties:
+        csrfToken: { type: string }
+        authenticated: { type: boolean }
+        verified: { type: boolean }
+        email: { type: [string, "null"] }
+        firstName: { type: [string, "null"] }
+        role: { type: [string, "null"], enum: [admin, volunteer, null] }
+        googleEnabled: { type: boolean }
+        nextPath: { type: string }
+        resendAfterSeconds: { type: integer }
+        notice: { type: string }
+    Me:
+      type: object
+      required: [user, role, verified, profile]
+      properties:
+        user:
+          $ref: "#/components/schemas/PublicUser"
+        role: { type: string, enum: [admin, volunteer] }
+        verified: { type: boolean }
+        profile:
+          anyOf:
+            - $ref: "#/components/schemas/PublicVolunteerProfile"
+            - type: "null"
+    PublicUser:
+      type: object
+      required: [id, email, firstName, lastName, phone, role, emailVerifiedAt, isActive, lastLoginAt, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: [string, "null"] }
+        role: { type: string, enum: [admin, volunteer] }
+        emailVerifiedAt: { type: [string, "null"], format: date-time }
+        isActive: { type: boolean }
+        lastLoginAt: { type: [string, "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicVolunteerProfile:
+      type: object
+      required: [id, userId, county, status, onboardingAnswers, onboardingCompletedAt, availabilityNotes, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt, agreementAcknowledgedAt, agreementVersion, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        county: { type: string }
+        status: { type: string, enum: [applicant, in_training, active, inactive] }
+        onboardingAnswers: { type: object, additionalProperties: true }
+        onboardingCompletedAt: { type: [string, "null"], format: date-time }
+        availabilityNotes: { type: [string, "null"] }
+        certificationStatus: { type: string, enum: [not_started, in_progress, complete] }
+        certificationCompletedAt: { type: [string, "null"] }
+        certificationExpiresAt: { type: [string, "null"] }
+        backgroundCheckStatus: { type: string, enum: [not_started, pending, cleared, not_cleared] }
+        backgroundCheckSubmittedAt: { type: [string, "null"] }
+        backgroundCheckClearedAt: { type: [string, "null"] }
+        agreementAcknowledgedAt: { type: [string, "null"], format: date-time }
+        agreementVersion: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     HealthStatus:
       type: object
       properties:

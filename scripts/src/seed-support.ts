@@ -1,4 +1,5 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, scryptSync, timingSafeEqual } from 'node:crypto';
+import bcrypt from 'bcrypt';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { appConfig } from '@workspace/shared/appConfig';
@@ -14,12 +15,11 @@ export function seedId(key: string): string {
 }
 
 export function hashSeedPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
-  return `scrypt$32768$8$1$${salt.toString('base64')}$${hash.toString('base64')}`;
+  return bcrypt.hashSync(password, 12);
 }
 
 export function verifySeedPassword(password: string, encoded: string): boolean {
+  if (encoded.startsWith('$2')) return bcrypt.compareSync(password, encoded);
   const [algorithm, n, r, p, salt, hash] = encoded.split('$');
   if (algorithm !== 'scrypt' || !salt || !hash) return false;
   const expected = Buffer.from(hash, 'base64');

@@ -5,6 +5,204 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface SignupInput {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  firstName: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  lastName: string;
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 10
+     * @maxLength 30
+     */
+  phone: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  password: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  confirmPassword: string;
+}
+
+export interface SigninInput {
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  password: string;
+}
+
+export interface EmailInput {
+  /** @maxLength 254 */
+  email: string;
+}
+
+export interface TokenInput {
+  /** @pattern ^[a-f0-9]{64}$ */
+  token: string;
+}
+
+export interface ResetInput {
+  /** @pattern ^[a-f0-9]{64}$ */
+  token: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  password: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  confirmPassword: string;
+}
+
+export interface AuthResult {
+  ok: boolean;
+  nextPath: string;
+  email?: string;
+  message?: string;
+}
+
+/**
+ * @nullable
+ */
+export type AuthSessionRole = typeof AuthSessionRole[keyof typeof AuthSessionRole] | null;
+
+
+export const AuthSessionRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export interface AuthSession {
+  csrfToken: string;
+  authenticated: boolean;
+  verified: boolean;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  role: AuthSessionRole;
+  googleEnabled: boolean;
+  nextPath: string;
+  resendAfterSeconds: number;
+  notice?: string;
+}
+
+export type MeRole = typeof MeRole[keyof typeof MeRole];
+
+
+export const MeRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export type PublicUserRole = typeof PublicUserRole[keyof typeof PublicUserRole];
+
+
+export const PublicUserRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone: string | null;
+  role: PublicUserRole;
+  /** @nullable */
+  emailVerifiedAt: string | null;
+  isActive: boolean;
+  /** @nullable */
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[keyof typeof PublicVolunteerProfileStatus];
+
+
+export const PublicVolunteerProfileStatus = {
+  applicant: 'applicant',
+  in_training: 'in_training',
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export type PublicVolunteerProfileCertificationStatus = typeof PublicVolunteerProfileCertificationStatus[keyof typeof PublicVolunteerProfileCertificationStatus];
+
+
+export const PublicVolunteerProfileCertificationStatus = {
+  not_started: 'not_started',
+  in_progress: 'in_progress',
+  complete: 'complete',
+} as const;
+
+export type PublicVolunteerProfileBackgroundCheckStatus = typeof PublicVolunteerProfileBackgroundCheckStatus[keyof typeof PublicVolunteerProfileBackgroundCheckStatus];
+
+
+export const PublicVolunteerProfileBackgroundCheckStatus = {
+  not_started: 'not_started',
+  pending: 'pending',
+  cleared: 'cleared',
+  not_cleared: 'not_cleared',
+} as const;
+
+export type PublicVolunteerProfileOnboardingAnswers = { [key: string]: unknown };
+
+export interface PublicVolunteerProfile {
+  id: string;
+  userId: string;
+  county: string;
+  status: PublicVolunteerProfileStatus;
+  onboardingAnswers: PublicVolunteerProfileOnboardingAnswers;
+  /** @nullable */
+  onboardingCompletedAt: string | null;
+  /** @nullable */
+  availabilityNotes: string | null;
+  certificationStatus: PublicVolunteerProfileCertificationStatus;
+  /** @nullable */
+  certificationCompletedAt: string | null;
+  /** @nullable */
+  certificationExpiresAt: string | null;
+  backgroundCheckStatus: PublicVolunteerProfileBackgroundCheckStatus;
+  /** @nullable */
+  backgroundCheckSubmittedAt: string | null;
+  /** @nullable */
+  backgroundCheckClearedAt: string | null;
+  /** @nullable */
+  agreementAcknowledgedAt: string | null;
+  /** @nullable */
+  agreementVersion: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Me {
+  user: PublicUser;
+  role: MeRole;
+  verified: boolean;
+  profile: PublicVolunteerProfile | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -27,4 +225,9 @@ export interface DevEmailCheckError {
   ok: false;
   error: string;
 }
+
+/**
+ * Authentication operation completed
+ */
+export type AuthSuccessResponse = AuthResult;
 

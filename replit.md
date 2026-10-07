@@ -4,7 +4,7 @@ A mobile-first volunteer management portal for The Alliance's Resource Coordinat
 
 ## Current scope
 
-The brand foundation, full database model, development seed, and shared Postmark-ready email service are implemented. No authentication, volunteer signup/approval, scheduling, messaging, resource hub, or administrative data screens/endpoints exist yet. UI navigation samples are labelled previews.
+The brand foundation, full database model, development seed, shared Postmark-ready email service, and custom email/password authentication are implemented. Google OAuth is prepared but unavailable until its client credentials are configured. Full onboarding forms, approvals, scheduling, messaging, resource hub, and administrative data screens are not implemented. The protected account/onboarding pages are real identity checkpoints, not full dashboards. UI navigation samples on the style guide remain labelled previews.
 
 The `/style-guide` route and its lazy-loaded module are development-only. The root page is a restrained portal entry, not an authentication screen.
 
@@ -37,7 +37,7 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Shared email service: `artifacts/api-server/src/email.ts` (the managed server equivalent of `server/email.ts`).
 - Branded HTML/plain-text wrapper: `artifacts/api-server/src/email-template.ts`, re-exported by the email service.
 - PostgreSQL connection and Drizzle configuration: `lib/db/`.
-- API contract: `lib/api-spec/openapi.yaml`; health check and development-only email check.
+- API contract: `lib/api-spec/openapi.yaml`; health, authentication, safe `/me`, and development-only email check.
 - Brand CSS tokens: `artifacts/alliance-volunteer-portal/src/index.css`.
 - Themed shadcn controls: `artifacts/alliance-volunteer-portal/src/components/ui/`.
 - Brand layouts, status badges, and empty states: `artifacts/alliance-volunteer-portal/src/components/brand-system.tsx`.
@@ -52,10 +52,10 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Store timestamps as UTC and display dates/times in `America/Los_Angeles`, including daylight-saving changes.
 - Calendar-only fields use validated YYYY-MM-DD strings, not timestamps; shift clock times are Pacific wall times.
 - Future volunteer queries must use `volunteerProfilePublicColumns` and the public schema/serializer. Never return a raw profile containing adminNotes. Never return passwordHash or tokenHash to a client.
-- `isActive = false` means a deactivated user; future authentication must refuse sign-in. No sign-in behavior is implemented yet.
+- `isActive = false` means a deactivated user; authentication refuses sign-in and the verified-user middleware also blocks existing sessions.
 - The seed uses stable UUIDs, a transaction, and conflict-do-nothing inserts. Reruns never delete rows, reset credentials, or overwrite edited fixtures.
   **Why:** repeatable dummy data must not destroy existing development work.
-- Seed passwords are salted scrypt hashes with their cost parameters encoded. Dummy volunteers receive randomized, undisclosed passwords; only the specified development admin credential is known. Authentication implementation is deferred.
+- New seed passwords use bcrypt cost 12. Existing scrypt fixture hashes remain usable and are upgraded only after a successful sign-in; rerunning the seed never overwrites passwords. Dummy volunteers receive randomized, undisclosed passwords; only the specified development admin credential is known.
 
 ## Development fixtures
 
@@ -80,6 +80,24 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
   **Why:** no external email should be attempted without a durable audit trail, including if the process stops during delivery.
 - Database outages fail closed without sending. An unavailable DB cannot record a new row; the service reports the failure to the caller and server logger. A provider acceptance followed by persistent audit-write failure must be reviewed before retrying, since delivery and database writes cannot be one atomic transaction.
 - Real provider delivery has not been tested. Before launch, configure an approved sender securely and obtain approval for the recipient/content of a controlled delivery check.
+
+## Authentication rules and operation
+
+- Auth pages: `/signup`, `/verify-email`, `/verify`, `/signin`, `/forgot-password`, `/reset-password`. Public forms use PublicLayout. `/onboarding` and all `/dashboard/*` paths require a verified account and successful protected `/api/me` response.
+- The server uses express-session and connect-pg-simple with the `sessions` Postgres table, SESSION_SECRET, and Secure/HttpOnly/SameSite=Lax cookies. New passwords are bcrypt cost 12; minimum 8 characters, maximum 72 UTF-8 bytes to avoid silent bcrypt truncation.
+- Auth/session, health, and the fixed development email check are explicitly public. ALL new resource routers must be mounted below `requireVerifiedUser` in the API router. `/api/me` returns 403 for unverified users and excludes password hashes, Google subjects, session versions, and volunteer adminNotes.
+  Verification is not role/record authorization: administrator endpoints must additionally check the current admin role, and personal-data endpoints must enforce ownership.
+- Signup atomically creates a volunteer user and applicant profile, then sends verification through the shared email service. Email failure leaves the account available for resend and is not presented as successful delivery.
+- Verification/reset tokens use random 32-byte values; auth_tokens stores only SHA-256 hashes. Verification lasts 48 hours, reset lasts one hour, and transactional consumption enforces single-use even under concurrent requests. Resends invalidate older verification tokens.
+- A session version is checked against the current user on every protected request. Password reset and verification increment it, invalidating older sessions; sign-in regenerates the session ID and updates lastLoginAt. Deactivation blocks sessions regardless of verification.
+- Obtain CSRF from GET `/api/auth/session` before mutations. Send `X-CSRF-Token` and same-origin credentials; refresh bootstrap after session-changing operations. Mutations also reject mismatched Origin headers. Signout destroys the stored session.
+- Postgres rate counters survive workers/restarts. Sign-in: 10/IP and 8/email per 15 minutes. Reset requests: 10/IP and 5/email per hour. Resend: one/minute and five/hour per user, with an additional IP limit. The initial signup email starts the minute cooldown, not the five-resend hourly quota.
+- Verification/reset links use APP_ORIGIN. It must be an HTTPS origin with no path/query. Development may default to the runtime development domain; production MUST explicitly configure the actual published origin. Never construct production links from a development domain.
+- Google uses authorization code exchange, state, nonce, PKCE, and Google's verified ID-token/email checks. Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET securely. Register `${APP_ORIGIN}/api/auth/google/callback` as the web client's redirect URI. Tokens from Google are not persisted.
+- Existing verified local accounts can be linked by verified Google email. Reclaiming an unverified registration replaces its potentially attacker-chosen password with an unknown random bcrypt credential, invalidates tokens/sessions, and clears the unverified phone. Google-only users can establish a local password through the reset flow.
+  **Why:** automatically verifying an old unverified registration while preserving its password/sessions would enable pre-registration account hijacking.
+- Live Google consent/token exchange has not been tested because credentials are absent. The UI must remain honest about availability; do not simulate a Google login.
+- Backend auth checks: `pnpm --filter @workspace/api-server run test:auth`. They refuse non-development NODE_ENV, use only temporary example.org accounts and reserved IPs, force console-only email in their process, and clean up their own fixtures. Email checks: `pnpm --filter @workspace/api-server run test:email`.
 
 ## Optional brand assets
 
