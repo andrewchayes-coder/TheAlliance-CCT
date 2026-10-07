@@ -43,6 +43,8 @@ function useAuthValue() {
   const refresh = useCallback(async (): Promise<AuthSession> => {
     qc.removeQueries({ queryKey: getGetMeQueryKey() });
     qc.removeQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
+    qc.removeQueries({ predicate: query => typeof query.queryKey[0] === 'string' &&
+      query.queryKey[0].startsWith('/api/admin/volunteers/') });
     const s = await qc.fetchQuery({ queryKey: getGetAuthSessionQueryKey(), queryFn: () => getAuthSession(FETCH_CREDS), staleTime: 0 });
     csrfRef.current = s.csrfToken;
     return s;

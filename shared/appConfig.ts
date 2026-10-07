@@ -9,6 +9,7 @@ export const appConfig = {
   reminderHoursBefore: 24,
   sameMorningReminder: false,
   sameMorningReminderHour: 7,
+  agreementVersion: "v1",
 } as const;
 
 export const {

@@ -1,0 +1,18 @@
+Build volunteer onboarding. The question list is still being finalized by the client, so make it config-driven.
+
+CONFIG — shared/onboardingQuestions.ts
+Export an array of question definitions: { id, label, helpText?, type: 'text' | 'textarea' | 'select' | 'multiselect' | 'radio' | 'date' | 'yesno', options?, required, step (1 or 2) }. Seed with these placeholders:
+1. County you live or work in (select from appConfig.counties, required)
+2. Preferred language(s) you can support callers in (multiselect: English, Spanish, Other; required)
+3. Have you volunteered in a helping/social-services role before? (yesno, required)
+4. How did you hear about this opportunity? (select, optional)
+5. Best days/times for you (textarea, optional) → also saved to availabilityNotes
+6. Anything else you'd like us to know? (textarea, optional)
+The form, validation (Zod built from the config), admin display, and CSV export must all read from this file so I can swap questions by editing only this file.
+
+/onboarding (volunteer, verified)
+- A short 2-step form with a simple progress indicator. Step 1: contact info confirmation (name, phone) + step-1 questions. Step 2: step-2 questions + agreement acknowledgment.
+- Agreement acknowledgment: links to the published "User Agreement" and "Safety Guidelines" resources (by a fixed category "Agreements"), and a required checkbox: "I have read and agree to the Volunteer User Agreement and Safety Guidelines." Save agreementAcknowledgedAt and agreementVersion (from appConfig.agreementVersion, default "v1").
+- On completion: save onboardingAnswers (jsonb keyed by question id), county, onboardingCompletedAt; send a welcome email with next steps ("Here's what happens next: our team will reach out about training and a background check. Once you're approved, you'll pick your weekly shift."); route to /dashboard.
+- Volunteers who haven't completed onboarding are redirected here from all volunteer pages.
+- Save progress between steps so a refresh doesn't lose answers.

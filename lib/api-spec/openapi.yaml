@@ -11,6 +11,67 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /onboarding:
+    patch:
+      operationId: saveOnboarding
+      summary: Save the signed-in volunteer's draft or complete onboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingInput"
+      responses:
+        "200":
+          description: Updated account and profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+  /onboarding/agreements:
+    get:
+      operationId: getOnboardingAgreements
+      summary: Published Agreements resources needed for acknowledgment
+      responses:
+        "200":
+          description: Published agreements and current version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingAgreements"
+  /onboarding/agreements/{resourceId}:
+    get:
+      operationId: getOnboardingAgreement
+      parameters:
+        - { name: resourceId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: A published agreement resource
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementResource"
+  /admin/volunteers/{userId}/onboarding:
+    get:
+      operationId: getVolunteerOnboarding
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Account and onboarding answers for administrator review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+  /admin/volunteers/onboarding.csv:
+    get:
+      operationId: exportVolunteerOnboarding
+      responses:
+        "200":
+          description: CSV with question labels from the shared configuration
+          content:
+            text/csv:
+              schema: { type: string }
   /healthz:
     get:
       operationId: healthCheck
@@ -232,6 +293,36 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    OnboardingInput:
+      type: object
+      required: [firstName, lastName, phone, answers, complete]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        answers: { type: object, additionalProperties: true }
+        complete: { type: boolean }
+        agreementAcknowledged: { type: boolean }
+        agreementVersion: { type: string }
+    AgreementResource:
+      type: object
+      required: [id, title, type, body, href]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        type: { type: string, enum: [article, document, link] }
+        body: { type: [string, "null"] }
+        href: { type: [string, "null"] }
+    OnboardingAgreements:
+      type: object
+      required: [version, ready, resources]
+      properties:
+        version: { type: string }
+        ready: { type: boolean }
+        resources:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgreementResource"
     AdminInviteInput:
       type: object
       required: [firstName, lastName, email]

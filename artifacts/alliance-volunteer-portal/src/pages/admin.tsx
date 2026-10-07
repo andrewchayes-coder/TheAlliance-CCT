@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
 import {
-  getListTeamUsersQueryKey, useListTeamUsers, type AdminInviteResult, type ListTeamUsersParams, type Me, type PublicUser,
+  getGetVolunteerOnboardingQueryKey, getListTeamUsersQueryKey, useGetVolunteerOnboarding, useListTeamUsers, type AdminInviteResult, type ListTeamUsersParams, type Me, type PublicUser,
 } from '@workspace/api-client-react';
 import { AppLayout, Button, EmptyState, PublicLayout, StatusBadge } from '@/components/brand-system';
+import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -191,6 +192,7 @@ function TeamBody({ me }: { me: Me }) {
               className="alliance-input pl-10" value={text} onChange={e => setText(e.target.value)} data-testid="input-search" />
           </div>
         </div>
+        {role === 'volunteer' && <p className="mt-4 text-sm"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/admin/volunteers/onboarding.csv`} download className="font-bold text-teal-text underline underline-offset-4" data-testid="link-onboarding-csv">Download onboarding CSV</a></p>}
         <div aria-live="polite" className="mt-4">{note && <Notice kind={note.kind}>{note.text}</Notice>}</div>
 
         {list.isPending ? (
@@ -218,6 +220,7 @@ function TeamBody({ me }: { me: Me }) {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                      {u.role === 'volunteer' && <Button asChild variant="secondary"><Link href={`/admin/volunteers/${u.id}/onboarding`} data-testid={`link-onboarding-${u.id}`}>Review onboarding</Link></Button>}
                       {pending && <StatusBadge status="attention">Invitation pending</StatusBadge>}
                       <StatusBadge status={u.isActive ? 'good' : 'blocked'}>{u.isActive ? 'Active' : 'Inactive'}</StatusBadge>
                       {pending && u.isActive && (
@@ -310,3 +313,53 @@ function AcceptForm() {
   );
 }
 export function AcceptInvite() { return <PublicAuthGate allowAuthed><AcceptForm /></PublicAuthGate>; }
+
+const fmtTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not recorded';
+
+function VolunteerOnboardingBody() {
+  const { userId = '' } = useParams<{ userId: string }>();
+  const q = useGetVolunteerOnboarding(userId, { query: { queryKey: getGetVolunteerOnboardingQueryKey(userId), enabled: !!userId, retry: false }, request: FETCH_CREDS });
+  const d = q.data;
+  const p = d?.profile;
+  return (
+    <AppLayout role="admin">
+      <Link href="/admin/team" className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
+      <h1 className="alliance-display text-[22px] md:text-[28px]">Volunteer onboarding</h1>
+      {q.isPending ? <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
+        : q.isError || !d ? <div className="mt-6"><Notice>We couldn't load this volunteer's onboarding.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        : (
+          <>
+            <section className="alliance-card mt-6" aria-labelledby="ob-contact">
+              <h2 id="ob-contact" className="alliance-display text-[15px]">{d.user.firstName} {d.user.lastName}</h2>
+              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                <div><dt className="alliance-label">Email</dt><dd className="break-all">{d.user.email}</dd></div>
+                <div><dt className="alliance-label">Phone</dt><dd>{d.user.phone || 'Not provided'}</dd></div>
+                <div><dt className="alliance-label">Status</dt><dd data-testid="text-onboarding-status">{p ? (p.onboardingCompletedAt ? 'Onboarding complete' : 'In progress (draft)') : 'Not started'}</dd></div>
+                <div><dt className="alliance-label">Volunteer status</dt><dd className="capitalize">{p?.status.replace(/_/g, ' ') ?? 'None'}</dd></div>
+                <div><dt className="alliance-label">Completed</dt><dd>{fmtTime(p?.onboardingCompletedAt)}</dd></div>
+                <div><dt className="alliance-label">Agreement acknowledged</dt><dd>{fmtTime(p?.agreementAcknowledgedAt)}</dd></div>
+                <div><dt className="alliance-label">Agreement version</dt><dd className="break-all">{p?.agreementVersion ?? 'None'}</dd></div>
+                <div><dt className="alliance-label">Last updated</dt><dd>{fmtTime(p?.updatedAt)}</dd></div>
+              </dl>
+            </section>
+            <section className="alliance-card mt-6" aria-labelledby="ob-answers">
+              <h2 id="ob-answers" className="alliance-display text-[15px]">Answers</h2>
+              <dl className="mt-3 divide-y divide-gray">
+                {onboardingQuestions.map(qn => {
+                  const v = p?.onboardingAnswers?.[qn.id];
+                  const text = v === undefined ? '' : formatOnboardingAnswer(v);
+                  return (
+                    <div key={qn.id} className="py-3" data-testid={`answer-${qn.id}`}>
+                      <dt className="text-sm font-bold">{qn.label}</dt>
+                      <dd className="mt-1 whitespace-pre-wrap break-words">{text || <span className="text-navy-soft">No answer</span>}</dd>
+                    </div>
+                  );
+                })}
+              </dl>
+            </section>
+          </>
+        )}
+    </AppLayout>
+  );
+}
+export const AdminVolunteerOnboarding = () => <RequireAdmin>{() => <VolunteerOnboardingBody />}</RequireAdmin>;

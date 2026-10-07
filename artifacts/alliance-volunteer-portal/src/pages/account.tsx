@@ -9,7 +9,7 @@ import type { Me } from '@workspace/api-client-react';
 const fmt = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'long' }) : null;
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 
-function Landing({ me, mode }: { me: Me; mode: 'dashboard' | 'onboarding' }) {
+function Landing({ me, mode }: { me: Me; mode: 'dashboard' }) {
   const auth = useAuth();
   const [, nav] = useLocation();
   const [busy, setBusy] = useState(false);
@@ -27,14 +27,12 @@ function Landing({ me, mode }: { me: Me; mode: 'dashboard' | 'onboarding' }) {
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
-        <p className="alliance-label">{mode === 'onboarding' ? 'Getting started' : 'Your account'}</p>
+        <p className="alliance-label">Your account</p>
         <h1 className="alliance-display mt-3 text-[24px] text-navy md:text-[32px]">
-          {mode === 'onboarding' ? `Welcome, ${me.user.firstName}` : `Hello, ${me.user.firstName}`}
+          Hello, {me.user.firstName}
         </h1>
         <p className="mt-3">
-          {mode === 'onboarding'
-            ? 'Your email is confirmed and your account is ready. Onboarding steps will appear here when they open.'
-            : `Thank you for helping local families find the support they need. ${p ? `Serving ${p.county} County.` : ''}`}
+          {`Thank you for helping local families find the support they need. ${p ? `Serving ${p.county} County.` : ''}`}
         </p>
         {err && <div className="mt-5"><Notice>{err}</Notice></div>}
         <ul className="mt-8 divide-y divide-gray rounded-2xl border border-gray" aria-label="Account checkpoints">
@@ -58,4 +56,3 @@ function Landing({ me, mode }: { me: Me; mode: 'dashboard' | 'onboarding' }) {
 }
 
 export const Dashboard = () => <RequireVerified>{me => <Landing me={me} mode="dashboard" />}</RequireVerified>;
-export const Onboarding = () => <RequireVerified>{me => <Landing me={me} mode="onboarding" />}</RequireVerified>;

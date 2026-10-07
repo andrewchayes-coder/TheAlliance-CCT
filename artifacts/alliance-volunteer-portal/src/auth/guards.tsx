@@ -13,7 +13,7 @@ function Redirect({ to }: { to: string }) {
 }
 
 /** Admins are sent to /admin from volunteer pages; with area="admin", volunteers are sent to /dashboard. */
-export function RequireVerified({ children, area = 'volunteer' }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin' }) {
+export function RequireVerified({ children, area = 'volunteer', allowIncomplete = false }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin'; allowIncomplete?: boolean }) {
   const { session, sessionLoading, sessionError, refresh, signout } = useAuth();
   const [, nav] = useLocation();
   const ok = !!session?.authenticated && session.verified;
@@ -46,6 +46,7 @@ export function RequireVerified({ children, area = 'volunteer' }: { children: (m
   if (me.data && me.data.verified) {
     if (area === 'admin' && me.data.role !== 'admin') return <Redirect to="/dashboard" />;
     if (area === 'volunteer' && me.data.role === 'admin') return <Redirect to="/admin" />;
+    if (area === 'volunteer' && !allowIncomplete && !me.data.profile?.onboardingCompletedAt) return <Redirect to="/onboarding" />;
     return <>{children(me.data)}</>;
   }
   if (me.isError && (status === 401 || status === 403) && retried.current && !me.isFetching && ok) {

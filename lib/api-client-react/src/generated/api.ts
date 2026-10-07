@@ -23,6 +23,7 @@ import type {
   AccountStatusInput,
   AdminInviteInput,
   AdminInviteResult,
+  AgreementResource,
   AuthSession,
   AuthSuccessResponse,
   DevEmailCheck,
@@ -31,6 +32,8 @@ import type {
   HealthStatus,
   ListTeamUsersParams,
   Me,
+  OnboardingAgreements,
+  OnboardingInput,
   PublicUser,
   ResetInput,
   SigninInput,
@@ -65,6 +68,384 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getSaveOnboardingUrl = () => {
+
+
+
+
+  return `/api/onboarding`
+}
+
+/**
+ * @summary Save the signed-in volunteer's draft or complete onboarding
+ */
+export const saveOnboarding = async (onboardingInput: OnboardingInput, options?: Parameters<typeof customFetch>[1]): Promise<Me> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Me>(getSaveOnboardingUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(onboardingInput)
+  }
+);}
+
+
+
+
+
+export const getSaveOnboardingMutationKey = () => ['saveOnboarding'] as const;
+
+export const getSaveOnboardingMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveOnboarding>>, TError,SaveOnboardingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveOnboarding>>, TError,SaveOnboardingMutationVariables, TContext> => {
+
+const mutationKey = getSaveOnboardingMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveOnboarding>>, SaveOnboardingMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  saveOnboarding(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveOnboardingMutationResult = NonNullable<Awaited<ReturnType<typeof saveOnboarding>>>
+    export type SaveOnboardingMutationBody = BodyType<OnboardingInput>
+    export type SaveOnboardingMutationError = ErrorType<unknown>
+    export type SaveOnboardingMutationVariables = {data: BodyType<OnboardingInput>}
+
+    /**
+ * @summary Save the signed-in volunteer's draft or complete onboarding
+ */
+export const useSaveOnboarding = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveOnboarding>>, TError,SaveOnboardingMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveOnboarding>>,
+        TError,
+        SaveOnboardingMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSaveOnboardingMutationOptions(options));
+    }
+
+export const getGetOnboardingAgreementsUrl = () => {
+
+
+
+
+  return `/api/onboarding/agreements`
+}
+
+/**
+ * @summary Published Agreements resources needed for acknowledgment
+ */
+export const getOnboardingAgreements = async ( options?: Parameters<typeof customFetch>[1]): Promise<OnboardingAgreements> => {
+
+  return customFetch<OnboardingAgreements>(getGetOnboardingAgreementsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOnboardingAgreementsQueryKey = () => {
+    return [
+    `/api/onboarding/agreements`
+    ] as const;
+    }
+
+
+export const getGetOnboardingAgreementsQueryOptions = <TData = Awaited<ReturnType<typeof getOnboardingAgreements>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOnboardingAgreementsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOnboardingAgreements>>> = ({ signal }) => getOnboardingAgreements({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreements>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOnboardingAgreementsQueryResult = NonNullable<Awaited<ReturnType<typeof getOnboardingAgreements>>>
+export type GetOnboardingAgreementsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Published Agreements resources needed for acknowledgment
+ */
+
+export function useGetOnboardingAgreements<TData = Awaited<ReturnType<typeof getOnboardingAgreements>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOnboardingAgreementsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetOnboardingAgreementUrl = (resourceId: string,) => {
+
+
+
+
+  return `/api/onboarding/agreements/${resourceId}`
+}
+
+export const getOnboardingAgreement = async (resourceId: string, options?: Parameters<typeof customFetch>[1]): Promise<AgreementResource> => {
+
+  return customFetch<AgreementResource>(getGetOnboardingAgreementUrl(resourceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOnboardingAgreementQueryKey = (resourceId: string,) => {
+    return [
+    `/api/onboarding/agreements/${resourceId}`
+    ] as const;
+    }
+
+
+export const getGetOnboardingAgreementQueryOptions = <TData = Awaited<ReturnType<typeof getOnboardingAgreement>>, TError = ErrorType<unknown>>(resourceId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOnboardingAgreementQueryKey(resourceId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOnboardingAgreement>>> = ({ signal }) => getOnboardingAgreement(resourceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: resourceId !== null && resourceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreement>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOnboardingAgreementQueryResult = NonNullable<Awaited<ReturnType<typeof getOnboardingAgreement>>>
+export type GetOnboardingAgreementQueryError = ErrorType<unknown>
+
+
+
+export function useGetOnboardingAgreement<TData = Awaited<ReturnType<typeof getOnboardingAgreement>>, TError = ErrorType<unknown>>(
+ resourceId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOnboardingAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOnboardingAgreementQueryOptions(resourceId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVolunteerOnboardingUrl = (userId: string,) => {
+
+
+
+
+  return `/api/admin/volunteers/${userId}/onboarding`
+}
+
+export const getVolunteerOnboarding = async (userId: string, options?: Parameters<typeof customFetch>[1]): Promise<Me> => {
+
+  return customFetch<Me>(getGetVolunteerOnboardingUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerOnboardingQueryKey = (userId: string,) => {
+    return [
+    `/api/admin/volunteers/${userId}/onboarding`
+    ] as const;
+    }
+
+
+export const getGetVolunteerOnboardingQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerOnboarding>>, TError = ErrorType<unknown>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerOnboarding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerOnboardingQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerOnboarding>>> = ({ signal }) => getVolunteerOnboarding(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: userId !== null && userId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerOnboarding>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerOnboardingQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerOnboarding>>>
+export type GetVolunteerOnboardingQueryError = ErrorType<unknown>
+
+
+
+export function useGetVolunteerOnboarding<TData = Awaited<ReturnType<typeof getVolunteerOnboarding>>, TError = ErrorType<unknown>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerOnboarding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerOnboardingQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getExportVolunteerOnboardingUrl = () => {
+
+
+
+
+  return `/api/admin/volunteers/onboarding.csv`
+}
+
+export const exportVolunteerOnboarding = async ( options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getExportVolunteerOnboardingUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getExportVolunteerOnboardingQueryKey = () => {
+    return [
+    `/api/admin/volunteers/onboarding.csv`
+    ] as const;
+    }
+
+
+export const getExportVolunteerOnboardingQueryOptions = <TData = Awaited<ReturnType<typeof exportVolunteerOnboarding>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerOnboarding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportVolunteerOnboardingQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportVolunteerOnboarding>>> = ({ signal }) => exportVolunteerOnboarding({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerOnboarding>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ExportVolunteerOnboardingQueryResult = NonNullable<Awaited<ReturnType<typeof exportVolunteerOnboarding>>>
+export type ExportVolunteerOnboardingQueryError = ErrorType<unknown>
+
+
+
+export function useExportVolunteerOnboarding<TData = Awaited<ReturnType<typeof exportVolunteerOnboarding>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof exportVolunteerOnboarding>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getExportVolunteerOnboardingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

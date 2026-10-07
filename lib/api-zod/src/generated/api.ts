@@ -9,6 +9,131 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Save the signed-in volunteer's draft or complete onboarding
+ */
+export const SaveOnboardingBody = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string(),
+  "answers": zod.record(zod.string(), zod.unknown()),
+  "complete": zod.boolean(),
+  "agreementAcknowledged": zod.boolean().optional(),
+  "agreementVersion": zod.string().optional()
+})
+
+export const SaveOnboardingResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "role": zod.enum(['admin', 'volunteer']),
+  "verified": zod.boolean(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Published Agreements resources needed for acknowledgment
+ */
+export const GetOnboardingAgreementsResponse = zod.object({
+  "version": zod.string(),
+  "ready": zod.boolean(),
+  "resources": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "type": zod.enum(['article', 'document', 'link']),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable()
+}))
+})
+
+
+export const GetOnboardingAgreementParams = zod.object({
+  "resourceId": zod.coerce.string().uuid()
+})
+
+export const GetOnboardingAgreementResponse = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "type": zod.enum(['article', 'document', 'link']),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable()
+})
+
+
+export const GetVolunteerOnboardingParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const GetVolunteerOnboardingResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "role": zod.enum(['admin', 'volunteer']),
+  "verified": zod.boolean(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()])
+})
+
+
+export const ExportVolunteerOnboardingResponse = zod.unknown()
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

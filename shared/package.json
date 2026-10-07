@@ -6,7 +6,8 @@
   "exports": {
     "./appConfig": "./appConfig.ts",
     "./schema": "./schema.ts",
-    "./time": "./time.ts"
+    "./time": "./time.ts",
+    "./onboardingQuestions": "./onboardingQuestions.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

@@ -5,6 +5,43 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type OnboardingInputAnswers = { [key: string]: unknown };
+
+export interface OnboardingInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  answers: OnboardingInputAnswers;
+  complete: boolean;
+  agreementAcknowledged?: boolean;
+  agreementVersion?: string;
+}
+
+export type AgreementResourceType = typeof AgreementResourceType[keyof typeof AgreementResourceType];
+
+
+export const AgreementResourceType = {
+  article: 'article',
+  document: 'document',
+  link: 'link',
+} as const;
+
+export interface AgreementResource {
+  id: string;
+  title: string;
+  type: AgreementResourceType;
+  /** @nullable */
+  body: string | null;
+  /** @nullable */
+  href: string | null;
+}
+
+export interface OnboardingAgreements {
+  version: string;
+  ready: boolean;
+  resources: AgreementResource[];
+}
+
 export interface AdminInviteInput {
   /**
      * @minLength 1

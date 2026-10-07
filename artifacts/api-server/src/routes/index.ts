@@ -4,6 +4,7 @@ import devEmailRouter from "./dev-email";
 import authRouter from "./auth";
 import meRouter from "./me";
 import adminRouter from "./admin";
+import onboardingRouter from "./onboarding";
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
@@ -18,6 +19,7 @@ router.use('/auth', authRouter);
 
 router.use(csrfGuard);
 router.use(meRouter);
+router.use(onboardingRouter);
 router.use('/admin', adminRouter);
 
 export default router;

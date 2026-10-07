@@ -109,6 +109,15 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Administrator writes lock active verified admins in a consistent order and recheck the actor's session version. Deactivation increments the target's session version, deletes all their stored sessions, and revokes unused authentication links atomically. Reactivation does not revive old sessions or links. Token consumption locks the user before the token to match deactivation and invitation renewal.
 - First-time bootstrap command: `npm run create-admin -- email@domain.org "First" "Last"`. It creates a pending admin and prints a private, seven-day invitation link. It refuses once an active verified admin exists; use `/admin/team` thereafter. Production must have `APP_ORIGIN` set to the actual HTTPS published origin and use the production database/environment. Do not seed development dummy users into production.
 
+## Volunteer onboarding
+
+- `shared/onboardingQuestions.ts` is the question source for the two-step form, Zod validation, administrator review, and CSV columns. Question IDs are the JSON answer keys; keep IDs stable when only changing wording. Optional `profileField` mappings maintain county and availability notes without hardcoded question IDs.
+- Verified volunteers without completed onboarding are redirected from volunteer pages to `/onboarding`. Progress saves to the database between steps and through debounced saves/“Save progress”; no questionnaire/contact data is stored in browser local storage.
+- `/admin/team` → Volunteers offers “Review onboarding” and a CSV download. Only admins can review another volunteer or export personal information. CSV cells neutralize spreadsheet formulas.
+- Agreement resources must be published in the exact category `Agreements`, with titles `User Agreement` and `Safety Guidelines`. Both must have readable content before submission is enabled. Missing resources are not replaced with made-up legal text. Current resource viewing supports text articles, HTTPS links/documents, and existing static seed PDF paths; private App Storage file downloads will need the resource-storage feature.
+- Completion records the current `appConfig.agreementVersion` (default `v1`), acknowledgment time, completion time, and a deduplicated welcome email. It does not approve the volunteer or bypass training/background checks. Late drafts cannot overwrite completed onboarding.
+- Checks: `pnpm --filter @workspace/api-server run test:onboarding`. These use owned development-only fixtures, force console-only email in their process, and clean up their own records.
+
 ## Optional brand assets
 
 Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.
