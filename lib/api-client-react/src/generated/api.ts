@@ -43,6 +43,10 @@ import type {
   PasswordChangeResult,
   PublicUser,
   ResetInput,
+  ScheduleClosedDateInput,
+  ScheduleSettings,
+  ScheduleSlotInput,
+  ScheduleSlotUpdate,
   SigninInput,
   SignupInput,
   TeamUsersResponse,
@@ -84,6 +88,460 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetScheduleSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/settings`
+}
+
+export const getScheduleSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+  return customFetch<ScheduleSettings>(getGetScheduleSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetScheduleSettingsQueryKey = () => {
+    return [
+    `/api/admin/schedule/settings`
+    ] as const;
+    }
+
+
+export const getGetScheduleSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getScheduleSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetScheduleSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScheduleSettings>>> = ({ signal }) => getScheduleSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getScheduleSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetScheduleSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getScheduleSettings>>>
+export type GetScheduleSettingsQueryError = ErrorType<unknown>
+
+
+
+export function useGetScheduleSettings<TData = Awaited<ReturnType<typeof getScheduleSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetScheduleSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateScheduleSlotUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/slots`
+}
+
+export const createScheduleSlot = async (scheduleSlotInput: ScheduleSlotInput, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleSettings>(getCreateScheduleSlotUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scheduleSlotInput)
+  }
+);}
+
+
+
+
+
+export const getCreateScheduleSlotMutationKey = () => ['createScheduleSlot'] as const;
+
+export const getCreateScheduleSlotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createScheduleSlot>>, TError,CreateScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createScheduleSlot>>, TError,CreateScheduleSlotMutationVariables, TContext> => {
+
+const mutationKey = getCreateScheduleSlotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createScheduleSlot>>, CreateScheduleSlotMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createScheduleSlot(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateScheduleSlotMutationResult = NonNullable<Awaited<ReturnType<typeof createScheduleSlot>>>
+    export type CreateScheduleSlotMutationBody = BodyType<ScheduleSlotInput>
+    export type CreateScheduleSlotMutationError = ErrorType<unknown>
+    export type CreateScheduleSlotMutationVariables = {data: BodyType<ScheduleSlotInput>}
+
+    export const useCreateScheduleSlot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createScheduleSlot>>, TError,CreateScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createScheduleSlot>>,
+        TError,
+        CreateScheduleSlotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateScheduleSlotMutationOptions(options));
+    }
+
+export const getUpdateScheduleSlotUrl = (slotId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/slots/${slotId}`
+}
+
+export const updateScheduleSlot = async (slotId: string,
+    scheduleSlotUpdate: ScheduleSlotUpdate, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleSettings>(getUpdateScheduleSlotUrl(slotId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scheduleSlotUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateScheduleSlotMutationKey = () => ['updateScheduleSlot'] as const;
+
+export const getUpdateScheduleSlotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateScheduleSlot>>, TError,UpdateScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateScheduleSlot>>, TError,UpdateScheduleSlotMutationVariables, TContext> => {
+
+const mutationKey = getUpdateScheduleSlotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateScheduleSlot>>, UpdateScheduleSlotMutationVariables> = (props) => {
+          const {slotId,data} = props ?? {};
+
+          return  updateScheduleSlot(slotId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateScheduleSlotMutationResult = NonNullable<Awaited<ReturnType<typeof updateScheduleSlot>>>
+    export type UpdateScheduleSlotMutationBody = BodyType<ScheduleSlotUpdate>
+    export type UpdateScheduleSlotMutationError = ErrorType<unknown>
+    export type UpdateScheduleSlotMutationVariables = {slotId: string;data: BodyType<ScheduleSlotUpdate>}
+
+    export const useUpdateScheduleSlot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateScheduleSlot>>, TError,UpdateScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateScheduleSlot>>,
+        TError,
+        UpdateScheduleSlotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateScheduleSlotMutationOptions(options));
+    }
+
+export const getCopyMondaySlotsUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/copy-monday`
+}
+
+export const copyMondaySlots = async ( options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+  return customFetch<ScheduleSettings>(getCopyMondaySlotsUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCopyMondaySlotsMutationKey = () => ['copyMondaySlots'] as const;
+
+export const getCopyMondaySlotsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof copyMondaySlots>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof copyMondaySlots>>, TError,void, TContext> => {
+
+const mutationKey = getCopyMondaySlotsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof copyMondaySlots>>, void> = () => {
+
+
+          return  copyMondaySlots(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CopyMondaySlotsMutationResult = NonNullable<Awaited<ReturnType<typeof copyMondaySlots>>>
+
+    export type CopyMondaySlotsMutationError = ErrorType<unknown>
+
+
+    export const useCopyMondaySlots = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof copyMondaySlots>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof copyMondaySlots>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCopyMondaySlotsMutationOptions(options));
+    }
+
+export const getAddScheduleClosedDateUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/closed-dates`
+}
+
+export const addScheduleClosedDate = async (scheduleClosedDateInput: ScheduleClosedDateInput, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleSettings>(getAddScheduleClosedDateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scheduleClosedDateInput)
+  }
+);}
+
+
+
+
+
+export const getAddScheduleClosedDateMutationKey = () => ['addScheduleClosedDate'] as const;
+
+export const getAddScheduleClosedDateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addScheduleClosedDate>>, TError,AddScheduleClosedDateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addScheduleClosedDate>>, TError,AddScheduleClosedDateMutationVariables, TContext> => {
+
+const mutationKey = getAddScheduleClosedDateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addScheduleClosedDate>>, AddScheduleClosedDateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  addScheduleClosedDate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddScheduleClosedDateMutationResult = NonNullable<Awaited<ReturnType<typeof addScheduleClosedDate>>>
+    export type AddScheduleClosedDateMutationBody = BodyType<ScheduleClosedDateInput>
+    export type AddScheduleClosedDateMutationError = ErrorType<unknown>
+    export type AddScheduleClosedDateMutationVariables = {data: BodyType<ScheduleClosedDateInput>}
+
+    export const useAddScheduleClosedDate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addScheduleClosedDate>>, TError,AddScheduleClosedDateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addScheduleClosedDate>>,
+        TError,
+        AddScheduleClosedDateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddScheduleClosedDateMutationOptions(options));
+    }
+
+export const getDeleteScheduleClosedDateUrl = (closedDateId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/closed-dates/${closedDateId}`
+}
+
+export const deleteScheduleClosedDate = async (closedDateId: string, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleSettings> => {
+
+  return customFetch<ScheduleSettings>(getDeleteScheduleClosedDateUrl(closedDateId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteScheduleClosedDateMutationKey = () => ['deleteScheduleClosedDate'] as const;
+
+export const getDeleteScheduleClosedDateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteScheduleClosedDate>>, TError,DeleteScheduleClosedDateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteScheduleClosedDate>>, TError,DeleteScheduleClosedDateMutationVariables, TContext> => {
+
+const mutationKey = getDeleteScheduleClosedDateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteScheduleClosedDate>>, DeleteScheduleClosedDateMutationVariables> = (props) => {
+          const {closedDateId} = props ?? {};
+
+          return  deleteScheduleClosedDate(closedDateId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteScheduleClosedDateMutationResult = NonNullable<Awaited<ReturnType<typeof deleteScheduleClosedDate>>>
+
+    export type DeleteScheduleClosedDateMutationError = ErrorType<unknown>
+    export type DeleteScheduleClosedDateMutationVariables = {closedDateId: string}
+
+    export const useDeleteScheduleClosedDate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteScheduleClosedDate>>, TError,DeleteScheduleClosedDateMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteScheduleClosedDate>>,
+        TError,
+        DeleteScheduleClosedDateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteScheduleClosedDateMutationOptions(options));
+    }
 
 export const getListVolunteerRosterUrl = (params?: ListVolunteerRosterParams,) => {
   const normalizedParams = new URLSearchParams();

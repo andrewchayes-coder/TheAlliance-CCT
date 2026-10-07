@@ -5,3 +5,4 @@
 - [New-tab links](new-tab-links.md) — use native anchors for documents; this router intercepts clicks even with target=_blank.
 - [Animated screenshots](animated-screenshot-verification.md) — wait for drawer/dialog animations to settle before treating clipped screenshots as layout bugs.
 - [Drizzle check constraints](drizzle-check-constraints.md) — a successful push may leave an existing named CHECK unchanged; verify the live definition.
+- [Workspace package installs](workspace-package-installs.md) — recover the install helper's root guard with a scoped pnpm add, not a disabled safety check.

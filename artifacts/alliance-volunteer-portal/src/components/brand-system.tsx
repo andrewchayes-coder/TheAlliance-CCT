@@ -68,7 +68,7 @@ const volunteerNav = [
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
 const adminItems: { label: string; href?: string }[] = [
   { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Team', href: '/admin/team' },
-  { label: 'Master schedule' }, { label: 'Messages' }, { label: 'Resources' },
+  { label: 'Master schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages' }, { label: 'Resources' },
 ];
 const adminActive = (loc: string, href: string) => href === '/admin' ? loc === '/admin' : loc === href || loc.startsWith(`${href}/`);
 

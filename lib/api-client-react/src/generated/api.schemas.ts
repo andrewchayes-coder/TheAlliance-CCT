@@ -5,6 +5,96 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface ScheduleSlotInput {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  dayOfWeek: number;
+  /** @pattern ^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$ */
+  startTime: string;
+  /** @pattern ^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$ */
+  endTime: string;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  capacity: number;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  label: string | null;
+  isActive: boolean;
+}
+
+export type ScheduleSlotUpdateDeactivationMode = typeof ScheduleSlotUpdateDeactivationMode[keyof typeof ScheduleSlotUpdateDeactivationMode];
+
+
+export const ScheduleSlotUpdateDeactivationMode = {
+  now: 'now',
+  keep_until: 'keep_until',
+} as const;
+
+export type ScheduleSlotUpdateDeactivation = {
+  mode: ScheduleSlotUpdateDeactivationMode;
+  keepUntilDate?: string;
+};
+
+export type ScheduleSlotUpdate = ScheduleSlotInput & {
+  expectedUpdatedAt: string;
+  expectedAssignmentIds: string[];
+  cancelRetirement?: boolean;
+  deactivation?: ScheduleSlotUpdateDeactivation;
+};
+
+export interface ScheduleClosedDateInput {
+  date: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  reason: string;
+}
+
+export type ScheduleSlotOverlapsItem = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  /** @nullable */
+  label: string | null;
+};
+
+export type ScheduleSlot = ScheduleSlotInput & ({
+  id: string;
+  updatedAt: string;
+  /** @nullable */
+  retireAfterDate: string | null;
+  assignedCount: number;
+  assignmentIds: string[];
+  overlaps: ScheduleSlotOverlapsItem[];
+});
+
+export type ScheduleSettingsClosedDatesItem = {
+  id: string;
+  date: string;
+  reason: string;
+};
+
+export type ScheduleSettingsEmailSummary = {
+  sent: number;
+  logged: number;
+  failed: number;
+};
+
+export interface ScheduleSettings {
+  slots: ScheduleSlot[];
+  closedDates: ScheduleSettingsClosedDatesItem[];
+  addedSlotIds?: string[];
+  releasedAssignmentCount?: number;
+  emailSummary?: ScheduleSettingsEmailSummary;
+}
+
 export type AttentionReason = typeof AttentionReason[keyof typeof AttentionReason];
 
 

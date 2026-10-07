@@ -31,7 +31,8 @@ export async function rosterSnapshot(now = new Date()) {
       label: shiftSlotsTable.label, startDate: shiftAssignmentsTable.startDate, endDate: shiftAssignmentsTable.endDate,
     }).from(shiftAssignmentsTable).innerJoin(shiftSlotsTable, eq(shiftSlotsTable.id, shiftAssignmentsTable.shiftSlotId))
       .where(and(inArray(shiftAssignmentsTable.volunteerProfileId, people.map(row => row.profile.id)),
-        eq(shiftSlotsTable.isActive, true), or(isNull(shiftAssignmentsTable.endedReason), ne(shiftAssignmentsTable.endedReason, 'admin_removed')),
+        eq(shiftSlotsTable.isActive, true), or(isNull(shiftSlotsTable.retireAfterDate), gte(shiftSlotsTable.retireAfterDate, today)),
+        or(isNull(shiftAssignmentsTable.endedReason), ne(shiftAssignmentsTable.endedReason, 'admin_removed')),
         or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today))))
       .orderBy(shiftSlotsTable.dayOfWeek, shiftSlotsTable.startTime, shiftAssignmentsTable.startDate, shiftAssignmentsTable.id);
     const skips = assignments.length ? await tx.select({ assignmentId: shiftSkipsTable.shiftAssignmentId, date: shiftSkipsTable.skipDate })

@@ -8,6 +8,345 @@
 import * as zod from 'zod';
 
 
+export const getScheduleSettingsResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const getScheduleSettingsResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const getScheduleSettingsResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const getScheduleSettingsResponseSlotsItemOneCapacityMax = 10;
+
+export const getScheduleSettingsResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const GetScheduleSettingsResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(getScheduleSettingsResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(getScheduleSettingsResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(getScheduleSettingsResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(getScheduleSettingsResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(getScheduleSettingsResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
+export const createScheduleSlotBodyDayOfWeekMax = 5;
+
+export const createScheduleSlotBodyStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const createScheduleSlotBodyEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const createScheduleSlotBodyCapacityMax = 10;
+
+export const createScheduleSlotBodyLabelMax = 120;
+
+
+
+export const CreateScheduleSlotBody = zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(createScheduleSlotBodyDayOfWeekMax),
+  "startTime": zod.string().regex(createScheduleSlotBodyStartTimeRegExp),
+  "endTime": zod.string().regex(createScheduleSlotBodyEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(createScheduleSlotBodyCapacityMax),
+  "label": zod.string().max(createScheduleSlotBodyLabelMax).nullable(),
+  "isActive": zod.boolean()
+})
+
+export const createScheduleSlotResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const createScheduleSlotResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const createScheduleSlotResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const createScheduleSlotResponseSlotsItemOneCapacityMax = 10;
+
+export const createScheduleSlotResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const CreateScheduleSlotResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(createScheduleSlotResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(createScheduleSlotResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(createScheduleSlotResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(createScheduleSlotResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(createScheduleSlotResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
+export const UpdateScheduleSlotParams = zod.object({
+  "slotId": zod.coerce.string().uuid()
+})
+
+export const updateScheduleSlotBodyOneDayOfWeekMax = 5;
+
+export const updateScheduleSlotBodyOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const updateScheduleSlotBodyOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const updateScheduleSlotBodyOneCapacityMax = 10;
+
+export const updateScheduleSlotBodyOneLabelMax = 120;
+
+
+
+export const UpdateScheduleSlotBody = zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(updateScheduleSlotBodyOneDayOfWeekMax),
+  "startTime": zod.string().regex(updateScheduleSlotBodyOneStartTimeRegExp),
+  "endTime": zod.string().regex(updateScheduleSlotBodyOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(updateScheduleSlotBodyOneCapacityMax),
+  "label": zod.string().max(updateScheduleSlotBodyOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "expectedUpdatedAt": zod.coerce.date(),
+  "expectedAssignmentIds": zod.array(zod.string().uuid()),
+  "cancelRetirement": zod.boolean().optional(),
+  "deactivation": zod.object({
+  "mode": zod.enum(['now', 'keep_until']),
+  "keepUntilDate": zod.coerce.date().optional()
+}).optional()
+}))
+
+export const updateScheduleSlotResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const updateScheduleSlotResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const updateScheduleSlotResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const updateScheduleSlotResponseSlotsItemOneCapacityMax = 10;
+
+export const updateScheduleSlotResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const UpdateScheduleSlotResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(updateScheduleSlotResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(updateScheduleSlotResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(updateScheduleSlotResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(updateScheduleSlotResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(updateScheduleSlotResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
+export const copyMondaySlotsResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const copyMondaySlotsResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const copyMondaySlotsResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const copyMondaySlotsResponseSlotsItemOneCapacityMax = 10;
+
+export const copyMondaySlotsResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const CopyMondaySlotsResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(copyMondaySlotsResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(copyMondaySlotsResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(copyMondaySlotsResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(copyMondaySlotsResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(copyMondaySlotsResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
+export const addScheduleClosedDateBodyReasonMax = 300;
+
+
+
+export const AddScheduleClosedDateBody = zod.object({
+  "date": zod.coerce.date(),
+  "reason": zod.string().min(1).max(addScheduleClosedDateBodyReasonMax)
+})
+
+export const addScheduleClosedDateResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const addScheduleClosedDateResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const addScheduleClosedDateResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const addScheduleClosedDateResponseSlotsItemOneCapacityMax = 10;
+
+export const addScheduleClosedDateResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const AddScheduleClosedDateResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(addScheduleClosedDateResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(addScheduleClosedDateResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(addScheduleClosedDateResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(addScheduleClosedDateResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(addScheduleClosedDateResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
+export const DeleteScheduleClosedDateParams = zod.object({
+  "closedDateId": zod.coerce.string().uuid()
+})
+
+export const deleteScheduleClosedDateResponseSlotsItemOneDayOfWeekMax = 5;
+
+export const deleteScheduleClosedDateResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const deleteScheduleClosedDateResponseSlotsItemOneEndTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');
+export const deleteScheduleClosedDateResponseSlotsItemOneCapacityMax = 10;
+
+export const deleteScheduleClosedDateResponseSlotsItemOneLabelMax = 120;
+
+
+
+export const DeleteScheduleClosedDateResponse = zod.object({
+  "slots": zod.array(zod.object({
+  "dayOfWeek": zod.number().int().min(1).max(deleteScheduleClosedDateResponseSlotsItemOneDayOfWeekMax),
+  "startTime": zod.string().regex(deleteScheduleClosedDateResponseSlotsItemOneStartTimeRegExp),
+  "endTime": zod.string().regex(deleteScheduleClosedDateResponseSlotsItemOneEndTimeRegExp),
+  "capacity": zod.number().int().min(1).max(deleteScheduleClosedDateResponseSlotsItemOneCapacityMax),
+  "label": zod.string().max(deleteScheduleClosedDateResponseSlotsItemOneLabelMax).nullable(),
+  "isActive": zod.boolean()
+}).and(zod.object({
+  "id": zod.string().uuid(),
+  "updatedAt": zod.coerce.date(),
+  "retireAfterDate": zod.coerce.date().nullable(),
+  "assignedCount": zod.number().int(),
+  "assignmentIds": zod.array(zod.string().uuid()),
+  "overlaps": zod.array(zod.object({
+  "id": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable()
+}))
+}))),
+  "closedDates": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "date": zod.coerce.date(),
+  "reason": zod.string()
+})),
+  "addedSlotIds": zod.array(zod.string().uuid()).optional(),
+  "releasedAssignmentCount": zod.number().int().optional(),
+  "emailSummary": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+}).optional()
+})
+
+
 export const listVolunteerRosterQuerySearchMax = 200;
 
 export const listVolunteerRosterQueryLimitDefault = 25;

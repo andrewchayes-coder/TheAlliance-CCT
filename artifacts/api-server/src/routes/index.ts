@@ -8,6 +8,7 @@ import onboardingRouter from "./onboarding";
 import volunteerRouter from "./volunteer";
 import adminRosterRouter from "./admin-roster";
 import adminWorkflowRouter from "./admin-volunteer-workflow";
+import adminScheduleRouter from "./admin-schedule";
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
@@ -27,5 +28,6 @@ router.use('/volunteer', volunteerRouter);
 router.use('/admin', adminRouter);
 router.use('/admin', adminRosterRouter);
 router.use('/admin', adminWorkflowRouter);
+router.use('/admin', adminScheduleRouter);
 
 export default router;

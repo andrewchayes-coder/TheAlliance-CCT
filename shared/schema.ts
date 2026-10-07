@@ -91,10 +91,11 @@ export const shiftSlotsTable = pgTable('shift_slots', {
   capacity: integer('capacity').notNull().default(2),
   label: text('label'),
   isActive: boolean('is_active').notNull().default(true),
+  retireAfterDate: date('retire_after_date', { mode: 'string' }),
   ...timestamps(),
 }, table => [
   check('shift_slots_weekday_valid', sql`${table.dayOfWeek} between 1 and 5`),
-  check('shift_slots_capacity_positive', sql`${table.capacity} > 0`),
+  check('shift_slots_capacity_positive', sql`${table.capacity} between 1 and 10`),
   check('shift_slots_start_time_valid', sql`${table.startTime} ~ '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$'`),
   check('shift_slots_end_time_valid', sql`${table.endTime} ~ '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$'`),
   check('shift_slots_time_order', sql`${table.endTime} > ${table.startTime}`),
@@ -246,7 +247,8 @@ export const insertShiftSlotSchema = createInsertSchema(shiftSlotsTable, {
   dayOfWeek: z.number().int().min(1).max(5),
   startTime: clockTime,
   endTime: clockTime,
-  capacity: z.number().int().positive().optional(),
+  capacity: z.number().int().min(1).max(10).optional(),
+  retireAfterDate: calendarDate.nullable().optional(),
 }).omit(generatedFields).refine(value => value.endTime > value.startTime, {
   path: ['endTime'], message: 'The end time must be after the start time',
 });

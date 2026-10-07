@@ -11,6 +11,79 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/schedule/settings:
+    get:
+      operationId: getScheduleSettings
+      responses:
+        '200':
+          description: Administrative shift configuration
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
+  /admin/schedule/slots:
+    post:
+      operationId: createScheduleSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleSlotInput' }
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
+  /admin/schedule/slots/{slotId}:
+    patch:
+      operationId: updateScheduleSlot
+      parameters:
+        - { name: slotId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleSlotUpdate' }
+      responses:
+        '200':
+          description: Updated settings and mail summary
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
+  /admin/schedule/copy-monday:
+    post:
+      operationId: copyMondaySlots
+      responses:
+        '200':
+          description: Missing copies added without replacing other slots
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
+  /admin/schedule/closed-dates:
+    post:
+      operationId: addScheduleClosedDate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleClosedDateInput' }
+      responses:
+        '200':
+          description: Updated closures
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
+  /admin/schedule/closed-dates/{closedDateId}:
+    delete:
+      operationId: deleteScheduleClosedDate
+      parameters:
+        - { name: closedDateId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Updated closures
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ScheduleSettings' }
   /admin/volunteers:
     get:
       operationId: listVolunteerRoster
@@ -487,6 +560,71 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    ScheduleSlotInput:
+      type: object
+      required: [dayOfWeek, startTime, endTime, capacity, label, isActive]
+      properties:
+        dayOfWeek: { type: integer, minimum: 1, maximum: 5 }
+        startTime: { type: string, pattern: '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$' }
+        endTime: { type: string, pattern: '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$' }
+        capacity: { type: integer, minimum: 1, maximum: 10 }
+        label: { type: [string, 'null'], maxLength: 120 }
+        isActive: { type: boolean }
+    ScheduleSlotUpdate:
+      allOf:
+        - { $ref: '#/components/schemas/ScheduleSlotInput' }
+        - type: object
+          required: [expectedUpdatedAt, expectedAssignmentIds]
+          properties:
+            expectedUpdatedAt: { type: string, format: date-time }
+            expectedAssignmentIds: { type: array, items: { type: string, format: uuid } }
+            cancelRetirement: { type: boolean }
+            deactivation:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: [now, keep_until] }
+                keepUntilDate: { type: string, format: date }
+    ScheduleClosedDateInput:
+      type: object
+      required: [date, reason]
+      properties:
+        date: { type: string, format: date }
+        reason: { type: string, minLength: 1, maxLength: 300 }
+    ScheduleSlot:
+      allOf:
+        - { $ref: '#/components/schemas/ScheduleSlotInput' }
+        - type: object
+          required: [id, updatedAt, retireAfterDate, assignedCount, assignmentIds, overlaps]
+          properties:
+            id: { type: string, format: uuid }
+            updatedAt: { type: string, format: date-time }
+            retireAfterDate: { type: [string, 'null'], format: date }
+            assignedCount: { type: integer }
+            assignmentIds: { type: array, items: { type: string, format: uuid } }
+            overlaps:
+              type: array
+              items: { type: object, required: [id, startTime, endTime, label], properties: { id: { type: string }, startTime: { type: string }, endTime: { type: string }, label: { type: [string, 'null'] } } }
+    ScheduleSettings:
+      type: object
+      required: [slots, closedDates]
+      properties:
+        slots: { type: array, items: { $ref: '#/components/schemas/ScheduleSlot' } }
+        closedDates:
+          type: array
+          items:
+            type: object
+            required: [id, date, reason]
+            properties:
+              id: { type: string, format: uuid }
+              date: { type: string, format: date }
+              reason: { type: string }
+        addedSlotIds: { type: array, items: { type: string, format: uuid } }
+        releasedAssignmentCount: { type: integer }
+        emailSummary:
+          type: object
+          required: [sent, logged, failed]
+          properties: { sent: { type: integer }, logged: { type: integer }, failed: { type: integer } }
     AttentionReason:
       type: string
       enum: [no_shift, certification_expiring, background_pending, onboarding_incomplete]

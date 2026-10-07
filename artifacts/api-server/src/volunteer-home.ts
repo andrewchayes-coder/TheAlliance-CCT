@@ -34,9 +34,12 @@ export async function volunteerDashboard(userId: string) {
   const today = pacificDay(now);
   const assignments = active && profile ? await db.select({
     assignmentId: shiftAssignmentsTable.id, startDate: shiftAssignmentsTable.startDate, endDate: shiftAssignmentsTable.endDate,
+    shiftSlotId: shiftSlotsTable.id, volunteerProfileId: shiftAssignmentsTable.volunteerProfileId,
     dayOfWeek: shiftSlotsTable.dayOfWeek, startTime: shiftSlotsTable.startTime, endTime: shiftSlotsTable.endTime, label: shiftSlotsTable.label,
+    retireAfterDate: shiftSlotsTable.retireAfterDate,
   }).from(shiftAssignmentsTable).innerJoin(shiftSlotsTable, eq(shiftSlotsTable.id, shiftAssignmentsTable.shiftSlotId))
     .where(and(eq(shiftAssignmentsTable.volunteerProfileId, profile.id), eq(shiftSlotsTable.isActive, true),
+      or(isNull(shiftSlotsTable.retireAfterDate), gte(shiftSlotsTable.retireAfterDate, today)),
       or(isNull(shiftAssignmentsTable.endedReason), ne(shiftAssignmentsTable.endedReason, 'admin_removed')),
       or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today)))) : [];
   const [closures, skips, quickLinks, unread, totals] = await Promise.all([
