@@ -4,7 +4,7 @@ A mobile-first volunteer management portal for The Alliance's Resource Coordinat
 
 ## Current scope
 
-The initial pass is the project foundation and brand system only. No authentication, volunteer signup/approval, scheduling, messaging, resource hub, or administrative data features exist yet. UI navigation samples are labelled previews.
+The brand foundation, full database model, and development seed are implemented. No authentication, volunteer signup/approval, scheduling, messaging, resource hub, or administrative data screens/endpoints exist yet. UI navigation samples are labelled previews.
 
 The `/style-guide` route and its lazy-loaded module are development-only. The root page is a restrained portal entry, not an authentication screen.
 
@@ -21,7 +21,9 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Managed backend workflow: `artifacts/api-server: API Server`
 - `pnpm run typecheck` checks all libraries and applications.
 - `pnpm --filter @workspace/api-spec run codegen` regenerates API types after contract changes.
-- `pnpm --filter @workspace/db run push` applies development schema changes when tables are added.
+- `pnpm --filter @workspace/db run push` applies development schema changes.
+- `npm run seed` (or `pnpm run seed`) adds the development fixtures. It refuses production and other explicit non-development NODE_ENV values; an unset NODE_ENV is treated as a local development invocation.
+- `pnpm --filter @workspace/scripts run verify-seed` checks fixture counts, insert validation, safe profile projection, placeholder PDFs, and database constraints. Constraint probes roll back completely; never run this on production.
 
 ## Stack and source map
 
@@ -29,7 +31,8 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Server: Express and TypeScript in `artifacts/api-server/src/`.
 - Shared configuration: `shared/appConfig.ts`, imported as `@workspace/shared/appConfig`.
 - Shared date helpers: `shared/time.ts`, imported as `@workspace/shared/time`.
-- Drizzle schema source: `shared/schema.ts`; intentionally no domain tables yet.
+- Drizzle schema source: `shared/schema.ts`, including all 11 tables, enums, indexes, insert schemas, inferred types, and safe public projections.
+- Seed script and fixtures: `scripts/src/seed.ts`, `scripts/src/seed-fixtures.ts`, `scripts/src/seed-support.ts`.
 - PostgreSQL connection and Drizzle configuration: `lib/db/`.
 - API contract: `lib/api-spec/openapi.yaml`; currently health check only.
 - Brand CSS tokens: `artifacts/alliance-volunteer-portal/src/index.css`.
@@ -42,7 +45,21 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
   **Why:** retain Replit's managed service routing and the existing pnpm workspace conventions without duplicating app code.
 - All app settings come from `shared/appConfig.ts`; do not scatter copies of product settings across screens or server code.
 - Store timestamps as UTC and display dates/times in `America/Los_Angeles`, including daylight-saving changes.
-- Do not create domain tables or seed volunteer records during the foundation-only pass.
+- Calendar-only fields use validated YYYY-MM-DD strings, not timestamps; shift clock times are Pacific wall times.
+- Future volunteer queries must use `volunteerProfilePublicColumns` and the public schema/serializer. Never return a raw profile containing adminNotes. Never return passwordHash or tokenHash to a client.
+- `isActive = false` means a deactivated user; future authentication must refuse sign-in. No sign-in behavior is implemented yet.
+- The seed uses stable UUIDs, a transaction, and conflict-do-nothing inserts. Reruns never delete rows, reset credentials, or overwrite edited fixtures.
+  **Why:** repeatable dummy data must not destroy existing development work.
+- Seed passwords are salted scrypt hashes with their cost parameters encoded. Dummy volunteers receive randomized, undisclosed passwords; only the specified development admin credential is known. Authentication implementation is deferred.
+
+## Development fixtures
+
+- One verified admin and 18 fictional volunteers: 4 applicant, 3 in_training, 10 active, 1 inactive. All emails use example.org and phone numbers use the reserved 555-01xx fictional range.
+- Twenty weekday slots (09:00–11:00, 11:00–13:00, 13:00–15:00, 15:00–17:00), capacity two; 18 standing assignments across the active volunteers leave intentional gaps.
+- Two occurrence skips and one upcoming observed US federal holiday closure. The closure is dummy data, not an Alliance holiday policy.
+- Two messages with recipients, and three documents, three articles, and three links; two links are quick links with placeholder URLs.
+- Three clearly marked placeholder PDFs are generated under the frontend's `public/seed-resources/`. These are static seed fixtures, not an upload or document-storage feature.
+- The seed does not send mail or generate live auth tokens.
 
 ## Optional brand assets
 

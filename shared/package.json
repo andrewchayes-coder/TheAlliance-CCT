@@ -7,5 +7,10 @@
     "./appConfig": "./appConfig.ts",
     "./schema": "./schema.ts",
     "./time": "./time.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "drizzle-zod": "0.8.3",
+    "zod": "catalog:"
   }
 }

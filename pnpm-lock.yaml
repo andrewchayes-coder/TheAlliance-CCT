@@ -650,11 +650,30 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.6
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../lib/db
+      '@workspace/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@types/pg@8.23.1)(pg@8.23.0)
       tsx:
         specifier: 'catalog:'
         version: 4.23.13
 
-  shared: {}
+  shared:
+    dependencies:
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@types/pg@8.23.1)(pg@8.23.0)
+      drizzle-zod:
+        specifier: 0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2(@types/pg@8.23.1)(pg@8.23.0))(zod@3.25.76)
+      zod:
+        specifier: 'catalog:'
+        version: 3.25.76
 
 packages:
 

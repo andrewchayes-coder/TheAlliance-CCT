@@ -4,10 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "seed": "tsx ./src/seed.ts",
+    "verify-seed": "tsx ./src/verify-seed.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@workspace/db": "workspace:*",
+    "@workspace/shared": "workspace:*",
+    "drizzle-orm": "catalog:",
     "@types/node": "catalog:",
     "tsx": "catalog:"
   }

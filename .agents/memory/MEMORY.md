@@ -1,0 +1,1 @@
+- [Drizzle-Zod refinements](drizzle-zod-refinements.md) — direct Zod overrides replace generated nullability/default optionality; preserve both explicitly.
