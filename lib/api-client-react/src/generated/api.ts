@@ -32,14 +32,21 @@ import type {
   HealthStatus,
   ListTeamUsersParams,
   Me,
+  MessageReadResult,
   OnboardingAgreements,
   OnboardingInput,
+  PasswordChangeInput,
+  PasswordChangeResult,
   PublicUser,
   ResetInput,
   SigninInput,
   SignupInput,
   TeamUsersResponse,
-  TokenInput
+  TokenInput,
+  VolunteerDashboard,
+  VolunteerMessage,
+  VolunteerProfileInput,
+  VolunteerResource
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -68,6 +75,451 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetVolunteerDashboardUrl = () => {
+
+
+
+
+  return `/api/volunteer/dashboard`
+}
+
+export const getVolunteerDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerDashboard> => {
+
+  return customFetch<VolunteerDashboard>(getGetVolunteerDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerDashboardQueryKey = () => {
+    return [
+    `/api/volunteer/dashboard`
+    ] as const;
+    }
+
+
+export const getGetVolunteerDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerDashboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerDashboard>>> = ({ signal }) => getVolunteerDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerDashboard>>>
+export type GetVolunteerDashboardQueryError = ErrorType<unknown>
+
+
+
+export function useGetVolunteerDashboard<TData = Awaited<ReturnType<typeof getVolunteerDashboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateVolunteerProfileUrl = () => {
+
+
+
+
+  return `/api/volunteer/profile`
+}
+
+export const updateVolunteerProfile = async (volunteerProfileInput: VolunteerProfileInput, options?: Parameters<typeof customFetch>[1]): Promise<Me> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Me>(getUpdateVolunteerProfileUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerProfileInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateVolunteerProfileMutationKey = () => ['updateVolunteerProfile'] as const;
+
+export const getUpdateVolunteerProfileMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerProfile>>, TError,UpdateVolunteerProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerProfile>>, TError,UpdateVolunteerProfileMutationVariables, TContext> => {
+
+const mutationKey = getUpdateVolunteerProfileMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVolunteerProfile>>, UpdateVolunteerProfileMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateVolunteerProfile(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVolunteerProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateVolunteerProfile>>>
+    export type UpdateVolunteerProfileMutationBody = BodyType<VolunteerProfileInput>
+    export type UpdateVolunteerProfileMutationError = ErrorType<unknown>
+    export type UpdateVolunteerProfileMutationVariables = {data: BodyType<VolunteerProfileInput>}
+
+    export const useUpdateVolunteerProfile = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVolunteerProfile>>, TError,UpdateVolunteerProfileMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVolunteerProfile>>,
+        TError,
+        UpdateVolunteerProfileMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateVolunteerProfileMutationOptions(options));
+    }
+
+export const getChangeVolunteerPasswordUrl = () => {
+
+
+
+
+  return `/api/volunteer/password`
+}
+
+export const changeVolunteerPassword = async (passwordChangeInput: PasswordChangeInput, options?: Parameters<typeof customFetch>[1]): Promise<PasswordChangeResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<PasswordChangeResult>(getChangeVolunteerPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(passwordChangeInput)
+  }
+);}
+
+
+
+
+
+export const getChangeVolunteerPasswordMutationKey = () => ['changeVolunteerPassword'] as const;
+
+export const getChangeVolunteerPasswordMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerPassword>>, TError,ChangeVolunteerPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerPassword>>, TError,ChangeVolunteerPasswordMutationVariables, TContext> => {
+
+const mutationKey = getChangeVolunteerPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeVolunteerPassword>>, ChangeVolunteerPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  changeVolunteerPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeVolunteerPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof changeVolunteerPassword>>>
+    export type ChangeVolunteerPasswordMutationBody = BodyType<PasswordChangeInput>
+    export type ChangeVolunteerPasswordMutationError = ErrorType<unknown>
+    export type ChangeVolunteerPasswordMutationVariables = {data: BodyType<PasswordChangeInput>}
+
+    export const useChangeVolunteerPassword = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerPassword>>, TError,ChangeVolunteerPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeVolunteerPassword>>,
+        TError,
+        ChangeVolunteerPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeVolunteerPasswordMutationOptions(options));
+    }
+
+export const getGetVolunteerMessagesUrl = () => {
+
+
+
+
+  return `/api/volunteer/messages`
+}
+
+export const getVolunteerMessages = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerMessage[]> => {
+
+  return customFetch<VolunteerMessage[]>(getGetVolunteerMessagesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerMessagesQueryKey = () => {
+    return [
+    `/api/volunteer/messages`
+    ] as const;
+    }
+
+
+export const getGetVolunteerMessagesQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerMessages>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerMessagesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerMessages>>> = ({ signal }) => getVolunteerMessages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerMessages>>>
+export type GetVolunteerMessagesQueryError = ErrorType<unknown>
+
+
+
+export function useGetVolunteerMessages<TData = Awaited<ReturnType<typeof getVolunteerMessages>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerMessagesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReadVolunteerMessageUrl = (recipientId: string,) => {
+
+
+
+
+  return `/api/volunteer/messages/${recipientId}/read`
+}
+
+export const readVolunteerMessage = async (recipientId: string, options?: Parameters<typeof customFetch>[1]): Promise<MessageReadResult> => {
+
+  return customFetch<MessageReadResult>(getReadVolunteerMessageUrl(recipientId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getReadVolunteerMessageMutationKey = () => ['readVolunteerMessage'] as const;
+
+export const getReadVolunteerMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readVolunteerMessage>>, TError,ReadVolunteerMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof readVolunteerMessage>>, TError,ReadVolunteerMessageMutationVariables, TContext> => {
+
+const mutationKey = getReadVolunteerMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof readVolunteerMessage>>, ReadVolunteerMessageMutationVariables> = (props) => {
+          const {recipientId} = props ?? {};
+
+          return  readVolunteerMessage(recipientId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReadVolunteerMessageMutationResult = NonNullable<Awaited<ReturnType<typeof readVolunteerMessage>>>
+
+    export type ReadVolunteerMessageMutationError = ErrorType<unknown>
+    export type ReadVolunteerMessageMutationVariables = {recipientId: string}
+
+    export const useReadVolunteerMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readVolunteerMessage>>, TError,ReadVolunteerMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof readVolunteerMessage>>,
+        TError,
+        ReadVolunteerMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReadVolunteerMessageMutationOptions(options));
+    }
+
+export const getGetVolunteerResourcesUrl = () => {
+
+
+
+
+  return `/api/volunteer/resources`
+}
+
+export const getVolunteerResources = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerResource[]> => {
+
+  return customFetch<VolunteerResource[]>(getGetVolunteerResourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerResourcesQueryKey = () => {
+    return [
+    `/api/volunteer/resources`
+    ] as const;
+    }
+
+
+export const getGetVolunteerResourcesQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerResources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerResources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerResourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerResources>>> = ({ signal }) => getVolunteerResources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerResources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerResourcesQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerResources>>>
+export type GetVolunteerResourcesQueryError = ErrorType<unknown>
+
+
+
+export function useGetVolunteerResources<TData = Awaited<ReturnType<typeof getVolunteerResources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerResources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerResourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getSaveOnboardingUrl = () => {
 

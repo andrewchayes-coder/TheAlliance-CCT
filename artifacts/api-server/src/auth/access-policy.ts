@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
-import { requireAuth, requireAdmin, requireVolunteer } from './session';
+import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer } from './session';
 
-type Guard = 'public' | 'auth' | 'admin' | 'volunteer';
+type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
   { method: 'GET', path: '/healthz', guard: 'public' },
   { method: 'GET', path: '/auth/session', guard: 'public' },
@@ -10,6 +10,11 @@ const declarations: Array<{ method: string; path: string | RegExp; guard: Guard 
   { method: 'GET', path: '/auth/google', guard: 'public' },
   { method: 'GET', path: '/auth/google/callback', guard: 'public' },
   { method: 'GET', path: '/me', guard: 'auth' },
+  ...['dashboard', 'messages', 'resources'].map(path =>
+    ({ method: 'GET', path: `/volunteer/${path}`, guard: 'onboardedVolunteer' as const })),
+  { method: 'PATCH', path: '/volunteer/profile', guard: 'onboardedVolunteer' },
+  { method: 'POST', path: '/volunteer/password', guard: 'onboardedVolunteer' },
+  { method: 'PATCH', path: /^\/volunteer\/messages\/[^/]+\/read$/, guard: 'onboardedVolunteer' },
   { method: 'PATCH', path: '/onboarding', guard: 'volunteer' },
   { method: 'GET', path: '/onboarding/agreements', guard: 'auth' },
   { method: 'GET', path: /^\/onboarding\/agreements\/[^/]+$/, guard: 'auth' },
@@ -34,7 +39,7 @@ export const apiAccessPolicy: RequestHandler = (req, res, next) => {
     return;
   }
   const guards: Record<Exclude<Guard, 'public'>, RequestHandler> = {
-    auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer,
+    auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer, onboardedVolunteer: requireOnboardedVolunteer,
   };
   if (declaration.guard === 'public') { next(); return; }
   return guards[declaration.guard](req, res, next);

@@ -7,6 +7,7 @@
     "test:auth": "tsx --test src/auth/auth.test.ts",
     "test:email": "tsx --test src/email.test.ts",
     "test:onboarding": "tsx --test src/onboarding.test.ts",
+    "test:volunteer": "tsx --test src/volunteer.test.ts",
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",

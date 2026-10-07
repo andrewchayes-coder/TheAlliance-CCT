@@ -11,6 +11,84 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /volunteer/dashboard:
+    get:
+      operationId: getVolunteerDashboard
+      responses:
+        "200":
+          description: Own shifts, active-only quick links, and latest unread message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerDashboard"
+  /volunteer/profile:
+    patch:
+      operationId: updateVolunteerProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VolunteerProfileInput"
+      responses:
+        "200":
+          description: Updated own account/profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+  /volunteer/password:
+    post:
+      operationId: changeVolunteerPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChangeInput"
+      responses:
+        "200":
+          description: Password changed and all existing sessions ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordChangeResult"
+  /volunteer/messages:
+    get:
+      operationId: getVolunteerMessages
+      responses:
+        "200":
+          description: Messages addressed to the signed-in volunteer only
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerMessage"
+  /volunteer/messages/{recipientId}/read:
+    patch:
+      operationId: readVolunteerMessage
+      parameters:
+        - { name: recipientId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Own recipient record marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageReadResult"
+  /volunteer/resources:
+    get:
+      operationId: getVolunteerResources
+      responses:
+        "200":
+          description: Published resources; active-only quick links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerResource"
   /onboarding:
     patch:
       operationId: saveOnboarding
@@ -293,6 +371,91 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    VolunteerProfileInput:
+      type: object
+      required: [firstName, lastName, phone, county, availabilityNotes, answers]
+      properties:
+        firstName: { type: string }
+        lastName: { type: string }
+        phone: { type: string }
+        county: { type: string }
+        availabilityNotes: { type: [string, "null"] }
+        answers: { type: object, additionalProperties: true }
+    PasswordChangeInput:
+      type: object
+      required: [currentPassword, password, confirmPassword]
+      properties:
+        currentPassword: { type: string, minLength: 1, maxLength: 500 }
+        password: { type: string, minLength: 8, maxLength: 72 }
+        confirmPassword: { type: string, minLength: 8, maxLength: 72 }
+    PasswordChangeResult:
+      type: object
+      required: [ok, nextPath]
+      properties:
+        ok: { type: boolean }
+        nextPath: { type: string }
+    MessageReadResult:
+      type: object
+      required: [ok, readAt]
+      properties:
+        ok: { type: boolean }
+        readAt: { type: string, format: date-time }
+    ShiftOccurrence:
+      type: object
+      required: [assignmentId, date, startTime, endTime, startsAt, endsAt, label]
+      properties:
+        assignmentId: { type: string, format: uuid }
+        date: { type: string }
+        startTime: { type: string }
+        endTime: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        label: { type: [string, "null"] }
+    VolunteerResource:
+      type: object
+      required: [id, title, type, summary, category, body, href, isQuickLink]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        type: { type: string, enum: [article, document, link] }
+        summary: { type: [string, "null"] }
+        category: { type: string }
+        body: { type: [string, "null"] }
+        href: { type: [string, "null"] }
+        isQuickLink: { type: boolean }
+    VolunteerMessage:
+      type: object
+      required: [id, recipientId, subject, body, sentAt, readAt]
+      properties:
+        id: { type: string, format: uuid }
+        recipientId: { type: string, format: uuid }
+        subject: { type: string }
+        body: { type: string }
+        sentAt: { type: string, format: date-time }
+        readAt: { type: [string, "null"], format: date-time }
+    VolunteerDashboard:
+      type: object
+      required: [shiftCount, nextShift, upcomingShifts, quickLinks, unreadMessage, unreadCount, schedulingOpen]
+      properties:
+        shiftCount: { type: integer }
+        nextShift:
+          anyOf:
+            - $ref: "#/components/schemas/ShiftOccurrence"
+            - { type: "null" }
+        upcomingShifts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShiftOccurrence"
+        quickLinks:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolunteerResource"
+        unreadMessage:
+          anyOf:
+            - $ref: "#/components/schemas/VolunteerMessage"
+            - { type: "null" }
+        unreadCount: { type: integer }
+        schedulingOpen: { type: boolean }
     OnboardingInput:
       type: object
       required: [firstName, lastName, phone, answers, complete]

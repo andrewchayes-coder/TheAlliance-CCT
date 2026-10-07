@@ -8,7 +8,7 @@ import { appOrigin } from './auth/session';
 import type { User } from '@workspace/db';
 
 const titles = ['user agreement', 'safety guidelines'];
-function safeHref(resource: typeof resourcesTable.$inferSelect): string | null {
+export function safeResourceHref(resource: typeof resourcesTable.$inferSelect): string | null {
   if (resource.type === 'article') return null;
   if (resource.type === 'document' && /^seed-resources\/[a-zA-Z0-9._-]+\.pdf$/.test(resource.fileKey ?? '')) {
     return `/${resource.fileKey}`;
@@ -25,7 +25,7 @@ export async function publishedAgreements() {
     eq(resourcesTable.category, 'Agreements'), eq(resourcesTable.isPublished, true),
   )).orderBy(desc(resourcesTable.updatedAt), resourcesTable.id);
   const selected = titles.map(title => rows.find(row => row.title.trim().toLowerCase() === title)).filter(row => !!row);
-  const resources = selected.map(row => ({ id: row.id, title: row.title, type: row.type, body: row.type === 'article' ? row.body : null, href: safeHref(row) }));
+  const resources = selected.map(row => ({ id: row.id, title: row.title, type: row.type, body: row.type === 'article' ? row.body : null, href: safeResourceHref(row) }));
   return { version: appConfig.agreementVersion || 'v1', resources,
     ready: resources.length === titles.length && resources.every(row => row.type === 'article' ? !!row.body?.trim() : !!row.href) };
 }

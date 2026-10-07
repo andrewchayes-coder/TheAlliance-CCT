@@ -5,6 +5,100 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type VolunteerProfileInputAnswers = { [key: string]: unknown };
+
+export interface VolunteerProfileInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  county: string;
+  /** @nullable */
+  availabilityNotes: string | null;
+  answers: VolunteerProfileInputAnswers;
+}
+
+export interface PasswordChangeInput {
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  currentPassword: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  password: string;
+  /**
+     * @minLength 8
+     * @maxLength 72
+     */
+  confirmPassword: string;
+}
+
+export interface PasswordChangeResult {
+  ok: boolean;
+  nextPath: string;
+}
+
+export interface MessageReadResult {
+  ok: boolean;
+  readAt: string;
+}
+
+export interface ShiftOccurrence {
+  assignmentId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  startsAt: string;
+  endsAt: string;
+  /** @nullable */
+  label: string | null;
+}
+
+export type VolunteerResourceType = typeof VolunteerResourceType[keyof typeof VolunteerResourceType];
+
+
+export const VolunteerResourceType = {
+  article: 'article',
+  document: 'document',
+  link: 'link',
+} as const;
+
+export interface VolunteerResource {
+  id: string;
+  title: string;
+  type: VolunteerResourceType;
+  /** @nullable */
+  summary: string | null;
+  category: string;
+  /** @nullable */
+  body: string | null;
+  /** @nullable */
+  href: string | null;
+  isQuickLink: boolean;
+}
+
+export interface VolunteerMessage {
+  id: string;
+  recipientId: string;
+  subject: string;
+  body: string;
+  sentAt: string;
+  /** @nullable */
+  readAt: string | null;
+}
+
+export interface VolunteerDashboard {
+  shiftCount: number;
+  nextShift: ShiftOccurrence | null;
+  upcomingShifts: ShiftOccurrence[];
+  quickLinks: VolunteerResource[];
+  unreadMessage: VolunteerMessage | null;
+  unreadCount: number;
+  schedulingOpen: boolean;
+}
+
 export type OnboardingInputAnswers = { [key: string]: unknown };
 
 export interface OnboardingInput {

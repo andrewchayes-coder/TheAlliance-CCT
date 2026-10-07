@@ -27,7 +27,7 @@ function issuesToErrors(issues: { path: PropertyKey[]; message: string }[]): Err
 
 const choiceClass = 'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg bg-gray px-3.5 py-2.5 text-[15px] has-[:checked]:bg-[#d7efee] has-[:checked]:ring-2 has-[:checked]:ring-teal has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal';
 
-function QuestionField({ q, value, error, onChange }: { q: OnboardingQuestion; value: unknown; error?: string; onChange: (v: unknown) => void }) {
+export function QuestionField({ q, value, error, onChange }: { q: OnboardingQuestion; value: unknown; error?: string; onChange: (v: unknown) => void }) {
   const id = useId();
   const descId = `${id}-d`;
   const described = error || q.helpText ? descId : undefined;

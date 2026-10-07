@@ -1,6 +1,7 @@
-import { type ReactNode } from 'react';
-import { Home, CalendarDays, UserRound, Menu, HeartHandshake } from 'lucide-react';
-import { Link } from 'wouter';
+import { useState, type ReactNode } from 'react';
+import { Home, CalendarDays, UserRound, Menu, HeartHandshake, MessageSquare, BookOpen } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -58,9 +59,11 @@ export function PublicLayout({ children, contained = true }: { children: ReactNo
 }
 
 const volunteerNav = [
-  { label: 'Home', icon: Home },
-  { label: 'Shifts', icon: CalendarDays },
-  { label: 'Profile', icon: UserRound },
+  { label: 'Home', href: '/dashboard', icon: Home },
+  { label: 'My Shifts', href: '/shifts', icon: CalendarDays },
+  { label: 'Messages', href: '/messages', icon: MessageSquare },
+  { label: 'Resources', href: '/resources', icon: BookOpen },
+  { label: 'Profile', href: '/profile', icon: UserRound },
 ];
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
 
@@ -87,29 +90,64 @@ function AdminMenu({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
 export function AppLayout({ children, role = 'volunteer', preview = false }: {
   children: ReactNode; role?: 'volunteer' | 'admin'; preview?: boolean;
 }) {
+  const auth = useAuth();
+  const [location] = useLocation();
+  const [busy, setBusy] = useState(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const live = !preview;
+  const isActive = (href: string) => location === href || location.startsWith(`${href}/`);
+  async function out() {
+    setBusy(true);
+    setMenuError(null);
+    try {
+      await auth.signout();
+      window.location.assign(import.meta.env.BASE_URL);
+    } catch {
+      setMenuError("We couldn't sign you out. Please try again.");
+      setBusy(false);
+    }
+  }
   return (
     <div className={`relative bg-gray text-navy ${preview ? 'min-h-[320px] overflow-hidden rounded-2xl' : 'min-h-[100dvh]'}`} data-testid={`app-layout-${role}`}>
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 md:px-6">
           <BrandMark />
-          <nav className="hidden items-center gap-5 text-sm text-white md:flex" aria-label={`${role} navigation preview`}>
-            {(role === 'admin' ? adminNav : volunteerNav.map(item => item.label)).map(label => <span key={label}>{label}</span>)}
+          <nav className="hidden items-center gap-1 text-sm text-white md:flex" aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : `${role} navigation preview`}>
+            {role === 'admin' || !live
+              ? (role === 'admin' ? adminNav : volunteerNav.map(i => i.label)).map(label => <span key={label} className="px-3">{label}</span>)
+              : volunteerNav.map(({ label, href }) => (
+                <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`nav-${href.slice(1)}`}
+                  className={`rounded-lg px-3 py-2 font-semibold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white ${isActive(href) ? 'bg-white/15 underline decoration-teal decoration-2 underline-offset-8' : ''}`}>{label}</Link>
+              ))}
           </nav>
           <div className="flex items-center gap-2">
             {role === 'admin' && <AdminMenu />}
             <details className="relative text-white">
-              <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/40" aria-label="Open user menu preview" data-testid="button-user-menu"><UserRound size={20} /></summary>
-              <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl bg-white p-4 text-sm text-navy shadow-lg">
-                <p className="font-bold">User menu preview</p><p className="mt-2">Account actions will be added in a later step.</p>
+              <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/40" aria-label={live ? 'Open user menu' : 'Open user menu preview'} data-testid="button-user-menu"><UserRound size={20} /></summary>
+              <div className="absolute right-0 z-20 mt-2 w-60 rounded-xl bg-white p-2 text-sm text-navy shadow-lg">
+                {live ? (
+                  <>
+                    <p className="truncate px-3 py-2 text-xs text-navy-soft">{auth.session?.email ?? 'Signed in'}</p>
+                    {menuError && <p role="alert" className="px-3 py-2 text-sm">{menuError}</p>}
+                    {role === 'volunteer' && <Link href="/profile" data-testid="link-menu-profile" className="flex min-h-11 items-center rounded-lg px-3 font-bold hover:bg-gray">Your profile</Link>}
+                    <button type="button" onClick={() => { void out(); }} disabled={busy} data-testid="button-signout" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-bold hover:bg-gray disabled:opacity-50">{busy ? 'Signing out' : 'Sign out'}</button>
+                  </>
+                ) : <div className="p-2"><p className="font-bold">User menu preview</p><p className="mt-2">Account actions appear here when signed in.</p></div>}
               </div>
             </details>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-24 md:px-6 md:pb-6">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-6 pb-28 md:px-6 md:pb-8">{children}</main>
       {role === 'volunteer' && (
-        <nav className={`${preview ? 'absolute' : 'fixed'} inset-x-0 bottom-0 z-10 grid grid-cols-3 border-t border-gray bg-white px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden`} aria-label="Volunteer navigation preview" data-testid="volunteer-bottom-tabs">
-          {volunteerNav.map(({ label, icon: Icon }) => (
+        <nav className={`${preview ? 'absolute' : 'fixed'} inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-gray bg-white px-1 pb-[max(10px,env(safe-area-inset-bottom))] pt-1 md:hidden`} aria-label={live ? 'Volunteer navigation' : 'Volunteer navigation preview'} data-testid="volunteer-bottom-tabs">
+          {volunteerNav.map(({ label, href, icon: Icon }) => live ? (
+            <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`tab-${href.slice(1)}`}
+              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 focus-visible:outline-2 focus-visible:outline-teal ${isActive(href) ? 'font-bold text-teal-text' : 'text-navy'}`}>
+              <Icon size={20} aria-hidden="true" /><span className="text-[10px] font-bold uppercase leading-tight">{label}</span>
+              <span className={`h-0.5 w-5 rounded-full ${isActive(href) ? 'bg-teal' : 'bg-transparent'}`} aria-hidden="true" />
+            </Link>
+          ) : (
             <div key={label} className="flex flex-col items-center gap-1 py-2 text-navy">
               <Icon size={20} aria-hidden="true" /><span className="text-[10px] font-bold uppercase">{label}</span>
             </div>

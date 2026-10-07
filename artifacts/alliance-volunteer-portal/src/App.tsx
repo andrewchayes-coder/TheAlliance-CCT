@@ -9,7 +9,9 @@ import Signup from '@/pages/signup';
 import Signin from '@/pages/signin';
 import { ForgotPassword, ResetPassword } from '@/pages/recovery';
 import { VerifyEmailPage, VerifyTokenPage } from '@/pages/verify';
-import { Dashboard } from '@/pages/account';
+import { Dashboard } from '@/pages/volunteer-home';
+import { Shifts, Messages, Resources } from '@/pages/volunteer-pages';
+import { Profile } from '@/pages/volunteer-profile';
 import { Onboarding, OnboardingAgreement } from '@/pages/onboarding';
 import { AdminHome, AdminTeam, AdminVolunteerOnboarding, AcceptInvite } from '@/pages/admin';
 import { AuthProvider } from '@/auth/auth-context';
@@ -38,6 +40,13 @@ function Router() {
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/dashboard/:rest*" component={Dashboard} />
+        <Route path="/shifts" component={Shifts} />
+        <Route path="/shifts/:rest*" component={Shifts} />
+        <Route path="/messages" component={Messages} />
+        <Route path="/messages/:rest*" component={Messages} />
+        <Route path="/resources" component={Resources} />
+        <Route path="/resources/:rest*" component={Resources} />
+        <Route path="/profile" component={Profile} />
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/onboarding/agreements/:resourceId" component={OnboardingAgreement} />
         <Route path="/onboarding/:rest*" component={Onboarding} />

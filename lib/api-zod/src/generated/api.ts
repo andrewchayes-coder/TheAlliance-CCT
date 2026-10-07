@@ -8,6 +8,152 @@
 import * as zod from 'zod';
 
 
+export const GetVolunteerDashboardResponse = zod.object({
+  "shiftCount": zod.number().int(),
+  "nextShift": zod.union([zod.object({
+  "assignmentId": zod.string().uuid(),
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "label": zod.string().nullable()
+}),zod.null()]),
+  "upcomingShifts": zod.array(zod.object({
+  "assignmentId": zod.string().uuid(),
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "label": zod.string().nullable()
+})),
+  "quickLinks": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "type": zod.enum(['article', 'document', 'link']),
+  "summary": zod.string().nullable(),
+  "category": zod.string(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "isQuickLink": zod.boolean()
+})),
+  "unreadMessage": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "recipientId": zod.string().uuid(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "sentAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullable()
+}),zod.null()]),
+  "unreadCount": zod.number().int(),
+  "schedulingOpen": zod.boolean()
+})
+
+
+export const UpdateVolunteerProfileBody = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string(),
+  "county": zod.string(),
+  "availabilityNotes": zod.string().nullable(),
+  "answers": zod.record(zod.string(), zod.unknown())
+})
+
+export const UpdateVolunteerProfileResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "role": zod.enum(['admin', 'volunteer']),
+  "verified": zod.boolean(),
+  "profile": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "userId": zod.string().uuid(),
+  "county": zod.string(),
+  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
+  "onboardingCompletedAt": zod.coerce.date().nullable(),
+  "availabilityNotes": zod.string().nullable(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
+  "certificationCompletedAt": zod.string().nullable(),
+  "certificationExpiresAt": zod.string().nullable(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
+  "backgroundCheckSubmittedAt": zod.string().nullable(),
+  "backgroundCheckClearedAt": zod.string().nullable(),
+  "agreementAcknowledgedAt": zod.coerce.date().nullable(),
+  "agreementVersion": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),zod.null()])
+})
+
+
+export const changeVolunteerPasswordBodyCurrentPasswordMax = 500;
+
+export const changeVolunteerPasswordBodyPasswordMin = 8;
+export const changeVolunteerPasswordBodyPasswordMax = 72;
+
+export const changeVolunteerPasswordBodyConfirmPasswordMin = 8;
+export const changeVolunteerPasswordBodyConfirmPasswordMax = 72;
+
+
+
+export const ChangeVolunteerPasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(changeVolunteerPasswordBodyCurrentPasswordMax),
+  "password": zod.string().min(changeVolunteerPasswordBodyPasswordMin).max(changeVolunteerPasswordBodyPasswordMax),
+  "confirmPassword": zod.string().min(changeVolunteerPasswordBodyConfirmPasswordMin).max(changeVolunteerPasswordBodyConfirmPasswordMax)
+})
+
+export const ChangeVolunteerPasswordResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string()
+})
+
+
+export const GetVolunteerMessagesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "recipientId": zod.string().uuid(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "sentAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullable()
+})
+export const GetVolunteerMessagesResponse = zod.array(GetVolunteerMessagesResponseItem)
+
+
+export const ReadVolunteerMessageParams = zod.object({
+  "recipientId": zod.coerce.string().uuid()
+})
+
+export const ReadVolunteerMessageResponse = zod.object({
+  "ok": zod.boolean(),
+  "readAt": zod.coerce.date()
+})
+
+
+export const GetVolunteerResourcesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "title": zod.string(),
+  "type": zod.enum(['article', 'document', 'link']),
+  "summary": zod.string().nullable(),
+  "category": zod.string(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "isQuickLink": zod.boolean()
+})
+export const GetVolunteerResourcesResponse = zod.array(GetVolunteerResourcesResponseItem)
+
+
 /**
  * @summary Save the signed-in volunteer's draft or complete onboarding
  */

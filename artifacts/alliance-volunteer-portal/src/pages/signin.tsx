@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicLayout, Button } from '@/components/brand-system';
 import { AuthHeading, Field, Notice, PasswordField, PublicAuthGate, SubmitButton } from '@/auth/auth-ui';
@@ -20,6 +20,13 @@ function Form() {
   const [err, setErr] = useState<string | null>(urlError);
   const [gNote, setGNote] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(() => new URLSearchParams(window.location.search).get('password-changed') === '1');
+  useEffect(() => {
+    if (!passwordChanged) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('password-changed');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [passwordChanged]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -27,6 +34,8 @@ function Form() {
     setErr(null); setBusy(true);
     try {
       const r = await auth.signin({ email: email.trim(), password });
+      auth.setFlash(null);
+      setPasswordChanged(false);
       nav(r.nextPath || '/dashboard');
     } catch (ex) { setErr(readError(ex).message); } finally { setBusy(false); }
   }
@@ -41,6 +50,8 @@ function Form() {
         Good to see you again. Pick up where you left off.
       </AuthHeading>
       {auth.session?.notice && <Notice kind="info">{auth.session.notice}</Notice>}
+      {auth.flash && <Notice kind="success">{auth.flash}</Notice>}
+      {passwordChanged && <Notice kind="success">Your password was changed. Please sign in again.</Notice>}
       {err && <Notice>{err}</Notice>}
       <form onSubmit={submit} className="grid gap-4">
         <Field label="Email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />

@@ -1,7 +1,7 @@
 import session from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { db, pool, usersTable, type User } from '@workspace/db';
+import { db, pool, usersTable, volunteerProfilesTable, type User } from '@workspace/db';
 import { eq } from 'drizzle-orm';
 import type { Request, Response, NextFunction } from 'express';
 
@@ -115,6 +115,19 @@ function requireRole(role: User['role']) {
 }
 export const requireAdmin = requireRole('admin');
 export const requireVolunteer = requireRole('volunteer');
+
+export async function requireOnboardedVolunteer(req: Request, res: Response, next: NextFunction): Promise<void> {
+  let authorized = false;
+  await requireVolunteer(req, res, () => { authorized = true; });
+  if (!authorized) return;
+  const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt }).from(volunteerProfilesTable)
+    .where(eq(volunteerProfilesTable.userId, req.authUser!.id));
+  if (!profile?.completedAt) {
+    res.status(403).json({ error: 'Please finish your onboarding first.', code: 'ONBOARDING_REQUIRED', nextPath: '/onboarding' });
+    return;
+  }
+  next();
+}
 
 export function csrfGuard(req: Request, res: Response, next: NextFunction): void {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) { next(); return; }

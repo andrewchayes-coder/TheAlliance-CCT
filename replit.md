@@ -118,6 +118,16 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Completion records the current `appConfig.agreementVersion` (default `v1`), acknowledgment time, completion time, and a deduplicated welcome email. It does not approve the volunteer or bypass training/background checks. Late drafts cannot overwrite completed onboarding.
 - Checks: `pnpm --filter @workspace/api-server run test:onboarding`. These use owned development-only fixtures, force console-only email in their process, and clean up their own records.
 
+## Volunteer home and profile
+
+- `/dashboard`, `/shifts`, `/messages`, `/resources`, and `/profile` use the volunteer AppLayout with five mobile tabs. Each requires a verified, active user account and completed onboarding; a volunteer-profile status of inactive is distinct from account deactivation and shows a contact-the-team message.
+- Dashboard cards use the current profile status, certification/background-check states, own standing assignments, active-only published quick links, and own unread message recipients. APIs under `/api/volunteer/*` derive identity from the session and require completed onboarding on the server.
+- Shift dates are a read-only projection of existing assignments, with skips and organization closures applied and times interpreted in `America/Los_Angeles`, including daylight-saving transitions. The projection is not a booking module: `schedulingOpen` remains false, and `/shifts` explicitly says selection is not open. Upcoming-shift components are reusable by the future scheduler.
+- Profile edits are limited to name, phone, county, availability notes, and answers validated by the shared question configuration. County/availability mappings stay synchronized; cleared notes are saved as null. Email, role, volunteer status, certification, background check, agreement acknowledgment/version, and admin notes cannot be changed through this endpoint.
+- Password changes require the current password, use bcrypt cost 12, and invalidate all sessions and unused auth tokens. The volunteer must sign in again; older passwords/sessions are rejected. Attempts are limited by user and IP.
+- Messages are limited to the current user's recipient rows; opening a message marks only that recipient read. Resources are read-only published content, with quick links hidden from nonactive volunteers. Resource management, sending messages, and shift booking are separate later modules.
+- Checks: `pnpm --filter @workspace/api-server run test:volunteer`; fixtures are development-only and cleaned up. Private volunteer query caches are removed when authentication state is refreshed.
+
 ## Optional brand assets
 
 Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.

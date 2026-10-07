@@ -1,5 +1,5 @@
 - [Drizzle-Zod pitfalls](drizzle-zod-refinements.md) — preserve direct-override wrappers and include Node types so Buffer-related conditionals infer string columns correctly.
 - [Development cookie proxy](development-cookie-proxy.md) — direct API cookie attributes can differ from the development edge; compare both before changing session settings.
-- [Auth navigation](auth-navigation.md) — explicit post-signout destinations need fresh client state or coordinated guards; verify the actual destination, not only logout success.
+- [Auth navigation](auth-navigation.md) — session-invalidating actions need fresh client state or coordinated guards; verify the destination and success notice, not only API success.
 - [Questionnaire scope](onboarding-question-scope.md) — the client is still finalizing onboarding questions; supplied questions are placeholders, not approved final copy.
 - [New-tab links](new-tab-links.md) — use native anchors for documents; this router intercepts clicks even with target=_blank.
