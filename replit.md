@@ -1,45 +1,51 @@
-# [Project name]
+# Alliance Volunteer Portal
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A mobile-first volunteer management portal for The Alliance's Resource Coordination Program.
 
-## Run & Operate
+## Current scope
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+The initial pass is the project foundation and brand system only. No authentication, volunteer signup/approval, scheduling, messaging, resource hub, or administrative data features exist yet. UI navigation samples are labelled previews.
 
-## Stack
+The `/style-guide` route and its lazy-loaded module are development-only. The root page is a restrained portal entry, not an authentication screen.
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+## Product context
 
-## Where things live
+- Volunteers will be verified and approved by staff, then sign up for recurring two-hour phone shifts Monday–Friday.
+- The pilot is 12–15 volunteers in Placer County, growing to about 60 across five counties.
+- Excellent phone usability is a requirement.
+- The counties in appConfig are placeholders, not a final service-area commitment.
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+## Run & operate
+
+- Managed frontend workflow: `artifacts/alliance-volunteer-portal: web`
+- Managed backend workflow: `artifacts/api-server: API Server`
+- `pnpm run typecheck` checks all libraries and applications.
+- `pnpm --filter @workspace/api-spec run codegen` regenerates API types after contract changes.
+- `pnpm --filter @workspace/db run push` applies development schema changes when tables are added.
+
+## Stack and source map
+
+- Client: React, Vite, TypeScript, Tailwind, shadcn/ui, wouter, TanStack Query in `artifacts/alliance-volunteer-portal/src/`.
+- Server: Express and TypeScript in `artifacts/api-server/src/`.
+- Shared configuration: `shared/appConfig.ts`, imported as `@workspace/shared/appConfig`.
+- Shared date helpers: `shared/time.ts`, imported as `@workspace/shared/time`.
+- Drizzle schema source: `shared/schema.ts`; intentionally no domain tables yet.
+- PostgreSQL connection and Drizzle configuration: `lib/db/`.
+- API contract: `lib/api-spec/openapi.yaml`; currently health check only.
+- Brand CSS tokens: `artifacts/alliance-volunteer-portal/src/index.css`.
+- Themed shadcn controls: `artifacts/alliance-volunteer-portal/src/components/ui/`.
+- Brand layouts, status badges, and empty states: `artifacts/alliance-volunteer-portal/src/components/brand-system.tsx`.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Client and server remain separate managed artifact packages rather than literal root `client/` and `server/` directories; shared files live in the requested root `shared/` directory.
+  **Why:** retain Replit's managed service routing and the existing pnpm workspace conventions without duplicating app code.
+- All app settings come from `shared/appConfig.ts`; do not scatter copies of product settings across screens or server code.
+- Store timestamps as UTC and display dates/times in `America/Los_Angeles`, including daylight-saving changes.
+- Do not create domain tables or seed volunteer records during the foundation-only pass.
 
-## Product
+## Optional brand assets
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.
 
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+Absent assets use the display-font wordmark and Montserrat 800. Open Sans 400/600/700 and Montserrat 800 load from Google Fonts. Do not invent a replacement logo.

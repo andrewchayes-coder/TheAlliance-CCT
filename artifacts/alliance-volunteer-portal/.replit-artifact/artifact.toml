@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Alliance Volunteer Portal"
+description = "A mobile-friendly volunteer management portal for The Alliance's Resource Coordination Program. This first version establishes the app structure and brand design system, with a development-only style guide."
+version = "1.0.0"
+id = "artifacts/alliance-volunteer-portal"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24781
+
+[services.development]
+run = "pnpm --filter @workspace/alliance-volunteer-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/alliance-volunteer-portal", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/alliance-volunteer-portal/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24781"
+BASE_PATH = "/"
