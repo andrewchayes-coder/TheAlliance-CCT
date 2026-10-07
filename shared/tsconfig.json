@@ -6,7 +6,7 @@
     "emitDeclarationOnly": true,
     "outDir": "dist",
     "rootDir": ".",
-    "types": []
+    "types": ["node"]
   },
   "include": ["*.ts"]
 }

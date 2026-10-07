@@ -183,10 +183,11 @@ export const notificationLogTable = pgTable('notification_log', {
 }, table => [
   index('notification_log_sent_at_idx').on(table.sentAt),
   index('notification_log_type_idx').on(table.type),
-  uniqueIndex('notification_log_reminder_unique').on(table.type, table.recipientUserId, table.relatedId)
-    .where(sql`${table.type} = 'reminder'`),
-  // A null component would bypass PostgreSQL uniqueness. Require both reminder key parts.
-  check('notification_log_reminder_key_required', sql`${table.type} <> 'reminder' or (${table.recipientUserId} is not null and ${table.relatedId} is not null)`),
+  // Treat an omitted user as a real key component, rather than bypassing uniqueness.
+  // No relatedId means no deduplication; unkeyed reminders are allowed.
+  uniqueIndex('notification_log_reminder_unique')
+    .on(table.type, sql`coalesce(${table.recipientUserId}::text, '')`, table.relatedId)
+    .where(sql`${table.type} = 'reminder' and ${table.relatedId} is not null`),
 ]);
 
 export const authTokensTable = pgTable('auth_tokens', {
@@ -261,9 +262,7 @@ export const insertResourceSchema = createInsertSchema(resourcesTable, {
 export const insertNotificationLogSchema = createInsertSchema(notificationLogTable, {
   recipientEmail: emailSchema,
   subject: z.string().trim().min(1),
-}).omit(generatedFields).refine(value => value.type !== 'reminder' || Boolean(value.recipientUserId && value.relatedId), {
-  path: ['relatedId'], message: 'Reminders require a recipient user and an occurrence key',
-});
+}).omit(generatedFields);
 export const insertAuthTokenSchema = createInsertSchema(authTokensTable, {
   tokenHash: z.string().min(20),
 }).omit(generatedFields);

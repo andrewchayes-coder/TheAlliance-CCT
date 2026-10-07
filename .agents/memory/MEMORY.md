@@ -1,1 +1,1 @@
-- [Drizzle-Zod refinements](drizzle-zod-refinements.md) — direct Zod overrides replace generated nullability/default optionality; preserve both explicitly.
+- [Drizzle-Zod pitfalls](drizzle-zod-refinements.md) — preserve direct-override wrappers and include Node types so Buffer-related conditionals infer string columns correctly.

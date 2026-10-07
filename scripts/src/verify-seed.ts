@@ -105,7 +105,7 @@ async function main() {
     assert.equal(insertShiftSlotSchema.safeParse({ dayOfWeek: 1, startTime: '9:00', endTime: '11:00' }).success, false);
     assert.equal(insertShiftAssignmentSchema.safeParse({ ...fixtures.assignments[0], startDate: '2026-02-30' }).success, false);
     assert.equal(insertResourceSchema.safeParse({ type: 'document', title: 'Missing file', category: 'Test', createdByUserId: adminId }).success, false);
-    assert.equal(insertNotificationLogSchema.safeParse({ type: 'reminder', recipientEmail: 'admin@example.org', subject: 'Test' }).success, false);
+    assert.equal(insertNotificationLogSchema.safeParse({ type: 'reminder', recipientEmail: 'admin@example.org', subject: 'Test' }).success, true);
 
     // All write probes run inside savepoints and a final rollback. No test rows persist.
     const client = await pool.connect();
@@ -161,9 +161,14 @@ async function main() {
         values: [adminId, `constraint-probe:${randomUUID()}`],
       };
       await probe('Duplicate reminders are rejected', [reminder, reminder], '23505');
-      await probe('Null reminder keys cannot bypass uniqueness', [{
+      await probe('Unkeyed reminders are allowed', [{
         text: "INSERT INTO notification_log(type,recipient_email,subject) VALUES('reminder','admin@example.org','Probe')", values: [],
-      }], '23514');
+      }], null);
+      const emailOnlyReminder = {
+        text: "INSERT INTO notification_log(type,recipient_email,subject,related_id) VALUES('reminder','admin@example.org','Probe',$1)",
+        values: [`constraint-probe:${randomUUID()}`],
+      };
+      await probe('Omitting a recipient user does not bypass keyed reminder uniqueness', [emailOnlyReminder, emailOnlyReminder], '23505');
       const ordinaryMessage = { ...reminder, text: reminder.text.replace("'reminder'", "'welcome'") };
       await probe('Non-reminder logs may share a related key', [ordinaryMessage, ordinaryMessage], null);
       await probe('Message recipients are unique', [{

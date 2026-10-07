@@ -372,6 +372,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/shared':
+        specifier: workspace:*
+        version: link:../../shared
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -390,6 +393,9 @@ importers:
       pino-http:
         specifier: ^10.5.0
         version: 10.5.0
+      postmark:
+        specifier: ^5.1.0
+        version: 5.1.0
     devDependencies:
       '@types/cookie-parser':
         specifier: ^1.4.10
@@ -415,6 +421,9 @@ importers:
       thread-stream:
         specifier: 3.1.0
         version: 3.1.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
 
   artifacts/mockup-sandbox:
     devDependencies:
@@ -674,6 +683,10 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.6
 
 packages:
 
@@ -2652,6 +2665,10 @@ packages:
   postgres-interval@1.2.0:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
+
+  postmark@5.1.0:
+    resolution: {integrity: sha512-8lj2Fu94pL3fzx9Sy599opqpK4Z/0/1xCHZS8tbGBnqSS5rAcXtcHQ+TI0Jc4VwlBWma1Ug0Qm98FEe+v94BIQ==}
+    engines: {node: '>=18.0.0'}
 
   prettier@3.9.6:
     resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
@@ -5181,6 +5198,8 @@ snapshots:
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+
+  postmark@5.1.0: {}
 
   prettier@3.9.6: {}
 
