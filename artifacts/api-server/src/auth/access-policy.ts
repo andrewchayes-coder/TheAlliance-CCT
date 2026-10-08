@@ -1,8 +1,13 @@
 import type { RequestHandler } from 'express';
 import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer } from './session';
+import { requireJobsSecret } from '../server/jobs-auth';
 
-type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer';
+type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'POST', path: '/jobs/run', guard: 'job' },
+  { method: 'GET', path: '/admin/notifications/jobs', guard: 'admin' },
+  { method: 'POST', path: '/admin/notifications/jobs/run', guard: 'admin' },
+  { method: 'POST', path: '/admin/notifications/jobs/test', guard: 'admin' },
   { method: 'GET', path: '/admin/messages', guard: 'admin' },
   { method: 'POST', path: '/admin/messages', guard: 'admin' },
   { method: 'POST', path: '/admin/messages/preview', guard: 'admin' },
@@ -70,7 +75,7 @@ export const apiAccessPolicy: RequestHandler = (req, res, next) => {
     return;
   }
   const guards: Record<Exclude<Guard, 'public'>, RequestHandler> = {
-    auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer, onboardedVolunteer: requireOnboardedVolunteer,
+    auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer, onboardedVolunteer: requireOnboardedVolunteer, job: requireJobsSecret,
   };
   if (declaration.guard === 'public') { next(); return; }
   return guards[declaration.guard](req, res, next);

@@ -11,6 +11,59 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/notifications/jobs:
+    get:
+      operationId: getReminderJobStatus
+      responses:
+        "200":
+          description: Persisted reminder diagnostics and delivery totals
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReminderJobStatus' }
+  /admin/notifications/jobs/run:
+    post:
+      operationId: runAdminReminderCheck
+      parameters:
+        - in: query
+          name: at
+          description: Development-only ISO clock override
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Reminder check result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReminderCheckResult' }
+  /admin/notifications/jobs/test:
+    post:
+      operationId: sendAdminTestReminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestReminderInput' }
+      responses:
+        "200":
+          description: Delivery status of the test email sent only to the authenticated admin
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestReminderResult' }
+  /jobs/run:
+    post:
+      operationId: runScheduledReminderCheck
+      parameters:
+        - in: header
+          name: JOBS_SECRET
+          required: true
+          schema: { type: string, minLength: 32 }
+      responses:
+        "200":
+          description: Machine-authenticated check result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReminderCheckResult' }
+        "401": { description: Missing or incorrect job secret }
+        "503": { description: Trigger secret not configured }
   /admin/messages:
     get:
       operationId: listAdminMessages
@@ -838,6 +891,74 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    ReminderRunCounts:
+      type: object
+      required: [eligible, sent, logged, failed, skipped, suppressed]
+      properties:
+        eligible: { type: integer }
+        sent: { type: integer }
+        logged: { type: integer }
+        failed: { type: integer }
+        skipped: { type: integer }
+        suppressed: { type: integer }
+    ReminderJobRun:
+      type: object
+      required: [id, source, status, checkedAt, startedAt, finishedAt, counts, error]
+      properties:
+        id: { type: string, format: uuid }
+        source: { type: string, enum: [cron, admin, external, command] }
+        status: { type: string, enum: [running, completed, failed] }
+        checkedAt: { type: string, format: date-time }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: [string, 'null'], format: date-time }
+        error: { type: [string, 'null'] }
+        counts: { $ref: '#/components/schemas/ReminderRunCounts' }
+    ReminderCheckResult:
+      type: object
+      required: [skippedRun, run]
+      properties:
+        skippedRun: { type: boolean }
+        run:
+          anyOf:
+            - { $ref: '#/components/schemas/ReminderJobRun' }
+            - { type: 'null' }
+    ReminderJobStatus:
+      type: object
+      required: [lastRun, schedulerEnabled, externalTriggerConfigured, timezone, cron, reminderHoursBefore, sameMorningReminder, sameMorningReminderHour, last7Days]
+      properties:
+        lastRun:
+          anyOf:
+            - { $ref: '#/components/schemas/ReminderJobRun' }
+            - { type: 'null' }
+        schedulerEnabled: { type: boolean }
+        externalTriggerConfigured: { type: boolean }
+        timezone: { type: string }
+        cron: { type: string }
+        reminderHoursBefore: { type: number }
+        sameMorningReminder: { type: boolean }
+        sameMorningReminderHour: { type: integer }
+        last7Days:
+          $ref: '#/components/schemas/ReminderDeliveryTotals'
+    ReminderDeliveryTotals:
+      type: object
+      required: [sent, logged, failed]
+      properties:
+        sent: { type: integer }
+        logged: { type: integer }
+        failed: { type: integer }
+    TestReminderInput:
+      type: object
+      required: [requestId]
+      properties:
+        requestId: { type: string, format: uuid }
+    TestReminderResult:
+      type: object
+      required: [ok, skipped, status, error]
+      properties:
+        ok: { type: boolean }
+        skipped: { type: boolean }
+        status: { type: string, enum: [sent, logged, failed] }
+        error: { type: [string, 'null'] }
     MessageDraftInput:
       type: object
       required: [audience, userIds, subject, body, sendByEmail]

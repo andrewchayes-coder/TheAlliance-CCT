@@ -8,6 +8,107 @@
 import * as zod from 'zod';
 
 
+export const GetReminderJobStatusResponse = zod.object({
+  "lastRun": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "source": zod.enum(['cron', 'admin', 'external', 'command']),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "checkedAt": zod.coerce.date(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullable(),
+  "error": zod.string().nullable(),
+  "counts": zod.object({
+  "eligible": zod.number().int(),
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int(),
+  "skipped": zod.number().int(),
+  "suppressed": zod.number().int()
+})
+}),zod.null()]),
+  "schedulerEnabled": zod.boolean(),
+  "externalTriggerConfigured": zod.boolean(),
+  "timezone": zod.string(),
+  "cron": zod.string(),
+  "reminderHoursBefore": zod.number(),
+  "sameMorningReminder": zod.boolean(),
+  "sameMorningReminderHour": zod.number().int(),
+  "last7Days": zod.object({
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int()
+})
+})
+
+
+export const RunAdminReminderCheckQueryParams = zod.object({
+  "at": zod.date().optional().describe('Development-only ISO clock override')
+})
+
+export const RunAdminReminderCheckResponse = zod.object({
+  "skippedRun": zod.boolean(),
+  "run": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "source": zod.enum(['cron', 'admin', 'external', 'command']),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "checkedAt": zod.coerce.date(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullable(),
+  "error": zod.string().nullable(),
+  "counts": zod.object({
+  "eligible": zod.number().int(),
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int(),
+  "skipped": zod.number().int(),
+  "suppressed": zod.number().int()
+})
+}),zod.null()])
+})
+
+
+export const SendAdminTestReminderBody = zod.object({
+  "requestId": zod.string().uuid()
+})
+
+export const SendAdminTestReminderResponse = zod.object({
+  "ok": zod.boolean(),
+  "skipped": zod.boolean(),
+  "status": zod.enum(['sent', 'logged', 'failed']),
+  "error": zod.string().nullable()
+})
+
+
+export const runScheduledReminderCheckHeaderJOBSSECRETMin = 32;
+
+
+
+export const RunScheduledReminderCheckHeader = zod.object({
+  "JOBS_SECRET": zod.string().min(runScheduledReminderCheckHeaderJOBSSECRETMin)
+})
+
+export const RunScheduledReminderCheckResponse = zod.object({
+  "skippedRun": zod.boolean(),
+  "run": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "source": zod.enum(['cron', 'admin', 'external', 'command']),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "checkedAt": zod.coerce.date(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullable(),
+  "error": zod.string().nullable(),
+  "counts": zod.object({
+  "eligible": zod.number().int(),
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int(),
+  "skipped": zod.number().int(),
+  "suppressed": zod.number().int()
+})
+}),zod.null()])
+})
+
+
 export const ListAdminMessagesQueryParams = zod.object({
   "userId": zod.coerce.string().uuid().optional()
 })

@@ -88,6 +88,23 @@ export const appSettingsTable = pgTable('app_settings', {
   lastDigestDate: date('last_digest_date', { mode: 'string' }),
   ...timestamps(),
 });
+/** Persisted diagnostics; separate from per-recipient delivery history. */
+export const reminderJobRunsTable = pgTable('reminder_job_runs', {
+  id: primaryKey(),
+  source: text('source').notNull(),
+  status: text('status').notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+  counts: jsonb('counts').$type<{
+    eligible: number; sent: number; logged: number; failed: number; skipped: number; suppressed: number;
+  }>().notNull().default({ eligible: 0, sent: 0, logged: 0, failed: 0, skipped: 0, suppressed: 0 }),
+  error: text('error'),
+}, table => [
+  index('reminder_job_runs_started_idx').on(table.startedAt),
+  check('reminder_job_runs_source_check', sql`${table.source} in ('cron','admin','external','command')`),
+  check('reminder_job_runs_status_check', sql`${table.status} in ('running','completed','failed')`),
+]);
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export const shiftSlotsTable = pgTable('shift_slots', {

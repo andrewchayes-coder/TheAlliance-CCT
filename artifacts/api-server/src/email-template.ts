@@ -6,6 +6,7 @@ export interface EmailTemplateOptions {
   firstName?: string;
   paragraphs: string[];
   cta?: { label: string; url: string };
+  ctas?: { label: string; url: string }[];
   preheader?: string;
   /** Raw Markdown; never untrusted HTML. */
   markdownBody?: string;
@@ -21,21 +22,22 @@ function escapeHtml(value: string): string {
 
 /** Plain-text copy and HTML are generated together, with every CTA in both versions. */
 export function createEmailTemplate(options: EmailTemplateOptions): { html: string; text: string } {
-  if (options.cta && !['http:', 'https:'].includes(new URL(options.cta.url).protocol)) {
+  const ctas = [...(options.cta ? [options.cta] : []), ...(options.ctas ?? [])];
+  if (ctas.some(cta => !['http:', 'https:'].includes(new URL(cta.url).protocol))) {
     throw new Error('Email CTA URLs must use http or https.');
   }
   const greeting = options.firstName?.trim() ? `Hi ${options.firstName.trim()},` : undefined;
   const paragraphs = [...(greeting ? [greeting] : []), ...options.paragraphs];
   const markdown = options.markdownBody ? renderMessageMarkdown(options.markdownBody) : null;
-  const button = options.cta ? `
+  const button = ctas.map(cta => `
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
       <tr><td bgcolor="#02928F" style="border-radius:8px;">
-        <a href="${escapeHtml(options.cta.url)}" style="display:inline-block;padding:14px 22px;color:#FFFFFF;background-color:#02928F;border-radius:8px;font-size:16px;font-weight:700;text-decoration:none;">${escapeHtml(options.cta.label)}</a>
+        <a href="${escapeHtml(cta.url)}" style="display:inline-block;padding:14px 22px;color:#FFFFFF;background-color:#02928F;border-radius:8px;font-size:16px;font-weight:700;text-decoration:none;">${escapeHtml(cta.label)}</a>
       </td></tr>
     </table>
     <p style="margin:0 0 20px;font-size:14px;line-height:1.6;overflow-wrap:anywhere;">If the button doesn't open, use this link:<br>
-      <a href="${escapeHtml(options.cta.url)}" style="color:#027A77;word-break:break-all;">${escapeHtml(options.cta.url)}</a>
-    </p>` : '';
+      <a href="${escapeHtml(cta.url)}" style="color:#027A77;word-break:break-all;">${escapeHtml(cta.url)}</a>
+    </p>`).join('\n');
   return {
     html: `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -59,7 +61,7 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
 </body></html>`,
     text: [
       appConfig.appName.toUpperCase(), options.heading, ...paragraphs, ...(markdown ? [markdown.text] : []),
-      ...(options.cta ? [`${options.cta.label}: ${options.cta.url}`] : []), emailFooter,
+      ...ctas.map(cta => `${cta.label}: ${cta.url}`), emailFooter,
     ].join('\n\n'),
   };
 }

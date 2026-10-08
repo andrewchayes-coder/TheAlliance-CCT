@@ -5,6 +5,91 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface ReminderRunCounts {
+  eligible: number;
+  sent: number;
+  logged: number;
+  failed: number;
+  skipped: number;
+  suppressed: number;
+}
+
+export type ReminderJobRunSource = typeof ReminderJobRunSource[keyof typeof ReminderJobRunSource];
+
+
+export const ReminderJobRunSource = {
+  cron: 'cron',
+  admin: 'admin',
+  external: 'external',
+  command: 'command',
+} as const;
+
+export type ReminderJobRunStatus = typeof ReminderJobRunStatus[keyof typeof ReminderJobRunStatus];
+
+
+export const ReminderJobRunStatus = {
+  running: 'running',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface ReminderJobRun {
+  id: string;
+  source: ReminderJobRunSource;
+  status: ReminderJobRunStatus;
+  checkedAt: string;
+  startedAt: string;
+  /** @nullable */
+  finishedAt: string | null;
+  /** @nullable */
+  error: string | null;
+  counts: ReminderRunCounts;
+}
+
+export interface ReminderCheckResult {
+  skippedRun: boolean;
+  run: ReminderJobRun | null;
+}
+
+export interface ReminderDeliveryTotals {
+  sent: number;
+  logged: number;
+  failed: number;
+}
+
+export interface ReminderJobStatus {
+  lastRun: ReminderJobRun | null;
+  schedulerEnabled: boolean;
+  externalTriggerConfigured: boolean;
+  timezone: string;
+  cron: string;
+  reminderHoursBefore: number;
+  sameMorningReminder: boolean;
+  sameMorningReminderHour: number;
+  last7Days: ReminderDeliveryTotals;
+}
+
+export interface TestReminderInput {
+  requestId: string;
+}
+
+export type TestReminderResultStatus = typeof TestReminderResultStatus[keyof typeof TestReminderResultStatus];
+
+
+export const TestReminderResultStatus = {
+  sent: 'sent',
+  logged: 'logged',
+  failed: 'failed',
+} as const;
+
+export interface TestReminderResult {
+  ok: boolean;
+  skipped: boolean;
+  status: TestReminderResultStatus;
+  /** @nullable */
+  error: string | null;
+}
+
 export type MessageDraftInputAudience = typeof MessageDraftInputAudience[keyof typeof MessageDraftInputAudience];
 
 
@@ -966,6 +1051,13 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type RunAdminReminderCheckParams = {
+/**
+ * Development-only ISO clock override
+ */
+at?: string;
+};
 
 export type ListAdminMessagesParams = {
 userId?: string;

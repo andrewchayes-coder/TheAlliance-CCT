@@ -26,3 +26,7 @@ channel = "stable-25_05"
 
 [userenv.production]
 APP_ORIGIN = "https://the-alliance-cct.replit.app"
+RUN_JOBS = "true"
+JOBS_RUN_URL = "https://the-alliance-cct.replit.app/api/jobs/run"
+
+[userenv.development]

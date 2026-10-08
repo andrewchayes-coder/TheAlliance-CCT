@@ -62,7 +62,10 @@ import type {
   PasswordChangeInput,
   PasswordChangeResult,
   PublicUser,
+  ReminderCheckResult,
+  ReminderJobStatus,
   ResetInput,
+  RunAdminReminderCheckParams,
   ScheduleClosedDateInput,
   ScheduleSettings,
   ScheduleSlotInput,
@@ -70,6 +73,8 @@ import type {
   SigninInput,
   SignupInput,
   TeamUsersResponse,
+  TestReminderInput,
+  TestReminderResult,
   TokenInput,
   VolunteerBookingInput,
   VolunteerDashboard,
@@ -112,6 +117,302 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetReminderJobStatusUrl = () => {
+
+
+
+
+  return `/api/admin/notifications/jobs`
+}
+
+export const getReminderJobStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReminderJobStatus> => {
+
+  return customFetch<ReminderJobStatus>(getGetReminderJobStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReminderJobStatusQueryKey = () => {
+    return [
+    `/api/admin/notifications/jobs`
+    ] as const;
+    }
+
+
+export const getGetReminderJobStatusQueryOptions = <TData = Awaited<ReturnType<typeof getReminderJobStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReminderJobStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReminderJobStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReminderJobStatus>>> = ({ signal }) => getReminderJobStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReminderJobStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReminderJobStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getReminderJobStatus>>>
+export type GetReminderJobStatusQueryError = ErrorType<unknown>
+
+
+
+export function useGetReminderJobStatus<TData = Awaited<ReturnType<typeof getReminderJobStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReminderJobStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReminderJobStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRunAdminReminderCheckUrl = (params?: RunAdminReminderCheckParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/notifications/jobs/run?${stringifiedParams}` : `/api/admin/notifications/jobs/run`
+}
+
+export const runAdminReminderCheck = async (params?: RunAdminReminderCheckParams, options?: Parameters<typeof customFetch>[1]): Promise<ReminderCheckResult> => {
+
+  return customFetch<ReminderCheckResult>(getRunAdminReminderCheckUrl(params),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRunAdminReminderCheckMutationKey = () => ['runAdminReminderCheck'] as const;
+
+export const getRunAdminReminderCheckMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAdminReminderCheck>>, TError,RunAdminReminderCheckMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runAdminReminderCheck>>, TError,RunAdminReminderCheckMutationVariables, TContext> => {
+
+const mutationKey = getRunAdminReminderCheckMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runAdminReminderCheck>>, RunAdminReminderCheckMutationVariables> = (props) => {
+          const {params} = props ?? {};
+
+          return  runAdminReminderCheck(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunAdminReminderCheckMutationResult = NonNullable<Awaited<ReturnType<typeof runAdminReminderCheck>>>
+
+    export type RunAdminReminderCheckMutationError = ErrorType<unknown>
+    export type RunAdminReminderCheckMutationVariables = {params?: RunAdminReminderCheckParams}
+
+    export const useRunAdminReminderCheck = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAdminReminderCheck>>, TError,RunAdminReminderCheckMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runAdminReminderCheck>>,
+        TError,
+        RunAdminReminderCheckMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRunAdminReminderCheckMutationOptions(options));
+    }
+
+export const getSendAdminTestReminderUrl = () => {
+
+
+
+
+  return `/api/admin/notifications/jobs/test`
+}
+
+export const sendAdminTestReminder = async (testReminderInput: TestReminderInput, options?: Parameters<typeof customFetch>[1]): Promise<TestReminderResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TestReminderResult>(getSendAdminTestReminderUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(testReminderInput)
+  }
+);}
+
+
+
+
+
+export const getSendAdminTestReminderMutationKey = () => ['sendAdminTestReminder'] as const;
+
+export const getSendAdminTestReminderMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendAdminTestReminder>>, TError,SendAdminTestReminderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendAdminTestReminder>>, TError,SendAdminTestReminderMutationVariables, TContext> => {
+
+const mutationKey = getSendAdminTestReminderMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendAdminTestReminder>>, SendAdminTestReminderMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendAdminTestReminder(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendAdminTestReminderMutationResult = NonNullable<Awaited<ReturnType<typeof sendAdminTestReminder>>>
+    export type SendAdminTestReminderMutationBody = BodyType<TestReminderInput>
+    export type SendAdminTestReminderMutationError = ErrorType<unknown>
+    export type SendAdminTestReminderMutationVariables = {data: BodyType<TestReminderInput>}
+
+    export const useSendAdminTestReminder = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendAdminTestReminder>>, TError,SendAdminTestReminderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendAdminTestReminder>>,
+        TError,
+        SendAdminTestReminderMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendAdminTestReminderMutationOptions(options));
+    }
+
+export const getRunScheduledReminderCheckUrl = () => {
+
+
+
+
+  return `/api/jobs/run`
+}
+
+export const runScheduledReminderCheck = async ( options?: Parameters<typeof customFetch>[1]): Promise<ReminderCheckResult> => {
+
+  return customFetch<ReminderCheckResult>(getRunScheduledReminderCheckUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRunScheduledReminderCheckMutationKey = () => ['runScheduledReminderCheck'] as const;
+
+export const getRunScheduledReminderCheckMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runScheduledReminderCheck>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runScheduledReminderCheck>>, TError,void, TContext> => {
+
+const mutationKey = getRunScheduledReminderCheckMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runScheduledReminderCheck>>, void> = () => {
+
+
+          return  runScheduledReminderCheck(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunScheduledReminderCheckMutationResult = NonNullable<Awaited<ReturnType<typeof runScheduledReminderCheck>>>
+
+    export type RunScheduledReminderCheckMutationError = ErrorType<void>
+
+
+    export const useRunScheduledReminderCheck = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runScheduledReminderCheck>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runScheduledReminderCheck>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRunScheduledReminderCheckMutationOptions(options));
+    }
 
 export const getListAdminMessagesUrl = (params?: ListAdminMessagesParams,) => {
   const normalizedParams = new URLSearchParams();

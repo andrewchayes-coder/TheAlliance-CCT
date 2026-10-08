@@ -13,12 +13,14 @@ import adminCoordinatorRouter from "./admin-coordinator";
 import volunteerScheduleRouter from "./volunteer-schedule";
 import adminScheduleControlsRouter from './admin-schedule-controls';
 import messagingRouter from './messaging';
+import reminderJobsRouter, { jobsTriggerRouter } from './jobs';
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
 const router: IRouter = Router();
 
 router.use(apiAccessPolicy);
+router.use(jobsTriggerRouter);
 router.use(healthRouter);
 if (process.env.NODE_ENV === 'development') {
   router.use(devEmailRouter);
@@ -26,6 +28,7 @@ if (process.env.NODE_ENV === 'development') {
 router.use('/auth', authRouter);
 
 router.use(csrfGuard);
+router.use(reminderJobsRouter);
 router.use(messagingRouter);
 router.use(meRouter);
 router.use(onboardingRouter);

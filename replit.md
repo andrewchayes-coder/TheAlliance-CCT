@@ -158,9 +158,18 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Schedule mutations take a shared transaction advisory lock. Future booking writers must acquire it before user/profile/slot row locks; use the user-then-profile lock order shared with profile-status changes. This prevents booking, capacity, and deactivation races.
 - Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
 
-## Volunteer standing shifts
+## Automated shift reminders
 
-### Messaging
+- `src/server/jobs.ts` schedules `*/15 * * * *` with node-cron in America/Los_Angeles only when `RUN_JOBS=true`. Manual staff checks and secret-authenticated external checks intentionally work even with automatic scheduling disabled.
+- Reminder candidates come from the shared occurrence engine: assignment dates, week-offs, closed dates, active/retired slots, active volunteer profiles/accounts and verification all apply. Eligibility is freshly checked immediately before each delivery.
+- The main reminder uses elapsed `appConfig.reminderHoursBefore` hours and a half-open 15-minute start window. Its related ID is `assignmentId:Pacific-date:24h`, regardless of configured hours. Optional morning checks run during the configured Pacific hour for today's not-yet-started occurrences and use `:am`; later quarter-hour checks retry failures without repeating confirmed mail.
+- A cross-process PostgreSQL advisory lock prevents overlapping checks. Central email-service deduplication prevents sent/logged retries across workers/restarts. Each email batch settles before the job lock is released. Interrupted run diagnostics are recovered by the next successful lock owner.
+- Persisted `reminder_job_runs` diagnostics power `/admin/notifications/jobs`. Seven-day delivery totals count actual standing-shift reminders; labelled test emails to the authenticated admin do not inflate those totals. Sent, logged and failed are distinct. Staff mutations require admin authentication plus CSRF.
+- Machine callers POST `/api/jobs/run` with the `JOBS_SECRET` header (at least 32 characters). This is the sole narrow, separately guarded machine route exempt from session/CSRF. Missing/unconfigured credentials fail closed. Secrets are never in URLs or browser code. Production rejects clock overrides; development staff checks accept an ISO `?at=` for controlled testing.
+- The existing published app is Autoscale, which cannot guarantee an in-process timer stays awake. Use an always-running API or a Scheduled Deployment every 15 minutes in America/Los_Angeles. `pnpm --filter @workspace/api-server run reminder-trigger` performs the HTTP POST using `JOBS_RUN_URL` and `JOBS_SECRET`; it does not start the server or connect to a database. `reminder-check` is a direct database CLI alternative.
+- Production `RUN_JOBS=true` is configured. Development is enabled only for testing and restored afterwards. External invocation remains disabled until the owner supplies `JOBS_SECRET` through Secrets. Schema changes are applied through publishing, not production startup DDL.
+
+## Messaging
 
 - `/admin/messages` supports active-volunteer blasts, all-status blasts, roster selections, and single recipients (including launching from volunteer detail). The active audience requires an active account and active profile; all-status and explicitly selected audiences may include inactive/unverified volunteer accounts. Admin accounts are never recipients of volunteer messages.
 - Preview counts are bound to the canonical draft and exact recipient IDs. Sending revalidates the audience and returns a conflict if it changed. A client request UUID is the persisted message ID; retrying that ID preserves the original message/recipient snapshot instead of duplicating it. Portal recipients are committed atomically before email delivery.
@@ -169,6 +178,8 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - `/messages` only returns the current volunteer's recipients; opening marks only their row read, preserves the first read timestamp, and refreshes navigation/dashboard unread state. No in-app reply endpoint exists. Staff lists, detail history and per-recipient receipts refresh every minute.
 - `appConfig.adminContact` is the preferred public program contact. It is currently unset because no program-specific address was supplied; the inbox falls back to the existing active, verified staff contact rather than inventing an address.
 - Development `message_audience` gained `active` and `selected` values, preserving existing `all`/`single` seed data. Production schema changes go through publishing, never startup DDL.
+
+## Volunteer standing shifts
 
 ### Staff overrides and coverage notifications
 

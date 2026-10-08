@@ -14,3 +14,9 @@ The daily digest is a Pacific-calendar daily operation, including DST, weekends,
 **Why:** otherwise polling could send an unplanned later digest after a day that was correctly empty at 7 AM. Recipient notification history prevents repeat delivery when a partial batch retries.
 
 **How to apply:** retain distinct event and date deduplication keys. Do not promise punctual production delivery from an in-process timer unless the API stays running; use an always-on process or a timezone-aware scheduled invocation.
+
+An enable flag does not provide cross-process exclusivity. Automatic timers, manual checks, and scheduled HTTP calls must share a database lock and persistent recipient deduplication keys. Settle every delivery in a batch before releasing that lock.
+
+**Why:** multiple web instances or an external wake-up can run together. An early rejected promise must not release the job lock while other recipient sends are still in flight.
+
+**How to apply:** gate only automatic timer registration with `RUN_JOBS`; authorized manual/external checks remain available when the timer is off. Use settled batches and preserve confirmation keys across restarts and partial failures.
