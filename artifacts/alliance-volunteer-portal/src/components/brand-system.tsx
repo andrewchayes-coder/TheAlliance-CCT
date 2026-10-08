@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Home, CalendarDays, UserRound, Menu, HeartHandshake, MessageSquare, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
+import { useGetMessageContext, getGetMessageContextQueryKey } from '@workspace/api-client-react';
+import { FETCH_CREDS } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -68,7 +70,7 @@ const volunteerNav = [
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
 const adminItems: { label: string; href?: string }[] = [
   { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Team', href: '/admin/team' },
-  { label: 'Master schedule', href: '/admin/schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages' }, { label: 'Resources' },
+  { label: 'Master schedule', href: '/admin/schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages', href: '/admin/messages' }, { label: 'Resources' },
 ];
 const adminActive = (loc: string, href: string) => href === '/admin' || href === '/admin/schedule' ? loc === href : loc === href || loc.startsWith(`${href}/`);
 
@@ -114,6 +116,11 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
   const [busy, setBusy] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
   const live = !preview;
+  const liveVolunteer = live && role === 'volunteer' && auth.session?.authenticated === true && auth.session.role === 'volunteer';
+  const ctx = useGetMessageContext({ query: { queryKey: getGetMessageContextQueryKey(), enabled: liveVolunteer, staleTime: 30_000, refetchInterval: 45_000, retry: false }, request: FETCH_CREDS });
+  const unread = liveVolunteer ? ctx.data?.unreadCount ?? 0 : 0;
+  const badge = (href: string) => href === '/messages' && unread > 0
+    ? <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-teal px-1.5 text-[11px] font-bold text-white" data-testid="badge-unread"><span aria-hidden="true">{unread > 99 ? '99+' : unread}</span><span className="sr-only"> {unread} unread</span></span> : null;
   const isActive = (href: string) => location === href || location.startsWith(`${href}/`);
   async function out() {
     setBusy(true);
@@ -141,7 +148,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
               ? (role === 'admin' ? adminNav : volunteerNav.map(i => i.label)).map(label => <span key={label} className="px-3">{label}</span>)
               : volunteerNav.map(({ label, href }) => (
                 <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`nav-${href.slice(1)}`}
-                  className={`rounded-lg px-3 py-2 font-semibold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white ${isActive(href) ? 'bg-white/15 underline decoration-teal decoration-2 underline-offset-8' : ''}`}>{label}</Link>
+                  className={`rounded-lg px-3 py-2 font-semibold transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white ${isActive(href) ? 'bg-white/15 underline decoration-teal decoration-2 underline-offset-8' : ''}`}>{label}{badge(href)}</Link>
               ))}
           </nav>
           <div className="flex items-center gap-2">
@@ -168,7 +175,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
           {volunteerNav.map(({ label, href, icon: Icon }) => live ? (
             <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`tab-${href.slice(1)}`}
               className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 focus-visible:outline-2 focus-visible:outline-teal ${isActive(href) ? 'font-bold text-teal-text' : 'text-navy'}`}>
-              <Icon size={20} aria-hidden="true" /><span className="text-[10px] font-bold uppercase leading-tight">{label}</span>
+              <span className="relative"><Icon size={20} aria-hidden="true" />{href === '/messages' && unread > 0 && <span className="absolute -right-2 -top-1 size-2.5 rounded-full bg-teal" aria-hidden="true" />}</span><span className="text-[10px] font-bold uppercase leading-tight">{label}{href === '/messages' && unread > 0 && <span className="sr-only"> {unread} unread</span>}</span>
               <span className={`h-0.5 w-5 rounded-full ${isActive(href) ? 'bg-teal' : 'bg-transparent'}`} aria-hidden="true" />
             </Link>
           ) : (

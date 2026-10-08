@@ -24,6 +24,8 @@ import type {
   AdminAssignmentInput,
   AdminInviteInput,
   AdminInviteResult,
+  AdminMessage,
+  AdminMessageDetail,
   AdminRemovalInput,
   AdminScheduleControls,
   AdminVolunteerDetail,
@@ -39,14 +41,22 @@ import type {
   EmailInput,
   ExportVolunteerRosterParams,
   ExportVolunteerScheduleParams,
+  FindMessageVolunteersParams,
   GetAdminScheduleControlsParams,
   GetAdminScheduleWeek400,
   GetAdminScheduleWeekParams,
+  GetMessageContext200,
   HealthStatus,
+  ListAdminMessagesParams,
   ListTeamUsersParams,
   ListVolunteerRosterParams,
   Me,
+  MessageDraftInput,
+  MessagePreview,
   MessageReadResult,
+  MessageSendInput,
+  MessageSendResult,
+  MessageVolunteer,
   OnboardingAgreements,
   OnboardingInput,
   PasswordChangeInput,
@@ -102,6 +112,468 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListAdminMessagesUrl = (params?: ListAdminMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/messages?${stringifiedParams}` : `/api/admin/messages`
+}
+
+export const listAdminMessages = async (params?: ListAdminMessagesParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminMessage[]> => {
+
+  return customFetch<AdminMessage[]>(getListAdminMessagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminMessagesQueryKey = (params?: ListAdminMessagesParams,) => {
+    return [
+    `/api/admin/messages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminMessages>>, TError = ErrorType<unknown>>(params?: ListAdminMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminMessagesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminMessages>>> = ({ signal }) => listAdminMessages(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminMessages>>>
+export type ListAdminMessagesQueryError = ErrorType<unknown>
+
+
+
+export function useListAdminMessages<TData = Awaited<ReturnType<typeof listAdminMessages>>, TError = ErrorType<unknown>>(
+ params?: ListAdminMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminMessagesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendAdminMessageUrl = () => {
+
+
+
+
+  return `/api/admin/messages`
+}
+
+export const sendAdminMessage = async (messageSendInput: MessageSendInput, options?: Parameters<typeof customFetch>[1]): Promise<MessageSendResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MessageSendResult>(getSendAdminMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(messageSendInput)
+  }
+);}
+
+
+
+
+
+export const getSendAdminMessageMutationKey = () => ['sendAdminMessage'] as const;
+
+export const getSendAdminMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendAdminMessage>>, TError,SendAdminMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendAdminMessage>>, TError,SendAdminMessageMutationVariables, TContext> => {
+
+const mutationKey = getSendAdminMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendAdminMessage>>, SendAdminMessageMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendAdminMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendAdminMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendAdminMessage>>>
+    export type SendAdminMessageMutationBody = BodyType<MessageSendInput>
+    export type SendAdminMessageMutationError = ErrorType<unknown>
+    export type SendAdminMessageMutationVariables = {data: BodyType<MessageSendInput>}
+
+    export const useSendAdminMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendAdminMessage>>, TError,SendAdminMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendAdminMessage>>,
+        TError,
+        SendAdminMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendAdminMessageMutationOptions(options));
+    }
+
+export const getPreviewAdminMessageUrl = () => {
+
+
+
+
+  return `/api/admin/messages/preview`
+}
+
+export const previewAdminMessage = async (messageDraftInput: MessageDraftInput, options?: Parameters<typeof customFetch>[1]): Promise<MessagePreview> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MessagePreview>(getPreviewAdminMessageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(messageDraftInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewAdminMessageMutationKey = () => ['previewAdminMessage'] as const;
+
+export const getPreviewAdminMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewAdminMessage>>, TError,PreviewAdminMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewAdminMessage>>, TError,PreviewAdminMessageMutationVariables, TContext> => {
+
+const mutationKey = getPreviewAdminMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewAdminMessage>>, PreviewAdminMessageMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  previewAdminMessage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewAdminMessageMutationResult = NonNullable<Awaited<ReturnType<typeof previewAdminMessage>>>
+    export type PreviewAdminMessageMutationBody = BodyType<MessageDraftInput>
+    export type PreviewAdminMessageMutationError = ErrorType<unknown>
+    export type PreviewAdminMessageMutationVariables = {data: BodyType<MessageDraftInput>}
+
+    export const usePreviewAdminMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewAdminMessage>>, TError,PreviewAdminMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewAdminMessage>>,
+        TError,
+        PreviewAdminMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPreviewAdminMessageMutationOptions(options));
+    }
+
+export const getFindMessageVolunteersUrl = (params?: FindMessageVolunteersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/messages/volunteers?${stringifiedParams}` : `/api/admin/messages/volunteers`
+}
+
+export const findMessageVolunteers = async (params?: FindMessageVolunteersParams, options?: Parameters<typeof customFetch>[1]): Promise<MessageVolunteer[]> => {
+
+  return customFetch<MessageVolunteer[]>(getFindMessageVolunteersUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getFindMessageVolunteersQueryKey = (params?: FindMessageVolunteersParams,) => {
+    return [
+    `/api/admin/messages/volunteers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getFindMessageVolunteersQueryOptions = <TData = Awaited<ReturnType<typeof findMessageVolunteers>>, TError = ErrorType<unknown>>(params?: FindMessageVolunteersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof findMessageVolunteers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getFindMessageVolunteersQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof findMessageVolunteers>>> = ({ signal }) => findMessageVolunteers(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof findMessageVolunteers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type FindMessageVolunteersQueryResult = NonNullable<Awaited<ReturnType<typeof findMessageVolunteers>>>
+export type FindMessageVolunteersQueryError = ErrorType<unknown>
+
+
+
+export function useFindMessageVolunteers<TData = Awaited<ReturnType<typeof findMessageVolunteers>>, TError = ErrorType<unknown>>(
+ params?: FindMessageVolunteersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof findMessageVolunteers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getFindMessageVolunteersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminMessageUrl = (messageId: string,) => {
+
+
+
+
+  return `/api/admin/messages/${messageId}`
+}
+
+export const getAdminMessage = async (messageId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminMessageDetail> => {
+
+  return customFetch<AdminMessageDetail>(getGetAdminMessageUrl(messageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminMessageQueryKey = (messageId: string,) => {
+    return [
+    `/api/admin/messages/${messageId}`
+    ] as const;
+    }
+
+
+export const getGetAdminMessageQueryOptions = <TData = Awaited<ReturnType<typeof getAdminMessage>>, TError = ErrorType<unknown>>(messageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminMessageQueryKey(messageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminMessage>>> = ({ signal }) => getAdminMessage(messageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: messageId !== null && messageId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminMessage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminMessageQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminMessage>>>
+export type GetAdminMessageQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminMessage<TData = Awaited<ReturnType<typeof getAdminMessage>>, TError = ErrorType<unknown>>(
+ messageId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminMessageQueryOptions(messageId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetMessageContextUrl = () => {
+
+
+
+
+  return `/api/volunteer/messages/context`
+}
+
+export const getMessageContext = async ( options?: Parameters<typeof customFetch>[1]): Promise<GetMessageContext200> => {
+
+  return customFetch<GetMessageContext200>(getGetMessageContextUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMessageContextQueryKey = () => {
+    return [
+    `/api/volunteer/messages/context`
+    ] as const;
+    }
+
+
+export const getGetMessageContextQueryOptions = <TData = Awaited<ReturnType<typeof getMessageContext>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessageContext>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMessageContextQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMessageContext>>> = ({ signal }) => getMessageContext({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMessageContext>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMessageContextQueryResult = NonNullable<Awaited<ReturnType<typeof getMessageContext>>>
+export type GetMessageContextQueryError = ErrorType<unknown>
+
+
+
+export function useGetMessageContext<TData = Awaited<ReturnType<typeof getMessageContext>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessageContext>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMessageContextQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetAdminScheduleControlsUrl = (params?: GetAdminScheduleControlsParams,) => {
   const normalizedParams = new URLSearchParams();

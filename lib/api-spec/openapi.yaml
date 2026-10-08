@@ -11,6 +11,81 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/messages:
+    get:
+      operationId: listAdminMessages
+      parameters:
+        - { name: userId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Sent messages, optionally for one volunteer
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/AdminMessage' } }
+    post:
+      operationId: sendAdminMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessageSendInput' }
+      responses:
+        '200':
+          description: Saved message and email batch results
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageSendResult' }
+  /admin/messages/preview:
+    post:
+      operationId: previewAdminMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MessageDraftInput' }
+      responses:
+        '200':
+          description: Exact recipient snapshot and content preview
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessagePreview' }
+  /admin/messages/volunteers:
+    get:
+      operationId: findMessageVolunteers
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: ids, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Staff-only volunteer search
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/MessageVolunteer' } }
+  /admin/messages/{messageId}:
+    get:
+      operationId: getAdminMessage
+      parameters:
+        - { name: messageId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Message and per-recipient read receipts
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminMessageDetail' }
+  /volunteer/messages/context:
+    get:
+      operationId: getMessageContext
+      responses:
+        '200':
+          description: Own unread count and Alliance staff contact
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [unreadCount, adminContact]
+                properties:
+                  unreadCount: { type: integer }
+                  adminContact: { type: [string, "null"] }
   /admin/schedule/controls:
     get:
       operationId: getAdminScheduleControls
@@ -763,6 +838,78 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    MessageDraftInput:
+      type: object
+      required: [audience, userIds, subject, body, sendByEmail]
+      properties:
+        audience: { type: string, enum: [active, all, selected, single] }
+        userIds: { type: array, items: { type: string, format: uuid }, maxItems: 500 }
+        subject: { type: string, minLength: 1, maxLength: 200 }
+        body: { type: string, minLength: 1, maxLength: 20000 }
+        sendByEmail: { type: boolean }
+    MessageSendInput:
+      allOf:
+        - { $ref: '#/components/schemas/MessageDraftInput' }
+        - type: object
+          required: [requestId, previewHash]
+          properties:
+            requestId: { type: string, format: uuid }
+            previewHash: { type: string }
+    MessageVolunteer:
+      type: object
+      required: [userId, firstName, lastName, email, status]
+      properties:
+        userId: { type: string, format: uuid }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+        status: { type: string }
+    MessagePreview:
+      type: object
+      required: [recipientCount, previewHash, html, text, recipients]
+      properties:
+        recipientCount: { type: integer }
+        previewHash: { type: string }
+        html: { type: string }
+        text: { type: string }
+        recipients: { type: array, items: { $ref: '#/components/schemas/MessageVolunteer' } }
+    MessageSendResult:
+      type: object
+      required: [messageId, recipientCount, sent, logged, failed, skipped, reused]
+      properties:
+        messageId: { type: string, format: uuid }
+        recipientCount: { type: integer }
+        sent: { type: integer }
+        logged: { type: integer }
+        failed: { type: integer }
+        skipped: { type: integer }
+        reused: { type: boolean }
+    AdminMessage:
+      type: object
+      required: [id, subject, body, audience, sentByEmail, sentAt, recipientCount, readCount, readAt]
+      properties:
+        id: { type: string, format: uuid }
+        subject: { type: string }
+        body: { type: string }
+        audience: { type: string, enum: [active, all, selected, single] }
+        sentByEmail: { type: boolean }
+        sentAt: { type: string, format: date-time }
+        recipientCount: { type: integer }
+        readCount: { type: integer }
+        readAt: { type: [string, "null"], format: date-time }
+    MessageReceipt:
+      allOf:
+        - { $ref: '#/components/schemas/MessageVolunteer' }
+        - type: object
+          required: [readAt]
+          properties:
+            readAt: { type: [string, "null"], format: date-time }
+    AdminMessageDetail:
+      type: object
+      required: [message, recipients]
+      properties:
+        message: { $ref: '#/components/schemas/AdminMessage' }
+        recipients: { type: array, items: { $ref: '#/components/schemas/MessageReceipt' } }
     AdminAssignmentInput:
       type: object
       required: [userId, slotId, override]

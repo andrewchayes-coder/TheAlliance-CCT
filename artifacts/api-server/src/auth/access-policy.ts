@@ -3,6 +3,12 @@ import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer 
 
 type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: '/admin/messages', guard: 'admin' },
+  { method: 'POST', path: '/admin/messages', guard: 'admin' },
+  { method: 'POST', path: '/admin/messages/preview', guard: 'admin' },
+  { method: 'GET', path: '/admin/messages/volunteers', guard: 'admin' },
+  { method: 'GET', path: /^\/admin\/messages\/[^/]+$/, guard: 'admin' },
+  { method: 'GET', path: '/volunteer/messages/context', guard: 'onboardedVolunteer' },
   { method: 'GET', path: '/volunteer/schedule', guard: 'volunteer' },
   { method: 'POST', path: '/volunteer/assignments', guard: 'volunteer' },
   { method: 'POST', path: /^\/volunteer\/assignments\/[^/]+\/(change|drop|skips)$/, guard: 'volunteer' },

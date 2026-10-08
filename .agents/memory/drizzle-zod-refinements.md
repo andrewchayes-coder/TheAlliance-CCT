@@ -20,3 +20,9 @@ Compose a generated API schema with validators from the same Zod entrypoint/vers
 **Why:** this project has generated API validators using root Zod v3 alongside shared Drizzle validators using Zod v4. Extending the generated object with v4 fields produced incompatible internal-parser types rather than a usable boundary validator.
 
 **How to apply:** inspect the generated schema import before extending/refining it. Keep API boundary overrides version-compatible; do not cast away version mismatches.
+
+Check the installed Zod runtime before using newer object-composition helpers. Build extensions from an unrefined base, then apply the same cross-field checks to every final schema.
+
+**Why:** this project's Zod v4 entrypoint did not provide `safeExtend`. A version-looking import is not a guarantee that a recently introduced method exists; relying on it caused an import-time server failure.
+
+**How to apply:** confirm helpers against the installed package. Keep uniqueness and audience/recipient cardinality checks on both preview and send schemas rather than relying on extension to preserve refinements.

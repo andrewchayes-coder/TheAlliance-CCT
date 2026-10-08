@@ -9,6 +9,7 @@ import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { ATTN, BG, CERT, DAYS, STATUS, calDate, clock, stamp, type Badge } from './format';
 import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
+import { MessageHistory } from '@/components/messages/sent-list';
 import { StatusPanel } from './status-panel';
 import { TrackingPanel } from './tracking-panel';
 import { NotesPanel } from './notes-panel';
@@ -124,7 +125,8 @@ export function VolunteerDetail() {
 
           <section className="alliance-card mt-6" aria-labelledby="v-msg">
             <h2 id="v-msg" className="alliance-display text-[15px]">Messages</h2>
-            <p className="mt-2 text-sm">Messaging is coming later. There is no message history yet, and nothing can be sent from here.</p>
+            <MessageHistory userId={userId} step={10} />
+            <Link href={`/admin/messages?userId=${userId}`} className="alliance-button mt-4" data-testid="link-message-volunteer">Message this volunteer</Link>
           </section>
 
           <NotesPanel userId={userId} serverNotes={d.adminNotes} onPending={setNotesPending} />

@@ -7,6 +7,7 @@
     "./appConfig": "./appConfig.ts",
     "./schema": "./schema.ts",
     "./time": "./time.ts",
+    "./markdown": "./markdown.ts",
     "./onboardingQuestions": "./onboardingQuestions.ts"
   },
   "dependencies": {

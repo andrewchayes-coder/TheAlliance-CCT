@@ -4,7 +4,7 @@ A mobile-first volunteer management portal for The Alliance's Resource Coordinat
 
 ## Current scope
 
-The brand foundation, full database model, development seed, shared Postmark-ready email service, and custom email/password authentication are implemented. Google OAuth is prepared but unavailable until its client credentials are configured. Full onboarding forms, approvals, scheduling, messaging, resource hub, and administrative data screens are not implemented. The protected account/onboarding pages are real identity checkpoints, not full dashboards. UI navigation samples on the style guide remain labelled previews.
+The brand foundation, database model, development seed, shared Postmark-ready email service, email/password authentication, onboarding, approvals, volunteer dashboards/profiles, roster, scheduling, coverage alerts, and messaging are implemented. Google OAuth is prepared but unavailable until its client credentials are configured. Resource publishing remains for a later step; volunteer resource reading is implemented. UI navigation samples on the style guide remain labelled previews.
 
 The `/style-guide` route and its lazy-loaded module are development-only. The root page is a restrained portal entry, not an authentication screen.
 
@@ -140,7 +140,7 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 
 ## Admin volunteer detail workflow
 
-- `/admin/volunteers/:userId` provides contact links, joined/login dates, confirmed status transitions in any direction, training/background tracking, configured onboarding answers/agreement, staff shift/week-off controls, autosaved staff-only notes, and the latest 50 activity entries. Messaging remains deferred to its later step.
+- `/admin/volunteers/:userId` provides contact links, joined/login dates, confirmed status transitions in any direction, training/background tracking, configured onboarding answers/agreement, staff shift/week-off controls, sent-message history/read status, autosaved staff-only notes, and the latest 50 activity entries.
 - Activation is server-enforced: verified email, completed onboarding, acknowledged agreement, complete certification, and cleared background check. The API rejects override fields and returns all missing requirements. Approval generates a warm `/shifts` email through the single email service, related to the status activity ID; UI distinguishes dev-logged from actually sent mail and reports delivery failures without undoing approval.
 - Inactive confirmation snapshots every unended assignment, including future reservations and inactive slots. The API compares the confirmed IDs and profile revision, then updates status, assignments (`admin_removed`, Pacific end date today), and activity atomically. Cancelled reservations retain their original start dates; only admin cancellations may end before a future start date. Ordinary end-date ordering remains enforced, including when the ending reason is null.
 - All status changes record actor, previous/new status, time, and released assignments in `activity_log`; tracking saves also record changed fields. Notes are not copied into the activity feed. Status/tracking revisions and exact prior-note compare-and-set prevent silent staff overwrites; drafts survive conflicts, and blank date inputs explicitly clear nullable columns.
@@ -159,6 +159,16 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
 
 ## Volunteer standing shifts
+
+### Messaging
+
+- `/admin/messages` supports active-volunteer blasts, all-status blasts, roster selections, and single recipients (including launching from volunteer detail). The active audience requires an active account and active profile; all-status and explicitly selected audiences may include inactive/unverified volunteer accounts. Admin accounts are never recipients of volunteer messages.
+- Preview counts are bound to the canonical draft and exact recipient IDs. Sending revalidates the audience and returns a conflict if it changed. A client request UUID is the persisted message ID; retrying that ID preserves the original message/recipient snapshot instead of duplicating it. Portal recipients are committed atomically before email delivery.
+- Optional email copies use bounded batches through `src/email.ts`, shared branding and safe Markdown, one notification per recipient on initial send, and deduplication by message ID. Failed attempts remain logged; same-ID retries can retry failures while skipping sent/logged recipients. Reply-To is the configured valid program contact address, otherwise the authenticated sender's email.
+- Supported Markdown is bold, HTTP(S)/mailto links, and ordered/bullet lists. Raw HTML is escaped and other URL schemes are rejected. The same renderer is used for preview, email HTML/plain text, and inbox reading.
+- `/messages` only returns the current volunteer's recipients; opening marks only their row read, preserves the first read timestamp, and refreshes navigation/dashboard unread state. No in-app reply endpoint exists. Staff lists, detail history and per-recipient receipts refresh every minute.
+- `appConfig.adminContact` is the preferred public program contact. It is currently unset because no program-specific address was supplied; the inbox falls back to the existing active, verified staff contact rather than inventing an address.
+- Development `message_audience` gained `active` and `selected` values, preserving existing `all`/`single` seed data. Production schema changes go through publishing, never startup DDL.
 
 ### Staff overrides and coverage notifications
 

@@ -12,7 +12,7 @@ export const volunteerStatus = pgEnum('volunteer_status', ['applicant', 'in_trai
 export const certificationStatus = pgEnum('certification_status', ['not_started', 'in_progress', 'complete']);
 export const backgroundCheckStatus = pgEnum('background_check_status', ['not_started', 'pending', 'cleared', 'not_cleared']);
 export const endedReason = pgEnum('shift_ended_reason', ['dropped', 'changed', 'admin_removed']);
-export const messageAudience = pgEnum('message_audience', ['all', 'single']);
+export const messageAudience = pgEnum('message_audience', ['all', 'single', 'active', 'selected']);
 export const resourceType = pgEnum('resource_type', ['document', 'article', 'link']);
 export const notificationType = pgEnum('notification_type', [
   'verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite',

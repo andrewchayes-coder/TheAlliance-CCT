@@ -59,7 +59,7 @@ function Loading() {
 
 const selectCls = 'alliance-input';
 
-function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessageSelected?: (userIds: string[]) => void }) {
+function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessageSelected?: (userIds: string[], navigate?: (to: string) => void) => void }) {
   const [, nav] = useLocation();
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
@@ -70,15 +70,14 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
   const [attn, setAttn] = useState(() => { const v = new URLSearchParams(window.location.search).get('needsAttention'); return v === 'true' || v === 'any' ? 'any' : ''; });
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [notice, setNotice] = useState(false);
-
+  
   useEffect(() => {
     const t = setTimeout(() => setSearch(text.trim()), 300);
     return () => clearTimeout(t);
   }, [text]);
 
   const filterKey = [search, status, county, cert, bg, attn].join('|');
-  useEffect(() => { setOffset(0); setSelected(new Set()); setNotice(false); }, [filterKey]);
+  useEffect(() => { setOffset(0); setSelected(new Set()); }, [filterKey]);
 
   const filters = {
     ...(search ? { search } : {}), ...(status ? { status } : {}), ...(county ? { county } : {}),
@@ -179,9 +178,8 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
           <span className="font-bold" aria-live="polite" data-testid="text-selected-count">{selected.size} selected</span>
           {selected.size > 0 && <button type="button" className="text-sm font-bold text-teal-text underline underline-offset-4" onClick={() => setSelected(new Set())}>Clear selection</button>}
           <Button type="button" className="ml-auto" disabled={selected.size === 0} data-testid="button-message-selected"
-            onClick={() => { onMessageSelected(Array.from(selected)); setNotice(true); }}>Message selected</Button>
+            onClick={() => onMessageSelected(Array.from(selected), nav)}>Message selected</Button>
         </div>
-        {notice && <div className="mt-3" aria-live="polite"><Notice kind="info">Messaging is coming later. Nothing was sent, and your selection is unchanged.</Notice></div>}
 
         {list.isPending ? <Loading />
           : list.isError && !data ? (

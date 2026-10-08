@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearch } from 'wouter';
+import { renderMessageMarkdown } from '@workspace/shared/markdown';
 import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, FileText } from 'lucide-react';
 import {
-  getGetVolunteerDashboardQueryKey, getGetVolunteerMessagesQueryKey, getGetVolunteerResourcesQueryKey,
+  getGetMessageContextQueryKey, getGetVolunteerDashboardQueryKey, getGetVolunteerMessagesQueryKey, useGetMessageContext, getGetVolunteerResourcesQueryKey,
   useGetVolunteerMessages, useGetVolunteerResources, useReadVolunteerMessage,
   type VolunteerMessage,
 } from '@workspace/api-client-react';
@@ -10,6 +12,8 @@ import { EmptyState } from '@/components/brand-system';
 import { FETCH_CREDS, readError, useAuth } from '@/auth/auth-context';
 import { Notice } from '@/auth/auth-ui';
 import { ErrorBlock, LoadingBlock, VolunteerPage, volunteerRoute } from '@/components/volunteer-ui';
+import { MarkdownView } from '@/components/messages/markdown-view';
+import { appConfig } from '@workspace/shared/appConfig';
 import { safeHttps, shortDateTime } from '@/lib/pacific';
 
 export { ShiftsPage as Shifts } from './shifts-page';
@@ -17,19 +21,38 @@ export { ShiftsPage as Shifts } from './shifts-page';
 function MessagesBody() {
   const auth = useAuth();
   const qc = useQueryClient();
-  const q = useGetVolunteerMessages({ query: { queryKey: getGetVolunteerMessagesQueryKey(), refetchOnWindowFocus: 'always' }, request: FETCH_CREDS });
+  const q = useGetVolunteerMessages({ query: { queryKey: getGetVolunteerMessagesQueryKey(), refetchOnWindowFocus: 'always', refetchInterval: 60_000 }, request: FETCH_CREDS });
+  const ctx = useGetMessageContext({ query: { queryKey: getGetMessageContextQueryKey(), staleTime: 30_000, refetchInterval: 45_000, retry: false }, request: FETCH_CREDS });
+  const contact = appConfig.adminContact ?? ctx.data?.adminContact ?? null;
   const read = useReadVolunteerMessage({ request: auth.request });
   const [openId, setOpenId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  async function open(m: VolunteerMessage) {
-    setOpenId(o => (o === m.recipientId ? null : m.recipientId));
-    if (m.readAt) return;
+  const search = useSearch();
+  const wantedId = new URLSearchParams(search).get('messageId');
+  const autoDone = useRef<string | null>(null);
+  const refresh = () => Promise.all([
+    qc.invalidateQueries({ queryKey: getGetVolunteerMessagesQueryKey() }),
+    qc.invalidateQueries({ queryKey: getGetMessageContextQueryKey() }),
+  ]);
+  useEffect(() => {
+    if (!wantedId || autoDone.current === wantedId || !q.data) return;
+    autoDone.current = wantedId;
+    const m = q.data.find(x => x.id === wantedId);
+    if (m) void open(m, true);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
+  async function open(m: VolunteerMessage, forceOpen = false) {
+    const closing = !forceOpen && openId === m.recipientId;
+    setOpenId(closing ? null : m.recipientId);
+    if (closing) { void refresh(); return; }
+    if (m.readAt) { void refresh(); return; }
     setErr(null);
     try {
       await read.mutateAsync({ recipientId: m.recipientId });
       await Promise.all([
         qc.invalidateQueries({ queryKey: getGetVolunteerMessagesQueryKey() }),
         qc.invalidateQueries({ queryKey: getGetVolunteerDashboardQueryKey() }),
+        qc.invalidateQueries({ queryKey: getGetMessageContextQueryKey() }),
+        qc.invalidateQueries({ predicate: k => typeof k.queryKey[0] === 'string' && (k.queryKey[0] as string).startsWith('/api/admin/messages') }),
       ]);
     } catch (e) { setErr(readError(e, "We couldn't mark that as read.").message); }
   }
@@ -47,14 +70,18 @@ function MessagesBody() {
                 <span className={`mt-2 size-2.5 shrink-0 rounded-full ${m.readAt ? 'bg-transparent' : 'bg-teal'}`} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className={`block ${m.readAt ? 'font-semibold' : 'font-bold'}`}>{m.subject}{!m.readAt && <span className="sr-only"> (unread)</span>}</span>
+                  {openId !== m.recipientId && <span className="block truncate text-sm text-navy-soft" data-testid={`text-preview-${m.recipientId}`}>{renderMessageMarkdown(m.body).text.split('\n').find(l => l.trim()) ?? ''}</span>}
                   <span className="block text-xs text-navy-soft">{shortDateTime(m.sentAt)}</span>
                 </span>
               </button>
-              {openId === m.recipientId && <div className="whitespace-pre-wrap break-words border-t border-gray px-4 py-4 pl-9" data-testid={`text-message-body-${m.recipientId}`}>{m.body}</div>}
+              {openId === m.recipientId && <div className="border-t border-gray px-4 py-4 pl-9"><MarkdownView body={m.body} testId={`text-message-body-${m.recipientId}`} /></div>}
             </li>
           ))}
         </ul>
       )}
+      <p className="text-sm" data-testid="text-questions">Questions? Reply to the email or contact {contact ? <>The Alliance at </> : null}{contact && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)
+        ? <a href={`mailto:${contact}`} className="font-bold text-teal-text underline underline-offset-4" data-testid="link-contact-admin">{contact}</a>
+        : <span className="font-bold">{contact ?? 'The Alliance'}</span>}.</p>
     </VolunteerPage>
   );
 }

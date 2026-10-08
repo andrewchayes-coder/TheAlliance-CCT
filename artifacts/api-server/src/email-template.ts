@@ -1,4 +1,5 @@
 import { appConfig } from '@workspace/shared/appConfig';
+import { renderMessageMarkdown } from '@workspace/shared/markdown';
 
 export interface EmailTemplateOptions {
   heading: string;
@@ -6,6 +7,8 @@ export interface EmailTemplateOptions {
   paragraphs: string[];
   cta?: { label: string; url: string };
   preheader?: string;
+  /** Raw Markdown; never untrusted HTML. */
+  markdownBody?: string;
 }
 
 export const emailFooter = "You're receiving this because you volunteer with The Alliance's Resource Coordination Program.";
@@ -23,6 +26,7 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
   }
   const greeting = options.firstName?.trim() ? `Hi ${options.firstName.trim()},` : undefined;
   const paragraphs = [...(greeting ? [greeting] : []), ...options.paragraphs];
+  const markdown = options.markdownBody ? renderMessageMarkdown(options.markdownBody) : null;
   const button = options.cta ? `
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
       <tr><td bgcolor="#02928F" style="border-radius:8px;">
@@ -46,6 +50,7 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
       <tr><td class="email-padding" style="padding:32px;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:16px;line-height:1.6;">
         <h1 style="margin:0 0 24px;font-size:24px;line-height:1.3;color:#06365D;">${escapeHtml(options.heading)}</h1>
         ${paragraphs.map(paragraph => `<p style="margin:0 0 18px;">${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`).join('\n')}
+        ${markdown?.html ?? ''}
         ${button}
       </td></tr>
       <tr><td class="email-padding" style="padding:24px 32px;border-top:1px solid #E6E6E6;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:13px;line-height:1.6;">${escapeHtml(emailFooter)}</td></tr>
@@ -53,7 +58,7 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
   </td></tr></table>
 </body></html>`,
     text: [
-      appConfig.appName.toUpperCase(), options.heading, ...paragraphs,
+      appConfig.appName.toUpperCase(), options.heading, ...paragraphs, ...(markdown ? [markdown.text] : []),
       ...(options.cta ? [`${options.cta.label}: ${options.cta.url}`] : []), emailFooter,
     ].join('\n\n'),
   };

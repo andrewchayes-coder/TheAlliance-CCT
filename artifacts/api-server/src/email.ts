@@ -14,6 +14,7 @@ export interface SendEmailOptions {
   html: string;
   text: string;
   relatedId?: string;
+  replyTo?: string;
 }
 export interface SendEmailResult {
   ok: boolean;
@@ -22,6 +23,7 @@ export interface SendEmailResult {
 }
 interface DeliveryMessage {
   From: string; To: string; Subject: string; HtmlBody: string; TextBody: string; MessageStream: 'outbound';
+  ReplyTo?: string;
 }
 interface DeliveryClient {
   sendEmail(message: DeliveryMessage): Promise<{ MessageID: string; ErrorCode: number; Message: string }>;
@@ -130,6 +132,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
           const response = await dependencies.deliveryClient(settings.token).sendEmail({
             From: settings.from, To: values.recipientEmail, Subject: values.subject,
             HtmlBody: options.html, TextBody: options.text, MessageStream: 'outbound',
+            ...(options.replyTo ? { ReplyTo: options.replyTo } : {}),
           });
           if (response.ErrorCode !== 0 || !response.MessageID) {
             throw new Error(`Postmark did not confirm delivery: ${response.Message || response.ErrorCode}`);

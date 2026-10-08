@@ -5,6 +5,97 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type MessageDraftInputAudience = typeof MessageDraftInputAudience[keyof typeof MessageDraftInputAudience];
+
+
+export const MessageDraftInputAudience = {
+  active: 'active',
+  all: 'all',
+  selected: 'selected',
+  single: 'single',
+} as const;
+
+export interface MessageDraftInput {
+  audience: MessageDraftInputAudience;
+  /** @maxItems 500 */
+  userIds: string[];
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  subject: string;
+  /**
+     * @minLength 1
+     * @maxLength 20000
+     */
+  body: string;
+  sendByEmail: boolean;
+}
+
+export type MessageSendInput = MessageDraftInput & {
+  requestId: string;
+  previewHash: string;
+};
+
+export interface MessageVolunteer {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string;
+}
+
+export interface MessagePreview {
+  recipientCount: number;
+  previewHash: string;
+  html: string;
+  text: string;
+  recipients: MessageVolunteer[];
+}
+
+export interface MessageSendResult {
+  messageId: string;
+  recipientCount: number;
+  sent: number;
+  logged: number;
+  failed: number;
+  skipped: number;
+  reused: boolean;
+}
+
+export type AdminMessageAudience = typeof AdminMessageAudience[keyof typeof AdminMessageAudience];
+
+
+export const AdminMessageAudience = {
+  active: 'active',
+  all: 'all',
+  selected: 'selected',
+  single: 'single',
+} as const;
+
+export interface AdminMessage {
+  id: string;
+  subject: string;
+  body: string;
+  audience: AdminMessageAudience;
+  sentByEmail: boolean;
+  sentAt: string;
+  recipientCount: number;
+  readCount: number;
+  /** @nullable */
+  readAt: string | null;
+}
+
+export type MessageReceipt = MessageVolunteer & ({
+  /** @nullable */
+  readAt: string | null;
+});
+
+export interface AdminMessageDetail {
+  message: AdminMessage;
+  recipients: MessageReceipt[];
+}
+
 export interface AdminAssignmentInput {
   userId: string;
   slotId: string;
@@ -875,6 +966,21 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type ListAdminMessagesParams = {
+userId?: string;
+};
+
+export type FindMessageVolunteersParams = {
+q?: string;
+ids?: string;
+};
+
+export type GetMessageContext200 = {
+  unreadCount: number;
+  /** @nullable */
+  adminContact: string | null;
+};
 
 export type GetAdminScheduleControlsParams = {
 slotId?: string;

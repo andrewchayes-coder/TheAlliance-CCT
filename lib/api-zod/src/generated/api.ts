@@ -8,6 +8,134 @@
 import * as zod from 'zod';
 
 
+export const ListAdminMessagesQueryParams = zod.object({
+  "userId": zod.coerce.string().uuid().optional()
+})
+
+export const ListAdminMessagesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['active', 'all', 'selected', 'single']),
+  "sentByEmail": zod.boolean(),
+  "sentAt": zod.coerce.date(),
+  "recipientCount": zod.number().int(),
+  "readCount": zod.number().int(),
+  "readAt": zod.coerce.date().nullable()
+})
+export const ListAdminMessagesResponse = zod.array(ListAdminMessagesResponseItem)
+
+
+export const sendAdminMessageBodyOneUserIdsMax = 500;
+
+export const sendAdminMessageBodyOneSubjectMax = 200;
+
+export const sendAdminMessageBodyOneBodyMax = 20000;
+
+
+
+export const SendAdminMessageBody = zod.object({
+  "audience": zod.enum(['active', 'all', 'selected', 'single']),
+  "userIds": zod.array(zod.string().uuid()).max(sendAdminMessageBodyOneUserIdsMax),
+  "subject": zod.string().min(1).max(sendAdminMessageBodyOneSubjectMax),
+  "body": zod.string().min(1).max(sendAdminMessageBodyOneBodyMax),
+  "sendByEmail": zod.boolean()
+}).and(zod.object({
+  "requestId": zod.string().uuid(),
+  "previewHash": zod.string()
+}))
+
+export const SendAdminMessageResponse = zod.object({
+  "messageId": zod.string().uuid(),
+  "recipientCount": zod.number().int(),
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int(),
+  "skipped": zod.number().int(),
+  "reused": zod.boolean()
+})
+
+
+export const previewAdminMessageBodyUserIdsMax = 500;
+
+export const previewAdminMessageBodySubjectMax = 200;
+
+export const previewAdminMessageBodyBodyMax = 20000;
+
+
+
+export const PreviewAdminMessageBody = zod.object({
+  "audience": zod.enum(['active', 'all', 'selected', 'single']),
+  "userIds": zod.array(zod.string().uuid()).max(previewAdminMessageBodyUserIdsMax),
+  "subject": zod.string().min(1).max(previewAdminMessageBodySubjectMax),
+  "body": zod.string().min(1).max(previewAdminMessageBodyBodyMax),
+  "sendByEmail": zod.boolean()
+})
+
+export const PreviewAdminMessageResponse = zod.object({
+  "recipientCount": zod.number().int(),
+  "previewHash": zod.string(),
+  "html": zod.string(),
+  "text": zod.string(),
+  "recipients": zod.array(zod.object({
+  "userId": zod.string().uuid(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "status": zod.string()
+}))
+})
+
+
+export const FindMessageVolunteersQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "ids": zod.coerce.string().optional()
+})
+
+export const FindMessageVolunteersResponseItem = zod.object({
+  "userId": zod.string().uuid(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "status": zod.string()
+})
+export const FindMessageVolunteersResponse = zod.array(FindMessageVolunteersResponseItem)
+
+
+export const GetAdminMessageParams = zod.object({
+  "messageId": zod.coerce.string().uuid()
+})
+
+export const GetAdminMessageResponse = zod.object({
+  "message": zod.object({
+  "id": zod.string().uuid(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "audience": zod.enum(['active', 'all', 'selected', 'single']),
+  "sentByEmail": zod.boolean(),
+  "sentAt": zod.coerce.date(),
+  "recipientCount": zod.number().int(),
+  "readCount": zod.number().int(),
+  "readAt": zod.coerce.date().nullable()
+}),
+  "recipients": zod.array(zod.object({
+  "userId": zod.string().uuid(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "status": zod.string()
+}).and(zod.object({
+  "readAt": zod.coerce.date().nullable()
+})))
+})
+
+
+export const GetMessageContextResponse = zod.object({
+  "unreadCount": zod.number().int(),
+  "adminContact": zod.string().nullable()
+})
+
+
 export const getAdminScheduleControlsQueryQMax = 120;
 
 
