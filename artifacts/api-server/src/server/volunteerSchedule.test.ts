@@ -5,6 +5,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable,
   shiftSkipsTable, activityLogTable, notificationLogTable, sessionsTable } from '@workspace/db';
 import { addCalendarDays, slotInstant, pacificDay } from './scheduleService';
+import { agreementVersion } from './agreements';
 if (process.env.NODE_ENV === 'production') throw new Error('Development fixture tests only.');
 process.env.NODE_ENV = 'development'; process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = '';
 const tag = `booking-${randomUUID()}`, ids: string[] = [], profiles: string[] = [], slots: string[] = [], sessions: string[] = [];
@@ -36,7 +37,8 @@ async function person(role: 'admin' | 'volunteer', verified = true, active = tru
   ids.push(u!.id);
   if (role === 'volunteer') {
     const [p] = await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: approved ? 'active' : 'applicant',
-      agreementAcknowledgedAt: agreement ? new Date() : null, onboardingCompletedAt: new Date(),
+      agreementAcknowledgedAt: agreement ? new Date() : null, agreementVersion: agreement ? await agreementVersion() : null,
+      onboardingCompletedAt: new Date(),
       adminNotes: `PRIVATE-NOTES-${tag}`, certificationStatus: 'complete', backgroundCheckStatus: 'cleared' }).returning();
     profiles.push(p!.id);
   }

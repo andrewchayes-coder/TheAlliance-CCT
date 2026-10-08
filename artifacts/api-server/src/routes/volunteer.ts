@@ -11,7 +11,8 @@ import { onboardingQuestions, buildOnboardingAnswersSchema, onboardingContactSch
 import { checkPassword, hashPassword, validNewPassword, enforceLimit } from '../auth/security';
 import { endSession } from '../auth/session';
 import { onboardingAccount } from '../onboarding';
-import { volunteerDashboard, ownMessages, publishedVolunteerResources } from '../volunteer-home';
+import { volunteerDashboard, ownMessages } from '../volunteer-home';
+import { visibleResources } from '../server/resources';
 
 const router = Router();
 router.get('/dashboard', async (req, res) => {
@@ -86,8 +87,6 @@ router.patch('/messages/:recipientId/read', async (req, res): Promise<void> => {
   res.set('Cache-Control', 'no-store').json({ ok: true, readAt: recipient.readAt!.toISOString() });
 });
 router.get('/resources', async (req, res) => {
-  const [profile] = await db.select({ status: volunteerProfilesTable.status }).from(volunteerProfilesTable)
-    .where(eq(volunteerProfilesTable.userId, req.authUser!.id));
-  res.set('Cache-Control', 'no-store').json(GetVolunteerResourcesResponse.parse(await publishedVolunteerResources(profile?.status === 'active')));
+  res.set('Cache-Control', 'no-store').json(GetVolunteerResourcesResponse.parse(await visibleResources(req.authUser!.id, false)));
 });
 export default router;

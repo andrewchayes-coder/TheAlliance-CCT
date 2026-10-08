@@ -168,6 +168,16 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Retry targets the original metadata row, preserves the original recipient, uses a per-row database lock, and never repeats confirmed sent/logged keys. Inactive/changed-address recipients, unknown delivery outcomes, obsolete standing-shift reminders and legacy rows without content fail explicitly. Metadata APIs never expose encrypted or decrypted bodies. Tests always target the signed-in administrator and keep an idempotent request ID across uncertain network retries.
 - The notification APIs are default-deny admin routes; mutations require CSRF. Provider status exposes only token presence and the requested From address, never the token. Development test copies are labelled logged/not delivered. Run `pnpm --filter @workspace/api-server run test:notifications` for quota, retry, privacy, filter and access tests.
 
+## Resource hub and agreement renewal
+
+- Admin resource management lives at `/admin/resources`: documents, Markdown articles, HTTPS links, publication, replacement, deletion and per-type ordering.
+- PDF/DOCX uploads are limited to 15 MiB, validated server-side, and stored privately through `@replit/object-storage`. The SDK receives the configured default bucket explicitly; it is externalized in the API bundle.
+- Document downloads always use authenticated `/api/resources/:id/file` routes; no public or signed storage URL is sent to a browser. Drafts are staff-only, and operational quick links remain active-volunteer-only.
+- The `Agreements` category is reserved for `User Agreement` and `Safety Guidelines` documents or compatible existing articles. Staff must publish both before opting into a new agreement version. Do not invent legal copy.
+- Agreement versions are persisted in app settings. A bump routes returning volunteers to renewal and server-blocks volunteer schedule APIs until acknowledgment; it does not end standing assignments or clear onboarding answers.
+- Seed PDFs reside under the API artifact, not web public assets. `pnpm --filter @workspace/api-server migrate-resource-seeds` privately upgrades existing legacy seed document records without changing their IDs; the authenticated download handler also upgrades remaining legacy references on first access.
+- `pnpm --filter @workspace/api-server test:resources` verifies real storage uploads/downloads, replacement, guards/publication, validation, ordering and agreement renewal with temporary fixtures cleaned afterward.
+
 ## Automated shift reminders
 
 - `src/server/jobs.ts` schedules `*/15 * * * *` with node-cron in America/Los_Angeles only when `RUN_JOBS=true`. Manual staff checks and secret-authenticated external checks intentionally work even with automatic scheduling disabled.

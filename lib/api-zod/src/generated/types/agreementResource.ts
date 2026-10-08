@@ -15,4 +15,8 @@ export interface AgreementResource {
   body: string | null;
   /** @nullable */
   href: string | null;
+  /** @nullable */
+  fileName?: string | null;
+  /** @nullable */
+  fileMimeType?: string | null;
 }

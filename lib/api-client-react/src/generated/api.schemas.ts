@@ -886,6 +886,113 @@ export interface VolunteerResource {
   /** @nullable */
   href: string | null;
   isQuickLink: boolean;
+  /** @nullable */
+  fileName?: string | null;
+  /** @nullable */
+  fileMimeType?: string | null;
+  sortOrder?: number;
+  isPublished?: boolean;
+  updatedAt?: string;
+  /** @nullable */
+  url?: string | null;
+}
+
+export type ResourceItemType = typeof ResourceItemType[keyof typeof ResourceItemType];
+
+
+export const ResourceItemType = {
+  document: 'document',
+  article: 'article',
+  link: 'link',
+} as const;
+
+export interface ResourceItem {
+  id: string;
+  type: ResourceItemType;
+  title: string;
+  category: string;
+  /** @nullable */
+  summary: string | null;
+  /** @nullable */
+  body: string | null;
+  /** @nullable */
+  href: string | null;
+  /** @nullable */
+  url: string | null;
+  /** @nullable */
+  fileName: string | null;
+  /** @nullable */
+  fileMimeType: string | null;
+  isQuickLink: boolean;
+  isPublished: boolean;
+  sortOrder: number;
+  updatedAt: string;
+}
+
+export interface ResourceUpload {
+  /** JSON-encoded ResourceInput */
+  metadata: string;
+  file?: Blob;
+}
+
+export interface ResourcePublishInput {
+  isPublished: boolean;
+}
+
+export type ResourceReorderInputType = typeof ResourceReorderInputType[keyof typeof ResourceReorderInputType];
+
+
+export const ResourceReorderInputType = {
+  document: 'document',
+  article: 'article',
+  link: 'link',
+} as const;
+
+export interface ResourceReorderInput {
+  type: ResourceReorderInputType;
+  ids: string[];
+}
+
+export interface AgreementAcknowledgmentInput {
+  version: string;
+  acknowledged: true;
+}
+
+export type ResourceInputType = typeof ResourceInputType[keyof typeof ResourceInputType];
+
+
+export const ResourceInputType = {
+  document: 'document',
+  article: 'article',
+  link: 'link',
+} as const;
+
+export interface ResourceInput {
+  type: ResourceInputType;
+  /** @maxLength 180 */
+  title: string;
+  /** @maxLength 80 */
+  category: string;
+  /** @maxLength 1000 */
+  summary: string;
+  /** @maxLength 30000 */
+  body: string;
+  /** @maxLength 2048 */
+  url: string;
+  isQuickLink: boolean;
+  isPublished: boolean;
+  bumpAgreementVersion: boolean;
+}
+
+export interface ResourceContext {
+  categories: string[];
+  agreementVersion: string;
+}
+
+export interface ResourceSaveResult {
+  resource: ResourceItem;
+  agreementVersion: string;
+  bumped: boolean;
 }
 
 export interface VolunteerMessage {
@@ -937,6 +1044,10 @@ export interface AgreementResource {
   body: string | null;
   /** @nullable */
   href: string | null;
+  /** @nullable */
+  fileName?: string | null;
+  /** @nullable */
+  fileMimeType?: string | null;
 }
 
 export interface OnboardingAgreements {
@@ -1098,6 +1209,8 @@ export interface Me {
   user: PublicUser;
   role: MeRole;
   verified: boolean;
+  agreementRequired?: boolean;
+  currentAgreementVersion?: string;
   profile: PublicVolunteerProfile | null;
 }
 
@@ -1128,6 +1241,19 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type DeleteResource200 = {
+  ok: boolean;
+};
+
+export type ReorderResources200 = {
+  ok: boolean;
+};
+
+export type AcknowledgeAgreement200 = {
+  version: string;
+  acknowledgedAt: string;
+};
 
 export type GetNotificationLogParams = {
 type?: EmailLogType;

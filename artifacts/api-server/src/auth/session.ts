@@ -120,7 +120,8 @@ export async function requireOnboardedVolunteer(req: Request, res: Response, nex
   let authorized = false;
   await requireVolunteer(req, res, () => { authorized = true; });
   if (!authorized) return;
-  const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt }).from(volunteerProfilesTable)
+  const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt,
+    agreementVersion: volunteerProfilesTable.agreementVersion, acknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt }).from(volunteerProfilesTable)
     .where(eq(volunteerProfilesTable.userId, req.authUser!.id));
   if (!profile?.completedAt) {
     res.status(403).json({ error: 'Please finish your onboarding first.', code: 'ONBOARDING_REQUIRED', nextPath: '/onboarding' });

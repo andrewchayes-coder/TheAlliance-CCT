@@ -13,5 +13,7 @@ export interface Me {
   user: PublicUser;
   role: MeRole;
   verified: boolean;
+  agreementRequired?: boolean;
+  currentAgreementVersion?: string;
   profile: PublicVolunteerProfile | null;
 }

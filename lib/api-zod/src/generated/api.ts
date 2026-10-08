@@ -8,6 +8,197 @@
 import * as zod from 'zod';
 
 
+export const GetPublishedResourceListResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetPublishedResourceListResponse = zod.array(GetPublishedResourceListResponseItem)
+
+
+export const GetAdminResourcesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+})
+export const GetAdminResourcesResponse = zod.array(GetAdminResourcesResponseItem)
+
+
+export const CreateResourceBody = zod.object({
+  "metadata": zod.string().describe('JSON-encoded ResourceInput'),
+  "file": zod.instanceof(Blob).optional()
+})
+
+export const CreateResourceResponse = zod.object({
+  "resource": zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+}),
+  "agreementVersion": zod.string(),
+  "bumped": zod.boolean()
+})
+
+
+export const GetResourceContextResponse = zod.object({
+  "categories": zod.array(zod.string()),
+  "agreementVersion": zod.string()
+})
+
+
+export const UpdateResourceParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const UpdateResourceBody = zod.object({
+  "metadata": zod.string().describe('JSON-encoded ResourceInput'),
+  "file": zod.instanceof(Blob).optional()
+})
+
+export const UpdateResourceResponse = zod.object({
+  "resource": zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+}),
+  "agreementVersion": zod.string(),
+  "bumped": zod.boolean()
+})
+
+
+export const DeleteResourceParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const DeleteResourceResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const PublishResourceParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const PublishResourceBody = zod.object({
+  "isPublished": zod.boolean()
+})
+
+export const PublishResourceResponse = zod.object({
+  "resource": zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+}),
+  "agreementVersion": zod.string(),
+  "bumped": zod.boolean()
+})
+
+
+export const ReorderResourcesBody = zod.object({
+  "type": zod.enum(['document', 'article', 'link']),
+  "ids": zod.array(zod.string().uuid())
+})
+
+export const ReorderResourcesResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+export const GetResourceParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const GetResourceResponse = zod.object({
+  "id": zod.string().uuid(),
+  "type": zod.enum(['document', 'article', 'link']),
+  "title": zod.string(),
+  "category": zod.string(),
+  "summary": zod.string().nullable(),
+  "body": zod.string().nullable(),
+  "href": zod.string().nullable(),
+  "url": zod.string().nullable(),
+  "fileName": zod.string().nullable(),
+  "fileMimeType": zod.string().nullable(),
+  "isQuickLink": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "sortOrder": zod.number().int(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const DownloadResourceFileParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const DownloadResourceFileResponse = zod.unknown()
+
+
+export const AcknowledgeAgreementBody = zod.object({
+  "version": zod.string(),
+  "acknowledged": zod.literal(true)
+})
+
+export const AcknowledgeAgreementResponse = zod.object({
+  "version": zod.string(),
+  "acknowledgedAt": zod.coerce.date()
+})
+
+
 export const GetNotificationSummaryResponse = zod.object({
   "month": zod.string(),
   "total": zod.number().int(),
@@ -1521,7 +1712,13 @@ export const GetVolunteerDashboardResponse = zod.object({
   "category": zod.string(),
   "body": zod.string().nullable(),
   "href": zod.string().nullable(),
-  "isQuickLink": zod.boolean()
+  "isQuickLink": zod.boolean(),
+  "fileName": zod.string().nullish(),
+  "fileMimeType": zod.string().nullish(),
+  "sortOrder": zod.number().int().optional(),
+  "isPublished": zod.boolean().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "url": zod.string().nullish()
 })),
   "unreadMessage": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -1561,6 +1758,8 @@ export const UpdateVolunteerProfileResponse = zod.object({
 }),
   "role": zod.enum(['admin', 'volunteer']),
   "verified": zod.boolean(),
+  "agreementRequired": zod.boolean().optional(),
+  "currentAgreementVersion": zod.string().optional(),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -1634,7 +1833,13 @@ export const GetVolunteerResourcesResponseItem = zod.object({
   "category": zod.string(),
   "body": zod.string().nullable(),
   "href": zod.string().nullable(),
-  "isQuickLink": zod.boolean()
+  "isQuickLink": zod.boolean(),
+  "fileName": zod.string().nullish(),
+  "fileMimeType": zod.string().nullish(),
+  "sortOrder": zod.number().int().optional(),
+  "isPublished": zod.boolean().optional(),
+  "updatedAt": zod.coerce.date().optional(),
+  "url": zod.string().nullish()
 })
 export const GetVolunteerResourcesResponse = zod.array(GetVolunteerResourcesResponseItem)
 
@@ -1668,6 +1873,8 @@ export const SaveOnboardingResponse = zod.object({
 }),
   "role": zod.enum(['admin', 'volunteer']),
   "verified": zod.boolean(),
+  "agreementRequired": zod.boolean().optional(),
+  "currentAgreementVersion": zod.string().optional(),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -1701,7 +1908,9 @@ export const GetOnboardingAgreementsResponse = zod.object({
   "title": zod.string(),
   "type": zod.enum(['article', 'document', 'link']),
   "body": zod.string().nullable(),
-  "href": zod.string().nullable()
+  "href": zod.string().nullable(),
+  "fileName": zod.string().nullish(),
+  "fileMimeType": zod.string().nullish()
 }))
 })
 
@@ -1715,7 +1924,9 @@ export const GetOnboardingAgreementResponse = zod.object({
   "title": zod.string(),
   "type": zod.enum(['article', 'document', 'link']),
   "body": zod.string().nullable(),
-  "href": zod.string().nullable()
+  "href": zod.string().nullable(),
+  "fileName": zod.string().nullish(),
+  "fileMimeType": zod.string().nullish()
 })
 
 
@@ -1739,6 +1950,8 @@ export const GetVolunteerOnboardingResponse = zod.object({
 }),
   "role": zod.enum(['admin', 'volunteer']),
   "verified": zod.boolean(),
+  "agreementRequired": zod.boolean().optional(),
+  "currentAgreementVersion": zod.string().optional(),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -2052,6 +2265,8 @@ export const GetMeResponse = zod.object({
 }),
   "role": zod.enum(['admin', 'volunteer']),
   "verified": zod.boolean(),
+  "agreementRequired": zod.boolean().optional(),
+  "currentAgreementVersion": zod.string().optional(),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),

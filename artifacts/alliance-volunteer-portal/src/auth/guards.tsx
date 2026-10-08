@@ -15,7 +15,7 @@ function Redirect({ to }: { to: string }) {
 /** Admins are sent to /admin from volunteer pages; with area="admin", volunteers are sent to /dashboard. */
 export function RequireVerified({ children, area = 'volunteer', allowIncomplete = false }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin'; allowIncomplete?: boolean }) {
   const { session, sessionLoading, sessionError, refresh, signout } = useAuth();
-  const [, nav] = useLocation();
+  const [path, nav] = useLocation();
   const ok = !!session?.authenticated && session.verified;
   const me = useGetMe({
     query: { queryKey: getGetMeQueryKey(), enabled: ok, staleTime: FRESH_MS, refetchOnWindowFocus: 'always', retry: false },
@@ -47,6 +47,7 @@ export function RequireVerified({ children, area = 'volunteer', allowIncomplete 
     if (area === 'admin' && me.data.role !== 'admin') return <Redirect to="/dashboard" />;
     if (area === 'volunteer' && me.data.role === 'admin') return <Redirect to="/admin" />;
     if (area === 'volunteer' && !allowIncomplete && !me.data.profile?.onboardingCompletedAt) return <Redirect to="/onboarding" />;
+    if (area === 'volunteer' && me.data.agreementRequired && (path === '/shifts' || path.startsWith('/shifts/'))) return <Redirect to="/agreements" />;
     return <>{children(me.data)}</>;
   }
   if (me.isError && (status === 401 || status === 403) && retried.current && !me.isFetching && ok) {

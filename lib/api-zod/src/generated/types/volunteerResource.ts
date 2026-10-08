@@ -19,4 +19,13 @@ export interface VolunteerResource {
   /** @nullable */
   href: string | null;
   isQuickLink: boolean;
+  /** @nullable */
+  fileName?: string | null;
+  /** @nullable */
+  fileMimeType?: string | null;
+  sortOrder?: number;
+  isPublished?: boolean;
+  updatedAt?: Date;
+  /** @nullable */
+  url?: string | null;
 }

@@ -2,13 +2,14 @@ import { appConfig } from '@workspace/shared/appConfig';
 import { createScheduleService, assignmentIsHeld, slotIsActive, pacificDay, addCalendarDays, slotInstant,
   type ScheduleData, type ScheduleSlot } from './scheduleService';
 
-export function bookingBlockers(profile: { status: string; agreementAcknowledgedAt: Date | null } | undefined) {
+export function bookingBlockers(profile: { status: string; agreementAcknowledgedAt: Date | null; agreementVersion?: string | null } | undefined, currentVersion?: string) {
   if (!profile) return ['Please complete your onboarding before choosing a weekly shift.'];
   const reasons: string[] = [];
   if (profile.status !== 'active') reasons.push(profile.status === 'inactive'
     ? 'Your volunteer status is inactive. Please contact The Alliance if you would like to return.'
     : "Your application is not approved for shifts yet. We'll email you when your training, background check, and approval are complete.");
   if (!profile.agreementAcknowledgedAt) reasons.push('Please acknowledge the volunteer agreement in onboarding.');
+  else if (currentVersion && profile.agreementVersion !== currentVersion) reasons.push('Please acknowledge the updated volunteer agreements before using shifts.');
   return reasons;
 }
 export function startDates(data: ScheduleData, slot: ScheduleSlot, now: Date) {
@@ -27,9 +28,9 @@ type BookingData = Omit<ScheduleData, 'skips'> & { skips: readonly {
 }[] };
 /** Personnel-free counts; every assignment identifier in the result belongs to this caller. */
 export function volunteerScheduleView(data: BookingData, profileId: string | undefined,
-  profile: Parameters<typeof bookingBlockers>[0], contactEmail: string | null, now = new Date()) {
+  profile: Parameters<typeof bookingBlockers>[0], contactEmail: string | null, now = new Date(), currentVersion?: string) {
   const today = pacificDay(now), held = heldAssignments(data, now), own = held.filter(a => a.volunteerProfileId === profileId);
-  const blockedReasons = bookingBlockers(profile);
+  const blockedReasons = bookingBlockers(profile, currentVersion);
   const ownSlotIds = new Set(own.map(a => a.shiftSlotId));
   const ownData = { ...data, slots: data.slots.filter(s => ownSlotIds.has(s.id)), assignments: own };
   const occurrences = own.length ? createScheduleService({ ...ownData, skips: [] }).getOccurrences(today, addCalendarDays(today, 365)) : [];

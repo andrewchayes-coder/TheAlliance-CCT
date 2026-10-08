@@ -88,6 +88,7 @@ export const appSettingsTable = pgTable('app_settings', {
   lastDigestDate: date('last_digest_date', { mode: 'string' }),
   postmarkMonthlyLimit: integer('postmark_monthly_limit').notNull().default(100),
   lastMonthlyAlertMonth: text('last_monthly_alert_month'),
+  agreementVersion: text('agreement_version').notNull().default('v1'),
   ...timestamps(),
 }, table => [check('app_settings_email_limit_check', sql`${table.postmarkMonthlyLimit} between 1 and 1000000`)]);
 /** Persisted diagnostics; separate from per-recipient delivery history. */

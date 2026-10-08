@@ -15,6 +15,12 @@ The schema package needs Node typings when using Drizzle-Zod, even though its sc
 
 **How to apply:** include @types/node for the schema package and Node in its compiler types. If exported insert types unexpectedly contain Buffer for text columns, fix the missing type context instead of hiding it with individual casts.
 
+Multipart code generation also needs Node types when it emits `z.instanceof(Blob)` in server-only validators.
+
+**Why:** generated binary upload validators refer to the runtime Blob global, but a server tsconfig without Node types cannot resolve its declaration. Adding browser DOM libraries masks the missing server type context.
+
+**How to apply:** use the supported Node type context for generated validator packages; keep multipart bodies named in the specification to avoid root re-export collisions between inferred schemas and generated body types.
+
 Compose a generated API schema with validators from the same Zod entrypoint/version as that schema, not automatically the entrypoint used by shared database validators.
 
 **Why:** this project has generated API validators using root Zod v3 alongside shared Drizzle validators using Zod v4. Extending the generated object with v4 fields produced incompatible internal-parser types rather than a usable boundary validator.

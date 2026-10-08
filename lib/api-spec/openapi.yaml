@@ -11,6 +11,143 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /resources:
+    get:
+      operationId: getPublishedResourceList
+      responses:
+        "200":
+          description: Published resources for volunteers; staff may preview drafts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ResourceItem" } }
+  /admin/resources:
+    get:
+      operationId: getAdminResources
+      responses:
+        "200":
+          description: Staff resource list, including drafts
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/ResourceItem" } }
+    post:
+      operationId: createResource
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/ResourceUpload" }
+      responses:
+        "201":
+          description: Resource saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceSaveResult" }
+  /admin/resources/context:
+    get:
+      operationId: getResourceContext
+      responses:
+        "200":
+          description: Categories and current agreement version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceContext" }
+  /admin/resources/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateResource
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: "#/components/schemas/ResourceUpload" }
+      responses:
+        "200":
+          description: Resource saved, retaining its identity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceSaveResult" }
+    delete:
+      operationId: deleteResource
+      responses:
+        "200":
+          description: Resource removed
+          content:
+            application/json:
+              schema: { type: object, required: [ok], properties: { ok: { type: boolean } } }
+  /admin/resources/{id}/publish:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: publishResource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResourcePublishInput" }
+      responses:
+        "200":
+          description: Publication state saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceSaveResult" }
+  /admin/resources/reorder:
+    post:
+      operationId: reorderResources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ResourceReorderInput" }
+      responses:
+        "200":
+          description: Complete type-specific order saved
+          content:
+            application/json:
+              schema: { type: object, required: [ok], properties: { ok: { type: boolean } } }
+  /resources/{id}:
+    get:
+      operationId: getResource
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Published volunteer resource, or staff preview
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResourceItem" }
+  /resources/{id}/file:
+    get:
+      operationId: downloadResourceFile
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Private document stream; use a native authenticated anchor and append ?download=1 to force attachment
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema: { type: string, format: binary }
+  /agreements/acknowledge:
+    post:
+      operationId: acknowledgeAgreement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AgreementAcknowledgmentInput" }
+      responses:
+        "200":
+          description: Current agreement acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, acknowledgedAt]
+                properties:
+                  version: { type: string }
+                  acknowledgedAt: { type: string, format: date-time }
   /admin/notifications/summary:
     get:
       operationId: getNotificationSummary
@@ -1612,6 +1749,79 @@ components:
         body: { type: [string, "null"] }
         href: { type: [string, "null"] }
         isQuickLink: { type: boolean }
+        fileName: { type: [string, "null"] }
+        fileMimeType: { type: [string, "null"] }
+        sortOrder: { type: integer }
+        isPublished: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+        url: { type: [string, "null"] }
+    ResourceItem:
+      type: object
+      required: [id, type, title, category, summary, body, href, url, fileName, fileMimeType, isQuickLink, isPublished, sortOrder, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [document, article, link] }
+        title: { type: string }
+        category: { type: string }
+        summary: { type: [string, "null"] }
+        body: { type: [string, "null"] }
+        href: { type: [string, "null"] }
+        url: { type: [string, "null"] }
+        fileName: { type: [string, "null"] }
+        fileMimeType: { type: [string, "null"] }
+        isQuickLink: { type: boolean }
+        isPublished: { type: boolean }
+        sortOrder: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    ResourceUpload:
+      type: object
+      required: [metadata]
+      properties:
+        metadata: { type: string, description: JSON-encoded ResourceInput }
+        file: { type: string, format: binary }
+    ResourcePublishInput:
+      type: object
+      required: [isPublished]
+      properties:
+        isPublished: { type: boolean }
+    ResourceReorderInput:
+      type: object
+      required: [type, ids]
+      properties:
+        type: { type: string, enum: [document, article, link] }
+        ids: { type: array, items: { type: string, format: uuid } }
+    AgreementAcknowledgmentInput:
+      type: object
+      required: [version, acknowledged]
+      properties:
+        version: { type: string }
+        acknowledged: { type: boolean, const: true }
+    ResourceInput:
+      type: object
+      required: [type, title, category, summary, body, url, isQuickLink, isPublished, bumpAgreementVersion]
+      properties:
+        type: { type: string, enum: [document, article, link] }
+        title: { type: string, maxLength: 180 }
+        category: { type: string, maxLength: 80 }
+        summary: { type: string, maxLength: 1000 }
+        body: { type: string, maxLength: 30000 }
+        url: { type: string, maxLength: 2048 }
+        isQuickLink: { type: boolean }
+        isPublished: { type: boolean }
+        bumpAgreementVersion: { type: boolean }
+    ResourceContext:
+      type: object
+      required: [categories, agreementVersion]
+      properties:
+        categories: { type: array, items: { type: string } }
+        agreementVersion: { type: string }
+    ResourceSaveResult:
+      type: object
+      required: [resource, agreementVersion, bumped]
+      properties:
+        resource: { $ref: "#/components/schemas/ResourceItem" }
+        agreementVersion: { type: string }
+        bumped: { type: boolean }
     VolunteerMessage:
       type: object
       required: [id, recipientId, subject, body, sentAt, readAt]
@@ -1665,6 +1875,8 @@ components:
         type: { type: string, enum: [article, document, link] }
         body: { type: [string, "null"] }
         href: { type: [string, "null"] }
+        fileName: { type: [string, "null"] }
+        fileMimeType: { type: [string, "null"] }
     OnboardingAgreements:
       type: object
       required: [version, ready, resources]
@@ -1769,6 +1981,8 @@ components:
           $ref: "#/components/schemas/PublicUser"
         role: { type: string, enum: [admin, volunteer] }
         verified: { type: boolean }
+        agreementRequired: { type: boolean }
+        currentAgreementVersion: { type: string }
         profile:
           anyOf:
             - $ref: "#/components/schemas/PublicVolunteerProfile"

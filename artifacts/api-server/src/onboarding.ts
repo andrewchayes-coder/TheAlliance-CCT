@@ -1,19 +1,21 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db, resourcesTable, usersTable, volunteerProfilesTable, userPublicSchema, volunteerProfilePublicColumns } from '@workspace/db';
-import { appConfig } from '@workspace/shared/appConfig';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { createEmailTemplate } from './email-template';
 import { sendEmail } from './email';
 import { appOrigin } from './auth/session';
 import type { User } from '@workspace/db';
+import { agreementVersion } from './server/agreements';
 
 const titles = ['user agreement', 'safety guidelines'];
 export function safeResourceHref(resource: typeof resourcesTable.$inferSelect): string | null {
   if (resource.type === 'article') return null;
   if (resource.type === 'document' && /^seed-resources\/[a-zA-Z0-9._-]+\.pdf$/.test(resource.fileKey ?? '')) {
-    return `/${resource.fileKey}`;
+    return `/api/resources/${resource.id}/file`;
   }
-  const candidate = resource.type === 'link' ? resource.url : resource.fileKey;
+  if (resource.type === 'document') return /^private\/resources\/[\w.-]+$/.test(resource.fileKey ?? '')
+    ? `/api/resources/${resource.id}/file` : null;
+  const candidate = resource.url;
   try {
     const url = new URL(candidate ?? '');
     return url.protocol === 'https:' && !url.username && !url.password ? url.href : null;
@@ -25,8 +27,9 @@ export async function publishedAgreements() {
     eq(resourcesTable.category, 'Agreements'), eq(resourcesTable.isPublished, true),
   )).orderBy(desc(resourcesTable.updatedAt), resourcesTable.id);
   const selected = titles.map(title => rows.find(row => row.title.trim().toLowerCase() === title)).filter(row => !!row);
-  const resources = selected.map(row => ({ id: row.id, title: row.title, type: row.type, body: row.type === 'article' ? row.body : null, href: safeResourceHref(row) }));
-  return { version: appConfig.agreementVersion || 'v1', resources,
+  const resources = selected.map(row => ({ id: row.id, title: row.title, type: row.type,
+    body: row.type === 'article' ? row.body : null, href: safeResourceHref(row), fileName: row.fileName, fileMimeType: row.fileMimeType }));
+  return { version: await agreementVersion(), resources,
     ready: resources.length === titles.length && resources.every(row => row.type === 'article' ? !!row.body?.trim() : !!row.href) };
 }
 

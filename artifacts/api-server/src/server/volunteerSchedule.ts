@@ -10,16 +10,17 @@ import { sendEmail, createEmailTemplate } from '../email';
 import { appOrigin } from '../auth/session';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
+import { agreementVersion, lockAgreementVersion } from './agreements';
 
 export async function volunteerSchedule(userId: string, now = new Date()) {
   return db.transaction(async tx => {
     const [profile] = await tx.select({ id: volunteerProfilesTable.id, status: volunteerProfilesTable.status,
-      agreementAcknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt })
+      agreementAcknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt, agreementVersion: volunteerProfilesTable.agreementVersion })
       .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId));
     const [contact] = await tx.select({ email: usersTable.email }).from(usersTable)
       .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), isNotNull(usersTable.emailVerifiedAt)))
       .orderBy(usersTable.createdAt, usersTable.id).limit(1);
-    return volunteerScheduleView(await readScheduleData(tx), profile?.id, profile, contact?.email ?? null, now);
+    return volunteerScheduleView(await readScheduleData(tx), profile?.id, profile, contact?.email ?? null, now, await agreementVersion(tx));
   }, { isolationLevel: 'repeatable read' });
 }
 type Actor = { id: string; sessionVersion: number };
@@ -40,15 +41,16 @@ const dateLabel = (date: string) => new Intl.DateTimeFormat('en-US', { timeZone:
 export async function volunteerScheduleAction(actor: Actor, input: Action, testNow?: Date) {
   const result = await db.transaction(async tx => {
     await lockSchedule(tx);
+    const currentVersion = await lockAgreementVersion(tx);
     const [user] = await tx.select({ id: usersTable.id, email: usersTable.email, firstName: usersTable.firstName,
       isActive: usersTable.isActive, emailVerifiedAt: usersTable.emailVerifiedAt, role: usersTable.role,
       sessionVersion: usersTable.sessionVersion }).from(usersTable).where(eq(usersTable.id, actor.id)).for('update');
     if (!user || !user.isActive || !user.emailVerifiedAt || user.role !== 'volunteer' || user.sessionVersion !== actor.sessionVersion)
       throw new WorkflowError(403, 'Your account is not available for scheduling. Please sign in again.');
     const [profile] = await tx.select({ id: volunteerProfilesTable.id, status: volunteerProfilesTable.status,
-      agreementAcknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt })
+      agreementAcknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt, agreementVersion: volunteerProfilesTable.agreementVersion })
       .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, actor.id)).for('update');
-    const blockers = bookingBlockers(profile);
+    const blockers = bookingBlockers(profile, currentVersion);
     if (blockers.length) throw new WorkflowError(403, blockers.join(' '));
     const now = testNow ?? new Date(), today = pacificDay(now);
     const data = await readScheduleData(tx), held = heldAssignments(data, now), own = held.filter(a => a.volunteerProfileId === profile!.id);

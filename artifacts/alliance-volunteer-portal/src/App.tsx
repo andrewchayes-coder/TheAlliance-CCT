@@ -10,7 +10,10 @@ import Signin from '@/pages/signin';
 import { ForgotPassword, ResetPassword } from '@/pages/recovery';
 import { VerifyEmailPage, VerifyTokenPage } from '@/pages/verify';
 import { Dashboard } from '@/pages/volunteer-home';
-import { Shifts, Messages, Resources } from '@/pages/volunteer-pages';
+import { Shifts, Messages } from '@/pages/volunteer-pages';
+import { Resources, ResourceArticle } from '@/pages/resources';
+import { AgreementRenewal } from '@/pages/agreement-renewal';
+import { AdminResources } from '@/pages/admin-resources';
 import { Profile } from '@/pages/volunteer-profile';
 import { Onboarding, OnboardingAgreement } from '@/pages/onboarding';
 import { AdminHome, AdminTeam, AdminVolunteerOnboarding, AcceptInvite } from '@/pages/admin';
@@ -51,7 +54,8 @@ function Router() {
         <Route path="/messages" component={Messages} />
         <Route path="/messages/:rest*" component={Messages} />
         <Route path="/resources" component={Resources} />
-        <Route path="/resources/:rest*" component={Resources} />
+        <Route path="/resources/:id" component={ResourceArticle} />
+        <Route path="/agreements" component={AgreementRenewal} />
         <Route path="/profile" component={Profile} />
         <Route path="/onboarding" component={Onboarding} />
         <Route path="/onboarding/agreements/:resourceId" component={OnboardingAgreement} />
@@ -62,6 +66,7 @@ function Router() {
         <Route path="/admin/volunteers/:userId/onboarding" component={AdminVolunteerOnboarding} />
         <Route path="/admin/volunteers" component={AdminRoster} />
         <Route path="/admin/volunteers/:userId" component={AdminVolunteerDetail} />
+        <Route path="/admin/resources" component={AdminResources} />
         <Route path="/admin/messages" component={AdminMessages} />
         <Route path="/admin/schedule" component={AdminSchedule} />
         <Route path="/admin/schedule/settings" component={AdminScheduleSettings} />

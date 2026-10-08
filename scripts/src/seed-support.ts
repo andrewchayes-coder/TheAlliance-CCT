@@ -92,7 +92,7 @@ export const documentFixtures = [
 
 /** Small valid PDFs, clearly labelled dummy content; no invented program guidance. */
 export async function writeSeedDocuments(): Promise<void> {
-  const directory = resolve(import.meta.dirname, '../..', 'artifacts/alliance-volunteer-portal/public/seed-resources');
+  const directory = resolve(import.meta.dirname, '../..', 'artifacts/api-server/seed-resources');
   await mkdir(directory, { recursive: true });
   for (const fixture of documentFixtures) {
     const text = `${fixture.title} - Development placeholder`;

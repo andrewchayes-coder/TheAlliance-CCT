@@ -3,7 +3,20 @@ import { z } from 'zod';
 import { volunteerSchedule, volunteerScheduleAction } from '../server/volunteerSchedule';
 import { WorkflowError } from '../admin-volunteer-detail';
 import { logger } from '../lib/logger';
+import { db, volunteerProfilesTable } from '@workspace/db';
+import { eq } from 'drizzle-orm';
+import { agreementVersion } from '../server/agreements';
 const router = Router();
+router.use(async (req, res, next) => {
+  const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt,
+    version: volunteerProfilesTable.agreementVersion, acknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt })
+    .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, req.authUser!.id));
+  if (profile?.completedAt && (!profile.acknowledgedAt || profile.version !== await agreementVersion())) {
+    res.status(403).json({ error: 'Please review and acknowledge the updated agreements before using shifts.',
+      code: 'AGREEMENT_REQUIRED', nextPath: '/agreements' }); return;
+  }
+  next();
+});
 const booking = z.object({ slotId: z.string().uuid(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict();
 const skip = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
 router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });

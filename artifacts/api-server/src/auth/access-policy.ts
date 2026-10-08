@@ -4,6 +4,17 @@ import { requireJobsSecret } from '../server/jobs-auth';
 
 type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: '/admin/resources', guard: 'admin' },
+  { method: 'GET', path: '/admin/resources/context', guard: 'admin' },
+  { method: 'POST', path: '/admin/resources', guard: 'admin' },
+  { method: 'POST', path: '/admin/resources/reorder', guard: 'admin' },
+  { method: 'PATCH', path: /^\/admin\/resources\/[^/]+$/, guard: 'admin' },
+  { method: 'PATCH', path: /^\/admin\/resources\/[^/]+\/publish$/, guard: 'admin' },
+  { method: 'DELETE', path: /^\/admin\/resources\/[^/]+$/, guard: 'admin' },
+  { method: 'GET', path: '/resources', guard: 'auth' },
+  { method: 'GET', path: /^\/resources\/[^/]+$/, guard: 'auth' },
+  { method: 'GET', path: /^\/resources\/[^/]+\/file$/, guard: 'auth' },
+  { method: 'POST', path: '/agreements/acknowledge', guard: 'volunteer' },
   { method: 'GET', path: '/admin/notifications', guard: 'admin' },
   { method: 'GET', path: '/admin/notifications/summary', guard: 'admin' },
   { method: 'PATCH', path: '/admin/notifications/settings', guard: 'admin' },

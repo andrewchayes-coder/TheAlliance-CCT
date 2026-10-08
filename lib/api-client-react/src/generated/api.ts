@@ -21,6 +21,7 @@ import type {
 
 import type {
   AccountStatusInput,
+  AcknowledgeAgreement200,
   AdminAssignmentInput,
   AdminInviteInput,
   AdminInviteResult,
@@ -29,6 +30,7 @@ import type {
   AdminRemovalInput,
   AdminScheduleControls,
   AdminVolunteerDetail,
+  AgreementAcknowledgmentInput,
   AgreementResource,
   AuthSession,
   AuthSuccessResponse,
@@ -36,6 +38,7 @@ import type {
   CoordinatorWeek,
   CoverageAlertInput,
   CoverageAlertSettings,
+  DeleteResource200,
   DevEmailCheck,
   DevEmailCheckError,
   EmailInput,
@@ -68,7 +71,14 @@ import type {
   PublicUser,
   ReminderCheckResult,
   ReminderJobStatus,
+  ReorderResources200,
   ResetInput,
+  ResourceContext,
+  ResourceItem,
+  ResourcePublishInput,
+  ResourceReorderInput,
+  ResourceSaveResult,
+  ResourceUpload,
   RunAdminReminderCheckParams,
   ScheduleClosedDateInput,
   ScheduleSettings,
@@ -121,6 +131,823 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetPublishedResourceListUrl = () => {
+
+
+
+
+  return `/api/resources`
+}
+
+export const getPublishedResourceList = async ( options?: Parameters<typeof customFetch>[1]): Promise<ResourceItem[]> => {
+
+  return customFetch<ResourceItem[]>(getGetPublishedResourceListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublishedResourceListQueryKey = () => {
+    return [
+    `/api/resources`
+    ] as const;
+    }
+
+
+export const getGetPublishedResourceListQueryOptions = <TData = Awaited<ReturnType<typeof getPublishedResourceList>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublishedResourceList>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublishedResourceListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublishedResourceList>>> = ({ signal }) => getPublishedResourceList({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublishedResourceList>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublishedResourceListQueryResult = NonNullable<Awaited<ReturnType<typeof getPublishedResourceList>>>
+export type GetPublishedResourceListQueryError = ErrorType<unknown>
+
+
+
+export function useGetPublishedResourceList<TData = Awaited<ReturnType<typeof getPublishedResourceList>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublishedResourceList>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublishedResourceListQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminResourcesUrl = () => {
+
+
+
+
+  return `/api/admin/resources`
+}
+
+export const getAdminResources = async ( options?: Parameters<typeof customFetch>[1]): Promise<ResourceItem[]> => {
+
+  return customFetch<ResourceItem[]>(getGetAdminResourcesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminResourcesQueryKey = () => {
+    return [
+    `/api/admin/resources`
+    ] as const;
+    }
+
+
+export const getGetAdminResourcesQueryOptions = <TData = Awaited<ReturnType<typeof getAdminResources>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminResources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminResourcesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminResources>>> = ({ signal }) => getAdminResources({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminResources>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminResourcesQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminResources>>>
+export type GetAdminResourcesQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminResources<TData = Awaited<ReturnType<typeof getAdminResources>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminResources>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminResourcesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateResourceUrl = () => {
+
+
+
+
+  return `/api/admin/resources`
+}
+
+export const createResource = async (resourceUpload: ResourceUpload, options?: Parameters<typeof customFetch>[1]): Promise<ResourceSaveResult> => {
+    const formData = new FormData();
+formData.append(`metadata`, resourceUpload.metadata);
+if(resourceUpload.file !== undefined) {
+ formData.append(`file`, resourceUpload.file);
+ }
+
+  return customFetch<ResourceSaveResult>(getCreateResourceUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getCreateResourceMutationKey = () => ['createResource'] as const;
+
+export const getCreateResourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createResource>>, TError,CreateResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createResource>>, TError,CreateResourceMutationVariables, TContext> => {
+
+const mutationKey = getCreateResourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createResource>>, CreateResourceMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createResource(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateResourceMutationResult = NonNullable<Awaited<ReturnType<typeof createResource>>>
+    export type CreateResourceMutationBody = BodyType<ResourceUpload>
+    export type CreateResourceMutationError = ErrorType<unknown>
+    export type CreateResourceMutationVariables = {data: BodyType<ResourceUpload>}
+
+    export const useCreateResource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createResource>>, TError,CreateResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createResource>>,
+        TError,
+        CreateResourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateResourceMutationOptions(options));
+    }
+
+export const getGetResourceContextUrl = () => {
+
+
+
+
+  return `/api/admin/resources/context`
+}
+
+export const getResourceContext = async ( options?: Parameters<typeof customFetch>[1]): Promise<ResourceContext> => {
+
+  return customFetch<ResourceContext>(getGetResourceContextUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResourceContextQueryKey = () => {
+    return [
+    `/api/admin/resources/context`
+    ] as const;
+    }
+
+
+export const getGetResourceContextQueryOptions = <TData = Awaited<ReturnType<typeof getResourceContext>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResourceContext>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResourceContextQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResourceContext>>> = ({ signal }) => getResourceContext({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResourceContext>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResourceContextQueryResult = NonNullable<Awaited<ReturnType<typeof getResourceContext>>>
+export type GetResourceContextQueryError = ErrorType<unknown>
+
+
+
+export function useGetResourceContext<TData = Awaited<ReturnType<typeof getResourceContext>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResourceContext>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResourceContextQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateResourceUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/resources/${id}`
+}
+
+export const updateResource = async (id: string,
+    resourceUpload: ResourceUpload, options?: Parameters<typeof customFetch>[1]): Promise<ResourceSaveResult> => {
+    const formData = new FormData();
+formData.append(`metadata`, resourceUpload.metadata);
+if(resourceUpload.file !== undefined) {
+ formData.append(`file`, resourceUpload.file);
+ }
+
+  return customFetch<ResourceSaveResult>(getUpdateResourceUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getUpdateResourceMutationKey = () => ['updateResource'] as const;
+
+export const getUpdateResourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateResource>>, TError,UpdateResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateResource>>, TError,UpdateResourceMutationVariables, TContext> => {
+
+const mutationKey = getUpdateResourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateResource>>, UpdateResourceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateResource(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateResourceMutationResult = NonNullable<Awaited<ReturnType<typeof updateResource>>>
+    export type UpdateResourceMutationBody = BodyType<ResourceUpload>
+    export type UpdateResourceMutationError = ErrorType<unknown>
+    export type UpdateResourceMutationVariables = {id: string;data: BodyType<ResourceUpload>}
+
+    export const useUpdateResource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateResource>>, TError,UpdateResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateResource>>,
+        TError,
+        UpdateResourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateResourceMutationOptions(options));
+    }
+
+export const getDeleteResourceUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/resources/${id}`
+}
+
+export const deleteResource = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<DeleteResource200> => {
+
+  return customFetch<DeleteResource200>(getDeleteResourceUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteResourceMutationKey = () => ['deleteResource'] as const;
+
+export const getDeleteResourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteResource>>, TError,DeleteResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteResource>>, TError,DeleteResourceMutationVariables, TContext> => {
+
+const mutationKey = getDeleteResourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteResource>>, DeleteResourceMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteResource(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteResourceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteResource>>>
+
+    export type DeleteResourceMutationError = ErrorType<unknown>
+    export type DeleteResourceMutationVariables = {id: string}
+
+    export const useDeleteResource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteResource>>, TError,DeleteResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteResource>>,
+        TError,
+        DeleteResourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteResourceMutationOptions(options));
+    }
+
+export const getPublishResourceUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/resources/${id}/publish`
+}
+
+export const publishResource = async (id: string,
+    resourcePublishInput: ResourcePublishInput, options?: Parameters<typeof customFetch>[1]): Promise<ResourceSaveResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ResourceSaveResult>(getPublishResourceUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resourcePublishInput)
+  }
+);}
+
+
+
+
+
+export const getPublishResourceMutationKey = () => ['publishResource'] as const;
+
+export const getPublishResourceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishResource>>, TError,PublishResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof publishResource>>, TError,PublishResourceMutationVariables, TContext> => {
+
+const mutationKey = getPublishResourceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishResource>>, PublishResourceMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  publishResource(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishResourceMutationResult = NonNullable<Awaited<ReturnType<typeof publishResource>>>
+    export type PublishResourceMutationBody = BodyType<ResourcePublishInput>
+    export type PublishResourceMutationError = ErrorType<unknown>
+    export type PublishResourceMutationVariables = {id: string;data: BodyType<ResourcePublishInput>}
+
+    export const usePublishResource = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishResource>>, TError,PublishResourceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof publishResource>>,
+        TError,
+        PublishResourceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPublishResourceMutationOptions(options));
+    }
+
+export const getReorderResourcesUrl = () => {
+
+
+
+
+  return `/api/admin/resources/reorder`
+}
+
+export const reorderResources = async (resourceReorderInput: ResourceReorderInput, options?: Parameters<typeof customFetch>[1]): Promise<ReorderResources200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReorderResources200>(getReorderResourcesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resourceReorderInput)
+  }
+);}
+
+
+
+
+
+export const getReorderResourcesMutationKey = () => ['reorderResources'] as const;
+
+export const getReorderResourcesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderResources>>, TError,ReorderResourcesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderResources>>, TError,ReorderResourcesMutationVariables, TContext> => {
+
+const mutationKey = getReorderResourcesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderResources>>, ReorderResourcesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  reorderResources(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderResourcesMutationResult = NonNullable<Awaited<ReturnType<typeof reorderResources>>>
+    export type ReorderResourcesMutationBody = BodyType<ResourceReorderInput>
+    export type ReorderResourcesMutationError = ErrorType<unknown>
+    export type ReorderResourcesMutationVariables = {data: BodyType<ResourceReorderInput>}
+
+    export const useReorderResources = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderResources>>, TError,ReorderResourcesMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderResources>>,
+        TError,
+        ReorderResourcesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReorderResourcesMutationOptions(options));
+    }
+
+export const getGetResourceUrl = (id: string,) => {
+
+
+
+
+  return `/api/resources/${id}`
+}
+
+export const getResource = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<ResourceItem> => {
+
+  return customFetch<ResourceItem>(getGetResourceUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResourceQueryKey = (id: string,) => {
+    return [
+    `/api/resources/${id}`
+    ] as const;
+    }
+
+
+export const getGetResourceQueryOptions = <TData = Awaited<ReturnType<typeof getResource>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResourceQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResource>>> = ({ signal }) => getResource(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResource>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetResourceQueryResult = NonNullable<Awaited<ReturnType<typeof getResource>>>
+export type GetResourceQueryError = ErrorType<unknown>
+
+
+
+export function useGetResource<TData = Awaited<ReturnType<typeof getResource>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getResource>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetResourceQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadResourceFileUrl = (id: string,) => {
+
+
+
+
+  return `/api/resources/${id}/file`
+}
+
+export const downloadResourceFile = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadResourceFileUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadResourceFileQueryKey = (id: string,) => {
+    return [
+    `/api/resources/${id}/file`
+    ] as const;
+    }
+
+
+export const getDownloadResourceFileQueryOptions = <TData = Awaited<ReturnType<typeof downloadResourceFile>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadResourceFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadResourceFileQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadResourceFile>>> = ({ signal }) => downloadResourceFile(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadResourceFile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadResourceFileQueryResult = NonNullable<Awaited<ReturnType<typeof downloadResourceFile>>>
+export type DownloadResourceFileQueryError = ErrorType<unknown>
+
+
+
+export function useDownloadResourceFile<TData = Awaited<ReturnType<typeof downloadResourceFile>>, TError = ErrorType<unknown>>(
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadResourceFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadResourceFileQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAcknowledgeAgreementUrl = () => {
+
+
+
+
+  return `/api/agreements/acknowledge`
+}
+
+export const acknowledgeAgreement = async (agreementAcknowledgmentInput: AgreementAcknowledgmentInput, options?: Parameters<typeof customFetch>[1]): Promise<AcknowledgeAgreement200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AcknowledgeAgreement200>(getAcknowledgeAgreementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(agreementAcknowledgmentInput)
+  }
+);}
+
+
+
+
+
+export const getAcknowledgeAgreementMutationKey = () => ['acknowledgeAgreement'] as const;
+
+export const getAcknowledgeAgreementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acknowledgeAgreement>>, TError,AcknowledgeAgreementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acknowledgeAgreement>>, TError,AcknowledgeAgreementMutationVariables, TContext> => {
+
+const mutationKey = getAcknowledgeAgreementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acknowledgeAgreement>>, AcknowledgeAgreementMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  acknowledgeAgreement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcknowledgeAgreementMutationResult = NonNullable<Awaited<ReturnType<typeof acknowledgeAgreement>>>
+    export type AcknowledgeAgreementMutationBody = BodyType<AgreementAcknowledgmentInput>
+    export type AcknowledgeAgreementMutationError = ErrorType<unknown>
+    export type AcknowledgeAgreementMutationVariables = {data: BodyType<AgreementAcknowledgmentInput>}
+
+    export const useAcknowledgeAgreement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acknowledgeAgreement>>, TError,AcknowledgeAgreementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acknowledgeAgreement>>,
+        TError,
+        AcknowledgeAgreementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAcknowledgeAgreementMutationOptions(options));
+    }
 
 export const getGetNotificationSummaryUrl = () => {
 
