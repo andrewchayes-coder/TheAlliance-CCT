@@ -11,6 +11,7 @@ import adminWorkflowRouter from "./admin-volunteer-workflow";
 import adminScheduleRouter from "./admin-schedule";
 import adminCoordinatorRouter from "./admin-coordinator";
 import volunteerScheduleRouter from "./volunteer-schedule";
+import adminScheduleControlsRouter from './admin-schedule-controls';
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
@@ -33,5 +34,6 @@ router.use('/admin', adminRosterRouter);
 router.use('/admin', adminWorkflowRouter);
 router.use('/admin', adminScheduleRouter);
 router.use('/admin', adminCoordinatorRouter);
+router.use('/admin', adminScheduleControlsRouter);
 
 export default router;

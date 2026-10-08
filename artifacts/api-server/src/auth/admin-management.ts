@@ -1,10 +1,15 @@
 import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import {
-  db, usersTable, authTokensTable, sessionsTable, notificationLogTable, type User,
+  db, usersTable, authTokensTable, sessionsTable, notificationLogTable, volunteerProfilesTable,
+  shiftAssignmentsTable, activityLogTable, type User,
 } from '@workspace/db';
 import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin, randomToken } from './session';
 import { hashPassword, tokenHash } from './security';
+import { lockSchedule } from '../server/scheduleMutations';
+import { pacificDay, assignmentIsHeld } from '../server/scheduleService';
+import { onAssignmentsReleased, type ReleasedAssignments } from '../uncovered-shifts';
+import { logger } from '../lib/logger';
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type AdminActor = Pick<User, 'id' | 'sessionVersion'>;
@@ -98,7 +103,9 @@ export function assertDeactivationAllowed(actorId: string, target: User, activeA
 }
 
 export async function setAccountActive(actor: AdminActor, userId: string, isActive: boolean) {
-  return db.transaction(async tx => {
+  let event: ReleasedAssignments | undefined;
+  const result = await db.transaction(async tx => {
+    await lockSchedule(tx);
     const admins = await lockActiveAdmins(tx, actor);
     const [target] = await tx.select().from(usersTable).where(eq(usersTable.id, userId)).for('update');
     if (!target) throw new AdminActionError(404, 'USER_NOT_FOUND', 'This account could not be found.');
@@ -113,7 +120,24 @@ export async function setAccountActive(actor: AdminActor, userId: string, isActi
     if (!isActive) {
       await tx.update(authTokensTable).set({ usedAt: new Date() })
         .where(and(eq(authTokensTable.userId, userId), isNull(authTokensTable.usedAt)));
+      if (target.role === 'volunteer') {
+        const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId)).for('update');
+        if (profile) {
+          const today = pacificDay(new Date());
+          const rows = (await tx.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.volunteerProfileId, profile.id)))
+            .filter(a => assignmentIsHeld(a, today));
+          for (const a of rows) await tx.update(shiftAssignmentsTable).set({ endDate: today, endedReason: 'admin_removed', updatedAt: new Date() })
+            .where(eq(shiftAssignmentsTable.id, a.id));
+          const [activity] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id,
+            actorUserId: actor.id, action: 'account_deactivated', details: { previousAssignments: rows } }).returning();
+          event = { volunteerProfileId: profile.id, assignmentIds: rows.map(a => a.id), shiftSlotIds: [...new Set(rows.map(a => a.shiftSlotId))],
+            effectiveDate: today, activityId: activity!.id };
+        }
+      }
     }
     return updated!;
   });
+  if (event) try { await onAssignmentsReleased(event); }
+  catch (err) { logger.error({ err }, 'Coverage alert failed after account deactivation.'); }
+  return result;
 }

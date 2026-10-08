@@ -8,6 +8,138 @@
 import * as zod from 'zod';
 
 
+export const getAdminScheduleControlsQueryQMax = 120;
+
+
+
+export const GetAdminScheduleControlsQueryParams = zod.object({
+  "slotId": zod.coerce.string().uuid().optional(),
+  "userId": zod.coerce.string().uuid().optional(),
+  "q": zod.coerce.string().max(getAdminScheduleControlsQueryQMax).optional()
+})
+
+export const GetAdminScheduleControlsResponse = zod.object({
+  "volunteers": zod.array(zod.object({
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "heldCount": zod.number().int(),
+  "blockedReasons": zod.array(zod.string())
+})),
+  "slots": zod.array(zod.object({
+  "id": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "heldCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "startDates": zod.array(zod.string())
+})),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "slotId": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startDate": zod.string(),
+  "dates": zod.array(zod.object({
+  "date": zod.string(),
+  "skipId": zod.string().nullable(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "closedReason": zod.string().nullable()
+}))
+}))
+})
+
+
+export const assignAdminShiftBodyReasonMax = 2000;
+
+
+
+export const AssignAdminShiftBody = zod.object({
+  "userId": zod.string().uuid(),
+  "slotId": zod.string().uuid(),
+  "startDate": zod.string().optional(),
+  "override": zod.boolean(),
+  "reason": zod.string().max(assignAdminShiftBodyReasonMax).optional()
+})
+
+export const AssignAdminShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const RemoveAdminShiftParams = zod.object({
+  "assignmentId": zod.coerce.string().uuid()
+})
+
+export const RemoveAdminShiftBody = zod.object({
+  "emailVolunteer": zod.boolean()
+})
+
+export const RemoveAdminShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const AddAdminWeekOffParams = zod.object({
+  "assignmentId": zod.coerce.string().uuid()
+})
+
+export const addAdminWeekOffBodyDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const AddAdminWeekOffBody = zod.object({
+  "date": zod.string().regex(addAdminWeekOffBodyDateRegExp)
+})
+
+export const AddAdminWeekOffResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const RemoveAdminWeekOffParams = zod.object({
+  "assignmentId": zod.coerce.string().uuid(),
+  "skipId": zod.coerce.string().uuid()
+})
+
+export const RemoveAdminWeekOffResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const GetCoverageAlertSettingsResponse = zod.object({
+  "dailyDigestEnabled": zod.boolean(),
+  "lastDigestDate": zod.string().nullable()
+})
+
+
+export const UpdateCoverageAlertSettingsBody = zod.object({
+  "dailyDigestEnabled": zod.boolean()
+})
+
+export const UpdateCoverageAlertSettingsResponse = zod.object({
+  "dailyDigestEnabled": zod.boolean(),
+  "lastDigestDate": zod.string().nullable()
+})
+
+
 export const GetVolunteerScheduleResponse = zod.object({
   "canBook": zod.boolean(),
   "blockedReasons": zod.array(zod.string()),

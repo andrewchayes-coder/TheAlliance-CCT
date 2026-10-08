@@ -5,6 +5,82 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AdminAssignmentInput {
+  userId: string;
+  slotId: string;
+  startDate?: string;
+  override: boolean;
+  /** @maxLength 2000 */
+  reason?: string;
+}
+
+export interface AdminRemovalInput {
+  emailVolunteer: boolean;
+}
+
+export interface CoverageAlertInput {
+  dailyDigestEnabled: boolean;
+}
+
+export interface CoverageAlertSettings {
+  dailyDigestEnabled: boolean;
+  /** @nullable */
+  lastDigestDate: string | null;
+}
+
+export type AdminScheduleControlsVolunteersItem = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  heldCount: number;
+  blockedReasons: string[];
+};
+
+export type AdminScheduleControlsAssignmentsItemDatesItem = {
+  date: string;
+  /** @nullable */
+  skipId: string | null;
+  startsAt: string;
+  endsAt: string;
+  /** @nullable */
+  closedReason: string | null;
+};
+
+export type AdminScheduleControlsAssignmentsItem = {
+  id: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  slotId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  startDate: string;
+  dates: AdminScheduleControlsAssignmentsItemDatesItem[];
+};
+
+export interface VolunteerAvailableSlot {
+  id: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  /** @nullable */
+  label: string | null;
+  capacity: number;
+  heldCount: number;
+  openSpots: number;
+  /** @nullable */
+  ownAssignmentId: string | null;
+  startDates: string[];
+}
+
+export interface AdminScheduleControls {
+  volunteers: AdminScheduleControlsVolunteersItem[];
+  slots: VolunteerAvailableSlot[];
+  assignments: AdminScheduleControlsAssignmentsItem[];
+}
+
 export interface VolunteerBookingInput {
   slotId: string;
   /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
@@ -48,21 +124,6 @@ export interface VolunteerStandingShift {
   endDate: string | null;
   nextDates: VolunteerShiftDate[];
   weeksOff: VolunteerShiftDate[];
-}
-
-export interface VolunteerAvailableSlot {
-  id: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  /** @nullable */
-  label: string | null;
-  capacity: number;
-  heldCount: number;
-  openSpots: number;
-  /** @nullable */
-  ownAssignmentId: string | null;
-  startDates: string[];
 }
 
 export interface VolunteerSchedule {
@@ -814,6 +875,15 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type GetAdminScheduleControlsParams = {
+slotId?: string;
+userId?: string;
+/**
+ * @maxLength 120
+ */
+q?: string;
+};
 
 export type GetAdminScheduleWeekParams = {
 /**

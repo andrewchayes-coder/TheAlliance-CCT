@@ -11,6 +11,99 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/schedule/controls:
+    get:
+      operationId: getAdminScheduleControls
+      parameters:
+        - { name: slotId, in: query, schema: { type: string, format: uuid } }
+        - { name: userId, in: query, schema: { type: string, format: uuid } }
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+      responses:
+        "200":
+          description: Staff scheduling controls
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminScheduleControls' }
+  /admin/schedule/assignments:
+    post:
+      operationId: assignAdminShift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminAssignmentInput' }
+      responses:
+        "200":
+          description: Assignment saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /admin/schedule/assignments/{assignmentId}/remove:
+    post:
+      operationId: removeAdminShift
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminRemovalInput' }
+      responses:
+        "200":
+          description: Assignment released
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /admin/schedule/assignments/{assignmentId}/skips:
+    post:
+      operationId: addAdminWeekOff
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VolunteerSkipInput' }
+      responses:
+        "200":
+          description: Week off saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /admin/schedule/assignments/{assignmentId}/skips/{skipId}:
+    delete:
+      operationId: removeAdminWeekOff
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: skipId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Week off removed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /admin/schedule/alerts:
+    get:
+      operationId: getCoverageAlertSettings
+      responses:
+        "200":
+          description: Digest settings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoverageAlertSettings' }
+    patch:
+      operationId: updateCoverageAlertSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CoverageAlertInput' }
+      responses:
+        "200":
+          description: Digest settings saved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoverageAlertSettings' }
   /volunteer/schedule:
     get:
       operationId: getVolunteerSchedule
@@ -670,6 +763,76 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    AdminAssignmentInput:
+      type: object
+      required: [userId, slotId, override]
+      properties:
+        userId: { type: string, format: uuid }
+        slotId: { type: string, format: uuid }
+        startDate: { type: string }
+        override: { type: boolean }
+        reason: { type: string, maxLength: 2000 }
+    AdminRemovalInput:
+      type: object
+      required: [emailVolunteer]
+      properties:
+        emailVolunteer: { type: boolean }
+    CoverageAlertInput:
+      type: object
+      required: [dailyDigestEnabled]
+      properties:
+        dailyDigestEnabled: { type: boolean }
+    CoverageAlertSettings:
+      type: object
+      required: [dailyDigestEnabled, lastDigestDate]
+      properties:
+        dailyDigestEnabled: { type: boolean }
+        lastDigestDate: { type: [string, "null"] }
+    AdminScheduleControls:
+      type: object
+      required: [volunteers, slots, assignments]
+      properties:
+        volunteers:
+          type: array
+          items:
+            type: object
+            required: [userId, firstName, lastName, email, heldCount, blockedReasons]
+            properties:
+              userId: { type: string }
+              firstName: { type: string }
+              lastName: { type: string }
+              email: { type: string }
+              heldCount: { type: integer }
+              blockedReasons: { type: array, items: { type: string } }
+        slots:
+          type: array
+          items: { $ref: '#/components/schemas/VolunteerAvailableSlot' }
+        assignments:
+          type: array
+          items:
+            type: object
+            required: [id, userId, firstName, lastName, slotId, dayOfWeek, startTime, endTime, startDate, dates]
+            properties:
+              id: { type: string }
+              userId: { type: string }
+              firstName: { type: string }
+              lastName: { type: string }
+              slotId: { type: string }
+              dayOfWeek: { type: integer }
+              startTime: { type: string }
+              endTime: { type: string }
+              startDate: { type: string }
+              dates:
+                type: array
+                items:
+                  type: object
+                  required: [date, skipId, startsAt, endsAt, closedReason]
+                  properties:
+                    date: { type: string }
+                    skipId: { type: [string, "null"] }
+                    startsAt: { type: string, format: date-time }
+                    endsAt: { type: string, format: date-time }
+                    closedReason: { type: [string, "null"] }
     VolunteerBookingInput:
       type: object
       required: [slotId]

@@ -21,19 +21,25 @@ import type {
 
 import type {
   AccountStatusInput,
+  AdminAssignmentInput,
   AdminInviteInput,
   AdminInviteResult,
+  AdminRemovalInput,
+  AdminScheduleControls,
   AdminVolunteerDetail,
   AgreementResource,
   AuthSession,
   AuthSuccessResponse,
   CoordinatorOverview,
   CoordinatorWeek,
+  CoverageAlertInput,
+  CoverageAlertSettings,
   DevEmailCheck,
   DevEmailCheckError,
   EmailInput,
   ExportVolunteerRosterParams,
   ExportVolunteerScheduleParams,
+  GetAdminScheduleControlsParams,
   GetAdminScheduleWeek400,
   GetAdminScheduleWeekParams,
   HealthStatus,
@@ -96,6 +102,555 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAdminScheduleControlsUrl = (params?: GetAdminScheduleControlsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/schedule/controls?${stringifiedParams}` : `/api/admin/schedule/controls`
+}
+
+export const getAdminScheduleControls = async (params?: GetAdminScheduleControlsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminScheduleControls> => {
+
+  return customFetch<AdminScheduleControls>(getGetAdminScheduleControlsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminScheduleControlsQueryKey = (params?: GetAdminScheduleControlsParams,) => {
+    return [
+    `/api/admin/schedule/controls`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminScheduleControlsQueryOptions = <TData = Awaited<ReturnType<typeof getAdminScheduleControls>>, TError = ErrorType<unknown>>(params?: GetAdminScheduleControlsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleControls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminScheduleControlsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminScheduleControls>>> = ({ signal }) => getAdminScheduleControls(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleControls>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminScheduleControlsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminScheduleControls>>>
+export type GetAdminScheduleControlsQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminScheduleControls<TData = Awaited<ReturnType<typeof getAdminScheduleControls>>, TError = ErrorType<unknown>>(
+ params?: GetAdminScheduleControlsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleControls>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminScheduleControlsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAssignAdminShiftUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/assignments`
+}
+
+export const assignAdminShift = async (adminAssignmentInput: AdminAssignmentInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getAssignAdminShiftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminAssignmentInput)
+  }
+);}
+
+
+
+
+
+export const getAssignAdminShiftMutationKey = () => ['assignAdminShift'] as const;
+
+export const getAssignAdminShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignAdminShift>>, TError,AssignAdminShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof assignAdminShift>>, TError,AssignAdminShiftMutationVariables, TContext> => {
+
+const mutationKey = getAssignAdminShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignAdminShift>>, AssignAdminShiftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  assignAdminShift(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssignAdminShiftMutationResult = NonNullable<Awaited<ReturnType<typeof assignAdminShift>>>
+    export type AssignAdminShiftMutationBody = BodyType<AdminAssignmentInput>
+    export type AssignAdminShiftMutationError = ErrorType<unknown>
+    export type AssignAdminShiftMutationVariables = {data: BodyType<AdminAssignmentInput>}
+
+    export const useAssignAdminShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignAdminShift>>, TError,AssignAdminShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof assignAdminShift>>,
+        TError,
+        AssignAdminShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAssignAdminShiftMutationOptions(options));
+    }
+
+export const getRemoveAdminShiftUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/assignments/${assignmentId}/remove`
+}
+
+export const removeAdminShift = async (assignmentId: string,
+    adminRemovalInput: AdminRemovalInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getRemoveAdminShiftUrl(assignmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(adminRemovalInput)
+  }
+);}
+
+
+
+
+
+export const getRemoveAdminShiftMutationKey = () => ['removeAdminShift'] as const;
+
+export const getRemoveAdminShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdminShift>>, TError,RemoveAdminShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeAdminShift>>, TError,RemoveAdminShiftMutationVariables, TContext> => {
+
+const mutationKey = getRemoveAdminShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeAdminShift>>, RemoveAdminShiftMutationVariables> = (props) => {
+          const {assignmentId,data} = props ?? {};
+
+          return  removeAdminShift(assignmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveAdminShiftMutationResult = NonNullable<Awaited<ReturnType<typeof removeAdminShift>>>
+    export type RemoveAdminShiftMutationBody = BodyType<AdminRemovalInput>
+    export type RemoveAdminShiftMutationError = ErrorType<unknown>
+    export type RemoveAdminShiftMutationVariables = {assignmentId: string;data: BodyType<AdminRemovalInput>}
+
+    export const useRemoveAdminShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdminShift>>, TError,RemoveAdminShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeAdminShift>>,
+        TError,
+        RemoveAdminShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveAdminShiftMutationOptions(options));
+    }
+
+export const getAddAdminWeekOffUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/assignments/${assignmentId}/skips`
+}
+
+export const addAdminWeekOff = async (assignmentId: string,
+    volunteerSkipInput: VolunteerSkipInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getAddAdminWeekOffUrl(assignmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerSkipInput)
+  }
+);}
+
+
+
+
+
+export const getAddAdminWeekOffMutationKey = () => ['addAdminWeekOff'] as const;
+
+export const getAddAdminWeekOffMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminWeekOff>>, TError,AddAdminWeekOffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addAdminWeekOff>>, TError,AddAdminWeekOffMutationVariables, TContext> => {
+
+const mutationKey = getAddAdminWeekOffMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addAdminWeekOff>>, AddAdminWeekOffMutationVariables> = (props) => {
+          const {assignmentId,data} = props ?? {};
+
+          return  addAdminWeekOff(assignmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddAdminWeekOffMutationResult = NonNullable<Awaited<ReturnType<typeof addAdminWeekOff>>>
+    export type AddAdminWeekOffMutationBody = BodyType<VolunteerSkipInput>
+    export type AddAdminWeekOffMutationError = ErrorType<unknown>
+    export type AddAdminWeekOffMutationVariables = {assignmentId: string;data: BodyType<VolunteerSkipInput>}
+
+    export const useAddAdminWeekOff = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addAdminWeekOff>>, TError,AddAdminWeekOffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addAdminWeekOff>>,
+        TError,
+        AddAdminWeekOffMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddAdminWeekOffMutationOptions(options));
+    }
+
+export const getRemoveAdminWeekOffUrl = (assignmentId: string,
+    skipId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/assignments/${assignmentId}/skips/${skipId}`
+}
+
+export const removeAdminWeekOff = async (assignmentId: string,
+    skipId: string, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+  return customFetch<VolunteerShiftResult>(getRemoveAdminWeekOffUrl(assignmentId,skipId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveAdminWeekOffMutationKey = () => ['removeAdminWeekOff'] as const;
+
+export const getRemoveAdminWeekOffMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdminWeekOff>>, TError,RemoveAdminWeekOffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeAdminWeekOff>>, TError,RemoveAdminWeekOffMutationVariables, TContext> => {
+
+const mutationKey = getRemoveAdminWeekOffMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeAdminWeekOff>>, RemoveAdminWeekOffMutationVariables> = (props) => {
+          const {assignmentId,skipId} = props ?? {};
+
+          return  removeAdminWeekOff(assignmentId,skipId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveAdminWeekOffMutationResult = NonNullable<Awaited<ReturnType<typeof removeAdminWeekOff>>>
+
+    export type RemoveAdminWeekOffMutationError = ErrorType<unknown>
+    export type RemoveAdminWeekOffMutationVariables = {assignmentId: string;skipId: string}
+
+    export const useRemoveAdminWeekOff = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeAdminWeekOff>>, TError,RemoveAdminWeekOffMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeAdminWeekOff>>,
+        TError,
+        RemoveAdminWeekOffMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveAdminWeekOffMutationOptions(options));
+    }
+
+export const getGetCoverageAlertSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/alerts`
+}
+
+export const getCoverageAlertSettings = async ( options?: Parameters<typeof customFetch>[1]): Promise<CoverageAlertSettings> => {
+
+  return customFetch<CoverageAlertSettings>(getGetCoverageAlertSettingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCoverageAlertSettingsQueryKey = () => {
+    return [
+    `/api/admin/schedule/alerts`
+    ] as const;
+    }
+
+
+export const getGetCoverageAlertSettingsQueryOptions = <TData = Awaited<ReturnType<typeof getCoverageAlertSettings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCoverageAlertSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCoverageAlertSettingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCoverageAlertSettings>>> = ({ signal }) => getCoverageAlertSettings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCoverageAlertSettings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCoverageAlertSettingsQueryResult = NonNullable<Awaited<ReturnType<typeof getCoverageAlertSettings>>>
+export type GetCoverageAlertSettingsQueryError = ErrorType<unknown>
+
+
+
+export function useGetCoverageAlertSettings<TData = Awaited<ReturnType<typeof getCoverageAlertSettings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCoverageAlertSettings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCoverageAlertSettingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateCoverageAlertSettingsUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/alerts`
+}
+
+export const updateCoverageAlertSettings = async (coverageAlertInput: CoverageAlertInput, options?: Parameters<typeof customFetch>[1]): Promise<CoverageAlertSettings> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CoverageAlertSettings>(getUpdateCoverageAlertSettingsUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(coverageAlertInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateCoverageAlertSettingsMutationKey = () => ['updateCoverageAlertSettings'] as const;
+
+export const getUpdateCoverageAlertSettingsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCoverageAlertSettings>>, TError,UpdateCoverageAlertSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCoverageAlertSettings>>, TError,UpdateCoverageAlertSettingsMutationVariables, TContext> => {
+
+const mutationKey = getUpdateCoverageAlertSettingsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCoverageAlertSettings>>, UpdateCoverageAlertSettingsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateCoverageAlertSettings(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCoverageAlertSettingsMutationResult = NonNullable<Awaited<ReturnType<typeof updateCoverageAlertSettings>>>
+    export type UpdateCoverageAlertSettingsMutationBody = BodyType<CoverageAlertInput>
+    export type UpdateCoverageAlertSettingsMutationError = ErrorType<unknown>
+    export type UpdateCoverageAlertSettingsMutationVariables = {data: BodyType<CoverageAlertInput>}
+
+    export const useUpdateCoverageAlertSettings = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCoverageAlertSettings>>, TError,UpdateCoverageAlertSettingsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateCoverageAlertSettings>>,
+        TError,
+        UpdateCoverageAlertSettingsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateCoverageAlertSettingsMutationOptions(options));
+    }
 
 export const getGetVolunteerScheduleUrl = () => {
 

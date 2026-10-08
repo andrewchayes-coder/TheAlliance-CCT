@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 import {
-  db, pool, usersTable, volunteerProfilesTable, authTokensTable, notificationLogTable, sessionsTable, authRateLimitsTable,
+  db, pool, usersTable, volunteerProfilesTable, authTokensTable, notificationLogTable, sessionsTable, authRateLimitsTable, activityLogTable,
 } from '@workspace/db';
 
 if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') {
@@ -128,6 +128,12 @@ after(async () => {
   if (createdUsers.length) {
     await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientUserId, createdUsers));
     await db.delete(authTokensTable).where(inArray(authTokensTable.userId, createdUsers));
+    const profiles = await db.select({ id: volunteerProfilesTable.id }).from(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, createdUsers));
+    if (profiles.length) {
+      const events = await db.select({ id: activityLogTable.id }).from(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profiles.map(p => p.id)));
+      if (events.length) await db.delete(notificationLogTable).where(inArray(notificationLogTable.relatedId, events.map(e => e.id)));
+      await db.delete(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profiles.map(p => p.id)));
+    }
     await db.delete(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, createdUsers));
     await db.delete(usersTable).where(inArray(usersTable.id, createdUsers));
   }

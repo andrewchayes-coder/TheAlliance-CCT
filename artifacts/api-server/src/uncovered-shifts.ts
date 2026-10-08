@@ -1,4 +1,4 @@
-import { logger } from './lib/logger';
+import { alertReleasedAssignments } from './server/coverageAlerts';
 
 export interface ReleasedAssignments {
   volunteerProfileId: string;
@@ -7,7 +7,6 @@ export interface ReleasedAssignments {
   effectiveDate: string;
   activityId: string;
 }
-/** Scheduling-step integration point. No coverage calculation or alert is claimed yet. */
-export async function onAssignmentsReleased(event: ReleasedAssignments): Promise<void> {
-  logger.info({ ...event, checkDeferred: true }, 'Standing assignments released; uncovered-shift check awaits the scheduling module.');
+export async function onAssignmentsReleased(event: ReleasedAssignments, now = new Date()): Promise<void> {
+  await alertReleasedAssignments(event, now);
 }

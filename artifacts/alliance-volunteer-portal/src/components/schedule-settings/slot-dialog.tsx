@@ -128,7 +128,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
           </label>
         </div>
         <p id="end-hint" className={`text-xs ${errs.end ? 'font-bold' : 'text-navy-soft'}`} role={errs.end ? 'alert' : undefined}>{errs.end || 'End defaults to two hours after start.'}</p>
-        <p id="cap-hint" className={`text-xs ${errs.cap && tried ? 'font-bold' : 'text-navy-soft'}`}>{errs.cap && tried ? errs.cap : assigned > 0 ? `${plural(assigned, 'volunteer')} assigned. Capacity cannot go below that.` : 'How many volunteers can hold this slot.'}</p>
+        <p id="cap-hint" className={`text-xs ${errs.cap && tried ? 'font-bold' : 'text-navy-soft'}`}>{errs.cap && tried ? errs.cap : assigned > 0 ? `${plural(assigned, 'volunteer')} assigned. Capacity cannot be lowered below both its current value and that number.` : 'How many volunteers can hold this slot.'}</p>
         <label className="block text-sm font-bold">Label (optional)
           <input type="text" maxLength={120} value={label} onChange={e => setLabel(e.target.value)} className={inputCls} placeholder="For example, Front desk" data-testid="input-slot-label" />
         </label>

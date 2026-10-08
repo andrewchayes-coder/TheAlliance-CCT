@@ -12,6 +12,7 @@ import { sendEmail, createEmailTemplate } from '../email';
 import { appOrigin } from '../auth/session';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
+import { lockSchedule } from '../server/scheduleMutations';
 
 const router = Router();
 function errorResponse(error: unknown, res: Response) {
@@ -32,6 +33,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
     if (!parsed.success) throw new WorkflowError(400, 'Choose a valid status and confirmation.');
     const input = parsed.data, today = pacificDay(new Date());
     const result = await db.transaction(async tx => {
+      await lockSchedule(tx);
       const { user, profile } = await lockedVolunteer(tx, id);
       checkRevision(profile, input.expectedUpdatedAt);
       if (profile.status === input.status) return { user, profile, activityId: null, released: [] as Awaited<ReturnType<typeof releasePreview>> };
@@ -51,7 +53,9 @@ router.post('/volunteers/:userId/status', async (req, res) => {
       await tx.update(volunteerProfilesTable).set({ status: input.status, updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
       const [event] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'status_changed',
         details: { from: profile.status, to: input.status, releasedAssignmentIds: released.map(row => row.assignmentId),
-          releasedShifts: released.map(row => ({ dayOfWeek: row.dayOfWeek, startTime: row.startTime, endTime: row.endTime })) } }).returning();
+          releasedShifts: released.map(row => ({ dayOfWeek: row.dayOfWeek, startTime: row.startTime, endTime: row.endTime })),
+          previousAssignments: released.map(row => ({ id: row.assignmentId, shiftSlotId: row.shiftSlotId,
+            volunteerProfileId: profile.id, startDate: row.startDate, endDate: row.endDate, endedReason: null })) } }).returning();
       return { user, profile, activityId: event!.id, released };
     });
     // Side effects happen only after the status, released assignments, and audit commit.

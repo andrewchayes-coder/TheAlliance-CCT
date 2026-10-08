@@ -6,6 +6,7 @@ import { RequireAdmin } from '@/auth/guards';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DAYS, calDate, clock, daysUntil } from '@/components/volunteer-detail/format';
+import { DigestToggle } from '@/components/schedule-controls/digest-toggle';
 import { SlotDialog } from '@/components/schedule-settings/slot-dialog';
 import { ClosedDates } from '@/components/schedule-settings/closed-dates';
 import { plural, useScheduleSync } from '@/components/schedule-settings/use-schedule';
@@ -68,6 +69,8 @@ function Body() {
       <p className="mt-2 text-xs text-navy-soft">Copying only adds Monday slots that are missing on other days. It never changes or removes existing slots.</p>
       <div className="mt-3" aria-live="polite">{result && <Notice kind="success">{result}</Notice>}</div>
       {copyErr && <div className="mt-3" role="alert"><Notice>{copyErr}</Notice></div>}
+
+      <DigestToggle />
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>}
       {q.isError && (

@@ -81,6 +81,13 @@ export const activityLogTable = pgTable('activity_log', {
 }, table => [index('activity_log_profile_created_idx').on(table.volunteerProfileId, table.createdAt)]);
 export const insertActivityLogSchema = createInsertSchema(activityLogTable).omit({ id: true, createdAt: true });
 export type ActivityLog = typeof activityLogTable.$inferSelect;
+
+export const appSettingsTable = pgTable('app_settings', {
+  id: text('id').primaryKey().default('schedule'),
+  dailyDigestEnabled: boolean('daily_digest_enabled').notNull().default(true),
+  lastDigestDate: date('last_digest_date', { mode: 'string' }),
+  ...timestamps(),
+});
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 export const shiftSlotsTable = pgTable('shift_slots', {

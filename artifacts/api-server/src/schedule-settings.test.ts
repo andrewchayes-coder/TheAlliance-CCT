@@ -65,7 +65,11 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   if (sessionIds.length) await db.delete(sessionsTable).where(inArray(sessionsTable.sid, sessionIds));
-  if (profileIds.length) await db.delete(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profileIds));
+  if (profileIds.length) {
+    const events = await db.select({ id: activityLogTable.id }).from(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profileIds));
+    if (events.length) await db.delete(notificationLogTable).where(inArray(notificationLogTable.relatedId, events.map(e => e.id)));
+    await db.delete(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profileIds));
+  }
   if (userIds.length) await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientUserId, userIds));
   if (assignmentIds.length) await db.delete(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.id, assignmentIds));
   if (slotIds.length) await db.delete(shiftSlotsTable).where(inArray(shiftSlotsTable.id, slotIds));

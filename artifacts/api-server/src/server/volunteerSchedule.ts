@@ -137,7 +137,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
   });
   // Post-commit side effects cannot roll back or make a successfully saved schedule appear to fail.
   if (result.released) try { await onAssignmentsReleased(result.released); } catch (error) {
-    logger.error({ err: error }, 'Volunteer schedule release check deferred');
+    logger.error({ err: error }, 'Coverage alert failed after the volunteer schedule was saved');
   }
   let emailWarning: string | null = null;
   if (result.confirmed) {

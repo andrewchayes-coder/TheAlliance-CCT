@@ -8,6 +8,7 @@ import { Notice } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { ATTN, BG, CERT, DAYS, STATUS, calDate, clock, stamp, type Badge } from './format';
+import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
 import { StatusPanel } from './status-panel';
 import { TrackingPanel } from './tracking-panel';
 import { NotesPanel } from './notes-panel';
@@ -32,6 +33,8 @@ function ActivityLine({ a }: { a: VolunteerActivity }) {
   return (
     <li className="py-2 text-sm" data-testid={`activity-${a.id}`}>
       <span className="font-bold">{text}</span>
+      {det.override === true && <span className="block text-[var(--alliance-amber-ink)]">Staff override{Array.isArray(det.overrides) && det.overrides.length ? `: ${det.overrides.map(v => String(v).replace(/_/g, ' ')).join(', ')}` : ''}</span>}
+      {typeof det.reason === 'string' && det.reason.trim() && <span className="block">Reason: {det.reason}</span>}
       <span className="block text-navy-soft">{a.actorName || 'Staff'} · {stamp(a.createdAt)}</span>
     </li>
   );
@@ -116,6 +119,7 @@ export function VolunteerDetail() {
                 ))}
               </ul>
             )}
+            <AdminScheduleControls userId={userId} />
           </section>
 
           <section className="alliance-card mt-6" aria-labelledby="v-msg">

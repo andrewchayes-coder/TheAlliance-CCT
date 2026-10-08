@@ -39,7 +39,7 @@ export async function updateSlot(slotId: string, input: SlotUpdate, actorUserId:
     if (!sameIds(input.expectedAssignmentIds, held.map(a => a.id)))
       throw new WorkflowError(409, 'The assigned volunteers changed. Refresh and review the assignment count before saving.');
     const count = new Set(held.map(a => a.volunteerProfileId)).size;
-    if (input.capacity < count) throw new WorkflowError(422, `${count} volunteers are assigned. Capacity cannot be reduced below ${count}; move or end assignments first.`);
+    if (input.capacity < slot.capacity && input.capacity < count) throw new WorkflowError(422, `${count} volunteers are assigned. Capacity cannot be reduced below ${count}; move or end assignments first.`);
     if (!input.isActive && count && !input.deactivation)
       throw new WorkflowError(400, `Choose when to end the assignments for these ${count} volunteers.`);
     let retireAfterDate = input.isActive && slotIsActive(slot, today) && !input.cancelRetirement ? slot.retireAfterDate : null;
@@ -68,7 +68,8 @@ export async function updateSlot(slotId: string, input: SlotUpdate, actorUserId:
         }
         const [activity] = await tx.insert(activityLogTable).values({ volunteerProfileId: p.profile.id, actorUserId,
           action: 'shift_slot_deactivated', details: { slotId, mode, keepUntilDate: retireAfterDate,
-            assignmentIds: owned.map(a => a.id), releasedAssignmentIds: immediate.map(a => a.id) } }).returning();
+            assignmentIds: owned.map(a => a.id), releasedAssignmentIds: immediate.map(a => a.id),
+            previousAssignments: owned } }).returning();
         effects.push({ user: p.user, profileId: p.profile.id, activityId: activity!.id, released: immediate.map(a => a.id),
           keptCount: owned.length - immediate.length, keepUntilDate: retireAfterDate });
       }

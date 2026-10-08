@@ -10,6 +10,7 @@ import { FETCH_CREDS } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { clock, pacificToday } from '@/components/volunteer-detail/format';
+import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
 import { POLL, addDays, dayLabel, fullName, layoutBlocks, timeGeometry, mondayOf, range, shortName, updatedLabel, validDate } from '@/lib/coordinator';
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
@@ -77,7 +78,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
               ))}
             </ul>
           )}
-          <p className="mt-6 rounded-lg bg-gray p-3 text-sm" data-testid="text-drawer-actions-note">Assignment actions will be available in the next schedule step</p>
+          <AdminScheduleControls key={`${block.slotId}-${block.date}`} slotId={block.slotId} closed={block.state === 'closed'} closedReason={block.closedReason} />
         </>)}
       </SheetContent>
     </Sheet>
