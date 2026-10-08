@@ -94,7 +94,7 @@ function AgreementsBlock({ checked, onCheck, error, onReady }: { checked: boolea
     <section className="rounded-2xl border border-gray p-5" aria-labelledby="agree-h">
       <h2 id="agree-h" className="alliance-display text-[14px]">Our agreements</h2>
       {q.isPending ? <Skeleton className="mt-4 h-24 w-full" /> : q.isError ? (
-        <div className="mt-3"><Notice>We couldn't load the agreements.</Notice><Button type="button" variant="secondary" onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        <div className="mt-3"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" variant="secondary" onClick={() => { void q.refetch(); }}>Try again</Button></div>
       ) : d && (
         <>
           {!d.ready && <div className="mt-3"><Notice kind="info">The User Agreement and Safety Guidelines aren't both available yet, so onboarding can't be finished today. You can save your progress and return later. Please check back soon, or contact the Alliance.</Notice></div>}
@@ -270,7 +270,7 @@ function OnboardingForm({ me }: { me: Me }) {
         <div className="mt-5 flex gap-2" aria-hidden="true">
           {[1, 2].map(n => <span key={n} className={`h-1.5 flex-1 rounded-full transition-colors ${n <= step ? 'bg-teal' : 'bg-gray'}`} />)}
         </div>
-        <div aria-live="polite" className="mt-5">{formErr && <Notice>{formErr}</Notice>}</div>
+        <div className="mt-5">{formErr && <Notice>{formErr}</Notice>}</div>
         <form noValidate onSubmit={e => { e.preventDefault(); void (step === 1 ? next() : finish()); }} className="mt-4 grid gap-6" data-testid="form-onboarding">
           <fieldset disabled={finishing || outBusy} className="contents">
           {step === 1 && (

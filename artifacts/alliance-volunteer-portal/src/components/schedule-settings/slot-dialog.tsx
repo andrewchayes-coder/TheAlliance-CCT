@@ -7,7 +7,7 @@ import { DAYS, calDate, clock, daysUntil, pacificToday } from '@/components/volu
 import { Dlg } from './dialog';
 import { addHours, emailText, overlaps, plural, useScheduleSync } from './use-schedule';
 
-const inputCls = 'mt-1 min-h-11 w-full rounded-lg border border-navy/40 bg-white px-3 focus-visible:outline-2 focus-visible:outline-teal';
+const inputCls = 'alliance-input mt-1 font-normal';
 const isScheduled = (s: ScheduleSlot) => s.isActive && !!s.retireAfterDate && daysUntil(s.retireAfterDate) >= 0;
 
 export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }: {
@@ -98,7 +98,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
     <Dlg id="slot-confirm-h" title={`End ${plural(assigned, 'assignment')} now?`} onClose={() => setStep('form')} busy={busy} testid="dialog-slot-endnow">
       <p className="mt-3 text-sm">This slot will close immediately and the {plural(assigned, 'volunteer')} assigned to {DAYS[snap.dayOfWeek]} {clock(snap.startTime)} to {clock(snap.endTime)} will lose their seats today. Future reservations are cancelled too. This cannot be undone here.</p>
       <p className="mt-2 text-sm">Each affected volunteer is sent a cancellation email. After you confirm, this page reports how many were sent, logged for testing, or failed. Reminders and gap alerts will be added later.</p>
-      {error && <div className="mt-3" role="alert"><Notice>{error}</Notice></div>}
+      {error && <div className="mt-3"><Notice>{error}</Notice></div>}
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <Button type="button" variant="secondary" onClick={() => setStep('form')} disabled={busy} data-testid="button-endnow-back">Go back</Button>
         <Button type="button" onClick={submit} disabled={busy} data-testid="button-endnow-confirm">{busy ? 'Ending...' : `End ${plural(assigned, 'assignment')} now`}</Button>
@@ -172,8 +172,8 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
           </fieldset>
         )}
         {deactivating && assigned === 0 && <p className="text-xs text-navy-soft">No volunteers are assigned, so this slot closes immediately.</p>}
-        {note && <div role="status"><Notice kind="info">{note}</Notice></div>}
-        {error && <div role="alert" data-testid="text-slot-error"><Notice>{error}</Notice></div>}
+        {note && <div><Notice kind="info">{note}</Notice></div>}
+        {error && <div data-testid="text-slot-error"><Notice>{error}</Notice></div>}
         <div className="flex flex-wrap justify-end gap-2">
           {stale && <Button type="button" variant="secondary" onClick={() => { void refresh(); }} data-testid="button-slot-refresh">Refresh latest</Button>}
           <Button type="button" variant="secondary" onClick={onClose} disabled={busy} data-testid="button-slot-cancel">Cancel</Button>

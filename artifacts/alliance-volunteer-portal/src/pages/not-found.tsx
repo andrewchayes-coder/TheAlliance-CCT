@@ -1,23 +1,11 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
-
+import { Link } from 'wouter';
+import { PublicLayout, Button } from '@/components/brand-system';
+import { AuthHeading } from '@/auth/auth-ui';
 export default function NotFound() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">
-              404 Page Not Found
-            </h1>
-          </div>
-
-          <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <PublicLayout>
+    <AuthHeading label="Let’s find your way back" title="That page isn’t available">
+      The link may have changed. Return to the portal to find your shifts, messages, and resources.
+    </AuthHeading>
+    <Button asChild><Link href="/">Return to the portal</Link></Button>
+  </PublicLayout>;
 }

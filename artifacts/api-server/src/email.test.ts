@@ -56,7 +56,8 @@ after(async () => {
 
 test('template is branded, escaped, mobile-friendly, and has the same CTA in plain text', () => {
   assert.ok(body.html.includes('ALLIANCE VOLUNTEER PORTAL'));
-  assert.ok(body.html.includes('#06365D') && body.html.includes('#02928F'));
+  assert.ok(body.html.includes('#06365D') && body.html.includes('#027A77'));
+  assert.ok(body.html.includes('font-size:17px') && body.html.includes('font-size:28px'));
   assert.ok(body.html.includes("'Open Sans',Arial,sans-serif"));
   assert.ok(body.html.includes('role="presentation"') && body.html.includes('max-width:600px'));
   assert.ok(body.text.includes('Hi Maya,') && body.text.includes(emailFooter));

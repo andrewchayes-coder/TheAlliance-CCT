@@ -25,7 +25,7 @@ function ForgotForm() {
       {done ? (
         <>
           <Notice kind="success">{done}</Notice>
-          <Link href="/signin" className="text-sm font-bold text-teal-text underline underline-offset-4">Back to sign in</Link>
+          <Link href="/signin" className="inline-flex min-h-11 items-center text-sm font-bold text-teal-text underline underline-offset-4">Back to sign in</Link>
         </>
       ) : (
         <>

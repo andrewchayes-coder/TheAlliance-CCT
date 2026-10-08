@@ -64,12 +64,12 @@ function MessagesBody() {
       ) : (
         <ul className="grid gap-2">
           {q.data.map(m => (
-            <li key={m.recipientId} className="rounded-xl bg-white shadow-sm" data-testid={`message-${m.recipientId}`}>
+            <li key={m.recipientId} className="min-w-0 rounded-xl bg-white shadow-sm" data-testid={`message-${m.recipientId}`}>
               <button type="button" onClick={() => { void open(m); }} aria-expanded={openId === m.recipientId}
                 className="flex min-h-14 w-full items-start gap-3 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-teal">
                 <span className={`mt-2 size-2.5 shrink-0 rounded-full ${m.readAt ? 'bg-transparent' : 'bg-teal'}`} aria-hidden="true" />
                 <span className="min-w-0 flex-1">
-                  <span className={`block ${m.readAt ? 'font-semibold' : 'font-bold'}`}>{m.subject}{!m.readAt && <span className="sr-only"> (unread)</span>}</span>
+                  <span className={`block break-words ${m.readAt ? 'font-semibold' : 'font-bold'}`}>{m.subject}{!m.readAt && <span className="sr-only"> (unread)</span>}</span>
                   {openId !== m.recipientId && <span className="block truncate text-sm text-navy-soft" data-testid={`text-preview-${m.recipientId}`}>{renderMessageMarkdown(m.body).text.split('\n').find(l => l.trim()) ?? ''}</span>}
                   <span className="block text-xs text-navy-soft">{shortDateTime(m.sentAt)}</span>
                 </span>

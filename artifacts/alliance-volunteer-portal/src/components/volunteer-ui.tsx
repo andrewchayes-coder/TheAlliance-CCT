@@ -37,8 +37,8 @@ export function LoadingBlock() {
 export function ErrorBlock({ onRetry, what }: { onRetry: () => void; what: string }) {
   return (
     <Card>
-      <Notice>We couldn't load {what}. Your information is safe.</Notice>
-      <Button variant="secondary" onClick={onRetry} data-testid="button-retry">Try again</Button>
+      <Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice>
+      <Button variant="secondary" onClick={onRetry} data-testid="button-retry" data-what={what}>Try again</Button>
     </Card>
   );
 }
@@ -53,7 +53,7 @@ export function UpcomingShifts({ shifts, schedulingOpen, max, now }: { shifts: S
           {list.map(s => (
             <li key={`${s.assignmentId}-${s.date}`} className="flex items-center gap-4 rounded-xl bg-white px-4 py-3 shadow-sm" data-testid={`shift-${s.assignmentId}-${s.date}`}>
               <div className="w-14 shrink-0 rounded-lg bg-navy py-1.5 text-center text-white">
-                <span className="block text-[11px] font-bold uppercase">{dayLabel(s.date, now).slice(0, 3)}</span>
+                <span className="block text-xs font-bold uppercase">{dayLabel(s.date, now).slice(0, 3)}</span>
                 <span className="block text-lg font-bold leading-tight">{Number(s.date.slice(8))}</span>
               </div>
               <div className="min-w-0"><p className="font-bold">{shiftWhen(s, now)}</p>{s.label && <p className="text-sm text-navy-soft">{s.label}</p>}</div>
@@ -62,8 +62,8 @@ export function UpcomingShifts({ shifts, schedulingOpen, max, now }: { shifts: S
         </ul>
       ) : (
         <div className="rounded-xl border border-dashed border-navy/25 bg-white px-5 py-6" data-testid="empty-upcoming">
-          <p className="font-bold">{schedulingOpen ? 'No upcoming shifts yet' : 'No shifts on your calendar'}</p>
-          <p className="mt-1 text-sm">{schedulingOpen ? 'Pick a weekly shift and your upcoming dates will appear here.' : 'Once you pick a weekly shift, your upcoming dates show here.'}</p>
+          <p className="font-bold">{schedulingOpen ? 'No shifts yet' : 'No shifts on your calendar'}</p>
+          <p className="mt-1 text-sm">{schedulingOpen ? 'Choose a weekly time to start helping local families find their way to support.' : 'Once you pick a weekly shift, your upcoming dates show here.'}</p>
         </div>
       )}
     </section>

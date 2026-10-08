@@ -103,7 +103,7 @@ function Body() {
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-28 w-full" />)}</div>}
       {q.isError && (
-        <div className="mt-4" role="alert"><Notice>{readError(q.error, "We couldn't load reminder job status.").message}</Notice>
+        <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
           <Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-jobs">Try again</Button></div>
       )}
       {d && (

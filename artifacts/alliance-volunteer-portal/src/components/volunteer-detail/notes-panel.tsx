@@ -85,7 +85,7 @@ export function NotesPanel({ userId, serverNotes, onPending }: { userId: string;
           <Button type="button" variant="secondary" onClick={retry} data-testid="button-notes-retry">Retry saving</Button></div>
       )}
       {state === 'conflict' && (
-        <div className="mt-2" role="alert" data-testid="notes-conflict">
+        <div className="mt-2" data-testid="notes-conflict">
           <Notice>Someone else changed these notes. Your draft is kept and has not been saved. Review the latest notes below, then choose.</Notice>
           <p className="mt-2 text-sm font-bold">Latest saved notes</p>
           <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-gray p-3 text-sm" data-testid="text-latest-notes">{serverNotes || 'No notes'}</p>

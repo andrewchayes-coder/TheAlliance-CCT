@@ -67,14 +67,14 @@ function Body() {
         </div>
       </div>
       <p className="mt-2 text-xs text-navy-soft">Copying only adds Monday slots that are missing on other days. It never changes or removes existing slots.</p>
-      <div className="mt-3" aria-live="polite">{result && <Notice kind="success">{result}</Notice>}</div>
-      {copyErr && <div className="mt-3" role="alert"><Notice>{copyErr}</Notice></div>}
+      <div className="mt-3">{result && <Notice kind="success">{result}</Notice>}</div>
+      {copyErr && <div className="mt-3"><Notice>{copyErr}</Notice></div>}
 
       <DigestToggle />
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>}
       {q.isError && (
-        <div className="mt-4" role="alert"><Notice>{readError(q.error, "We couldn't load schedule settings.").message}</Notice>
+        <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
           <Button type="button" className="mt-3" onClick={() => { void q.refetch(); }} data-testid="button-retry-settings">Try again</Button></div>
       )}
       {data && (<>

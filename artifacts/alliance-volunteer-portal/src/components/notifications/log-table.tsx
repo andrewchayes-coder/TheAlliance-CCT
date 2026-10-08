@@ -14,7 +14,7 @@ import { TYPES, typeLabel, when } from './shared';
 
 const realDate = (v: string) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false; const d = new Date(`${v}T00:00:00Z`); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v; };
 const tone = (s: EmailLogStatus) => (s === 'sent' ? 'good' : s === 'failed' ? 'blocked' : 'neutral');
-const sel = 'h-11 rounded-lg border border-navy bg-white px-2 text-sm';
+const sel = 'alliance-input';
 
 function RetryAction({ r, onRetry }: { r: NotificationLogRow; onRetry: (r: NotificationLogRow) => void }) {
   if (r.status !== 'failed') return null;
@@ -87,14 +87,14 @@ export function LogSection() {
         {filtered && <Button type="button" variant="secondary" onClick={clear} data-testid="button-clear-filters">Clear filters</Button>}
         {dateErr && <p role="alert" className="text-sm font-bold" data-testid="error-dates">{dateErr}</p>}
       </div>
-      <div className="mt-2" aria-live="polite">{outcome && <div data-testid="retry-outcome"><Notice kind={outcome.kind}>{outcome.msg}</Notice></div>}</div>
+      <div className="mt-2">{outcome && <div data-testid="retry-outcome"><Notice kind={outcome.kind}>{outcome.msg}</Notice></div>}</div>
 
       {q.isLoading && !dateErr && <div className="mt-3 space-y-2" role="status" aria-busy="true"><span className="sr-only">Loading log</span>{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>}
-      {q.isError && <div className="mt-3" role="alert"><Notice>{readError(q.error, "We couldn't load the email log.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-log">Try again</Button></div>}
+      {q.isError && <div className="mt-3"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-log">Try again</Button></div>}
       {d && !dateErr && (d.rows.length === 0 ? (
         <div className="mt-3"><EmptyState title={filtered ? 'No emails match' : 'No emails logged yet'} description={filtered ? 'Try widening or clearing the filters.' : 'Sent and logged emails will appear here.'} action={filtered ? <Button type="button" onClick={clear}>Clear filters</Button> : undefined} /></div>
       ) : (<>
-        <div className="mt-3 hidden max-h-[560px] overflow-auto rounded-xl border border-gray bg-white md:block">
+        <div className="mt-3 hidden max-h-[560px] overflow-auto rounded-xl border border-gray bg-white xl:block">
           <table className="w-full min-w-[860px] text-left text-sm" data-testid="table-log">
             <thead className="sticky top-0 bg-navy text-white"><tr>{['Time (Pacific)', 'Type', 'Recipient', 'Subject', 'Status', 'Error'].map(h => <th key={h} className="px-3 py-2 text-xs uppercase">{h}</th>)}<th className="px-3 py-2"><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>{d.rows.map(r => (
@@ -107,7 +107,7 @@ export function LogSection() {
               </tr>))}</tbody>
           </table>
         </div>
-        <ul className="mt-3 space-y-2 md:hidden">{d.rows.map(r => (
+        <ul className="mt-3 space-y-2 xl:hidden">{d.rows.map(r => (
           <li key={r.id} className="rounded-xl border border-gray bg-white p-3 text-sm" data-testid={`card-log-${r.id}`}>
             <div className="flex items-center justify-between gap-2"><b>{typeLabel(r.type)}</b><StatusBadge status={tone(r.status)}>{r.status}</StatusBadge></div>
             <p className="mt-1 text-xs">{when(r.time)}</p><p className="mt-1 break-all">{r.recipient}</p><p className="break-words">{r.subject}</p>

@@ -25,7 +25,7 @@ function Body() {
       <h1 className="alliance-display text-[22px]">Email notifications</h1>
       <p className="mt-1 max-w-xl text-sm">Monthly email volume, the provider connection, and every message the portal has sent or logged.</p>
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>}
-      {q.isError && <div className="mt-4" role="alert"><Notice>{readError(q.error, "We couldn't load notification usage.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-summary">Try again</Button></div>}
+      {q.isError && <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-summary">Try again</Button></div>}
       {s && (
         <div className="mt-4 space-y-4">
           <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">

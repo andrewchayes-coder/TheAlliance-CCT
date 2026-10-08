@@ -60,6 +60,7 @@ function PasswordSection() {
       <h2 className="alliance-display text-[14px]">Password</h2>
       <p className="mt-2 text-sm">Changing your password signs you out everywhere.</p>
       <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-4" data-testid="form-password">
+        <input type="email" name="username" autoComplete="username" value={auth.session?.email ?? ''} readOnly tabIndex={-1} aria-label="Account email" className="sr-only" />
         {err.form && <Notice>{err.form}</Notice>}
         <fieldset disabled={busy} className="contents">
         <PasswordField label="Current password" autoComplete="current-password" value={f.currentPassword} error={err.currentPassword} onChange={e => setF({ ...f, currentPassword: e.target.value })} data-testid="input-current-password" />
@@ -134,7 +135,7 @@ function ProfileForm({ me }: { me: Me }) {
       <Card>
         <h2 className="alliance-display text-[14px]">Your details</h2>
         <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-5" data-testid="form-profile">
-          <div aria-live="polite">{msg && <Notice kind={msg.kind}>{msg.text}</Notice>}</div>
+          <div>{msg && <Notice kind={msg.kind}>{msg.text}</Notice>}</div>
           <fieldset disabled={busy} className="contents">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="First name" autoComplete="given-name" maxLength={100} value={contact.firstName} error={errors.firstName} onChange={e => setContact({ ...contact, firstName: e.target.value })} data-testid="input-first-name" />

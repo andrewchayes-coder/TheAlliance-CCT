@@ -50,12 +50,12 @@ export function UsageCard({ s }: { s: Summary }) {
       <form className="mt-4 flex flex-wrap items-end gap-2" onSubmit={e => { e.preventDefault(); void submit(); }}>
         <label className="text-sm font-bold">Monthly limit
           <input value={value} onChange={e => { setDraft(e.target.value); setOk(false); }} inputMode="numeric" data-testid="input-limit"
-            className="mt-1 block h-11 w-40 rounded-lg border border-navy bg-white px-3 tabular-nums" aria-invalid={!!err} />
+            className="alliance-input mt-1 block w-40 tabular-nums" aria-invalid={!!err} />
         </label>
         <Button type="submit" disabled={save.isPending || draft === null} data-testid="button-save-limit">{save.isPending ? 'Saving' : 'Save limit'}</Button>
         {draft !== null && <Button type="button" variant="secondary" onClick={() => { setDraft(null); setErr(null); }} data-testid="button-reset-limit">Discard</Button>}
       </form>
-      <div aria-live="polite" className="mt-2">{err && <Notice>{err}</Notice>}{ok && <Notice kind="success">Limit saved.</Notice>}</div>
+      <div className="mt-2">{err && <Notice>{err}</Notice>}{ok && <Notice kind="success">Limit saved.</Notice>}</div>
     </Card>
   );
 }

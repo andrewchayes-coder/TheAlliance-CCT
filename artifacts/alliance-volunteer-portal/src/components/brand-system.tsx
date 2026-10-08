@@ -34,7 +34,7 @@ function BrandMark() {
       {__HAS_BRAND_LOGO__ ? (
         <img src={`${import.meta.env.BASE_URL}brand/logo.svg`} alt={appConfig.orgName} className="max-h-12 max-w-[240px]" />
       ) : (
-        <span className="alliance-display block max-w-[280px] text-[12px] leading-relaxed text-white sm:max-w-none sm:text-[15px]">
+        <span className="alliance-display block max-w-[280px] text-[14px] leading-relaxed text-white sm:max-w-none sm:text-[15px]">
           {appConfig.appName}
         </span>
       )}
@@ -48,7 +48,7 @@ export function PublicLayout({ children, contained = true }: { children: ReactNo
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-6 md:px-8">
           <BrandMark />
-          <span className="hidden text-xs font-semibold uppercase tracking-wider text-white sm:block">{appConfig.defaultCounty} County</span>
+          <span className="hidden text-sm font-semibold uppercase tracking-wider text-white sm:block">{appConfig.defaultCounty} County</span>
         </div>
       </header>
       {contained ? (
@@ -74,13 +74,13 @@ const adminItems: { label: string; href?: string }[] = [
 ];
 const adminActive = (loc: string, href: string) => href === '/admin' || href === '/admin/schedule' || href === '/admin/notifications' ? loc === href : loc === href || loc.startsWith(`${href}/`);
 
-function AdminMenu({ alwaysVisible = false, live = false }: { alwaysVisible?: boolean; live?: boolean }) {
+function AdminMenu({ alwaysVisible = false, live = false, role = 'admin' }: { alwaysVisible?: boolean; live?: boolean; role?: string }) {
   const [location] = useLocation();
   return (
     <Sheet>
       <SheetTrigger asChild>
         <button type="button" aria-label={live ? 'Open admin navigation' : 'Open admin navigation preview'} data-testid="button-admin-menu"
-          className={`rounded-lg p-3 text-white focus-visible:outline-2 focus-visible:outline-white ${alwaysVisible ? '' : 'md:hidden'}`}>
+          aria-haspopup="dialog" className={`inline-flex size-11 items-center justify-center rounded-lg text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${alwaysVisible ? '' : role === 'admin' ? 'xl:hidden' : 'md:hidden'}`}>
           <Menu size={22} aria-hidden="true" />
         </button>
       </SheetTrigger>
@@ -91,10 +91,10 @@ function AdminMenu({ alwaysVisible = false, live = false }: { alwaysVisible?: bo
             {adminItems.map(({ label, href }) => href ? (
               <SheetClose asChild key={label}>
                 <Link href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
-                  className={`block rounded-lg px-4 py-3 font-bold ${adminActive(location, href) ? 'bg-navy text-white' : 'bg-gray'}`}>{label}</Link>
+                  className={`block min-h-11 rounded-lg px-4 py-3 font-bold focus-visible:outline-2 focus-visible:outline-teal ${adminActive(location, href) ? 'bg-navy text-white' : 'bg-gray'}`}>{label}</Link>
               </SheetClose>
             ) : (
-              <div key={label} aria-disabled="true" className="flex items-center justify-between rounded-lg bg-gray px-4 py-3 opacity-60">{label}<span className="text-xs">Coming later</span></div>
+              <div key={label} aria-disabled="true" className="flex items-center justify-between rounded-lg bg-gray px-4 py-3 ">{label}<span className="text-xs">Coming later</span></div>
             ))}
           </nav>
         ) : (<>
@@ -120,7 +120,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
   const ctx = useGetMessageContext({ query: { queryKey: getGetMessageContextQueryKey(), enabled: liveVolunteer, staleTime: 30_000, refetchInterval: 45_000, retry: false }, request: FETCH_CREDS });
   const unread = liveVolunteer ? ctx.data?.unreadCount ?? 0 : 0;
   const badge = (href: string) => href === '/messages' && unread > 0
-    ? <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-teal px-1.5 text-[11px] font-bold text-white" data-testid="badge-unread"><span aria-hidden="true">{unread > 99 ? '99+' : unread}</span><span className="sr-only"> {unread} unread</span></span> : null;
+    ? <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-teal-text px-1.5 text-[14px] font-bold text-white" data-testid="badge-unread"><span aria-hidden="true">{unread > 99 ? '99+' : unread}</span><span className="sr-only"> {unread} unread</span></span> : null;
   const isActive = (href: string) => location === href || location.startsWith(`${href}/`);
   async function out() {
     setBusy(true);
@@ -138,12 +138,12 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 md:px-6">
           <BrandMark />
-          <nav className="hidden items-center gap-1 text-sm text-white md:flex" aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : live ? 'Admin navigation' : `${role} navigation preview`}>
+          <nav className={`hidden shrink-0 items-center gap-1 whitespace-nowrap text-sm text-white ${role === 'admin' ? 'xl:flex' : 'lg:flex'}`} aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : live ? 'Admin navigation' : `${role} navigation preview`}>
             {role === 'admin' && live
               ? adminItems.map(({ label, href }) => href ? (
                 <Link key={label} href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
                   className={`rounded-lg px-3 py-2 font-semibold hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white ${adminActive(location, href) ? 'bg-white/15 underline decoration-teal decoration-2 underline-offset-8' : ''}`}>{label}</Link>
-              ) : <span key={label} aria-disabled="true" title="Coming later" className="hidden px-3 opacity-60 xl:inline">{label} <span className="text-[10px] uppercase">soon</span></span>)
+              ) : <span key={label} aria-disabled="true" title="Coming later" className="hidden px-3 xl:inline">{label} <span className="text-xs uppercase">soon</span></span>)
               : role === 'admin' || !live
               ? (role === 'admin' ? adminNav : volunteerNav.map(i => i.label)).map(label => <span key={label} className="px-3">{label}</span>)
               : volunteerNav.map(({ label, href }) => (
@@ -152,13 +152,13 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
               ))}
           </nav>
           <div className="flex items-center gap-2">
-            {role === 'admin' && <AdminMenu live={live} />}
-            <details className="relative text-white">
-              <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/40" aria-label={live ? 'Open user menu' : 'Open user menu preview'} data-testid="button-user-menu"><UserRound size={20} /></summary>
-              <div className="absolute right-0 z-20 mt-2 w-60 rounded-xl bg-white p-2 text-sm text-navy shadow-lg">
+            {role === 'admin' && <AdminMenu live={live} role={role} />}
+            <details className="relative text-white" data-testid="menu-user">
+              <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-white/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" aria-label={live ? 'Open user menu' : 'Open user menu preview'} data-testid="button-user-menu"><UserRound size={20} aria-hidden="true" /></summary>
+              <div className="absolute right-0 z-20 mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-xl bg-white p-2 text-sm text-navy shadow-lg">
                 {live ? (
                   <>
-                    <p className="truncate px-3 py-2 text-xs text-navy-soft">{auth.session?.email ?? 'Signed in'}</p>
+                    <p className="truncate px-3 py-2 text-sm text-navy-soft">{auth.session?.email ?? 'Signed in'}</p>
                     {menuError && <p role="alert" className="px-3 py-2 text-sm">{menuError}</p>}
                     {role === 'volunteer' && <Link href="/profile" data-testid="link-menu-profile" className="flex min-h-11 items-center rounded-lg px-3 font-bold hover:bg-gray">Your profile</Link>}
                     <button type="button" onClick={() => { void out(); }} disabled={busy} data-testid="button-signout" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-bold hover:bg-gray disabled:opacity-50">{busy ? 'Signing out' : 'Sign out'}</button>
@@ -169,18 +169,18 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 pb-28 md:px-6 md:pb-8">{children}</main>
+      <main className="mx-auto min-w-0 max-w-6xl px-4 py-6 pb-28 md:px-6 lg:pb-8">{children}</main>
       {role === 'volunteer' && (
-        <nav className={`${preview ? 'absolute' : 'fixed'} inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-gray bg-white px-1 pb-[max(10px,env(safe-area-inset-bottom))] pt-1 md:hidden`} aria-label={live ? 'Volunteer navigation' : 'Volunteer navigation preview'} data-testid="volunteer-bottom-tabs">
+        <nav className={`${preview ? 'absolute' : 'fixed'} inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-gray bg-white px-1 pb-[max(10px,env(safe-area-inset-bottom))] pt-1 lg:hidden`} aria-label={live ? 'Volunteer navigation' : 'Volunteer navigation preview'} data-testid="volunteer-bottom-tabs">
           {volunteerNav.map(({ label, href, icon: Icon }) => live ? (
             <Link key={href} href={href} aria-current={isActive(href) ? 'page' : undefined} data-testid={`tab-${href.slice(1)}`}
-              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 focus-visible:outline-2 focus-visible:outline-teal ${isActive(href) ? 'font-bold text-teal-text' : 'text-navy'}`}>
-              <span className="relative"><Icon size={20} aria-hidden="true" />{href === '/messages' && unread > 0 && <span className="absolute -right-2 -top-1 size-2.5 rounded-full bg-teal" aria-hidden="true" />}</span><span className="text-[10px] font-bold uppercase leading-tight">{label}{href === '/messages' && unread > 0 && <span className="sr-only"> {unread} unread</span>}</span>
+              className={`flex min-h-12 min-w-11 flex-col items-center justify-center gap-0.5 rounded-lg py-1.5 focus-visible:outline-2 focus-visible:outline-teal ${isActive(href) ? 'font-bold text-teal-text' : 'text-navy'}`}>
+              <span className="relative"><Icon size={20} aria-hidden="true" />{href === '/messages' && unread > 0 && <span className="absolute -right-2 -top-1 size-2.5 rounded-full bg-teal-text" aria-hidden="true" />}</span><span className="whitespace-nowrap text-[13px] font-bold leading-tight">{label}{href === '/messages' && unread > 0 && <span className="sr-only"> {unread} unread</span>}</span>
               <span className={`h-0.5 w-5 rounded-full ${isActive(href) ? 'bg-teal' : 'bg-transparent'}`} aria-hidden="true" />
             </Link>
           ) : (
             <div key={label} className="flex flex-col items-center gap-1 py-2 text-navy">
-              <Icon size={20} aria-hidden="true" /><span className="text-[10px] font-bold uppercase">{label}</span>
+              <Icon size={20} aria-hidden="true" /><span className="text-xs font-bold uppercase">{label}</span>
             </div>
           ))}
         </nav>
@@ -193,7 +193,7 @@ export function AdminSheetPreview() {
   return (
     <div className="mx-auto max-w-[320px] overflow-hidden rounded-2xl border border-gray bg-white shadow-sm" data-testid="admin-sheet-preview">
       <header className="flex items-center justify-between gap-3 bg-navy p-4"><BrandMark /><AdminMenu alwaysVisible /></header>
-      <div className="p-5"><p className="alliance-label">Admin layout</p><p className="mt-3 text-sm">Open the menu to review the mobile navigation sheet. No portal features are active.</p></div>
+      <div className="p-5"><p className="alliance-label">Admin layout</p><p className="mt-3">Open the menu to review the mobile navigation sheet. No portal features are active.</p></div>
     </div>
   );
 }

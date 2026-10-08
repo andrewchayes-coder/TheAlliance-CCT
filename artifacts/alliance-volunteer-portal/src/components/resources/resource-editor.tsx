@@ -11,7 +11,7 @@ import { AGREEMENT_TITLES, MAX_FILE, fileError, httpsError, isAgreementCat } fro
 type T = 'document' | 'article' | 'link';
 const MD_HELP = 'Markdown: # headings, **bold**, links and bullet or numbered lists. HTML and embedded images are not enabled.';
 const lbl = 'mb-1 block text-sm font-bold';
-const area = 'w-full rounded-lg border border-navy/30 bg-white p-3 text-navy';
+const area = 'alliance-input';
 
 export function ResourceEditor({ type, item, ctx, onClose }: { type: T; item: ResourceItem | null; ctx?: ResourceContext; onClose: () => void }) {
   const auth = useAuth();

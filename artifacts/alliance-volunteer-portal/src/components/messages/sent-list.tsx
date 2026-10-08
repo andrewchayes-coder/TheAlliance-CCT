@@ -18,7 +18,7 @@ export function useAdminMessages(userId?: string) {
 function Receipts({ id }: { id: string }) {
   const q = useGetAdminMessage(id, { query: { queryKey: getGetAdminMessageQueryKey(id), staleTime: FRESH_MS, refetchInterval: POLL, refetchOnWindowFocus: 'always', retry: false }, request: FETCH_CREDS });
   if (q.isPending) return <div className="space-y-2" role="status"><span className="sr-only">Loading</span><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>;
-  if (q.isError || !q.data) return <div><Notice>We couldn't load the read receipts.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
+  if (q.isError || !q.data) return <div><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
   return (
     <ul className="max-h-80 divide-y divide-gray overflow-y-auto text-sm" aria-label="Read receipts" data-testid={`list-receipts-${id}`}>
       {q.data.recipients.map(r => (
@@ -36,7 +36,7 @@ export function MessageHistory({ userId, receipts = false, step = 50 }: { userId
   const q = useAdminMessages(userId);
   const [open, setOpen] = useState<string | null>(null);
   if (q.isPending) return <div className="mt-3 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>;
-  if (q.isError && !q.data) return <div className="mt-3"><Notice>We couldn't load sent messages.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
+  if (q.isError && !q.data) return <div className="mt-3"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
   const rows: AdminMessage[] = q.data ?? [];
   if (rows.length === 0) return <div className="mt-3"><EmptyState title="No messages yet" description={userId ? 'Nothing has been sent to this volunteer.' : 'Messages you send will be listed here with read receipts.'} /></div>;
   return (

@@ -88,7 +88,7 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
             <input type="date" className={sel} value={cur.bc} onChange={e => set('bc', e.target.value)} data-testid="input-bg-cleared" /></label>
         </fieldset>
       </div>
-      {err && <div className="mt-3" role="alert"><Notice>{err.msg}</Notice></div>}
+      {err && <div className="mt-3"><Notice>{err.msg}</Notice></div>}
       {saved && !draft && <p className="mt-3 text-sm font-bold" role="status">Tracking saved.</p>}
       {draft && <p className="mt-3 text-sm text-navy-soft">Unsaved tracking changes. Saving updates both cards.</p>}
       {draft && blockedReason && <p className="mt-2 text-sm font-bold" role="status">{blockedReason}</p>}

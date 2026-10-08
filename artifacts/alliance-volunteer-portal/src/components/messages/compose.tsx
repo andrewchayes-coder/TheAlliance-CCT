@@ -104,7 +104,7 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
   return (
     <div data-testid="panel-compose">
       {unsure && (
-        <div className="mb-5" role="alert" data-testid="panel-unsure">
+        <div className="mb-5" data-testid="panel-unsure">
           <Notice>Your earlier send, "{unsure.payload.subject}" to {unsure.count} volunteer{unsure.count === 1 ? '' : 's'}, is unconfirmed. It may or may not have gone out. Retrying sends that exact saved draft with the same request id, so nobody gets it twice. If you edit and send something new, that is a separate message and the earlier one stays uncertain.</Notice>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button type="button" disabled={busy} onClick={() => { void exec(unsure.payload, unsure.subject, unsure.count, true); }} data-testid="button-retry-send">Retry that exact send</Button>
@@ -113,7 +113,7 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
         </div>
       )}
       {result && (
-        <div className="mb-5" role="status" data-testid="result-send">
+        <div className="mb-5" data-testid="result-send">
           <Notice kind={result.failed > 0 ? 'info' : 'success'}>
             {result.reused ? 'This message had already been sent. ' : 'Message sent. '}Reached {result.recipientCount} in the portal. Email: {result.sent} sent, {result.logged} logged, {result.failed} failed, {result.skipped} skipped.
           </Notice>
@@ -125,7 +125,7 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
           {AUD.map(([v, l, d]) => (
             <label key={v} className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3 ${audience === v ? 'border-navy bg-gray' : 'border-gray'}`}>
               <input type="radio" name="audience" className="mt-1 size-5" checked={audience === v} onChange={() => pickAudience(v)} data-testid={`radio-audience-${v}`} />
-              <span><span className="block font-bold">{l}</span><span className="block text-sm text-navy-soft">{d}</span></span>
+              <span className="min-w-0"><span className="block font-bold">{l}</span><span className="block text-sm font-normal normal-case text-navy-soft">{d}</span></span>
             </label>
           ))}
         </div>
@@ -152,7 +152,7 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
       </fieldset>
 
       {problems.length > 0 && <ul className="mt-4 text-sm" data-testid="list-problems">{problems.map(p => <li key={p}>{p}</li>)}</ul>}
-      {err && <div className="mt-4" role="alert" data-testid="text-send-error"><Notice>{err}</Notice></div>}
+      {err && <div className="mt-4" data-testid="text-send-error"><Notice>{err}</Notice></div>}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button type="button" variant={valid ? 'secondary' : 'default'} disabled={busy || problems.length > 0} onClick={() => { void runPreview(); }} data-testid="button-preview">
           {preview.isPending ? 'Building preview' : valid ? 'Refresh preview' : 'Preview recipients and message'}</Button>

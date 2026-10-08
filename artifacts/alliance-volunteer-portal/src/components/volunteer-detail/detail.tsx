@@ -55,11 +55,11 @@ export function VolunteerDetail() {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin/volunteers" className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
+      <Link href="/admin/volunteers" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
       {q.isPending ? (
         <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       ) : !d || !e || !p ? (
-        <div className="mt-6"><Notice>We couldn't load this volunteer.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        <div className="mt-6"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
       ) : (
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}

@@ -72,7 +72,7 @@ export function VerifyEmailPage() {
       {err && <Notice>{err}</Notice>}
       {okMsg && <Notice kind="success">{okMsg}</Notice>}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Button type="button" onClick={resend} disabled={busy || cool > 0 || leaving} aria-live="polite">
+        <Button type="button" onClick={resend} disabled={busy || cool > 0 || leaving} aria-busy={busy}>
           {busy ? 'Sending' : cool > 0 ? `Resend available in ${cool}s` : 'Resend email'}
         </Button>
         <Button type="button" variant="secondary" onClick={startOver} disabled={leaving}>

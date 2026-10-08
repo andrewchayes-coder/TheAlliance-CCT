@@ -53,7 +53,7 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
         footer={<>{cancel}<button type="button" disabled={busy || !date} className="alliance-button alliance-button-primary" data-testid="button-confirm-skip" onClick={() => act.skip(a.id, ymd(date))}>{busy ? 'Saving' : 'Take week off'}</button></>}>
         {err}
         <label className="grid gap-1 text-sm font-bold" htmlFor="skip-date">Date
-          <select id="skip-date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} data-testid="select-skip-date" className="min-h-11 rounded-lg border border-navy/30 bg-white px-3 font-normal">
+          <select id="skip-date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} data-testid="select-skip-date" className="alliance-input font-normal">
             {options.map(d => <option key={d.date} value={d.date}>{dateLabel(d.date)}</option>)}
           </select>
         </label>
@@ -72,7 +72,7 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
       {err}
       {changing && <p className="text-sm">Your current {slotTitle(dlg.from)} shift is released when this one is confirmed.</p>}
       <label className="grid gap-1 text-sm font-bold" htmlFor="start-date">Starting
-        <select id="start-date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} data-testid="select-start-date" className="min-h-11 rounded-lg border border-navy/30 bg-white px-3 font-normal">
+        <select id="start-date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} data-testid="select-start-date" className="alliance-input font-normal">
           {slot.startDates.map(d => <option key={d} value={ymd(d)}>{dateLabel(d)}</option>)}
         </select>
       </label>

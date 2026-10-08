@@ -11,19 +11,19 @@ const buttonVariants = cva(
         default: 'alliance-button-primary',
         primary: 'alliance-button-primary',
         destructive:
-          'bg-destructive text-destructive-foreground shadow-sm border-destructive-border',
+          'bg-destructive text-destructive-foreground border border-destructive-border',
         outline: 'alliance-button-secondary',
         secondary: 'alliance-button-secondary',
         // @replit no hover, transparent border
         ghost: 'border border-transparent',
-        link: 'text-primary underline-offset-4 hover:underline',
+        link: 'text-teal-text underline-offset-4 hover:underline',
       },
       size: {
         // @replit changed sizes
-        default: 'min-h-9 px-4 py-2',
-        sm: 'min-h-8 rounded-md px-3 text-xs',
-        lg: 'min-h-10 rounded-md px-8',
-        icon: 'h-9 w-9',
+        default: 'min-h-11 px-4 py-2',
+        sm: 'min-h-11 rounded-md px-3 text-sm',
+        lg: 'min-h-12 rounded-md px-8',
+        icon: 'h-11 w-11',
       },
     },
     defaultVariants: {

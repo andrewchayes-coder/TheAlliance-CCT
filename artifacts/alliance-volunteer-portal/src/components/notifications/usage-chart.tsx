@@ -7,7 +7,7 @@ function Tip({ active, payload }: { active?: boolean; payload?: { payload: Row }
   if (!active || !payload?.length) return null;
   const r = payload[0].payload;
   return (
-    <div className="rounded-lg border border-gray bg-white p-3 text-xs shadow-lg" data-testid="chart-tooltip">
+    <div className="rounded-lg border border-gray bg-white p-3 text-sm shadow-md" data-testid="chart-tooltip">
       <p className="font-bold">{String(r.full)}{r.current ? ' (month so far)' : ''}</p>
       <p className="mb-1">Total: <b className="tabular-nums">{String(r.total)}</b></p>
       {TYPES.map(t => <p key={t.type} className="flex items-center gap-2"><span className="size-2.5 rounded-sm" style={{ background: t.color }} />{t.label}: <b className="tabular-nums">{String(r[t.type])}</b></p>)}
@@ -29,15 +29,23 @@ export function UsageChart({ s }: { s: Summary }) {
             <XAxis dataKey="label" tickLine={false} />
             <YAxis allowDecimals={false} tickFormatter={(v: number) => String(Math.round(v))} tickLine={false} />
             <Tooltip content={<Tip />} cursor={{ fill: 'rgba(31,58,95,0.06)' }} />
-            <Legend formatter={(v: string) => typeLabel(v)} wrapperStyle={{ fontSize: 12 }} />
+            <Legend formatter={(v: string) => typeLabel(v)} wrapperStyle={{ fontSize: 14 }} />
             {TYPES.map(t => <Bar key={t.type} dataKey={t.type} name={t.type} stackId="a" fill={t.color} isAnimationActive={false} />)}
           </BarChart>
         </ResponsiveContainer>
       </div>
       <details className="mt-3 text-sm">
-        <summary className="cursor-pointer font-bold" data-testid="toggle-chart-table">View chart data as a table</summary>
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-xs tabular-nums" data-testid="table-monthly">
+        <summary className="flex min-h-11 cursor-pointer items-center font-bold" data-testid="toggle-chart-table">View chart data as a table</summary>
+        <ul className="mt-2 space-y-2 lg:hidden" aria-label="Emails per month by type">
+          {s.months.map(m => (
+            <li key={m.month} className="rounded-xl border border-gray p-3">
+              <p className="font-bold">{monthName(m.month, true)}{m.month === s.month ? ' (so far)' : ''}: <span className="tabular-nums">{m.total}</span> total</p>
+              <dl className="mt-1 grid grid-cols-2 gap-x-3 text-sm tabular-nums">{TYPES.map(t => <div key={t.type} className="flex justify-between gap-2"><dt>{t.label}</dt><dd className="font-bold">{countOf(m.byType, t.type)}</dd></div>)}</dl>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-2 hidden lg:block">
+          <table className="w-full text-left text-sm tabular-nums" data-testid="table-monthly">
             <caption className="sr-only">Emails per month by type</caption>
             <thead><tr><th className="py-1 pr-2">Month</th>{TYPES.map(t => <th key={t.type} className="px-1">{t.label}</th>)}<th className="px-1">Total</th></tr></thead>
             <tbody>{s.months.map(m => (

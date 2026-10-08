@@ -42,7 +42,7 @@ function Body() {
           <label className="relative block"><span className="sr-only">Search resources</span>
             <Search size={18} className="absolute left-3 top-3.5" aria-hidden="true" />
             <input type="search" value={term} onChange={e => setTerm(e.target.value)} placeholder="Search guides and documents…" data-testid="input-search"
-              className="min-h-12 w-full rounded-lg border border-navy/30 bg-white pl-10 pr-3" /></label>
+              className="alliance-input pl-10" /></label>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Categories">
             {[null, ...cats].map(c => <button key={c ?? 'all'} type="button" aria-pressed={cat === c} onClick={() => setCat(c)}
               className={`min-h-11 rounded-full px-4 text-sm font-bold ${cat === c ? 'bg-navy text-white' : 'bg-white shadow-sm'}`}>{c ?? 'All'}</button>)}
@@ -71,7 +71,7 @@ function ArticleBody() {
   useSeo(q.data?.title ?? 'Article', q.data?.summary ?? 'A guide for Alliance volunteers.');
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
-      <Link href="/resources" className="text-sm font-bold underline">Back to Resources</Link>
+      <Link href="/resources" className="inline-flex min-h-11 items-center text-sm font-bold underline">Back to Resources</Link>
       {q.isPending ? <LoadingBlock /> : q.isError || !q.data ? <ErrorBlock what="this article" onRetry={() => { void q.refetch(); }} /> : (
         <article className="mt-4">
           <p className="alliance-section-kicker">{q.data.category}</p>

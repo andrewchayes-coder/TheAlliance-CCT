@@ -1,13 +1,13 @@
 import type { EmailLogType, NotificationSummary } from '@workspace/api-client-react';
 
 export const TYPES: { type: EmailLogType; label: string; color: string }[] = [
-  { type: 'verification', label: 'Verification', color: '#1f3a5f' },
-  { type: 'password_reset', label: 'Password reset', color: '#1a8a8a' },
-  { type: 'welcome', label: 'Welcome', color: '#3b7dd8' },
-  { type: 'reminder', label: 'Reminder', color: '#7a5ab8' },
-  { type: 'message', label: 'Message', color: '#c9962b' },
-  { type: 'admin_alert', label: 'Admin alert', color: '#8a94a0' },
-  { type: 'invite', label: 'Invite', color: '#b4572f' },
+  { type: 'verification', label: 'Verification', color: '#06365d' },
+  { type: 'password_reset', label: 'Password reset', color: '#1a466b' },
+  { type: 'welcome', label: 'Welcome', color: '#2c567b' },
+  { type: 'reminder', label: 'Reminder', color: '#3e668b' },
+  { type: 'message', label: 'Message', color: '#50769b' },
+  { type: 'admin_alert', label: 'Admin alert', color: '#385e7d' },
+  { type: 'invite', label: 'Invite', color: '#6a869e' },
 ];
 export const typeLabel = (t: string) => TYPES.find(x => x.type === t)?.label ?? t;
 export const monthParts = (m: string) => { const [y, mo] = m.split('-').map(Number); return { y, mo }; };

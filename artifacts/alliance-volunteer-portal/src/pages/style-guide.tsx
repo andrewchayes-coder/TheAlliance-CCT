@@ -135,7 +135,7 @@ export default function StyleGuide() {
                 <p className="alliance-label mb-3">PublicLayout · entry shell</p>
                 <div className="overflow-hidden rounded-2xl border border-[#06365D]/10 bg-[#f8fafb]">
                   <div className="flex items-center justify-between bg-navy px-5 py-4 text-white">
-                    <div className="alliance-display text-[12px]">{appConfig.appName}</div>
+                    <div className="alliance-display text-[14px]">{appConfig.appName}</div>
                     <span className="hidden text-xs sm:block">{appConfig.defaultCounty} County</span>
                   </div>
                   <div className="px-5 py-9 md:px-8">
@@ -165,12 +165,12 @@ export default function StyleGuide() {
                 <div>
                   <p className="alliance-label mb-3">Volunteer · mobile bottom tabs</p>
                   <div className="relative mx-auto h-[315px] max-w-[310px] overflow-hidden rounded-[24px] border-[6px] border-[#06365D] bg-[#f3f7f8] shadow-lg">
-                    <div className="flex items-center justify-between bg-navy px-4 py-3 text-white"><span className="alliance-display text-[10px]">{appConfig.orgName}</span><span className="h-7 w-7 rounded-full border border-white/40 text-center text-[10px] font-bold leading-7">AV</span></div>
+                    <div className="flex items-center justify-between bg-navy px-4 py-3 text-white"><span className="alliance-display text-[14px]">{appConfig.orgName}</span><span className="h-7 w-7 rounded-full border border-white/40 text-center text-[14px] font-bold leading-7">AV</span></div>
                     <div className="p-4"><div className="h-5 w-32 rounded bg-[#06365D]/10" /><div className="mt-3 h-3 w-full rounded bg-[#06365D]/10" /><div className="mt-2 h-3 w-3/4 rounded bg-[#06365D]/10" /><div className="mt-6 h-24 rounded-xl bg-white shadow-sm" /></div>
                     <div className="absolute inset-x-0 bottom-0 grid grid-cols-3 border-t border-[#06365D]/10 bg-white px-2 pb-3 pt-2">
-                      <div className="text-center text-[#027A77]"><div className="flex justify-center"><span className="rounded-full bg-[#e8f4f3] p-1"><span className="block h-3 w-3 rounded-sm bg-[#02928F]" /></span></div><span className="mt-1 block text-[9px] font-bold">HOME</span></div>
-                      <div className="text-center text-[#06365D]/55"><div className="mx-auto mt-1 h-4 w-4 rounded border border-current" /><span className="mt-1 block text-[9px] font-bold">SHIFTS</span></div>
-                      <div className="text-center text-[#06365D]/55"><div className="mx-auto mt-1 h-4 w-4 rounded-full border border-current" /><span className="mt-1 block text-[9px] font-bold">PROFILE</span></div>
+                      <div className="text-center text-[#027A77]"><div className="flex justify-center"><span className="rounded-full bg-[#e8f4f3] p-1"><span className="block h-3 w-3 rounded-sm bg-[#02928F]" /></span></div><span className="mt-1 block text-[14px] font-bold">HOME</span></div>
+                      <div className="text-center text-[#06365D]/55"><div className="mx-auto mt-1 h-4 w-4 rounded border border-current" /><span className="mt-1 block text-[14px] font-bold">SHIFTS</span></div>
+                      <div className="text-center text-[#06365D]/55"><div className="mx-auto mt-1 h-4 w-4 rounded-full border border-current" /><span className="mt-1 block text-[14px] font-bold">PROFILE</span></div>
                     </div>
                   </div>
                   <p className="mt-2 text-center text-xs text-[#06365D]/55">Pinned navigation preview · not interactive</p>

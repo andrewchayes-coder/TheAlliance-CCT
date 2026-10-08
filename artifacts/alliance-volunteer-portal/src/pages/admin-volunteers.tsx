@@ -165,9 +165,9 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
             </select></label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-          <a href={csv('roster')} download className="inline-flex items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-roster-csv">
+          <a href={csv('roster')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-roster-csv">
             <Download size={16} aria-hidden="true" />Download roster CSV</a>
-          <a href={csv('schedule')} download className="inline-flex items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-schedule-csv">
+          <a href={csv('schedule')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-schedule-csv">
             <Download size={16} aria-hidden="true" />Download schedule CSV</a>
           <span className="text-navy-soft">Exports include all {hasFilters ? 'matching' : ''} volunteers, not just this page.</span>
           <p className="w-full text-navy-soft">Roster exports include personal information and internal admin notes. Share only with authorized staff.</p>
@@ -183,7 +183,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
 
         {list.isPending ? <Loading />
           : list.isError && !data ? (
-            <div className="mt-4"><Notice>We couldn't load the roster.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
+            <div className="mt-4"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
           ) : data && rows.length === 0 ? (
             <div className="mt-4"><EmptyState title={hasFilters ? 'No volunteers match' : 'No volunteers yet'}
               description={hasFilters ? 'Loosen a filter or try a different search.' : 'Volunteers appear here after they sign up.'}
@@ -192,7 +192,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
             <div className={list.isFetching ? 'opacity-70' : ''} aria-busy={list.isFetching}>
               {list.isError && <div className="mt-4"><Notice>Couldn't refresh the roster. Showing the last loaded results.</Notice></div>}
               {/* Desktop table */}
-              <div className="mt-4 hidden overflow-x-auto md:block">
+              <div className="mt-4 hidden overflow-x-auto xl:block">
                 <table className="w-full min-w-[960px] text-left text-sm" data-testid="table-roster">
                   <caption className="sr-only">Volunteer roster</caption>
                   <thead>
@@ -209,7 +209,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                         onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
                         <td className="py-3"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
                         <td className="py-3 pr-3">
-                          <Link href={`/admin/volunteers/${e.user.id}`} className="font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}</Link>
+                          <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}</Link>
                           <span className="block break-all text-xs text-navy-soft">{e.user.email}</span>
                         </td>
                         <td className="pr-3">{e.profile.county}</td>
@@ -225,14 +225,14 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                 </table>
               </div>
               {/* Mobile cards */}
-              <ul className="mt-4 space-y-3 md:hidden" aria-label="Volunteers">
+              <ul className="mt-4 space-y-3 xl:hidden" aria-label="Volunteers">
                 {rows.map(e => (
                   <li key={e.user.id} className="flex cursor-pointer gap-3 rounded-xl border border-gray p-4" data-testid={`card-volunteer-${e.user.id}`}
                     onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
-                    <input type="checkbox" className="mt-1 h-6 w-6 shrink-0" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} />
+                    <input type="checkbox" className="mt-1 shrink-0" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} />
                     <div className="min-w-0 flex-1">
-                      <Link href={`/admin/volunteers/${e.user.id}`} className="font-bold text-teal-text underline underline-offset-4">{fullName(e)}</Link>
-                      <p className="break-all text-xs text-navy-soft">{e.user.email}</p>
+                      <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4">{fullName(e)}</Link>
+                      <span className="block break-words text-sm text-navy-soft">{e.user.email}</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Pill map={STATUS} value={e.profile.status} /><Pill map={CERT} value={e.profile.certificationStatus} /><Pill map={BG} value={e.profile.backgroundCheckStatus} />
                       </div>

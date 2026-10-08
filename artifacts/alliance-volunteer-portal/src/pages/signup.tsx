@@ -12,14 +12,14 @@ function Form() {
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof v) => (e: { target: { value: string } }) => setV(s => ({ ...s, [k]: e.target.value }));
   const pwErr = v.password && v.password.length < 8 ? 'Use at least 8 characters.' : null;
-  const matchErr = v.confirmPassword && v.password !== v.confirmPassword ? 'Passwords do not match.' : null;
+  const matchErr = v.confirmPassword && v.password !== v.confirmPassword ? 'Please enter the same password in both fields.' : null;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
     setErr(null);
     if (v.password.length < 8) return setErr('Your password needs at least 8 characters.');
-    if (v.password !== v.confirmPassword) return setErr('The two passwords do not match.');
+    if (v.password !== v.confirmPassword) return setErr('Please enter the same password in both fields.');
     setBusy(true);
     try {
       const r = await auth.signup({

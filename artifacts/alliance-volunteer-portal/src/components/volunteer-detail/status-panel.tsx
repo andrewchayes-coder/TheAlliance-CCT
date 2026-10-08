@@ -32,14 +32,18 @@ function Confirm({ snap, current, busy, error, onCancel, onConfirm }: {
   snap: Snapshot; current: AdminVolunteerDetail; busy: boolean; error: string | null; onCancel: () => void; onConfirm: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { const d = ref.current; if (d && !d.open) d.showModal(); }, []);
+  useEffect(() => {
+    const d = ref.current; const back = document.activeElement as HTMLElement | null;
+    if (d && !d.open) d.showModal();
+    return () => { if (back?.isConnected) back.focus(); };
+  }, []);
   const label = STATUS[snap.target][0];
   const nowIds = current.assignmentsToRelease.map(a => a.assignmentId).sort().join(',');
   const snapIds = snap.shifts.map(a => a.assignmentId).sort().join(',');
   const changed = snap.target === 'inactive' && (nowIds !== snapIds || current.entry.profile.updatedAt !== snap.expectedUpdatedAt);
   return (
     <dialog ref={ref} onCancel={e => { e.preventDefault(); if (!busy) onCancel(); }} aria-labelledby="status-dlg-h" data-testid="dialog-status"
-      className="m-auto w-[min(92vw,34rem)] max-h-[88dvh] overflow-y-auto rounded-2xl p-5 shadow-xl backdrop:bg-black/50">
+      className="m-auto w-[min(92vw,34rem)] max-h-[88dvh] overflow-y-auto rounded-2xl bg-white p-5 text-navy">
       <h2 id="status-dlg-h" className="alliance-display text-[18px]">Change status to {label}?</h2>
       <p className="mt-2 text-sm">{COPY[snap.target]}</p>
       {snap.target === 'inactive' && (
@@ -49,8 +53,8 @@ function Confirm({ snap, current, busy, error, onCancel, onConfirm }: {
             <ul className="mt-1 divide-y divide-gray rounded-lg bg-gray px-3" data-testid="list-release">{snap.shifts.map(s => <ShiftLine key={s.assignmentId} s={s} />)}</ul>
           </div>
         ))}
-      {changed && <div className="mt-3" role="alert"><Notice>This volunteer's shifts or record changed while this window was open. Close it and review the latest before confirming. Nothing was changed.</Notice></div>}
-      {error && <div className="mt-3" role="alert"><Notice>{error}</Notice></div>}
+      {changed && <div className="mt-3"><Notice>This volunteer's shifts or record changed while this window was open. Close it and review the latest before confirming. Nothing was changed.</Notice></div>}
+      {error && <div className="mt-3"><Notice>{error}</Notice></div>}
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={busy} data-testid="button-status-cancel">{error || changed ? 'Close' : 'Cancel'}</Button>
         <Button type="button" onClick={onConfirm} disabled={busy || changed} data-testid="button-status-confirm">{busy ? 'Saving…' : `Confirm ${label}`}</Button>
@@ -125,7 +129,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
           <ul className="mt-1 list-disc pl-5">{missing.map(r => <li key={r.key}>{r.label}</li>)}</ul>
         </div>
       )}
-      <div className="mt-3" aria-live="polite">{result && <Notice kind={result.kind === 'good' ? 'success' : 'info'}>{result.text}</Notice>}</div>
+      <div className="mt-3">{result && <Notice kind={result.kind === 'good' ? 'success' : 'info'}>{result.text}</Notice>}</div>
       {snap && <Confirm snap={snap} current={detail} busy={m.isPending} error={error} onCancel={() => { setSnap(null); setError(null); }} onConfirm={confirm} />}
     </section>
   );

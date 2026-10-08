@@ -18,7 +18,7 @@ type Props = { slotId?: string; userId?: string; closed?: boolean; closedReason?
 type Confirm = { kind: 'remove'; a: AdminScheduleControlsAssignmentsItem } | { kind: 'off'; a: AdminScheduleControlsAssignmentsItem; date: string } | { kind: 'undo'; a: AdminScheduleControlsAssignmentsItem; date: string; skipId: string };
 
 const who = (v: { firstName: string; lastName: string }) => `${v.firstName} ${v.lastName}`.trim();
-const field = 'min-h-11 w-full rounded-lg border border-navy-soft bg-white px-3 text-sm text-navy';
+const field = 'alliance-input';
 
 export function AdminScheduleControls({ slotId, userId, closed, closedReason }: Props) {
   const { request } = useAuth();
@@ -86,10 +86,10 @@ export function AdminScheduleControls({ slotId, userId, closed, closedReason }: 
 
   return (
     <div className="mt-4 space-y-5" data-testid="admin-schedule-controls">
-      <div aria-live="polite">{ok && <Notice kind="success">{ok}</Notice>}</div>
-      {err && <div role="alert"><Notice>{err}</Notice></div>}
+      <div>{ok && <Notice kind="success">{ok}</Notice>}</div>
+      {err && <div><Notice>{err}</Notice></div>}
       {ctl.isError && !data && (
-        <div role="alert"><Notice>{readError(ctl.error, "We couldn't load schedule controls.").message}</Notice>
+        <div><Notice>{readError(ctl.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
           <Button type="button" onClick={() => { void ctl.refetch(); }} data-testid="button-retry-controls">Try again</Button></div>
       )}
       {ctl.isPending && <div role="status" aria-busy="true"><span className="sr-only">Loading controls</span><Skeleton className="h-24 w-full" /></div>}

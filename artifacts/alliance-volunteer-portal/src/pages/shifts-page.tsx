@@ -87,7 +87,7 @@ function ShiftsBody() {
           <section aria-labelledby="mine-h">
             <h2 id="mine-h" className="alliance-section-kicker mb-3">Your standing shifts ({s.assignments.length} of {s.maxShifts})</h2>
             {s.assignments.length === 0 ? (
-              <EmptyState title="No weekly shift yet" description={s.canBook ? 'Pick a time below. It repeats every week until you change it.' : 'Your shifts will show here once you can book.'} />
+              <EmptyState title="No shifts yet" description={s.canBook ? 'Choose a weekly time to start helping local families find their way to support.' : 'Your shifts will show here once you can book.'} />
             ) : (
               <ShiftCards assignments={s.assignments} contactEmail={s.contactEmail} busy={busy}
                 onChange={a => { setChanging(a); }} onDrop={a => open({ kind: 'drop', a })} onSkip={a => open({ kind: 'skip', a })}

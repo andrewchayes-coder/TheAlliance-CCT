@@ -12,3 +12,4 @@
 - [Email retry safety](email-retry-policy.md) — regenerate authentication links, review uncertain delivery, and avoid inflating usage from historical dedupe.
 - [Postgres test clients](postgres-test-clients.md) — infer clients from an async connect wrapper; the overloaded method's return type can resolve to void.
 - [Private storage SDK](private-storage-sdk.md) — default discovery can fail after provisioning; keep the SDK intact in bundled APIs under pnpm.
+- [Brand accessibility](brand-accessibility.md) — AA takes priority over the original bright teal; home-screen support must not add generic caching of private data.

@@ -147,34 +147,34 @@ function TeamBody({ me }: { me: Me }) {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin" className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>
+      <Link href="/admin" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>
       <h1 className="alliance-display text-[22px] md:text-[28px]">Team accounts</h1>
       <p className="mb-6 mt-2 max-w-2xl">Invite admins and control who can sign in.</p>
       <InviteCard />
       <section className="alliance-card" aria-labelledby="team-h">
         <h2 id="team-h" className="sr-only">Accounts</h2>
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div role="group" aria-label="Filter by role" className="grid grid-cols-2 gap-1 rounded-lg bg-gray p-1 md:w-72">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div role="group" aria-label="Filter by role" className="grid grid-cols-2 gap-1 rounded-lg bg-gray p-1 lg:w-72">
             {(['admin', 'volunteer'] as const).map(r => (
               <button key={r} type="button" aria-pressed={role === r} data-testid={`filter-${r}`}
                 onClick={() => { setRole(r); setOffset(0); }}
                 className={`min-h-11 rounded-md text-sm font-bold capitalize ${role === r ? 'bg-white shadow-sm' : ''}`}>{r}s</button>
             ))}
           </div>
-          <div className="relative md:w-80">
+          <div className="relative lg:w-80">
             <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
             <input type="search" aria-label="Search by name or email" placeholder="Search name or email" maxLength={100}
               className="alliance-input pl-10" value={text} onChange={e => setText(e.target.value)} data-testid="input-search" />
           </div>
         </div>
         {role === 'volunteer' && <p className="mt-4 text-sm"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/admin/volunteers/onboarding.csv`} download className="font-bold text-teal-text underline underline-offset-4" data-testid="link-onboarding-csv">Download onboarding CSV</a></p>}
-        <div aria-live="polite" className="mt-4">{note && <Notice kind={note.kind}>{note.text}</Notice>}</div>
+        <div className="mt-4">{note && <Notice kind={note.kind}>{note.text}</Notice>}</div>
 
         {list.isPending ? (
           <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading accounts</span>
             {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : list.isError && !data ? (
-          <div className="mt-4"><Notice>We couldn't load accounts.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
+          <div className="mt-4"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
         ) : data && data.users.length === 0 ? (
           <div className="mt-4"><EmptyState title={q ? 'No matches' : `No ${role}s yet`}
             description={q ? 'Try a different name or email.' : role === 'admin' ? 'Invite an admin above to get started.' : 'Volunteers appear here after they sign up.'} /></div>
@@ -186,7 +186,7 @@ function TeamBody({ me }: { me: Me }) {
                 const self = u.id === me.user.id;
                 const pending = u.role === 'admin' && !u.emailVerifiedAt;
                 return (
-                  <li key={u.id} className="flex flex-col gap-3 py-4 md:flex-row md:items-center" data-testid={`row-user-${u.id}`}>
+                  <li key={u.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center" data-testid={`row-user-${u.id}`}>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold">{u.firstName} {u.lastName}{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
                       <p className="break-all text-sm">{u.email}</p>
@@ -298,10 +298,10 @@ function VolunteerOnboardingBody() {
   const p = d?.profile;
   return (
     <AppLayout role="admin">
-      <Link href="/admin/team" className="mb-3 inline-flex items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
+      <Link href="/admin/team" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
       <h1 className="alliance-display text-[22px] md:text-[28px]">Volunteer onboarding</h1>
       {q.isPending ? <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-        : q.isError || !d ? <div className="mt-6"><Notice>We couldn't load this volunteer's onboarding.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        : q.isError || !d ? <div className="mt-6"><Notice>We couldn’t open this volunteer’s onboarding details just now. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
         : (
           <>
             <section className="alliance-card mt-6" aria-labelledby="ob-contact">

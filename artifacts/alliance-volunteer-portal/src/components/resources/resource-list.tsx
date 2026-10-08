@@ -58,10 +58,10 @@ export function ResourceList({ type, all, onEdit }: { type: T; all: ResourceItem
   }
   const agr = (r: ResourceItem) => isAgreementCat(r.category);
 
-  if (!server.length) return <p className="rounded-xl bg-white p-6 text-center shadow-sm" data-testid="empty-resources">Nothing here yet. Use the New button to add the first one.</p>;
+  if (!server.length) return <p className="rounded-xl bg-white p-6 text-center shadow-sm" data-testid="empty-resources">Your resource collection starts here. Choose New to add a guide or link that helps volunteers feel prepared.</p>;
   return (
     <div>
-      {err && <div role="alert"><Notice>{err}</Notice></div>}
+      {err && <div><Notice>{err}</Notice></div>}
       <Reorder.Group axis="y" values={order} onReorder={apply} className="grid gap-2">
         {order.map((id, i) => { const r = byId.get(id); if (!r) return null; return (
           <Reorder.Item key={id} value={id} dragListener={!reorder.isPending} onDragStart={() => { dragStart.current = [...orderRef.current]; }} onDragEnd={() => { void commit(dragStart.current); }}

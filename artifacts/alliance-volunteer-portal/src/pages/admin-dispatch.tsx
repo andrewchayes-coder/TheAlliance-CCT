@@ -36,7 +36,7 @@ function Body() {
       {q.isPending ? (
         <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading dispatch</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       ) : !d ? (
-        <div className="mt-6"><Notice>We couldn't load the dispatch view.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-overview">Try again</Button></div>
+        <div className="mt-6"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-overview">Try again</Button></div>
       ) : (<>
         {q.isError && (
           <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--alliance-red)] p-3 text-[var(--alliance-red-ink)]" data-testid="banner-refresh-error">
