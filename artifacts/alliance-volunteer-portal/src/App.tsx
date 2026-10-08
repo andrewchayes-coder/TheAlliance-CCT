@@ -15,6 +15,7 @@ import { Profile } from '@/pages/volunteer-profile';
 import { Onboarding, OnboardingAgreement } from '@/pages/onboarding';
 import { AdminHome, AdminTeam, AdminVolunteerOnboarding, AcceptInvite } from '@/pages/admin';
 import { AdminRoster, AdminVolunteerDetail } from '@/pages/admin-volunteers';
+import { AdminSchedule } from '@/pages/admin-schedule';
 import { AdminScheduleSettings } from '@/pages/admin-schedule-settings';
 import { AuthProvider } from '@/auth/auth-context';
 import {
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/admin/volunteers/:userId/onboarding" component={AdminVolunteerOnboarding} />
         <Route path="/admin/volunteers" component={AdminRoster} />
         <Route path="/admin/volunteers/:userId" component={AdminVolunteerDetail} />
+        <Route path="/admin/schedule" component={AdminSchedule} />
         <Route path="/admin/schedule/settings" component={AdminScheduleSettings} />
         <Route path="/admin/:rest*" component={AdminHome} />
         {import.meta.env.DEV && StyleGuide && (

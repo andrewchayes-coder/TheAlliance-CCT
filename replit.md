@@ -158,6 +158,14 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Schedule mutations take a shared transaction advisory lock. Future booking writers must acquire it before user/profile/slot row locks; use the user-then-profile lock order shared with profile-status changes. This prevents booking, capacity, and deactivation races.
 - Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
 
+## Coordinator dispatch and master schedule
+
+- `/admin` is the live coordinator dispatch view; `/admin/schedule` is the Monday–Friday master calendar with a phone day picker. Both read admin-only, no-store endpoints and refresh every 60 seconds while foregrounded, plus on window focus. The displayed update time is the server snapshot time in America/Los_Angeles; failed refreshes retain the last snapshot with an explicit not-live warning.
+- The coordinator projection uses `scheduleService` for current/next occurrences and coverage. The weekly display uses a skip-free/closure-free shadow of the same engine solely to show "week off" names and closed cells; counts and gaps always come from the actual engine, never the shadow. Contact data is joined only inside the admin projection, not added to the shared scheduling engine.
+- Closed days remain visible even without configured slots and never contribute open spots. Repeated current contacts across overlapping assignments are deduplicated in the dispatch UI, retaining all shift end times. Drawer details follow the latest polled block; removed blocks do not retain old personnel details.
+- Weekday time columns share a locally expanding axis so short slots and long volunteer lists fit without extending a card beyond its actual end time. Overlapping intervals use separate lanes, including transitive overlap groups. Assignment/skip mutation actions remain for subsequent schedule steps.
+- Needs-attention rules are shared with the roster. Overview queries select only required contact/attention fields, omit notes and answer blobs, bound recent activity, and read a repeatable snapshot; no persistent private-data cache is used. Settings writes invalidate overview and calendar queries immediately in the current client.
+
 ## Optional brand assets
 
 Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.

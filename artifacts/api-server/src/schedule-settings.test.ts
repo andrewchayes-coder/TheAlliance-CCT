@@ -83,12 +83,24 @@ const body = (slot: any, extra = {}) => ({
 describe('Admin schedule settings API', () => {
   it('declares an admin guard for every read/write; volunteers/unverified/deactivated cannot access them', async () => {
     const actions: [string, string][] = [['/admin/schedule/settings', 'GET'], ['/admin/schedule/slots', 'POST'],
+      ['/admin/overview', 'GET'], ['/admin/schedule/week?weekStart=2026-10-05', 'GET'],
       [`/admin/schedule/slots/${slotId}`, 'PATCH'], ['/admin/schedule/copy-monday', 'POST'],
       ['/admin/schedule/closed-dates', 'POST'], [`/admin/schedule/closed-dates/${randomUUID()}`, 'DELETE']];
     for (const [id, code] of [[undefined, 401], [volId, 403], [inactiveAdmin, 403], [unverifiedAdmin, 403]] as const) {
       const c = await client(id);
       for (const [path, method] of actions) expect((await c(path, method, {})).status).toBe(code);
     }
+  });
+  it('coordinator endpoints are fresh admin-only DTOs with validated date inputs and no notes or answer blobs', async () => {
+    const home = await staff('/admin/overview');
+    expect(home.status).toBe(200); expect(home.data.updatedAt).toBeTruthy(); expect(home.data.recentActivity).toBeInstanceOf(Array);
+    const week = await staff('/admin/schedule/week?weekStart=2026-10-07');
+    expect(week.status).toBe(200); expect(week.data.weekStart).toBe('2026-10-05'); expect(week.data.days).toHaveLength(5);
+    expect(JSON.stringify(week.data)).not.toContain('adminNotes'); expect(JSON.stringify(home.data)).not.toContain('onboardingAnswers');
+    expect((await staff('/admin/schedule/week?weekStart=2026-02-30')).status).toBe(400);
+    expect((await staff('/admin/schedule/week')).status).toBe(400);
+    expect((await staff('/admin/schedule/week?weekStart=')).status).toBe(400);
+    expect((await staff('/admin/schedule/week?weekStart[]=2026-10-05')).status).toBe(400);
   });
   it('counts people including future holds, blocks capacity floor, invalid time/range and stale assignment confirmations', async () => {
     const slot = await current();

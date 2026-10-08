@@ -9,6 +9,7 @@ import volunteerRouter from "./volunteer";
 import adminRosterRouter from "./admin-roster";
 import adminWorkflowRouter from "./admin-volunteer-workflow";
 import adminScheduleRouter from "./admin-schedule";
+import adminCoordinatorRouter from "./admin-coordinator";
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 
@@ -29,5 +30,6 @@ router.use('/admin', adminRouter);
 router.use('/admin', adminRosterRouter);
 router.use('/admin', adminWorkflowRouter);
 router.use('/admin', adminScheduleRouter);
+router.use('/admin', adminCoordinatorRouter);
 
 export default router;

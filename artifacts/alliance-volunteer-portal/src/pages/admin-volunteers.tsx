@@ -67,7 +67,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
   const [county, setCounty] = useState('');
   const [cert, setCert] = useState('');
   const [bg, setBg] = useState('');
-  const [attn, setAttn] = useState('');
+  const [attn, setAttn] = useState(() => { const v = new URLSearchParams(window.location.search).get('needsAttention'); return v === 'true' || v === 'any' ? 'any' : ''; });
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState(false);

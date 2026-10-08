@@ -5,6 +5,86 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface CoordinatorVolunteer {
+  assignmentId: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /** @nullable */
+  phone: string | null;
+  skipped: boolean;
+  accountActive: boolean;
+}
+
+export type CoordinatorBlockState = typeof CoordinatorBlockState[keyof typeof CoordinatorBlockState];
+
+
+export const CoordinatorBlockState = {
+  covered: 'covered',
+  under: 'under',
+  empty: 'empty',
+  closed: 'closed',
+} as const;
+
+export interface CoordinatorBlock {
+  slotId: string;
+  date: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  startsAt: string;
+  endsAt: string;
+  /** @nullable */
+  label: string | null;
+  capacity: number;
+  assignedCount: number;
+  openSpots: number;
+  state: CoordinatorBlockState;
+  /** @nullable */
+  closedReason: string | null;
+  volunteers: CoordinatorVolunteer[];
+}
+
+export interface CoordinatorDay {
+  date: string;
+  dayOfWeek: number;
+  /** @nullable */
+  closedReason: string | null;
+}
+
+export interface CoordinatorWeek {
+  weekStart: string;
+  today: string;
+  updatedAt: string;
+  days: CoordinatorDay[];
+  blocks: CoordinatorBlock[];
+  openSpots: number;
+  underCoveredShifts: number;
+}
+
+export interface CoordinatorActivity {
+  id: string;
+  userId: string;
+  volunteerName: string;
+  actorName: string;
+  action: string;
+  createdAt: string;
+}
+
+export interface CoordinatorOverview {
+  updatedAt: string;
+  today: string;
+  weekStart: string;
+  operatingNow: boolean;
+  onShiftNow: CoordinatorBlock[];
+  upNext: CoordinatorBlock[];
+  openSpots: number;
+  underCoveredShifts: number;
+  needsAttention: number;
+  recentActivity: CoordinatorActivity[];
+}
+
 export interface ScheduleSlotInput {
   /**
      * @minimum 1
@@ -662,6 +742,17 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type GetAdminScheduleWeekParams = {
+/**
+ * @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$
+ */
+weekStart: string;
+};
+
+export type GetAdminScheduleWeek400 = {
+  error: string;
+};
 
 export type ListVolunteerRosterParams = {
 /**

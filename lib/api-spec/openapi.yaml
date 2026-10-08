@@ -11,6 +11,38 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      responses:
+        '200':
+          description: Fresh coordinator dispatch and coverage snapshot, admin only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoordinatorOverview' }
+  /admin/schedule/week:
+    get:
+      operationId: getAdminScheduleWeek
+      parameters:
+        - name: weekStart
+          in: query
+          required: true
+          schema: { type: string, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+      responses:
+        '200':
+          description: Monday through Friday schedule with skipped assignments and closures
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoordinatorWeek' }
+        '400':
+          description: Invalid calendar date
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error: { type: string }
   /admin/schedule/settings:
     get:
       operationId: getScheduleSettings
@@ -560,6 +592,90 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    CoordinatorVolunteer:
+      type: object
+      required: [assignmentId, userId, firstName, lastName, email, phone, skipped, accountActive]
+      properties:
+        assignmentId: { type: string }
+        userId: { type: string }
+        firstName: { type: string }
+        lastName: { type: string }
+        email: { type: string }
+        phone: { type: [string, 'null'] }
+        skipped: { type: boolean }
+        accountActive: { type: boolean }
+    CoordinatorBlock:
+      type: object
+      required: [slotId, date, dayOfWeek, startTime, endTime, startsAt, endsAt, label, capacity, assignedCount, openSpots, state, closedReason, volunteers]
+      properties:
+        slotId: { type: string }
+        date: { type: string }
+        dayOfWeek: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        label: { type: [string, 'null'] }
+        capacity: { type: integer }
+        assignedCount: { type: integer }
+        openSpots: { type: integer }
+        state: { type: string, enum: [covered, under, empty, closed] }
+        closedReason: { type: [string, 'null'] }
+        volunteers:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorVolunteer' }
+    CoordinatorDay:
+      type: object
+      required: [date, dayOfWeek, closedReason]
+      properties:
+        date: { type: string }
+        dayOfWeek: { type: integer }
+        closedReason: { type: [string, 'null'] }
+    CoordinatorWeek:
+      type: object
+      required: [weekStart, today, updatedAt, days, blocks, openSpots, underCoveredShifts]
+      properties:
+        weekStart: { type: string }
+        today: { type: string }
+        updatedAt: { type: string, format: date-time }
+        days:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorDay' }
+        blocks:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorBlock' }
+        openSpots: { type: integer }
+        underCoveredShifts: { type: integer }
+    CoordinatorActivity:
+      type: object
+      required: [id, userId, volunteerName, actorName, action, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        volunteerName: { type: string }
+        actorName: { type: string }
+        action: { type: string }
+        createdAt: { type: string, format: date-time }
+    CoordinatorOverview:
+      type: object
+      required: [updatedAt, today, weekStart, operatingNow, onShiftNow, upNext, openSpots, underCoveredShifts, needsAttention, recentActivity]
+      properties:
+        updatedAt: { type: string, format: date-time }
+        today: { type: string }
+        weekStart: { type: string }
+        operatingNow: { type: boolean }
+        onShiftNow:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorBlock' }
+        upNext:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorBlock' }
+        openSpots: { type: integer }
+        underCoveredShifts: { type: integer }
+        needsAttention: { type: integer }
+        recentActivity:
+          type: array
+          items: { $ref: '#/components/schemas/CoordinatorActivity' }
     ScheduleSlotInput:
       type: object
       required: [dayOfWeek, startTime, endTime, capacity, label, isActive]

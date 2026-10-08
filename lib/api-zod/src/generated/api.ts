@@ -8,6 +8,121 @@
 import * as zod from 'zod';
 
 
+export const GetAdminOverviewResponse = zod.object({
+  "updatedAt": zod.coerce.date(),
+  "today": zod.string(),
+  "weekStart": zod.string(),
+  "operatingNow": zod.boolean(),
+  "onShiftNow": zod.array(zod.object({
+  "slotId": zod.string(),
+  "date": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "closedReason": zod.string().nullable(),
+  "volunteers": zod.array(zod.object({
+  "assignmentId": zod.string(),
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullable(),
+  "skipped": zod.boolean(),
+  "accountActive": zod.boolean()
+}))
+})),
+  "upNext": zod.array(zod.object({
+  "slotId": zod.string(),
+  "date": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "closedReason": zod.string().nullable(),
+  "volunteers": zod.array(zod.object({
+  "assignmentId": zod.string(),
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullable(),
+  "skipped": zod.boolean(),
+  "accountActive": zod.boolean()
+}))
+})),
+  "openSpots": zod.number().int(),
+  "underCoveredShifts": zod.number().int(),
+  "needsAttention": zod.number().int(),
+  "recentActivity": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerName": zod.string(),
+  "actorName": zod.string(),
+  "action": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+export const getAdminScheduleWeekQueryWeekStartRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const GetAdminScheduleWeekQueryParams = zod.object({
+  "weekStart": zod.coerce.string().regex(getAdminScheduleWeekQueryWeekStartRegExp)
+})
+
+export const GetAdminScheduleWeekResponse = zod.object({
+  "weekStart": zod.string(),
+  "today": zod.string(),
+  "updatedAt": zod.coerce.date(),
+  "days": zod.array(zod.object({
+  "date": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "closedReason": zod.string().nullable()
+})),
+  "blocks": zod.array(zod.object({
+  "slotId": zod.string(),
+  "date": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "closedReason": zod.string().nullable(),
+  "volunteers": zod.array(zod.object({
+  "assignmentId": zod.string(),
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullable(),
+  "skipped": zod.boolean(),
+  "accountActive": zod.boolean()
+}))
+})),
+  "openSpots": zod.number().int(),
+  "underCoveredShifts": zod.number().int()
+})
+
+
 export const getScheduleSettingsResponseSlotsItemOneDayOfWeekMax = 5;
 
 export const getScheduleSettingsResponseSlotsItemOneStartTimeRegExp = new RegExp('^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$');

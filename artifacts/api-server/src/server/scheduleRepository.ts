@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, ne, or } from 'drizzle-orm';
+import { and, eq, gte, lte, inArray, isNull, ne, or } from 'drizzle-orm';
 import { db, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, closedDatesTable } from '@workspace/db';
 import { GetScheduleSettingsResponse } from '@workspace/api-zod';
 import { assignmentIsHeld, pacificDay, slotIsActive, createScheduleService } from './scheduleService';
@@ -10,10 +10,12 @@ export const ongoingForSlot = (slotId: string, today: string) => and(
   or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, today)),
 );
 /** No cached snapshot: closed dates and edits take effect on the next read. */
-export async function readScheduleData(tx: ScheduleTransaction, profileId?: string) {
+export async function readScheduleData(tx: ScheduleTransaction, profileId?: string, range?: { from: string; to?: string }) {
   const slots = await tx.select().from(shiftSlotsTable);
   const assignments = await tx.select().from(shiftAssignmentsTable)
-    .where(profileId ? eq(shiftAssignmentsTable.volunteerProfileId, profileId) : undefined);
+    .where(and(profileId ? eq(shiftAssignmentsTable.volunteerProfileId, profileId) : undefined,
+      range ? or(isNull(shiftAssignmentsTable.endDate), gte(shiftAssignmentsTable.endDate, range.from)) : undefined,
+      range?.to ? lte(shiftAssignmentsTable.startDate, range.to) : undefined));
   const skips = assignments.length ? await tx.select().from(shiftSkipsTable)
     .where(inArray(shiftSkipsTable.shiftAssignmentId, assignments.map(a => a.id))) : [];
   const closedDates = await tx.select().from(closedDatesTable).orderBy(closedDatesTable.date);

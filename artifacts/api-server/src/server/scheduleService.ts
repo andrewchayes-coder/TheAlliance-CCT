@@ -35,7 +35,10 @@ export function createScheduleService(data: ScheduleData, clock: () => Date = ()
   const closed = new Set(data.closedDates.map(c => c.date));
   const skipped = new Set(data.skips.map(s => `${s.shiftAssignmentId}:${s.skipDate}`));
   const bySlot = new Map<string, ScheduleAssignment[]>();
-  for (const a of assignments) bySlot.set(a.shiftSlotId, [...(bySlot.get(a.shiftSlotId) ?? []), a]);
+  for (const a of assignments) {
+    const list = bySlot.get(a.shiftSlotId);
+    if (list) list.push(a); else bySlot.set(a.shiftSlotId, [a]);
+  }
 
   function getOccurrences(fromDate: string | Date, toDate: string | Date): Occurrence[] {
     const from = calendarDay(fromDate), to = calendarDay(toDate);
@@ -63,8 +66,12 @@ export function createScheduleService(data: ScheduleData, clock: () => Date = ()
   }
   /** Return all slots tied for the next start, not arbitrarily one overlapping slot. */
   function getUpNext(at: Date = clock()) {
-    const upcoming = getOccurrences(pacificDay(at), addCalendarDays(pacificDay(at), 366)).filter(o => o.startsAt > at);
-    return upcoming.length ? upcoming.filter(o => o.startsAt.getTime() === upcoming[0]!.startsAt.getTime()) : [];
+    const from = pacificDay(at), through = addCalendarDays(from, 366);
+    for (let date = from; date <= through; date = addCalendarDays(date, 1)) {
+      const upcoming = getOccurrences(date, date).filter(o => o.startsAt > at);
+      if (upcoming.length) return upcoming.filter(o => o.startsAt.getTime() === upcoming[0]!.startsAt.getTime());
+    }
+    return [];
   }
   function getCoverage(weekStart: string | Date) {
     const from = calendarDay(weekStart);

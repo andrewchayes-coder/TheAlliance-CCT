@@ -27,11 +27,15 @@ import type {
   AgreementResource,
   AuthSession,
   AuthSuccessResponse,
+  CoordinatorOverview,
+  CoordinatorWeek,
   DevEmailCheck,
   DevEmailCheckError,
   EmailInput,
   ExportVolunteerRosterParams,
   ExportVolunteerScheduleParams,
+  GetAdminScheduleWeek400,
+  GetAdminScheduleWeekParams,
   HealthStatus,
   ListTeamUsersParams,
   ListVolunteerRosterParams,
@@ -88,6 +92,155 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAdminOverviewUrl = () => {
+
+
+
+
+  return `/api/admin/overview`
+}
+
+export const getAdminOverview = async ( options?: Parameters<typeof customFetch>[1]): Promise<CoordinatorOverview> => {
+
+  return customFetch<CoordinatorOverview>(getGetAdminOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminOverviewQueryKey = () => {
+    return [
+    `/api/admin/overview`
+    ] as const;
+    }
+
+
+export const getGetAdminOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminOverview>>> = ({ signal }) => getAdminOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminOverview>>>
+export type GetAdminOverviewQueryError = ErrorType<unknown>
+
+
+
+export function useGetAdminOverview<TData = Awaited<ReturnType<typeof getAdminOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminScheduleWeekUrl = (params: GetAdminScheduleWeekParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/schedule/week?${stringifiedParams}` : `/api/admin/schedule/week`
+}
+
+export const getAdminScheduleWeek = async (params: GetAdminScheduleWeekParams, options?: Parameters<typeof customFetch>[1]): Promise<CoordinatorWeek> => {
+
+  return customFetch<CoordinatorWeek>(getGetAdminScheduleWeekUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminScheduleWeekQueryKey = (params?: GetAdminScheduleWeekParams,) => {
+    return [
+    `/api/admin/schedule/week`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminScheduleWeekQueryOptions = <TData = Awaited<ReturnType<typeof getAdminScheduleWeek>>, TError = ErrorType<GetAdminScheduleWeek400>>(params: GetAdminScheduleWeekParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleWeek>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminScheduleWeekQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminScheduleWeek>>> = ({ signal }) => getAdminScheduleWeek(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleWeek>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminScheduleWeekQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminScheduleWeek>>>
+export type GetAdminScheduleWeekQueryError = ErrorType<GetAdminScheduleWeek400>
+
+
+
+export function useGetAdminScheduleWeek<TData = Awaited<ReturnType<typeof getAdminScheduleWeek>>, TError = ErrorType<GetAdminScheduleWeek400>>(
+ params: GetAdminScheduleWeekParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminScheduleWeek>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminScheduleWeekQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetScheduleSettingsUrl = () => {
 

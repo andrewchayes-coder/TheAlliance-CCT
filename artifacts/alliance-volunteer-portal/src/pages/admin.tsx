@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, ClipboardList, Search, Users } from 'lucide-react';
+import { ChevronLeft, Search } from 'lucide-react';
+import { AdminOverviewPage } from '@/pages/admin-dispatch';
 import {
   getGetVolunteerOnboardingQueryKey, getListTeamUsersQueryKey, useGetVolunteerOnboarding, useListTeamUsers, type AdminInviteResult, type ListTeamUsersParams, type Me, type PublicUser,
 } from '@workspace/api-client-react';
@@ -19,42 +20,7 @@ import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 const PAGE = 25;
 const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' }) : null;
 
-function AdminHomeBody({ me }: { me: Me }) {
-  const auth = useAuth();
-  const [, nav] = useLocation();
-  const [busy, setBusy] = useState(false);
-  async function out() {
-    setBusy(true);
-    try { await auth.signout(); nav('/'); } catch { setBusy(false); }
-  }
-  return (
-    <AppLayout role="admin">
-      <p className="alliance-label">Administration</p>
-      <h1 className="alliance-display mt-3 text-[22px] md:text-[28px]">Welcome, {me.user.firstName}</h1>
-      <p className="mt-3 max-w-2xl">Manage who can help the Resource Coordination Program support local families.</p>
-      <Link href="/admin/team" data-testid="link-admin-team"
-        className="alliance-card mt-6 flex items-center gap-4 hover:shadow-md focus-visible:outline-2 focus-visible:outline-teal">
-        <Users size={26} aria-hidden="true" className="shrink-0 text-teal-text" />
-        <span className="min-w-0">
-          <span className="block font-bold">Team accounts</span>
-          <span className="block text-sm">Invite admins, and activate or deactivate admin and volunteer accounts.</span>
-        </span>
-        <ChevronRight size={20} aria-hidden="true" className="ml-auto shrink-0" />
-      </Link>
-      <Link href="/admin/volunteers" data-testid="link-admin-roster"
-        className="alliance-card mt-4 flex items-center gap-4 hover:shadow-md focus-visible:outline-2 focus-visible:outline-teal">
-        <ClipboardList size={26} aria-hidden="true" className="shrink-0 text-teal-text" />
-        <span className="min-w-0">
-          <span className="block font-bold">Roster</span>
-          <span className="block text-sm">Search volunteers, see who needs attention, and export the roster.</span>
-        </span>
-        <ChevronRight size={20} aria-hidden="true" className="ml-auto shrink-0" />
-      </Link>
-      <div className="mt-8"><Button variant="secondary" onClick={out} disabled={busy} data-testid="button-signout">{busy ? 'Signing out' : 'Sign out'}</Button></div>
-    </AppLayout>
-  );
-}
-export const AdminHome = () => <RequireAdmin>{me => <AdminHomeBody me={me} />}</RequireAdmin>;
+export const AdminHome = () => <AdminOverviewPage />;
 
 function InviteCard() {
   const auth = useAuth();

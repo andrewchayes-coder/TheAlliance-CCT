@@ -9,7 +9,7 @@ export function useScheduleSync() {
     void qc.invalidateQueries({
       predicate: q => {
         const k = q.queryKey[0];
-        return typeof k === 'string' && (k.startsWith('/api/admin/volunteers') || k.startsWith('/api/volunteer/dashboard'));
+        return typeof k === 'string' && (k.startsWith('/api/admin/volunteers') || k.startsWith('/api/admin/overview') || k.startsWith('/api/admin/schedule/week') || k.startsWith('/api/volunteer/dashboard'));
       },
     });
   };

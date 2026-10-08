@@ -68,9 +68,9 @@ const volunteerNav = [
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
 const adminItems: { label: string; href?: string }[] = [
   { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Team', href: '/admin/team' },
-  { label: 'Master schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages' }, { label: 'Resources' },
+  { label: 'Master schedule', href: '/admin/schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages' }, { label: 'Resources' },
 ];
-const adminActive = (loc: string, href: string) => href === '/admin' ? loc === '/admin' : loc === href || loc.startsWith(`${href}/`);
+const adminActive = (loc: string, href: string) => href === '/admin' || href === '/admin/schedule' ? loc === href : loc === href || loc.startsWith(`${href}/`);
 
 function AdminMenu({ alwaysVisible = false, live = false }: { alwaysVisible?: boolean; live?: boolean }) {
   const [location] = useLocation();

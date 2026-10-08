@@ -23,6 +23,8 @@ const declarations: Array<{ method: string; path: string | RegExp; guard: Guard 
   { method: 'GET', path: '/admin/volunteers/roster.csv', guard: 'admin' },
   { method: 'GET', path: '/admin/volunteers/schedule.csv', guard: 'admin' },
   { method: 'GET', path: '/admin/schedule/settings', guard: 'admin' },
+  { method: 'GET', path: '/admin/overview', guard: 'admin' },
+  { method: 'GET', path: '/admin/schedule/week', guard: 'admin' },
   { method: 'POST', path: '/admin/schedule/slots', guard: 'admin' },
   { method: 'PATCH', path: /^\/admin\/schedule\/slots\/[^/]+$/, guard: 'admin' },
   { method: 'POST', path: '/admin/schedule/copy-monday', guard: 'admin' },
