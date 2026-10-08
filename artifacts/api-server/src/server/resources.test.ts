@@ -27,7 +27,7 @@ const data = (type: 'article' | 'document' | 'link', extra = {}) => ({ type, tit
   url: type === 'link' ? 'https://example.invalid/help' : '', isQuickLink: false, isPublished: false, bumpAgreementVersion: false, ...extra });
 type TestResponse = Omit<Response, 'json'> & { json(): Promise<any> };
 async function request(path: string, cookie = cookieA, method = 'GET', body?: unknown): Promise<TestResponse> {
-  const headers: Record<string, string> = { Cookie: cookie };
+  const headers: Record<string, string> = { Cookie: cookie, Origin: process.env.APP_ORIGIN! };
   if (method !== 'GET') headers['X-CSRF-Token'] = csrf;
   if (body && !(body instanceof FormData)) headers['Content-Type'] = 'application/json';
   return fetch(`${base}${path}`, { method, headers, body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined });

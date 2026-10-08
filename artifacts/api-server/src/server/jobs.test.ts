@@ -76,7 +76,7 @@ afterAll(async () => {
   await pool.end();
 });
 async function request(path: string, method = 'GET', headers: Record<string, string> = {}, data?: unknown) {
-  return fetch(`${base}/api${path}`, { method, headers: { 'content-type': 'application/json', ...headers },
+  return fetch(`${base}/api${path}`, { method, headers: { Origin: (await import('../auth/session')).appOrigin, 'content-type': 'application/json', ...headers },
     ...(method !== 'GET' ? { body: JSON.stringify(data ?? {}) } : {}) });
 }
 describe('Reminder job persistence, safeguards and delivery', () => {

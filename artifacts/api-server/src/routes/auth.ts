@@ -17,10 +17,11 @@ import {
 } from '../auth/security';
 import { accountPath, claimToken, passwordResetEmail, verificationEmail } from '../auth/accounts';
 import googleRouter from './google-auth';
+import { mountApiRouter } from '../auth/route-catalog';
 
 const router: IRouter = Router();
 router.use(csrfGuard);
-router.use(googleRouter);
+mountApiRouter(router, '', googleRouter);
 const normalizedBody = (body: unknown) => {
   if (!body || typeof body !== 'object') return body;
   const value = body as Record<string, unknown>;

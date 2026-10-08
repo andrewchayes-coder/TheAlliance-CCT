@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router, type IRouter } from 'express';
+import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, notificationLogTable } from '@workspace/db';
 import { TestDevEmailResponse, type DevEmailCheckError } from '@workspace/api-zod';
@@ -10,6 +11,7 @@ const checkError = (error: string): DevEmailCheckError => ({ ok: false, error })
 
 // Fixed recipient/content: this is not an unauthenticated email-sending API.
 router.post('/dev/email-test', async (req, res): Promise<void> => {
+  z.object({}).strict().parse(req.body ?? {});
   if (process.env.NODE_ENV !== 'development') {
     res.status(404).json(checkError('Not found.'));
     return;

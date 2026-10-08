@@ -5,8 +5,8 @@ import { hashSeedPassword, writeSeedDocuments } from './seed-support';
 
 async function main() {
   // Check before importing the DB client or writing any files. Never override NODE_ENV.
-  if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') {
-    throw new Error('Seed refused: dummy data can only be seeded in development, never production.');
+  if (process.env.NODE_ENV !== 'development' || process.env.SEED_DATABASE_ENVIRONMENT !== 'development') {
+    throw new Error('Seed refused: explicitly set NODE_ENV=development and SEED_DATABASE_ENVIRONMENT=development. Never seed production.');
   }
   const { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable,
     shiftSkipsTable, closedDatesTable, messagesTable, messageRecipientsTable, resourcesTable,

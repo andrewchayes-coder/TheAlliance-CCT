@@ -18,7 +18,7 @@ import { Field, Notice, PasswordField, AuthHeading, SubmitButton, PublicAuthGate
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 
 const PAGE = 25;
-const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'medium' }) : null;
+const fmtDate = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'medium' }) : null;
 
 export const AdminHome = () => <AdminOverviewPage />;
 
@@ -289,7 +289,7 @@ function AcceptForm() {
 }
 export function AcceptInvite() { return <PublicAuthGate allowAuthed><AcceptForm /></PublicAuthGate>; }
 
-const fmtTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Not recorded';
+const fmtTime = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'medium', timeStyle: 'short' }) : 'Not recorded';
 
 function VolunteerOnboardingBody() {
   const { userId = '' } = useParams<{ userId: string }>();

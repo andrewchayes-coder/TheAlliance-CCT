@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { enforceLimit } from '../auth/security';
 import { z } from 'zod/v4';
 import { logger } from '../lib/logger';
 import { WorkflowError } from '../admin-volunteer-detail';
@@ -16,7 +17,11 @@ function handle(fn: (req: Request) => Promise<unknown>) {
 }
 router.get('/admin/messages', handle(req => listMessages(z.object({ userId: z.uuid().optional() }).parse(req.query).userId)));
 router.post('/admin/messages/preview', handle(req => previewMessage(messageDraftSchema.parse(req.body))));
-router.post('/admin/messages', handle(req => sendMessage(req.authUser!, messageSendSchema.parse(req.body))));
+router.post('/admin/messages', async (req, res, next) => {
+  if (!await enforceLimit(req, res, 'message-send-user', req.authUser!.id, 3600, 20)) return;
+  if (!await enforceLimit(req, res, 'message-send-ip', req.ip ?? 'unknown', 3600, 60)) return;
+  next();
+}, handle(req => sendMessage(req.authUser!, messageSendSchema.parse(req.body))));
 router.get('/admin/messages/volunteers', handle(req => {
   const q = z.object({ q: z.string().trim().max(120).optional(), ids: z.string().max(18500).optional() }).strict().parse(req.query);
   const ids = q.ids ? z.array(z.uuid()).min(1).max(500).parse(q.ids.split(',')) : undefined;

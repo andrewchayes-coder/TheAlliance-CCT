@@ -10,7 +10,7 @@ import { RequireAdmin } from '@/auth/guards';
 import { FETCH_CREDS, readError, useAuth } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); };
+const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'medium', timeStyle: 'short' }); };
 const hour = (h: number) => `${h % 12 === 0 ? 12 : h % 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
 
 function Stat({ label, value, id }: { label: string; value: string | number; id: string }) {
@@ -137,7 +137,7 @@ function Body() {
             <h2 className="alliance-display text-[15px]">Safe checks</h2>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <Button type="button" onClick={() => { void doRun(); }} disabled={busy} data-testid="button-run-check">Run reminder check now</Button>
-              <Button type="button" variant="secondary" onClick={() => { void doTest(); }} disabled={busy} data-testid="button-send-test">Send test reminder to me</Button>
+        {import.meta.env.DEV && <Button type="button" variant="secondary" onClick={() => { void doTest(); }} disabled={busy} data-testid="button-send-test">Send test reminder to me</Button>}
             </div>
             <p className="mt-2 text-xs text-navy-soft">The test goes only to the email of the admin signed in now. The address cannot be changed.{retrying ? ' Next click retries the previous test request.' : ''}</p>
             <div className="mt-3 break-words" aria-live="polite">

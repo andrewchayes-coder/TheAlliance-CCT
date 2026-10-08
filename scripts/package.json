@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "smoke": "tsx ./src/smoke.ts",
     "seed": "tsx ./src/seed.ts",
     "verify-seed": "tsx ./src/verify-seed.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "catalog:",
     "@workspace/db": "workspace:*",

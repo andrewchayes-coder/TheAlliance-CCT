@@ -23,13 +23,13 @@ router.post('/schedule/assignments', async (req, res) => {
   try { res.json(await adminScheduleAction(req.authUser!, { kind: 'assign', ...assign.parse(req.body) })); }
   catch (err) { failure(err, res); }
 });
-router.post('/schedule/assignments/:assignmentId/:action', async (req, res) => {
+router.post(['/schedule/assignments/:assignmentId/remove', '/schedule/assignments/:assignmentId/skips'], async (req, res) => {
   try {
     const assignmentId = uuid.parse(req.params.assignmentId);
-    if (req.params.action === 'remove') {
+    if (req.path.endsWith('/remove')) {
       const body = z.object({ emailVolunteer: z.boolean() }).strict().parse(req.body);
       res.json(await adminScheduleAction(req.authUser!, { kind: 'remove', assignmentId, ...body }));
-    } else if (req.params.action === 'skips') {
+    } else if (req.path.endsWith('/skips')) {
       const body = z.object({ date: z.string() }).strict().parse(req.body);
       res.json(await adminScheduleAction(req.authUser!, { kind: 'skip', assignmentId, ...body }));
     } else res.status(404).json({ error: 'Unknown scheduling action.' });

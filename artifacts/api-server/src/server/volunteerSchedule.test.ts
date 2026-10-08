@@ -85,10 +85,13 @@ describe('Volunteer standing schedule transactions', () => {
       [path(randomUUID(), `skips/${randomUUID()}`), 'DELETE']];
     for (const [c, expected] of [[anon, 401], [admin, 403], [unverified, 403], [inactive, 403]] as const)
       for (const [p, m] of actions) expect((await c(p, m, {})).status).toBe(expected);
-    for (const c of [blocked, noAgreement]) {
+    for (const c of [blocked]) {
       const v = await view(c); expect(v.canBook).toBe(false); expect(v.blockedReasons.length).toBeGreaterThan(0);
       expect((await post(c, '/volunteer/assignments', { slotId: slots[0] })).status).toBe(403);
     }
+    const agreementGate = await noAgreement('/volunteer/schedule');
+    expect(agreementGate.status).toBe(403);
+    expect(agreementGate.data.code).toBe('AGREEMENT_REQUIRED');
     const raw = JSON.stringify(await view(clients[0]!));
     expect(raw).not.toContain('Private-'); expect(raw).not.toContain('+15555550001'); expect(raw).not.toContain('PRIVATE-NOTES-');
     expect(raw).not.toContain(ids[1]!); expect(raw).not.toContain(profiles[1]!);

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { volunteerSchedule, volunteerScheduleAction } from '../server/volunteerSchedule';
 import { WorkflowError } from '../admin-volunteer-detail';
@@ -26,8 +26,7 @@ router.get('/schedule', async (req, res) => {
     res.status(500).json({ error: 'Your schedule could not be loaded. Please try again.' });
   }
 });
-router.all(['/assignments', '/assignments/:assignmentId/change', '/assignments/:assignmentId/drop',
-  '/assignments/:assignmentId/skips', '/assignments/:assignmentId/skips/:skipId'], async (req, res) => {
+const changeAssignment: RequestHandler = async (req, res) => {
   try {
     const assignmentId = req.params.assignmentId ? z.string().uuid().parse(req.params.assignmentId) : undefined;
     const actor = req.authUser!;
@@ -44,5 +43,10 @@ router.all(['/assignments', '/assignments/:assignmentId/change', '/assignments/:
     logger.error({ err: error }, 'Volunteer schedule change failed');
     res.status(500).json({ error: 'Your schedule was not changed. Please try again.' });
   }
-});
+};
+router.post('/assignments', changeAssignment);
+router.post('/assignments/:assignmentId/change', changeAssignment);
+router.post('/assignments/:assignmentId/drop', changeAssignment);
+router.post('/assignments/:assignmentId/skips', changeAssignment);
+router.delete('/assignments/:assignmentId/skips/:skipId', changeAssignment);
 export default router;

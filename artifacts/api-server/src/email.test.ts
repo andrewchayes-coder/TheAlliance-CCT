@@ -41,6 +41,24 @@ async function rows(relatedId: string) {
 }
 const successResponse = { MessageID: 'postmark-test-message', ErrorCode: 0, Message: 'OK' };
 
+test('production fails closed without complete delivery settings and never logs recovery credentials', async () => {
+  const previous = process.env.NODE_ENV;
+  const start = messages.info.length;
+  try {
+    process.env.NODE_ENV = 'production';
+    for (const [i, settings] of [{}, { token: 'synthetic-test-token' }, { from: 'synthetic@example.invalid' }].entries()) {
+      const options = input(`production-missing-${i}`);
+      const result = await service({ settings: () => settings })(options);
+      assert.equal(result.ok, false);
+      const [row] = await rows(options.relatedId!);
+      assert.equal(row?.status, 'failed');
+      assert.match(row?.error ?? '', /No email content was logged/);
+    }
+    assert.deepEqual(messages.info.slice(start), []);
+    assert.equal(messages.error.some(m => m.includes('dummy-test-link')), false);
+  } finally { if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous; }
+});
+
 before(async () => {
   await db.insert(usersTable).values(userIds.map((id, index) => ({
     id, email: `email-probe-${runId}-user${index}@example.org`, firstName: 'Email', lastName: 'Test',

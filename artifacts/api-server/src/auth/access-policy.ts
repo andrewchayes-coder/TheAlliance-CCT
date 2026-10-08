@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express';
 import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer } from './session';
 import { requireJobsSecret } from '../server/jobs-auth';
 
-type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
+export type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
   { method: 'GET', path: '/admin/resources', guard: 'admin' },
   { method: 'GET', path: '/admin/resources/context', guard: 'admin' },
@@ -77,22 +77,28 @@ const declarations: Array<{ method: string; path: string | RegExp; guard: Guard 
   { method: 'PATCH', path: /^\/admin\/users\/[^/]+\/status$/, guard: 'admin' },
 ];
 if (process.env.NODE_ENV === 'development') {
-  declarations.push({ method: 'POST', path: '/dev/email-test', guard: 'public' });
+  declarations.push({ method: 'POST', path: '/dev/email-test', guard: 'admin' });
+}
+
+export function declaredGuard(method: string, requestPath: string): Guard | undefined {
+  const path = requestPath.replace(/\/+$/, '').toLowerCase() || '/';
+  if (process.env.NODE_ENV !== 'development' && ['/dev/email-test', '/admin/notifications/test', '/admin/notifications/jobs/test'].includes(path)) return undefined;
+  return declarations.find(route => route.method === (method === 'HEAD' ? 'GET' : method)
+    && (typeof route.path === 'string' ? route.path === path : route.path.test(path)))?.guard;
 }
 
 /** Runs BEFORE every API handler. An undeclared route cannot execute, even for an admin. */
 export const apiAccessPolicy: RequestHandler = (req, res, next) => {
   const path = req.path.replace(/\/+$/, '').toLowerCase() || '/';
   const method = req.method === 'HEAD' ? 'GET' : req.method;
-  const declaration = declarations.find(route =>
-    route.method === method && (typeof route.path === 'string' ? route.path === path : route.path.test(path)));
-  if (!declaration) {
+  const guard = declaredGuard(method, path);
+  if (!guard) {
     res.status(403).json({ error: 'This API route is not available.', code: 'ROUTE_NOT_DECLARED' });
     return;
   }
   const guards: Record<Exclude<Guard, 'public'>, RequestHandler> = {
     auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer, onboardedVolunteer: requireOnboardedVolunteer, job: requireJobsSecret,
   };
-  if (declaration.guard === 'public') { next(); return; }
-  return guards[declaration.guard](req, res, next);
+  if (guard === 'public') { next(); return; }
+  return guards[guard](req, res, next);
 };

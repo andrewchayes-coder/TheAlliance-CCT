@@ -6,7 +6,7 @@ import { Notice } from '@/auth/auth-ui';
 import { useAuth, readError } from '@/auth/auth-context';
 import type { Me } from '@workspace/api-client-react';
 
-const fmt = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleDateString(undefined, { dateStyle: 'long' }) : null;
+const fmt = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', dateStyle: 'long' }) : null;
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 
 function Landing({ me, mode }: { me: Me; mode: 'dashboard' }) {

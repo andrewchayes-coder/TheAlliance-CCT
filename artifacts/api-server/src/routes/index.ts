@@ -18,31 +18,40 @@ import messagingRouter from './messaging';
 import reminderJobsRouter, { jobsTriggerRouter } from './jobs';
 import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
+import { validateWriteBoundary } from '../middlewares/request-hardening';
+import { apiRouteCatalog, mountApiRouter } from '../auth/route-catalog';
 
 const router: IRouter = Router();
+function mount(prefix: string, child: IRouter) {
+  mountApiRouter(router, prefix, child);
+}
+
+/** Inspect actual Express 5 layers, not a second manually maintained route list. */
+export function registeredApiRoutes() {
+  return apiRouteCatalog(router);
+}
 
 router.use(apiAccessPolicy);
-router.use(jobsTriggerRouter);
-router.use(healthRouter);
-if (process.env.NODE_ENV === 'development') {
-  router.use(devEmailRouter);
-}
-router.use('/auth', authRouter);
+router.use(validateWriteBoundary);
+mount('', jobsTriggerRouter);
+mount('', healthRouter);
+mount('/auth', authRouter);
 
 router.use(csrfGuard);
-router.use(resourcesRouter);
-router.use(notificationsRouter);
-router.use(reminderJobsRouter);
-router.use(messagingRouter);
-router.use(meRouter);
-router.use(onboardingRouter);
-router.use('/volunteer', volunteerRouter);
-router.use('/volunteer', volunteerScheduleRouter);
-router.use('/admin', adminRouter);
-router.use('/admin', adminRosterRouter);
-router.use('/admin', adminWorkflowRouter);
-router.use('/admin', adminScheduleRouter);
-router.use('/admin', adminCoordinatorRouter);
-router.use('/admin', adminScheduleControlsRouter);
+if (process.env.NODE_ENV === 'development') mount('', devEmailRouter);
+mount('', resourcesRouter);
+mount('', notificationsRouter);
+mount('', reminderJobsRouter);
+mount('', messagingRouter);
+mount('', meRouter);
+mount('', onboardingRouter);
+mount('/volunteer', volunteerRouter);
+mount('/volunteer', volunteerScheduleRouter);
+mount('/admin', adminRouter);
+mount('/admin', adminRosterRouter);
+mount('/admin', adminWorkflowRouter);
+mount('/admin', adminScheduleRouter);
+mount('/admin', adminCoordinatorRouter);
+mount('/admin', adminScheduleControlsRouter);
 
 export default router;

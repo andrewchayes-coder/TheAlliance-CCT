@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import helmet from 'helmet';
+import { errorEnvelope } from './middlewares/request-hardening';
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
@@ -7,6 +9,9 @@ import { appOrigin, sessionMiddleware } from "./auth/session";
 
 const app: Express = express();
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(helmet());
+app.use(errorEnvelope);
 
 app.use(
   pinoHttp({

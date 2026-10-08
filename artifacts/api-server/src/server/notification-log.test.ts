@@ -68,7 +68,7 @@ describe('notification monitoring and safe retry', () => {
   it('retries a saved failure in place once; recipient and content are not editable', async () => {
     const row = await failed();
     expect(row.status).toBe('failed'); expect(row.retryPayload).not.toContain('Original content');
-    const headers = { Cookie: await cookie(admin), 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
+    const headers = { Cookie: await cookie(admin), Origin: process.env.APP_ORIGIN!, 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
     const spoof = await fetch(`${base}/admin/notifications/${row.id}/retry`, { method: 'POST', headers, body: JSON.stringify({ to: 'other@example.invalid' }) });
     expect(spoof.status).toBe(400);
     const first = await fetch(`${base}/admin/notifications/${row.id}/retry`, { method: 'POST', headers, body: '{}' });
@@ -116,7 +116,7 @@ describe('notification monitoring and safe retry', () => {
   it('enforces admin/CSRF guards, validates settings/dates, and sends tests only to the current admin', async () => {
     expect((await fetch(`${base}/admin/notifications`)).status).toBe(401);
     expect((await fetch(`${base}/admin/notifications`, { headers: { Cookie: await cookie(volunteer) } })).status).toBe(403);
-    const headers = { Cookie: await cookie(admin), 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
+    const headers = { Cookie: await cookie(admin), Origin: process.env.APP_ORIGIN!, 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
     expect((await fetch(`${base}/admin/notifications/settings`, { method: 'PATCH', headers: { Cookie: headers.Cookie, 'Content-Type': 'application/json' }, body: '{"monthlyLimit":100}' })).status).toBe(403);
     expect((await fetch(`${base}/admin/notifications/settings`, { method: 'PATCH', headers, body: '{"monthlyLimit":0}' })).status).toBe(400);
     expect((await fetch(`${base}/admin/notifications?from=2026-02-31`, { headers })).status).toBe(400);

@@ -55,6 +55,27 @@ before(async () => {
   active = await fixture('active'); applicant = await fixture('applicant'); other = await fixture('active');
   pending = await fixture('applicant', false); administrator = await fixture('applicant', true, true, 'admin');
 });
+test('all volunteer-reachable personal-data feeds exclude peer identity and staff notes', async () => {
+  const [original] = await db.select().from(usersTable).where(eq(usersTable.id, other));
+  await db.update(usersTable).set({ firstName: `PrivatePeer${namespace}`, lastName: 'NeverExpose',
+    email: `private-peer-${namespace}@example.invalid`, phone: '+19165550199' }).where(eq(usersTable.id, other));
+  try {
+  const call = await client(active);
+  for (const path of ['/me', '/volunteer/dashboard', '/volunteer/messages', '/volunteer/messages/context',
+    '/volunteer/resources', '/volunteer/schedule']) {
+    const response = await call(path);
+    assert.equal(response.status, 200, path);
+    const json = JSON.stringify(response.data);
+    for (const forbidden of [`PrivatePeer${namespace}`, 'NeverExpose', `private-peer-${namespace}@example.invalid`,
+      '+19165550199', 'PRIVATE_ONLY_ADMIN', '"adminNotes"', '"passwordHash"']) {
+      assert.equal(json.includes(forbidden), false, `${path} exposed ${forbidden}`);
+    }
+  }
+  } finally {
+    await db.update(usersTable).set({ firstName: original!.firstName, lastName: original!.lastName,
+      email: original!.email, phone: original!.phone }).where(eq(usersTable.id, other));
+  }
+});
 after(async () => {
   if (slotIds.length) {
     await db.delete(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.shiftSlotId, slotIds));

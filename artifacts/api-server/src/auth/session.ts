@@ -133,7 +133,7 @@ export async function requireOnboardedVolunteer(req: Request, res: Response, nex
 export function csrfGuard(req: Request, res: Response, next: NextFunction): void {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) { next(); return; }
   const origin = req.get('origin');
-  if ((origin && origin !== appOrigin) || !sameSecret(req.session.csrfToken, req.get('x-csrf-token'))) {
+  if (origin !== appOrigin || !sameSecret(req.session.csrfToken, req.get('x-csrf-token'))) {
     res.status(403).json({ error: 'Please refresh the page and try again.', code: 'CSRF_INVALID' });
     return;
   }

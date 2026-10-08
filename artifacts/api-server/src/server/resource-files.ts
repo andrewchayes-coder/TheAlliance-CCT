@@ -32,6 +32,13 @@ function isWordArchive(data: Buffer) {
     if (next > end || data.readUInt32LE(pos + 42) >= start) return false;
     const name = data.toString('utf8', pos + 46, pos + 46 + length);
     if (name.includes('..') || name.startsWith('/') || name.includes('\\')) return false;
+    if (/vbaProject\.bin$/i.test(name) || names.has(name)) return false;
+    const local = data.readUInt32LE(pos + 42);
+    const compressed = data.readUInt32LE(pos + 20);
+    if (local + 30 > start || data.readUInt32LE(local) !== 0x04034b50) return false;
+    const localNameLength = data.readUInt16LE(local + 26), extraLength = data.readUInt16LE(local + 28);
+    if (local + 30 + localNameLength + extraLength + compressed > start
+      || data.toString('utf8', local + 30, local + 30 + localNameLength) !== name) return false;
     names.add(name); total += data.readUInt32LE(pos + 24); pos = next;
   }
   return pos === end && total <= 100 * 1024 * 1024 && names.has('[Content_Types].xml') && names.has('word/document.xml');

@@ -89,7 +89,7 @@ export function ProviderCard({ s, onDone }: { s: Summary; onDone: () => void }) 
         <div className="flex flex-wrap justify-between gap-2"><dt>From address</dt><dd className="break-all font-bold" data-testid="text-email-from">{p.emailFrom ?? 'Not configured'}</dd></div>
         <div className="flex flex-wrap justify-between gap-2"><dt>Delivery</dt><dd><StatusBadge status={p.deliveryEnabled ? 'good' : 'neutral'}>{p.deliveryEnabled ? 'Enabled' : 'Log only'}</StatusBadge></dd></div>
       </dl>
-      <Button className="mt-3" type="button" onClick={() => { void send(); }} disabled={test.isPending} data-testid="button-send-provider-test">{test.isPending ? 'Sending test' : 'Send test email to me'}</Button>
+      {import.meta.env.DEV && <Button className="mt-3" type="button" onClick={() => { void send(); }} disabled={test.isPending} data-testid="button-send-provider-test">{test.isPending ? 'Sending test' : 'Send test email to me'}</Button>}
       <p className="mt-2 text-xs text-navy-soft">Goes only to the signed-in admin's email. The address cannot be changed.{retrying ? ' Next click retries the previous request.' : ''}</p>
       <div aria-live="polite" className="mt-2 break-words">
         {res && <Notice kind={res.ok && res.status !== 'failed' ? 'success' : 'error'}>{res.skipped ? 'Skipped. ' : ''}{msg}{res.error ? ` ${res.error}` : ''}</Notice>}

@@ -162,6 +162,9 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
             status: 'sent', providerMessageId: response.MessageID, error: null, sentAt: new Date(),
           }).where(eq(notificationLogTable.id, auditId));
         } else {
+          if (process.env.NODE_ENV === 'production') {
+            throw new Error('Email delivery is unavailable: configure both Postmark and the sender address. No email content was logged.');
+          }
           if (settings.token || settings.from || process.env.NODE_ENV === 'production') {
             safeLog('warn', 'Postmark is not fully configured. Both POSTMARK_SERVER_TOKEN and EMAIL_FROM are required; this email will only be logged, not delivered.');
           }
