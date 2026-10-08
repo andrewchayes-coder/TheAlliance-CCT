@@ -19,6 +19,7 @@ import { AdminSchedule } from '@/pages/admin-schedule';
 import { AdminMessages } from '@/pages/admin-messages';
 import { AdminScheduleSettings } from '@/pages/admin-schedule-settings';
 import { AdminNotificationJobs } from '@/pages/admin-notification-jobs';
+import { AdminNotifications } from '@/pages/admin-notifications';
 import { AuthProvider } from '@/auth/auth-context';
 import {
   Route,
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/admin/messages" component={AdminMessages} />
         <Route path="/admin/schedule" component={AdminSchedule} />
         <Route path="/admin/schedule/settings" component={AdminScheduleSettings} />
+        <Route path="/admin/notifications" component={AdminNotifications} />
         <Route path="/admin/notifications/jobs" component={AdminNotificationJobs} />
         <Route path="/admin/:rest*" component={AdminHome} />
         {import.meta.env.DEV && StyleGuide && (

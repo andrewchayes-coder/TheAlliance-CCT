@@ -1,4 +1,5 @@
 import { ServerClient } from 'postmark';
+import { encryptEmailBody, tokenEmailTypes } from './server/email-payload';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { pool, notificationLogTable, insertNotificationLogSchema, type NotificationLog } from '@workspace/db';
@@ -7,6 +8,8 @@ import { logger } from './lib/logger';
 export { createEmailTemplate, emailFooter, type EmailTemplateOptions } from './email-template';
 
 export interface SendEmailOptions {
+  /** Internal retry target. Never accept this field from an email composition request. */
+  retryLogId?: string;
   type: NotificationLog['type'];
   to: string;
   toUserId?: string;
@@ -107,21 +110,37 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         if (handled) return { ok: true, skipped: true };
       }
 
+      const [retryTarget] = options.retryLogId ? await database.select().from(notificationLogTable)
+        .where(eq(notificationLogTable.id, options.retryLogId)).limit(1) : [];
+      if (options.retryLogId && (!retryTarget || retryTarget.type !== values.type ||
+        retryTarget.recipientEmail !== values.recipientEmail || retryTarget.recipientUserId !== values.recipientUserId))
+        return { ok: false, error: 'The original email no longer matches this retry.' };
+      if (retryTarget && retryTarget.status !== 'failed') return { ok: true, skipped: true };
       const [previousFailure] = keyed ? await database.select({ id: notificationLogTable.id }).from(notificationLogTable)
         .where(and(keyCondition, eq(notificationLogTable.status, 'failed')))
         .orderBy(desc(notificationLogTable.updatedAt)).limit(1) : [];
       // Persist the audit BEFORE any external side effect. A crash remains visibly unconfirmed.
+      let retryPayload: string | null = null;
+      let payloadFailure: string | undefined;
+      if (!tokenEmailTypes.has(values.type) && options.html?.trim() && options.text?.trim()) {
+        try { retryPayload = encryptEmailBody({ html: options.html, text: options.text, ...(options.replyTo ? { replyTo: options.replyTo } : {}) }); }
+        catch { payloadFailure = 'Email retry content could not be saved. Check the server encryption configuration before sending again.'; }
+      }
       const pending = {
         ...values, status: 'failed' as const, error: 'Delivery started but has not been confirmed.',
         providerMessageId: null, sentAt: null,
+        updatedAt: new Date(),
+        retryPayload,
       };
-      const [audit] = previousFailure
-        ? await database.update(notificationLogTable).set(pending).where(eq(notificationLogTable.id, previousFailure.id))
+      const target = retryTarget ?? previousFailure;
+      const [audit] = target
+        ? await database.update(notificationLogTable).set(pending).where(eq(notificationLogTable.id, target.id))
           .returning({ id: notificationLogTable.id })
         : await database.insert(notificationLogTable).values(pending).returning({ id: notificationLogTable.id });
       auditId = audit!.id;
 
       try {
+        if (payloadFailure) throw new Error(payloadFailure);
         if (!validation.success) {
           throw new Error(validation.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('; '));
         }
@@ -200,4 +219,12 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
   };
 }
 
-export const sendEmail = createEmailService();
+const deliverEmail = createEmailService();
+export const sendEmail = async (options: SendEmailOptions): Promise<SendEmailResult> => {
+  const result = await deliverEmail(options);
+  if (result.ok && !result.skipped && !options.relatedId?.startsWith('monthly-limit:')) {
+    try { await (await import('./server/monthly-email-limit')).checkMonthlyEmailLimit(); }
+    catch { try { emailLogger.error('Monthly email limit check could not complete; the next send or staff dashboard visit will retry it.'); } catch { /* Never reject callers after delivery. */ } }
+  }
+  return result;
+};

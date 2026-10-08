@@ -29,10 +29,11 @@ export async function accountPath(user: User): Promise<string> {
     .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id)).limit(1);
   return profile?.completed ? '/dashboard' : '/onboarding';
 }
-export async function mintToken(userId: string, type: 'email_verify' | 'password_reset') {
+export async function mintToken(userId: string, type: 'email_verify' | 'password_reset' | 'admin_invite') {
   const raw = randomToken();
-  const expiresAt = new Date(Date.now() + (type === 'email_verify' ? 48 : 1) * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + (type === 'email_verify' ? 48 : type === 'admin_invite' ? 168 : 1) * 60 * 60 * 1000);
   const row = await db.transaction(async tx => {
+    await tx.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).for('update');
     await tx.update(authTokensTable).set({ usedAt: new Date() })
       .where(and(eq(authTokensTable.userId, userId), eq(authTokensTable.type, type), isNull(authTokensTable.usedAt)));
     const [created] = await tx.insert(authTokensTable).values({ userId, type, tokenHash: tokenHash(raw), expiresAt }).returning();
@@ -40,7 +41,7 @@ export async function mintToken(userId: string, type: 'email_verify' | 'password
   });
   return { ...row, raw };
 }
-export async function verificationEmail(user: User) {
+export async function verificationEmail(user: User, retryLogId?: string) {
   const token = await mintToken(user.id, 'email_verify');
   const content = createEmailTemplate({
     heading: 'Welcome to The Alliance',
@@ -53,9 +54,9 @@ export async function verificationEmail(user: User) {
     cta: { label: 'Verify my email', url: `${appOrigin}/verify?token=${token.raw}` },
   });
   return sendEmail({ type: 'verification', to: user.email, toUserId: user.id,
-    subject: 'Welcome to The Alliance — please verify your email', relatedId: token.id, ...content });
+    subject: 'Welcome to The Alliance — please verify your email', relatedId: token.id, retryLogId, ...content });
 }
-export async function passwordResetEmail(user: User) {
+export async function passwordResetEmail(user: User, retryLogId?: string) {
   const token = await mintToken(user.id, 'password_reset');
   const content = createEmailTemplate({
     heading: 'Let’s get you back into the volunteer portal',
@@ -68,5 +69,5 @@ export async function passwordResetEmail(user: User) {
     cta: { label: 'Reset my password', url: `${appOrigin}/reset-password?token=${token.raw}` },
   });
   return sendEmail({ type: 'password_reset', to: user.email, toUserId: user.id,
-    subject: 'Reset your Alliance Volunteer Portal password', relatedId: token.id, ...content });
+    subject: 'Reset your Alliance Volunteer Portal password', relatedId: token.id, retryLogId, ...content });
 }

@@ -7,6 +7,7 @@
     "test:schedule": "vitest run --config vitest.config.ts",
     "test:auth": "tsx --test src/auth/auth.test.ts",
     "test:email": "tsx --test src/email.test.ts",
+    "test:notifications": "vitest run --config vitest.config.ts src/server/monthly-email-limit.test.ts src/server/notification-log.test.ts",
     "test:onboarding": "tsx --test src/onboarding.test.ts",
     "test:volunteer": "tsx --test src/volunteer.test.ts",
     "test:roster": "tsx --test src/admin-roster.test.ts",

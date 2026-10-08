@@ -5,6 +5,83 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type EmailLogType = typeof EmailLogType[keyof typeof EmailLogType];
+
+
+export const EmailLogType = {
+  verification: 'verification',
+  password_reset: 'password_reset',
+  welcome: 'welcome',
+  reminder: 'reminder',
+  message: 'message',
+  admin_alert: 'admin_alert',
+  invite: 'invite',
+} as const;
+
+export type EmailLogStatus = typeof EmailLogStatus[keyof typeof EmailLogStatus];
+
+
+export const EmailLogStatus = {
+  sent: 'sent',
+  logged: 'logged',
+  failed: 'failed',
+} as const;
+
+export interface EmailTypeCount {
+  type: EmailLogType;
+  count: number;
+}
+
+export interface EmailMonthCount {
+  month: string;
+  total: number;
+  byType: EmailTypeCount[];
+}
+
+export interface EmailProviderStatus {
+  tokenConfigured: boolean;
+  /** @nullable */
+  emailFrom: string | null;
+  deliveryEnabled: boolean;
+}
+
+export interface NotificationSummary {
+  month: string;
+  total: number;
+  byType: EmailTypeCount[];
+  monthlyLimit: number;
+  percent: number;
+  months: EmailMonthCount[];
+  postmark: EmailProviderStatus;
+}
+
+export interface NotificationLogRow {
+  id: string;
+  time: string;
+  type: EmailLogType;
+  recipient: string;
+  subject: string;
+  status: EmailLogStatus;
+  /** @nullable */
+  error: string | null;
+  canRetry: boolean;
+}
+
+export interface NotificationLogPage {
+  rows: NotificationLogRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface NotificationLimitInput {
+  /**
+     * @minimum 1
+     * @maximum 1000000
+     */
+  monthlyLimit: number;
+}
+
 export interface ReminderRunCounts {
   eligible: number;
   sent: number;
@@ -1051,6 +1128,18 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type GetNotificationLogParams = {
+type?: EmailLogType;
+status?: EmailLogStatus;
+from?: string;
+to?: string;
+search?: string;
+/**
+ * @minimum 1
+ */
+page?: number;
+};
 
 export type RunAdminReminderCheckParams = {
 /**

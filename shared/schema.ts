@@ -86,8 +86,10 @@ export const appSettingsTable = pgTable('app_settings', {
   id: text('id').primaryKey().default('schedule'),
   dailyDigestEnabled: boolean('daily_digest_enabled').notNull().default(true),
   lastDigestDate: date('last_digest_date', { mode: 'string' }),
+  postmarkMonthlyLimit: integer('postmark_monthly_limit').notNull().default(100),
+  lastMonthlyAlertMonth: text('last_monthly_alert_month'),
   ...timestamps(),
-});
+}, table => [check('app_settings_email_limit_check', sql`${table.postmarkMonthlyLimit} between 1 and 1000000`)]);
 /** Persisted diagnostics; separate from per-recipient delivery history. */
 export const reminderJobRunsTable = pgTable('reminder_job_runs', {
   id: primaryKey(),
@@ -216,6 +218,7 @@ export const notificationLogTable = pgTable('notification_log', {
   recipientUserId: uuid('recipient_user_id').references(() => usersTable.id, { onDelete: 'restrict' }),
   subject: text('subject').notNull(),
   relatedId: text('related_id'),
+  retryPayload: text('retry_payload'),
   status: notificationStatus('status').notNull().default('logged'),
   providerMessageId: text('provider_message_id'),
   error: text('error'),

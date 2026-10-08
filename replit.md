@@ -158,6 +158,16 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Schedule mutations take a shared transaction advisory lock. Future booking writers must acquire it before user/profile/slot row locks; use the user-then-profile lock order shared with profile-status changes. This prevents booking, capacity, and deactivation races.
 - Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
 
+## Notification monitoring and safe retries
+
+- `/admin/notifications` shows sent + logged usage by type for Pacific calendar months, including the current partial month and five previous months. Failure rows do not count. Usage uses successful-send time (`sent_at`, with legacy creation-time fallback), so an old failure retried successfully counts in its delivery month.
+- `app_settings.postmarkMonthlyLimit` defaults to 100 and is monitoring-only: the progress bar warns at 80% and 95%; delivery is not blocked. One monthly 80% alert goes to active, verified administrators through the central email service. A database lock, per-recipient related IDs and a month acknowledgment protect concurrent checks and recover partial failures without repeating confirmed recipients.
+- Every confirmed central send checks the limit after releasing its delivery connection/lock. Limit edits and staff summary visits also check it, allowing interrupted checks to recover. Alert emails use `monthly-limit:YYYY-MM` and bypass recursive quota checks.
+- Future non-authentication emails save authenticated, encrypted HTML/plain-text/reply-to content for safe manual retry. The encryption key is purpose-derived from `SESSION_SECRET`; rotating it makes older retry payloads unreadable, and retry fails explicitly rather than fabricating content.
+- Verification, password-reset and administrator-invite bodies are never saved. Retry issues fresh hash-only, single-use tokens with the original 48-hour / 1-hour / 7-day expiry. Already verified accounts or accepted invitations cannot be reissued by the log.
+- Retry targets the original metadata row, preserves the original recipient, uses a per-row database lock, and never repeats confirmed sent/logged keys. Inactive/changed-address recipients, unknown delivery outcomes, obsolete standing-shift reminders and legacy rows without content fail explicitly. Metadata APIs never expose encrypted or decrypted bodies. Tests always target the signed-in administrator and keep an idempotent request ID across uncertain network retries.
+- The notification APIs are default-deny admin routes; mutations require CSRF. Provider status exposes only token presence and the requested From address, never the token. Development test copies are labelled logged/not delivered. Run `pnpm --filter @workspace/api-server run test:notifications` for quota, retry, privacy, filter and access tests.
+
 ## Automated shift reminders
 
 - `src/server/jobs.ts` schedules `*/15 * * * *` with node-cron in America/Los_Angeles only when `RUN_JOBS=true`. Manual staff checks and secret-authenticated external checks intentionally work even with automatic scheduling disabled.

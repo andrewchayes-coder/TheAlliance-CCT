@@ -8,6 +8,102 @@
 import * as zod from 'zod';
 
 
+export const GetNotificationSummaryResponse = zod.object({
+  "month": zod.string(),
+  "total": zod.number().int(),
+  "byType": zod.array(zod.object({
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "count": zod.number().int()
+})),
+  "monthlyLimit": zod.number().int(),
+  "percent": zod.number(),
+  "months": zod.array(zod.object({
+  "month": zod.string(),
+  "total": zod.number().int(),
+  "byType": zod.array(zod.object({
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "count": zod.number().int()
+}))
+})),
+  "postmark": zod.object({
+  "tokenConfigured": zod.boolean(),
+  "emailFrom": zod.string().nullable(),
+  "deliveryEnabled": zod.boolean()
+})
+})
+
+
+export const getNotificationLogQueryPageDefault = 1;
+
+
+
+export const GetNotificationLogQueryParams = zod.object({
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']).optional(),
+  "status": zod.enum(['sent', 'logged', 'failed']).optional(),
+  "from": zod.date().optional(),
+  "to": zod.date().optional(),
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().int().min(1).default(getNotificationLogQueryPageDefault)
+})
+
+export const GetNotificationLogResponse = zod.object({
+  "rows": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "time": zod.coerce.date(),
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "recipient": zod.string(),
+  "subject": zod.string(),
+  "status": zod.enum(['sent', 'logged', 'failed']),
+  "error": zod.string().nullable(),
+  "canRetry": zod.boolean()
+})),
+  "total": zod.number().int(),
+  "page": zod.number().int(),
+  "pageSize": zod.number().int()
+})
+
+
+export const updateNotificationLimitBodyMonthlyLimitMax = 1000000;
+
+
+
+export const UpdateNotificationLimitBody = zod.object({
+  "monthlyLimit": zod.number().int().min(1).max(updateNotificationLimitBodyMonthlyLimitMax)
+})
+
+export const updateNotificationLimitResponseMonthlyLimitMax = 1000000;
+
+
+
+export const UpdateNotificationLimitResponse = zod.object({
+  "monthlyLimit": zod.number().int().min(1).max(updateNotificationLimitResponseMonthlyLimitMax)
+})
+
+
+export const RetryNotificationEmailParams = zod.object({
+  "id": zod.coerce.string().uuid()
+})
+
+export const RetryNotificationEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "skipped": zod.boolean(),
+  "status": zod.enum(['sent', 'logged', 'failed']),
+  "error": zod.string().nullable()
+})
+
+
+export const SendProviderTestEmailBody = zod.object({
+  "requestId": zod.string().uuid()
+})
+
+export const SendProviderTestEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "skipped": zod.boolean(),
+  "status": zod.enum(['sent', 'logged', 'failed']),
+  "error": zod.string().nullable()
+})
+
+
 export const GetReminderJobStatusResponse = zod.object({
   "lastRun": zod.union([zod.object({
   "id": zod.string().uuid(),

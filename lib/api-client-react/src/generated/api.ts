@@ -46,6 +46,7 @@ import type {
   GetAdminScheduleWeek400,
   GetAdminScheduleWeekParams,
   GetMessageContext200,
+  GetNotificationLogParams,
   HealthStatus,
   ListAdminMessagesParams,
   ListTeamUsersParams,
@@ -57,6 +58,9 @@ import type {
   MessageSendInput,
   MessageSendResult,
   MessageVolunteer,
+  NotificationLimitInput,
+  NotificationLogPage,
+  NotificationSummary,
   OnboardingAgreements,
   OnboardingInput,
   PasswordChangeInput,
@@ -117,6 +121,387 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetNotificationSummaryUrl = () => {
+
+
+
+
+  return `/api/admin/notifications/summary`
+}
+
+export const getNotificationSummary = async ( options?: Parameters<typeof customFetch>[1]): Promise<NotificationSummary> => {
+
+  return customFetch<NotificationSummary>(getGetNotificationSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNotificationSummaryQueryKey = () => {
+    return [
+    `/api/admin/notifications/summary`
+    ] as const;
+    }
+
+
+export const getGetNotificationSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getNotificationSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotificationSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNotificationSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNotificationSummary>>> = ({ signal }) => getNotificationSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNotificationSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNotificationSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getNotificationSummary>>>
+export type GetNotificationSummaryQueryError = ErrorType<unknown>
+
+
+
+export function useGetNotificationSummary<TData = Awaited<ReturnType<typeof getNotificationSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotificationSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNotificationSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetNotificationLogUrl = (params?: GetNotificationLogParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/notifications?${stringifiedParams}` : `/api/admin/notifications`
+}
+
+export const getNotificationLog = async (params?: GetNotificationLogParams, options?: Parameters<typeof customFetch>[1]): Promise<NotificationLogPage> => {
+
+  return customFetch<NotificationLogPage>(getGetNotificationLogUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetNotificationLogQueryKey = (params?: GetNotificationLogParams,) => {
+    return [
+    `/api/admin/notifications`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetNotificationLogQueryOptions = <TData = Awaited<ReturnType<typeof getNotificationLog>>, TError = ErrorType<unknown>>(params?: GetNotificationLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotificationLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetNotificationLogQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getNotificationLog>>> = ({ signal }) => getNotificationLog(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNotificationLog>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetNotificationLogQueryResult = NonNullable<Awaited<ReturnType<typeof getNotificationLog>>>
+export type GetNotificationLogQueryError = ErrorType<unknown>
+
+
+
+export function useGetNotificationLog<TData = Awaited<ReturnType<typeof getNotificationLog>>, TError = ErrorType<unknown>>(
+ params?: GetNotificationLogParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getNotificationLog>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetNotificationLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateNotificationLimitUrl = () => {
+
+
+
+
+  return `/api/admin/notifications/settings`
+}
+
+export const updateNotificationLimit = async (notificationLimitInput: NotificationLimitInput, options?: Parameters<typeof customFetch>[1]): Promise<NotificationLimitInput> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<NotificationLimitInput>(getUpdateNotificationLimitUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(notificationLimitInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateNotificationLimitMutationKey = () => ['updateNotificationLimit'] as const;
+
+export const getUpdateNotificationLimitMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationLimit>>, TError,UpdateNotificationLimitMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateNotificationLimit>>, TError,UpdateNotificationLimitMutationVariables, TContext> => {
+
+const mutationKey = getUpdateNotificationLimitMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateNotificationLimit>>, UpdateNotificationLimitMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateNotificationLimit(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateNotificationLimitMutationResult = NonNullable<Awaited<ReturnType<typeof updateNotificationLimit>>>
+    export type UpdateNotificationLimitMutationBody = BodyType<NotificationLimitInput>
+    export type UpdateNotificationLimitMutationError = ErrorType<unknown>
+    export type UpdateNotificationLimitMutationVariables = {data: BodyType<NotificationLimitInput>}
+
+    export const useUpdateNotificationLimit = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateNotificationLimit>>, TError,UpdateNotificationLimitMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateNotificationLimit>>,
+        TError,
+        UpdateNotificationLimitMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateNotificationLimitMutationOptions(options));
+    }
+
+export const getRetryNotificationEmailUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/notifications/${id}/retry`
+}
+
+export const retryNotificationEmail = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<TestReminderResult> => {
+
+  return customFetch<TestReminderResult>(getRetryNotificationEmailUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRetryNotificationEmailMutationKey = () => ['retryNotificationEmail'] as const;
+
+export const getRetryNotificationEmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryNotificationEmail>>, TError,RetryNotificationEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof retryNotificationEmail>>, TError,RetryNotificationEmailMutationVariables, TContext> => {
+
+const mutationKey = getRetryNotificationEmailMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retryNotificationEmail>>, RetryNotificationEmailMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  retryNotificationEmail(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RetryNotificationEmailMutationResult = NonNullable<Awaited<ReturnType<typeof retryNotificationEmail>>>
+
+    export type RetryNotificationEmailMutationError = ErrorType<void>
+    export type RetryNotificationEmailMutationVariables = {id: string}
+
+    export const useRetryNotificationEmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryNotificationEmail>>, TError,RetryNotificationEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof retryNotificationEmail>>,
+        TError,
+        RetryNotificationEmailMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRetryNotificationEmailMutationOptions(options));
+    }
+
+export const getSendProviderTestEmailUrl = () => {
+
+
+
+
+  return `/api/admin/notifications/test`
+}
+
+export const sendProviderTestEmail = async (testReminderInput: TestReminderInput, options?: Parameters<typeof customFetch>[1]): Promise<TestReminderResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<TestReminderResult>(getSendProviderTestEmailUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(testReminderInput)
+  }
+);}
+
+
+
+
+
+export const getSendProviderTestEmailMutationKey = () => ['sendProviderTestEmail'] as const;
+
+export const getSendProviderTestEmailMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendProviderTestEmail>>, TError,SendProviderTestEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendProviderTestEmail>>, TError,SendProviderTestEmailMutationVariables, TContext> => {
+
+const mutationKey = getSendProviderTestEmailMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendProviderTestEmail>>, SendProviderTestEmailMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendProviderTestEmail(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendProviderTestEmailMutationResult = NonNullable<Awaited<ReturnType<typeof sendProviderTestEmail>>>
+    export type SendProviderTestEmailMutationBody = BodyType<TestReminderInput>
+    export type SendProviderTestEmailMutationError = ErrorType<unknown>
+    export type SendProviderTestEmailMutationVariables = {data: BodyType<TestReminderInput>}
+
+    export const useSendProviderTestEmail = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendProviderTestEmail>>, TError,SendProviderTestEmailMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendProviderTestEmail>>,
+        TError,
+        SendProviderTestEmailMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendProviderTestEmailMutationOptions(options));
+    }
 
 export const getGetReminderJobStatusUrl = () => {
 

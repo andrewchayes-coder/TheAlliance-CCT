@@ -1,0 +1,20 @@
+import type { EmailLogType, NotificationSummary } from '@workspace/api-client-react';
+
+export const TYPES: { type: EmailLogType; label: string; color: string }[] = [
+  { type: 'verification', label: 'Verification', color: '#1f3a5f' },
+  { type: 'password_reset', label: 'Password reset', color: '#1a8a8a' },
+  { type: 'welcome', label: 'Welcome', color: '#3b7dd8' },
+  { type: 'reminder', label: 'Reminder', color: '#7a5ab8' },
+  { type: 'message', label: 'Message', color: '#c9962b' },
+  { type: 'admin_alert', label: 'Admin alert', color: '#8a94a0' },
+  { type: 'invite', label: 'Invite', color: '#b4572f' },
+];
+export const typeLabel = (t: string) => TYPES.find(x => x.type === t)?.label ?? t;
+export const monthParts = (m: string) => { const [y, mo] = m.split('-').map(Number); return { y, mo }; };
+export const monthName = (m: string, long = false) => {
+  const { y, mo } = monthParts(m);
+  return new Date(Date.UTC(y, mo - 1, 1)).toLocaleString('en-US', { month: long ? 'long' : 'short', ...(long ? { year: 'numeric' } : {}), timeZone: 'UTC' });
+};
+export const countOf = (list: { type: string; count: number }[], t: string) => list.find(x => x.type === t)?.count ?? 0;
+export type Summary = NotificationSummary;
+export const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? iso : d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Los_Angeles' }); };

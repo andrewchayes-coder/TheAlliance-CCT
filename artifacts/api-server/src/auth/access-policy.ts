@@ -4,6 +4,11 @@ import { requireJobsSecret } from '../server/jobs-auth';
 
 type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: '/admin/notifications', guard: 'admin' },
+  { method: 'GET', path: '/admin/notifications/summary', guard: 'admin' },
+  { method: 'PATCH', path: '/admin/notifications/settings', guard: 'admin' },
+  { method: 'POST', path: '/admin/notifications/test', guard: 'admin' },
+  { method: 'POST', path: /^\/admin\/notifications\/[^/]+\/retry$/, guard: 'admin' },
   { method: 'POST', path: '/jobs/run', guard: 'job' },
   { method: 'GET', path: '/admin/notifications/jobs', guard: 'admin' },
   { method: 'POST', path: '/admin/notifications/jobs/run', guard: 'admin' },

@@ -11,6 +11,71 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/notifications/summary:
+    get:
+      operationId: getNotificationSummary
+      responses:
+        "200":
+          description: Pacific calendar month totals and provider status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationSummary' }
+  /admin/notifications:
+    get:
+      operationId: getNotificationLog
+      parameters:
+        - { in: query, name: type, schema: { $ref: '#/components/schemas/EmailLogType' } }
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/EmailLogStatus' } }
+        - { in: query, name: from, schema: { type: string, format: date } }
+        - { in: query, name: to, schema: { type: string, format: date } }
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        "200":
+          description: Admin-only paginated email metadata; never message bodies or encrypted payloads
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationLogPage' }
+  /admin/notifications/settings:
+    patch:
+      operationId: updateNotificationLimit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NotificationLimitInput' }
+      responses:
+        "200":
+          description: Saved monitoring limit
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationLimitInput' }
+  /admin/notifications/{id}/retry:
+    post:
+      operationId: retryNotificationEmail
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Retry result; confirmed sends are not repeated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestReminderResult' }
+        "409": { description: No safe retry available }
+  /admin/notifications/test:
+    post:
+      operationId: sendProviderTestEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestReminderInput' }
+      responses:
+        "200":
+          description: Email to the authenticated administrator only
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestReminderResult' }
   /admin/notifications/jobs:
     get:
       operationId: getReminderJobStatus
@@ -891,6 +956,76 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    EmailLogType:
+      type: string
+      enum: [verification, password_reset, welcome, reminder, message, admin_alert, invite]
+    EmailLogStatus:
+      type: string
+      enum: [sent, logged, failed]
+    EmailTypeCount:
+      type: object
+      required: [type, count]
+      properties:
+        type: { $ref: '#/components/schemas/EmailLogType' }
+        count: { type: integer }
+    EmailMonthCount:
+      type: object
+      required: [month, total, byType]
+      properties:
+        month: { type: string }
+        total: { type: integer }
+        byType:
+          type: array
+          items: { $ref: '#/components/schemas/EmailTypeCount' }
+    EmailProviderStatus:
+      type: object
+      required: [tokenConfigured, emailFrom, deliveryEnabled]
+      properties:
+        tokenConfigured: { type: boolean }
+        emailFrom: { type: [string, "null"] }
+        deliveryEnabled: { type: boolean }
+    NotificationSummary:
+      type: object
+      required: [month, total, byType, monthlyLimit, percent, months, postmark]
+      properties:
+        month: { type: string }
+        total: { type: integer }
+        byType:
+          type: array
+          items: { $ref: '#/components/schemas/EmailTypeCount' }
+        monthlyLimit: { type: integer }
+        percent: { type: number }
+        months:
+          type: array
+          items: { $ref: '#/components/schemas/EmailMonthCount' }
+        postmark: { $ref: '#/components/schemas/EmailProviderStatus' }
+    NotificationLogRow:
+      type: object
+      required: [id, time, type, recipient, subject, status, error, canRetry]
+      properties:
+        id: { type: string, format: uuid }
+        time: { type: string, format: date-time }
+        type: { $ref: '#/components/schemas/EmailLogType' }
+        recipient: { type: string }
+        subject: { type: string }
+        status: { $ref: '#/components/schemas/EmailLogStatus' }
+        error: { type: [string, "null"] }
+        canRetry: { type: boolean }
+    NotificationLogPage:
+      type: object
+      required: [rows, total, page, pageSize]
+      properties:
+        rows:
+          type: array
+          items: { $ref: '#/components/schemas/NotificationLogRow' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    NotificationLimitInput:
+      type: object
+      required: [monthlyLimit]
+      properties:
+        monthlyLimit: { type: integer, minimum: 1, maximum: 1000000 }
     ReminderRunCounts:
       type: object
       required: [eligible, sent, logged, failed, skipped, suppressed]

@@ -9,3 +9,5 @@
 - [Coordinator dispatch](coordinator-dispatch.md) — admin home is the phone-first Find Help dispatch tool; stale schedules must never appear live.
 - [Standing shift changes](standing-shift-changes.md) — changes release the old shift immediately; fresh enrollment must not inherit cancelled weeks off.
 - [Coverage notifications](coverage-notifications.md) — alert actual reductions; digest timing needs Pacific DST and an always-on or scheduled runtime.
+- [Email retry safety](email-retry-policy.md) — regenerate authentication links, review uncertain delivery, and avoid inflating usage from historical dedupe.
+- [Postgres test clients](postgres-test-clients.md) — infer clients from an async connect wrapper; the overloaded method's return type can resolve to void.
