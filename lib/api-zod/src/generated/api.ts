@@ -8,6 +8,131 @@
 import * as zod from 'zod';
 
 
+export const GetVolunteerScheduleResponse = zod.object({
+  "canBook": zod.boolean(),
+  "blockedReasons": zod.array(zod.string()),
+  "contactEmail": zod.string().nullable(),
+  "minShifts": zod.number().int(),
+  "maxShifts": zod.number().int(),
+  "today": zod.string(),
+  "slots": zod.array(zod.object({
+  "id": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "heldCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "startDates": zod.array(zod.string())
+})),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "slotId": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "nextDates": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+})),
+  "weeksOff": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+}))
+}))
+})
+
+
+export const bookVolunteerShiftBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const BookVolunteerShiftBody = zod.object({
+  "slotId": zod.string(),
+  "startDate": zod.string().regex(bookVolunteerShiftBodyStartDateRegExp).optional()
+})
+
+export const BookVolunteerShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const ChangeVolunteerShiftParams = zod.object({
+  "assignmentId": zod.coerce.string()
+})
+
+export const changeVolunteerShiftBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const ChangeVolunteerShiftBody = zod.object({
+  "slotId": zod.string(),
+  "startDate": zod.string().regex(changeVolunteerShiftBodyStartDateRegExp).optional()
+})
+
+export const ChangeVolunteerShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const DropVolunteerShiftParams = zod.object({
+  "assignmentId": zod.coerce.string()
+})
+
+export const DropVolunteerShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const SkipVolunteerShiftParams = zod.object({
+  "assignmentId": zod.coerce.string()
+})
+
+export const skipVolunteerShiftBodyDateRegExp = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+
+
+export const SkipVolunteerShiftBody = zod.object({
+  "date": zod.string().regex(skipVolunteerShiftBodyDateRegExp)
+})
+
+export const SkipVolunteerShiftResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
+export const UndoVolunteerSkipParams = zod.object({
+  "assignmentId": zod.coerce.string(),
+  "skipId": zod.coerce.string()
+})
+
+export const UndoVolunteerSkipResponse = zod.object({
+  "message": zod.string(),
+  "assignmentId": zod.string().nullable(),
+  "emailWarning": zod.string().nullable()
+})
+
+
 export const GetAdminOverviewResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "today": zod.string(),

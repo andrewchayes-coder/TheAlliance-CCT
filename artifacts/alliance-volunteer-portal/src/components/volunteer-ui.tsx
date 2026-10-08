@@ -26,6 +26,10 @@ export const volunteerRoute = (render: (me: Me) => ReactNode) => () => (
   <RequireVerified>{me => <AppLayout role="volunteer">{render(me)}</AppLayout>}</RequireVerified>
 );
 
+export const volunteerRouteIncomplete = (render: (me: Me) => ReactNode) => () => (
+  <RequireVerified allowIncomplete>{me => <AppLayout role="volunteer">{render(me)}</AppLayout>}</RequireVerified>
+);
+
 export function LoadingBlock() {
   return <div role="status" aria-busy="true" className="grid gap-3"><span className="sr-only">Loading</span><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /></div>;
 }
@@ -58,8 +62,8 @@ export function UpcomingShifts({ shifts, schedulingOpen, max, now }: { shifts: S
         </ul>
       ) : (
         <div className="rounded-xl border border-dashed border-navy/25 bg-white px-5 py-6" data-testid="empty-upcoming">
-          <p className="font-bold">{schedulingOpen ? 'No upcoming shifts yet' : 'Shift scheduling is coming soon'}</p>
-          <p className="mt-1 text-sm">{schedulingOpen ? 'Your upcoming shifts will appear here.' : "Choosing and booking shifts isn't open yet. Your upcoming shifts will show here once it is."}</p>
+          <p className="font-bold">{schedulingOpen ? 'No upcoming shifts yet' : 'No shifts on your calendar'}</p>
+          <p className="mt-1 text-sm">{schedulingOpen ? 'Pick a weekly shift and your upcoming dates will appear here.' : 'Once you pick a weekly shift, your upcoming dates show here.'}</p>
         </div>
       )}
     </section>

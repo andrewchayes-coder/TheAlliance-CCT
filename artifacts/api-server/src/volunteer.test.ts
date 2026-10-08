@@ -155,7 +155,7 @@ test('own assignment projection returns four dates without other volunteers or o
   assert.equal(response.data.nextShift.startTime, '09:00');
   assert.equal(JSON.stringify(response.data).includes('volunteerProfileId'), false);
   assert.equal(JSON.stringify(response.data).includes(other), false);
-  assert.equal(response.data.schedulingOpen, false);
+  assert.equal(response.data.schedulingOpen, true);
 });
 test('profile saves explicit blank availability and config answers, never ownership/role/status/email/agreement', async () => {
   const request = await client(active);

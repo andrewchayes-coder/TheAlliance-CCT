@@ -3,37 +3,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, FileText } from 'lucide-react';
 import {
   getGetVolunteerDashboardQueryKey, getGetVolunteerMessagesQueryKey, getGetVolunteerResourcesQueryKey,
-  useGetVolunteerDashboard, useGetVolunteerMessages, useGetVolunteerResources, useReadVolunteerMessage,
-  getGetVolunteerDashboardQueryKey as dashKey, type VolunteerMessage,
+  useGetVolunteerMessages, useGetVolunteerResources, useReadVolunteerMessage,
+  type VolunteerMessage,
 } from '@workspace/api-client-react';
 import { EmptyState } from '@/components/brand-system';
 import { FETCH_CREDS, readError, useAuth } from '@/auth/auth-context';
 import { Notice } from '@/auth/auth-ui';
-import { ErrorBlock, LoadingBlock, UpcomingShifts, VolunteerPage, useNow, volunteerRoute } from '@/components/volunteer-ui';
+import { ErrorBlock, LoadingBlock, VolunteerPage, volunteerRoute } from '@/components/volunteer-ui';
 import { safeHttps, shortDateTime } from '@/lib/pacific';
 
-function ShiftsBody() {
-  const now = useNow();
-  const q = useGetVolunteerDashboard({
-    query: { queryKey: dashKey(), refetchInterval: 60_000, staleTime: 15_000, refetchOnWindowFocus: 'always' }, request: FETCH_CREDS,
-  });
-  return (
-    <VolunteerPage kicker="My shifts" title="Your shifts">
-      {q.isPending ? <LoadingBlock /> : q.isError ? <ErrorBlock what="your shifts" onRetry={() => { void q.refetch(); }} /> : (
-        <>
-          <div className="rounded-xl bg-white p-5 shadow-sm" data-testid="card-booking-status">
-            <p className="font-bold">{q.data.schedulingOpen ? 'Shift booking is available' : 'Shift booking is not open yet'}</p>
-            <p className="mt-1 text-sm">{q.data.schedulingOpen
-              ? 'Booking tools are on their way to this page.'
-              : "We'll email you when you can choose a weekly shift. Anything already on your calendar shows below."}</p>
-          </div>
-          <UpcomingShifts shifts={q.data.upcomingShifts} schedulingOpen={q.data.schedulingOpen} now={now} />
-        </>
-      )}
-    </VolunteerPage>
-  );
-}
-export const Shifts = volunteerRoute(() => <ShiftsBody />);
+export { ShiftsPage as Shifts } from './shifts-page';
 
 function MessagesBody() {
   const auth = useAuth();

@@ -55,12 +55,16 @@ import type {
   SignupInput,
   TeamUsersResponse,
   TokenInput,
+  VolunteerBookingInput,
   VolunteerDashboard,
   VolunteerMessage,
   VolunteerNotesUpdate,
   VolunteerProfileInput,
   VolunteerResource,
   VolunteerRoster,
+  VolunteerSchedule,
+  VolunteerShiftResult,
+  VolunteerSkipInput,
   VolunteerStatusResult,
   VolunteerStatusUpdate,
   VolunteerTrackingUpdate
@@ -92,6 +96,463 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetVolunteerScheduleUrl = () => {
+
+
+
+
+  return `/api/volunteer/schedule`
+}
+
+export const getVolunteerSchedule = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerSchedule> => {
+
+  return customFetch<VolunteerSchedule>(getGetVolunteerScheduleUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerScheduleQueryKey = () => {
+    return [
+    `/api/volunteer/schedule`
+    ] as const;
+    }
+
+
+export const getGetVolunteerScheduleQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerSchedule>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerScheduleQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerSchedule>>> = ({ signal }) => getVolunteerSchedule({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerSchedule>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerScheduleQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerSchedule>>>
+export type GetVolunteerScheduleQueryError = ErrorType<unknown>
+
+
+
+export function useGetVolunteerSchedule<TData = Awaited<ReturnType<typeof getVolunteerSchedule>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerSchedule>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerScheduleQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBookVolunteerShiftUrl = () => {
+
+
+
+
+  return `/api/volunteer/assignments`
+}
+
+export const bookVolunteerShift = async (volunteerBookingInput: VolunteerBookingInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getBookVolunteerShiftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerBookingInput)
+  }
+);}
+
+
+
+
+
+export const getBookVolunteerShiftMutationKey = () => ['bookVolunteerShift'] as const;
+
+export const getBookVolunteerShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookVolunteerShift>>, TError,BookVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bookVolunteerShift>>, TError,BookVolunteerShiftMutationVariables, TContext> => {
+
+const mutationKey = getBookVolunteerShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookVolunteerShift>>, BookVolunteerShiftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  bookVolunteerShift(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BookVolunteerShiftMutationResult = NonNullable<Awaited<ReturnType<typeof bookVolunteerShift>>>
+    export type BookVolunteerShiftMutationBody = BodyType<VolunteerBookingInput>
+    export type BookVolunteerShiftMutationError = ErrorType<unknown>
+    export type BookVolunteerShiftMutationVariables = {data: BodyType<VolunteerBookingInput>}
+
+    export const useBookVolunteerShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookVolunteerShift>>, TError,BookVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bookVolunteerShift>>,
+        TError,
+        BookVolunteerShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBookVolunteerShiftMutationOptions(options));
+    }
+
+export const getChangeVolunteerShiftUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/volunteer/assignments/${assignmentId}/change`
+}
+
+export const changeVolunteerShift = async (assignmentId: string,
+    volunteerBookingInput: VolunteerBookingInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getChangeVolunteerShiftUrl(assignmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerBookingInput)
+  }
+);}
+
+
+
+
+
+export const getChangeVolunteerShiftMutationKey = () => ['changeVolunteerShift'] as const;
+
+export const getChangeVolunteerShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerShift>>, TError,ChangeVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerShift>>, TError,ChangeVolunteerShiftMutationVariables, TContext> => {
+
+const mutationKey = getChangeVolunteerShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeVolunteerShift>>, ChangeVolunteerShiftMutationVariables> = (props) => {
+          const {assignmentId,data} = props ?? {};
+
+          return  changeVolunteerShift(assignmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeVolunteerShiftMutationResult = NonNullable<Awaited<ReturnType<typeof changeVolunteerShift>>>
+    export type ChangeVolunteerShiftMutationBody = BodyType<VolunteerBookingInput>
+    export type ChangeVolunteerShiftMutationError = ErrorType<unknown>
+    export type ChangeVolunteerShiftMutationVariables = {assignmentId: string;data: BodyType<VolunteerBookingInput>}
+
+    export const useChangeVolunteerShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeVolunteerShift>>, TError,ChangeVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeVolunteerShift>>,
+        TError,
+        ChangeVolunteerShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeVolunteerShiftMutationOptions(options));
+    }
+
+export const getDropVolunteerShiftUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/volunteer/assignments/${assignmentId}/drop`
+}
+
+export const dropVolunteerShift = async (assignmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+  return customFetch<VolunteerShiftResult>(getDropVolunteerShiftUrl(assignmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDropVolunteerShiftMutationKey = () => ['dropVolunteerShift'] as const;
+
+export const getDropVolunteerShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dropVolunteerShift>>, TError,DropVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof dropVolunteerShift>>, TError,DropVolunteerShiftMutationVariables, TContext> => {
+
+const mutationKey = getDropVolunteerShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof dropVolunteerShift>>, DropVolunteerShiftMutationVariables> = (props) => {
+          const {assignmentId} = props ?? {};
+
+          return  dropVolunteerShift(assignmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DropVolunteerShiftMutationResult = NonNullable<Awaited<ReturnType<typeof dropVolunteerShift>>>
+
+    export type DropVolunteerShiftMutationError = ErrorType<unknown>
+    export type DropVolunteerShiftMutationVariables = {assignmentId: string}
+
+    export const useDropVolunteerShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof dropVolunteerShift>>, TError,DropVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof dropVolunteerShift>>,
+        TError,
+        DropVolunteerShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDropVolunteerShiftMutationOptions(options));
+    }
+
+export const getSkipVolunteerShiftUrl = (assignmentId: string,) => {
+
+
+
+
+  return `/api/volunteer/assignments/${assignmentId}/skips`
+}
+
+export const skipVolunteerShift = async (assignmentId: string,
+    volunteerSkipInput: VolunteerSkipInput, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<VolunteerShiftResult>(getSkipVolunteerShiftUrl(assignmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(volunteerSkipInput)
+  }
+);}
+
+
+
+
+
+export const getSkipVolunteerShiftMutationKey = () => ['skipVolunteerShift'] as const;
+
+export const getSkipVolunteerShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof skipVolunteerShift>>, TError,SkipVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof skipVolunteerShift>>, TError,SkipVolunteerShiftMutationVariables, TContext> => {
+
+const mutationKey = getSkipVolunteerShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof skipVolunteerShift>>, SkipVolunteerShiftMutationVariables> = (props) => {
+          const {assignmentId,data} = props ?? {};
+
+          return  skipVolunteerShift(assignmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SkipVolunteerShiftMutationResult = NonNullable<Awaited<ReturnType<typeof skipVolunteerShift>>>
+    export type SkipVolunteerShiftMutationBody = BodyType<VolunteerSkipInput>
+    export type SkipVolunteerShiftMutationError = ErrorType<unknown>
+    export type SkipVolunteerShiftMutationVariables = {assignmentId: string;data: BodyType<VolunteerSkipInput>}
+
+    export const useSkipVolunteerShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof skipVolunteerShift>>, TError,SkipVolunteerShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof skipVolunteerShift>>,
+        TError,
+        SkipVolunteerShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSkipVolunteerShiftMutationOptions(options));
+    }
+
+export const getUndoVolunteerSkipUrl = (assignmentId: string,
+    skipId: string,) => {
+
+
+
+
+  return `/api/volunteer/assignments/${assignmentId}/skips/${skipId}`
+}
+
+export const undoVolunteerSkip = async (assignmentId: string,
+    skipId: string, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerShiftResult> => {
+
+  return customFetch<VolunteerShiftResult>(getUndoVolunteerSkipUrl(assignmentId,skipId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUndoVolunteerSkipMutationKey = () => ['undoVolunteerSkip'] as const;
+
+export const getUndoVolunteerSkipMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoVolunteerSkip>>, TError,UndoVolunteerSkipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof undoVolunteerSkip>>, TError,UndoVolunteerSkipMutationVariables, TContext> => {
+
+const mutationKey = getUndoVolunteerSkipMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof undoVolunteerSkip>>, UndoVolunteerSkipMutationVariables> = (props) => {
+          const {assignmentId,skipId} = props ?? {};
+
+          return  undoVolunteerSkip(assignmentId,skipId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UndoVolunteerSkipMutationResult = NonNullable<Awaited<ReturnType<typeof undoVolunteerSkip>>>
+
+    export type UndoVolunteerSkipMutationError = ErrorType<unknown>
+    export type UndoVolunteerSkipMutationVariables = {assignmentId: string;skipId: string}
+
+    export const useUndoVolunteerSkip = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoVolunteerSkip>>, TError,UndoVolunteerSkipMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof undoVolunteerSkip>>,
+        TError,
+        UndoVolunteerSkipMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUndoVolunteerSkipMutationOptions(options));
+    }
 
 export const getGetAdminOverviewUrl = () => {
 

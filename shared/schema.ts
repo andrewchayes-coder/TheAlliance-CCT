@@ -116,8 +116,8 @@ export const shiftAssignmentsTable = pgTable('shift_assignments', {
   index('shift_assignments_slot_idx').on(table.shiftSlotId, table.startDate, table.endDate),
   index('shift_assignments_volunteer_idx').on(table.volunteerProfileId, table.startDate, table.endDate),
   uniqueIndex('shift_assignments_standing_unique').on(table.volunteerProfileId, table.shiftSlotId, table.startDate),
-  // An admin can cancel a future reservation today, before its first occurrence.
-  check('shift_assignments_date_order', sql`${table.endDate} is null or ${table.endDate} >= ${table.startDate} or coalesce(${table.endedReason} = 'admin_removed', false)`),
+  // Cancelled reservations may end before their first occurrence; ordinary assignments cannot.
+  check('shift_assignments_date_order', sql`${table.endDate} is null or ${table.endDate} >= ${table.startDate} or ${table.endedReason} is not null`),
 ]);
 
 export const shiftSkipsTable = pgTable('shift_skips', {
@@ -254,7 +254,7 @@ export const insertShiftSlotSchema = createInsertSchema(shiftSlotsTable, {
 });
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignmentsTable, {
   startDate: calendarDate, endDate: calendarDate.nullable().optional(),
-}).omit(generatedFields).refine(value => !value.endDate || value.endDate >= value.startDate, {
+}).omit(generatedFields).refine(value => !value.endDate || value.endDate >= value.startDate || !!value.endedReason, {
   path: ['endDate'], message: 'The end date cannot be before the start date',
 });
 export const insertShiftSkipSchema = createInsertSchema(shiftSkipsTable, { skipDate: calendarDate }).omit(generatedFields);

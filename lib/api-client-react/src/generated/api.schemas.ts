@@ -5,6 +5,78 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface VolunteerBookingInput {
+  slotId: string;
+  /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
+  startDate?: string;
+}
+
+export interface VolunteerSkipInput {
+  /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
+  date: string;
+}
+
+export interface VolunteerShiftResult {
+  message: string;
+  /** @nullable */
+  assignmentId: string | null;
+  /** @nullable */
+  emailWarning: string | null;
+}
+
+export interface VolunteerShiftDate {
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  skipped: boolean;
+  /** @nullable */
+  skipId: string | null;
+  canSkip: boolean;
+  canUndo: boolean;
+}
+
+export interface VolunteerStandingShift {
+  id: string;
+  slotId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  /** @nullable */
+  label: string | null;
+  startDate: string;
+  /** @nullable */
+  endDate: string | null;
+  nextDates: VolunteerShiftDate[];
+  weeksOff: VolunteerShiftDate[];
+}
+
+export interface VolunteerAvailableSlot {
+  id: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  /** @nullable */
+  label: string | null;
+  capacity: number;
+  heldCount: number;
+  openSpots: number;
+  /** @nullable */
+  ownAssignmentId: string | null;
+  startDates: string[];
+}
+
+export interface VolunteerSchedule {
+  canBook: boolean;
+  blockedReasons: string[];
+  /** @nullable */
+  contactEmail: string | null;
+  minShifts: number;
+  maxShifts: number;
+  today: string;
+  slots: VolunteerAvailableSlot[];
+  assignments: VolunteerStandingShift[];
+}
+
 export interface CoordinatorVolunteer {
   assignmentId: string;
   userId: string;

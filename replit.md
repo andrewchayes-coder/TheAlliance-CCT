@@ -158,6 +158,15 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Schedule mutations take a shared transaction advisory lock. Future booking writers must acquire it before user/profile/slot row locks; use the user-then-profile lock order shared with profile-status changes. This prevents booking, capacity, and deactivation races.
 - Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
 
+## Volunteer standing shifts
+
+- `/shifts` is verified-volunteer self-service, including an explanation for applicants, inactive profiles, or missing agreement acknowledgment. Availability exposes counts and only the caller's assignment/skip IDs; no other volunteer contact information. The contact link uses the oldest active, verified staff account.
+- Booking/change/drop/skip/undo all recheck the user/session and profile inside a transaction. Writers follow the shared advisory schedule-lock order, lock the user/profile, and row-lock the target slot; capacity is reread after that slot lock. Standing reservations, including future starts, consume capacity and the configured maximum. Skipping an occurrence never frees its standing seat.
+- New starts must be future, match the weekday, fall within 28 calendar days, and avoid closures/retirement. Changes immediately release the previous assignment; drops require the configured minimum to remain. Since end dates are inclusive, immediate cancellation uses yesterday with `changed` or `dropped`; the assignment-date CHECK permits pre-start ends only when an ended reason exists.
+- Rebooking an identical cancelled reservation reuses its unique row, records the prior cancellation in activity, and clears future weeks off from that cancelled enrollment. Confirmation emails go only through `email.ts`, use the activity ID for deduplication, and report any delivery failure separately from a successfully saved shift.
+- Weeks off require at least 24 elapsed hours before the Pacific shift start; undo remains available until the start. Own standing cards show the next four potential occurrences with weeks-off markers and all upcoming stored skips. The dashboard uses actual occurrences, excluding skips and closures, and is invalidated after all self-service changes.
+- The development assignment CHECK was explicitly updated and verified. Keep the schema source in sync and apply production schema changes through Publish; no runtime/startup DDL is used.
+
 ## Coordinator dispatch and master schedule
 
 - `/admin` is the live coordinator dispatch view; `/admin/schedule` is the Monday–Friday master calendar with a phone day picker. Both read admin-only, no-store endpoints and refresh every 60 seconds while foregrounded, plus on window focus. The displayed update time is the server snapshot time in America/Los_Angeles; failed refreshes retain the last snapshot with an explicit not-live warning.

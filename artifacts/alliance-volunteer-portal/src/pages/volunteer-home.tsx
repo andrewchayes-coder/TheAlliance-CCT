@@ -50,7 +50,7 @@ function Home({ me }: { me: Me }) {
     if (d.shiftCount === 0) return (
       <section className="rounded-2xl bg-navy p-6 text-white shadow-md" data-testid="card-choose-shift">
         <h2 className="alliance-display text-[16px]">Choose your weekly shift</h2>
-        <p className="mt-2">{d.schedulingOpen ? "You're approved. Pick the weekly shift that fits your life." : "You're approved. Weekly shift selection is coming soon; we'll let you know when it opens."}</p>
+        <p className="mt-2">{d.schedulingOpen ? "You're approved. Pick the weekly shift that fits your life." : "You're approved. Open Shifts to see what's holding you back from booking."}</p>
         <Link href="/shifts" className="alliance-button alliance-button-primary mt-4" data-testid="link-choose-shift">Choose your weekly shift</Link>
       </section>
     );

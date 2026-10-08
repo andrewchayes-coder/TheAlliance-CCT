@@ -11,6 +11,84 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /volunteer/schedule:
+    get:
+      operationId: getVolunteerSchedule
+      responses:
+        '200':
+          description: Own standing shifts and anonymous slot availability
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerSchedule' }
+  /volunteer/assignments:
+    post:
+      operationId: bookVolunteerShift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VolunteerBookingInput' }
+      responses:
+        '200':
+          description: Standing shift saved and confirmation attempted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /volunteer/assignments/{assignmentId}/change:
+    post:
+      operationId: changeVolunteerShift
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VolunteerBookingInput' }
+      responses:
+        '200':
+          description: Old shift ended and replacement saved atomically
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /volunteer/assignments/{assignmentId}/drop:
+    post:
+      operationId: dropVolunteerShift
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Standing shift released
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /volunteer/assignments/{assignmentId}/skips:
+    post:
+      operationId: skipVolunteerShift
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VolunteerSkipInput' }
+      responses:
+        '200':
+          description: Week off recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
+  /volunteer/assignments/{assignmentId}/skips/{skipId}:
+    delete:
+      operationId: undoVolunteerSkip
+      parameters:
+        - { name: assignmentId, in: path, required: true, schema: { type: string } }
+        - { name: skipId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Week off undone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VolunteerShiftResult' }
   /admin/overview:
     get:
       operationId: getAdminOverview
@@ -592,6 +670,75 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    VolunteerBookingInput:
+      type: object
+      required: [slotId]
+      properties:
+        slotId: { type: string }
+        startDate: { type: string, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+    VolunteerSkipInput:
+      type: object
+      required: [date]
+      properties:
+        date: { type: string, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+    VolunteerShiftResult:
+      type: object
+      required: [message, assignmentId, emailWarning]
+      properties:
+        message: { type: string }
+        assignmentId: { type: [string, 'null'] }
+        emailWarning: { type: [string, 'null'] }
+    VolunteerShiftDate:
+      type: object
+      required: [date, startsAt, endsAt, skipped, skipId, canSkip, canUndo]
+      properties:
+        date: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        skipped: { type: boolean }
+        skipId: { type: [string, 'null'] }
+        canSkip: { type: boolean }
+        canUndo: { type: boolean }
+    VolunteerStandingShift:
+      type: object
+      required: [id, slotId, dayOfWeek, startTime, endTime, label, startDate, endDate, nextDates, weeksOff]
+      properties:
+        id: { type: string }
+        slotId: { type: string }
+        dayOfWeek: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+        label: { type: [string, 'null'] }
+        startDate: { type: string }
+        endDate: { type: [string, 'null'] }
+        nextDates: { type: array, items: { $ref: '#/components/schemas/VolunteerShiftDate' } }
+        weeksOff: { type: array, items: { $ref: '#/components/schemas/VolunteerShiftDate' } }
+    VolunteerAvailableSlot:
+      type: object
+      required: [id, dayOfWeek, startTime, endTime, label, capacity, heldCount, openSpots, ownAssignmentId, startDates]
+      properties:
+        id: { type: string }
+        dayOfWeek: { type: integer }
+        startTime: { type: string }
+        endTime: { type: string }
+        label: { type: [string, 'null'] }
+        capacity: { type: integer }
+        heldCount: { type: integer }
+        openSpots: { type: integer }
+        ownAssignmentId: { type: [string, 'null'] }
+        startDates: { type: array, items: { type: string } }
+    VolunteerSchedule:
+      type: object
+      required: [canBook, blockedReasons, contactEmail, minShifts, maxShifts, today, slots, assignments]
+      properties:
+        canBook: { type: boolean }
+        blockedReasons: { type: array, items: { type: string } }
+        contactEmail: { type: [string, 'null'] }
+        minShifts: { type: integer }
+        maxShifts: { type: integer }
+        today: { type: string }
+        slots: { type: array, items: { $ref: '#/components/schemas/VolunteerAvailableSlot' } }
+        assignments: { type: array, items: { $ref: '#/components/schemas/VolunteerStandingShift' } }
     CoordinatorVolunteer:
       type: object
       required: [assignmentId, userId, firstName, lastName, email, phone, skipped, accountActive]
