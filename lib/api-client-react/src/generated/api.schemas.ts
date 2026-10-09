@@ -1214,6 +1214,32 @@ export interface Me {
   profile: PublicVolunteerProfile | null;
 }
 
+export type ProductionReadinessStatus = typeof ProductionReadinessStatus[keyof typeof ProductionReadinessStatus];
+
+
+export const ProductionReadinessStatus = {
+  ok: 'ok',
+  degraded: 'degraded',
+} as const;
+
+export type ProductionReadinessDb = typeof ProductionReadinessDb[keyof typeof ProductionReadinessDb];
+
+
+export const ProductionReadinessDb = {
+  ok: 'ok',
+  unavailable: 'unavailable',
+} as const;
+
+export type ProductionReadinessEmail = {
+  configured: boolean;
+};
+
+export interface ProductionReadiness {
+  status: ProductionReadinessStatus;
+  db: ProductionReadinessDb;
+  email: ProductionReadinessEmail;
+}
+
 export interface HealthStatus {
   status: string;
 }

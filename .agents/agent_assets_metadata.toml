@@ -14,3 +14,31 @@ mtime_ms = 1791481325490
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/38b77d8e-c16c-4ed8-a7b7-329cbeecba52/44ab76f4-1466-4e2e-83b7-4759b2289d8b"
 storage_version_token = "1791481704265100"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "xofy5bYY5mxA7GHIHA-uv"
+uri = "file://DEPLOY.md"
+type = "text"
+title = "Production deployment guide"
+description = "Startup requirements, migration safety, first-admin setup, scheduling, custom domains, and rollback."
+logical_id = "0947e26a-5934-45c3-8e01-d68a8fb34e00"
+content_hash = "sha256:6c3c359b3bc93d09fff89cf109070097b783fedce3d44708a834f4166dfafb78"
+size = 13114
+mtime_ms = 1791552968703
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/0947e26a-5934-45c3-8e01-d68a8fb34e00/5cacfa7e-f4e2-4d1e-97a0-c78b4f2b2ce2"
+storage_version_token = "1791553014800357"
+content_type = "text/markdown"
+
+[[outputs]]
+id = "hrpiudFhTh-MpvNiy58Ee"
+uri = "file://CHANGELOG.md"
+type = "text"
+title = "v1.0.0 release changelog"
+description = "Delivered modules and security/deployment notes, ready for future release entries."
+logical_id = "82509cce-c471-4943-b97a-cfda134560e8"
+content_hash = "sha256:9c32878bf35596894fda6a04914762443788cadf828781ee816ea3c2bc0c2181"
+size = 3272
+mtime_ms = 1791552442820
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/82509cce-c471-4943-b97a-cfda134560e8/00c89a75-92ca-424e-bdfc-2f5208835369"
+storage_version_token = "1791553015332565"
+content_type = "text/markdown"

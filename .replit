@@ -2,7 +2,7 @@ modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
@@ -28,5 +28,6 @@ channel = "stable-25_05"
 APP_ORIGIN = "https://the-alliance-cct.replit.app"
 RUN_JOBS = "true"
 JOBS_RUN_URL = "https://the-alliance-cct.replit.app/api/jobs/run"
+APP_BASE_URL = "https://the-alliance-cct.replit.app"
 
 [userenv.development]

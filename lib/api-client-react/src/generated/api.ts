@@ -68,6 +68,7 @@ import type {
   OnboardingInput,
   PasswordChangeInput,
   PasswordChangeResult,
+  ProductionReadiness,
   PublicUser,
   ReminderCheckResult,
   ReminderJobStatus,
@@ -5062,6 +5063,83 @@ export function useExportVolunteerOnboarding<TData = Awaited<ReturnType<typeof e
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getExportVolunteerOnboardingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getProductionReadinessUrl = () => {
+
+
+
+
+  return `/api/health`
+}
+
+/**
+ * @summary Database and email configuration readiness
+ */
+export const productionReadiness = async ( options?: Parameters<typeof customFetch>[1]): Promise<ProductionReadiness> => {
+
+  return customFetch<ProductionReadiness>(getProductionReadinessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getProductionReadinessQueryKey = () => {
+    return [
+    `/api/health`
+    ] as const;
+    }
+
+
+export const getProductionReadinessQueryOptions = <TData = Awaited<ReturnType<typeof productionReadiness>>, TError = ErrorType<ProductionReadiness>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof productionReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductionReadinessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productionReadiness>>> = ({ signal }) => productionReadiness({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productionReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ProductionReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof productionReadiness>>>
+export type ProductionReadinessQueryError = ErrorType<ProductionReadiness>
+
+
+/**
+ * @summary Database and email configuration readiness
+ */
+
+export function useProductionReadiness<TData = Awaited<ReturnType<typeof productionReadiness>>, TError = ErrorType<ProductionReadiness>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof productionReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getProductionReadinessQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

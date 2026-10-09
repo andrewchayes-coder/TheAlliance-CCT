@@ -1,3 +1,4 @@
+import './server/startup-check';
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startCoverageDigest } from './server/coverageAlerts';

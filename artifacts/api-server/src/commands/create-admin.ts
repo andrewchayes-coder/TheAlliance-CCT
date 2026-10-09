@@ -1,3 +1,4 @@
+import '../server/startup-check';
 import { pool } from '@workspace/db';
 import { inviteAdministrator } from '../auth/admin-management';
 

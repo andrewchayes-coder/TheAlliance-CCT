@@ -20,15 +20,15 @@ declare global {
   }
 }
 
-const originValue = process.env.APP_ORIGIN || (
+const originValue = process.env.APP_BASE_URL || process.env.APP_ORIGIN || (
   process.env.NODE_ENV === 'development' && process.env.REPLIT_DEV_DOMAIN
     ? `https://${process.env.REPLIT_DEV_DOMAIN}` : ''
 );
-if (!originValue) throw new Error('Configure APP_ORIGIN with the HTTPS public app origin.');
+if (!originValue) throw new Error('Configure APP_BASE_URL with the HTTPS public app origin.');
 const originUrl = new URL(originValue);
 if (originUrl.protocol !== 'https:' || originUrl.username || originUrl.password
   || originUrl.pathname !== '/' || originUrl.search || originUrl.hash) {
-  throw new Error('APP_ORIGIN must be an HTTPS origin without a path, query, or credentials.');
+  throw new Error('APP_BASE_URL must be an HTTPS origin without a path, query, or credentials.');
 }
 export const appOrigin = originUrl.origin;
 export const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);

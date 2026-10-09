@@ -872,6 +872,24 @@ paths:
           content:
             text/csv:
               schema: { type: string }
+  /health:
+    get:
+      operationId: productionReadiness
+      tags: [health]
+      summary: Database and email configuration readiness
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionReadiness"
+        "503":
+          description: Database unavailable or email not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionReadiness"
   /healthz:
     get:
       operationId: healthCheck
@@ -2023,6 +2041,22 @@ components:
         agreementVersion: { type: [string, "null"] }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    ProductionReadiness:
+      type: object
+      required: [status, db, email]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        db:
+          type: string
+          enum: [ok, unavailable]
+        email:
+          type: object
+          required: [configured]
+          properties:
+            configured:
+              type: boolean
     HealthStatus:
       type: object
       properties:

@@ -1978,6 +1978,18 @@ export const ExportVolunteerOnboardingResponse = zod.unknown()
 
 
 /**
+ * @summary Database and email configuration readiness
+ */
+export const ProductionReadinessResponse = zod.object({
+  "status": zod.enum(['ok', 'degraded']),
+  "db": zod.enum(['ok', 'unavailable']),
+  "email": zod.object({
+  "configured": zod.boolean()
+})
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */

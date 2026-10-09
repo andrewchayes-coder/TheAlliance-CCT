@@ -28,7 +28,7 @@ describe('actual API registrations and security boundaries', () => {
       expect(guard, `${method} ${path}`).toBeDefined();
       if (path.startsWith('/admin/') || path === '/dev/email-test') expect(guard).toBe('admin');
       else if (path === '/jobs/run') expect(guard).toBe('job');
-      else if (path.startsWith('/auth/') || path === '/healthz') expect(guard).toBe('public');
+      else if (path.startsWith('/auth/') || path === '/healthz' || path === '/health') expect(guard).toBe('public');
       else expect(['auth', 'volunteer', 'onboardedVolunteer']).toContain(guard);
       if (method === 'GET') expect(declaredGuard('HEAD', concrete(path))).toBe(guard);
     }

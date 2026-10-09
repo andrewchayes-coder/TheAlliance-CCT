@@ -1,5 +1,6 @@
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod/v4';
+import { runDailyDigest } from '../server/coverageAlerts';
 import { reminderJobStatus, runReminderCheck, sendTestReminder } from '../server/jobs';
 import { logger } from '../lib/logger';
 
@@ -25,7 +26,11 @@ export const jobsTriggerRouter = Router();
 jobsTriggerRouter.post('/jobs/run', handle(async (req, res) => {
   z.object({}).strict().parse(req.body ?? {});
   z.object({}).strict().parse(req.query);
-  res.json(await runReminderCheck({ source: 'external' }));
+  const result = await runReminderCheck({ source: 'external' });
+  // Autoscale disables in-process timers; the authorized external trigger also
+  // checks the Pacific daily digest. Development/shared QA never runs this branch.
+  if (process.env.NODE_ENV === 'production' && process.env.RUN_JOBS === 'false') await runDailyDigest();
+  res.json(result);
 }));
 const router = Router();
 router.get('/admin/notifications/jobs', handle(async (_req, res) => { res.json(await reminderJobStatus()); }));

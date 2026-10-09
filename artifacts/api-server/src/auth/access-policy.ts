@@ -35,6 +35,7 @@ const declarations: Array<{ method: string; path: string | RegExp; guard: Guard 
   { method: 'POST', path: /^\/volunteer\/assignments\/[^/]+\/(change|drop|skips)$/, guard: 'volunteer' },
   { method: 'DELETE', path: /^\/volunteer\/assignments\/[^/]+\/skips\/[^/]+$/, guard: 'volunteer' },
   { method: 'GET', path: '/healthz', guard: 'public' },
+  { method: 'GET', path: '/health', guard: 'public' },
   { method: 'GET', path: '/auth/session', guard: 'public' },
   ...['signup', 'signin', 'resend-verification', 'verify', 'forgot-password', 'reset-password', 'signout', 'accept-invite']
     .map(path => ({ method: 'POST', path: `/auth/${path}`, guard: 'public' as const })),
