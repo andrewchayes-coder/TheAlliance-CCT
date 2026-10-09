@@ -13,3 +13,9 @@ Drizzle's migration-history checker prepends a relative prefix to its output pat
 **Why:** this occurred during migration preparation even though the generated snapshot existed.
 
 **How to apply:** use package-relative migration output and execute the CLI from that package; keep schema paths absolute if needed.
+
+For an existing published app, select the requested deployment type in Publishing; a saved source target alone does not establish the provider used by the next publish.
+
+**Why:** a publish still created an Autoscale service after the source target had been set to Reserved VM.
+
+**How to apply:** verify Publishing settings and actual build/provider metadata before claiming the deployment type changed.
