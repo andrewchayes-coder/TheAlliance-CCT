@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { assertProductionConfig, requiredProductionKeys } from './production-config';
 import { createReadinessCheck } from './readiness';
 
@@ -42,10 +46,41 @@ describe('production configuration and readiness', () => {
     const check = createReadinessCheck(() => new Promise(() => {}), () => true, 5);
     expect((await check()).db).toBe('unavailable');
   });
-  it('deploy launcher validates before migrate; never pushes or seeds', () => {
+  it('deploy launcher validates then starts the API; no schema writes or history guard', () => {
     const source = readFileSync(new URL('../../../../scripts/production-start.sh', import.meta.url), 'utf8');
-    expect(source.indexOf('dist/preflight.mjs')).toBeLessThan(source.indexOf('run migrate'));
-    expect(source.indexOf('run migrate')).toBeLessThan(source.indexOf('dist/index.mjs'));
-    expect(source).not.toMatch(/run (push|seed)/);
+    expect(source).toContain('dist/preflight.mjs');
+    expect(source).toContain('exec node --enable-source-maps');
+    expect(source.indexOf('dist/preflight.mjs')).toBeLessThan(source.indexOf('dist/index.mjs'));
+    expect(source).not.toMatch(/drizzle|migrat|push|seed/i);
+    expect(existsSync(new URL('../../../../lib/db/scripts/migrate.mjs', import.meta.url))).toBe(false);
+    const rootPackage = JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8'));
+    const dbPackage = JSON.parse(readFileSync(new URL('../../../../lib/db/package.json', import.meta.url), 'utf8'));
+    expect(rootPackage.scripts['db:migrate']).toBeUndefined();
+    expect(dbPackage.scripts.migrate).toBeUndefined();
+  });
+  it.each([0, 9])('launcher honors configuration preflight exit %i without contacting a database', (preflightExit) => {
+    const directory = mkdtempSync(join(tmpdir(), 'alliance-launcher-'));
+    const trace = join(directory, 'trace');
+    try {
+      // A fake Node executable records launch order; no API, jobs or database run.
+      writeFileSync(join(directory, 'node'), `#!/bin/sh
+printf '%s\\n' "$*" >> "$LAUNCH_TRACE"
+case "$*" in
+  *dist/preflight.mjs*) exit "$PREFLIGHT_EXIT" ;;
+esac
+`, { mode: 0o700 });
+      const result = spawnSync('/bin/sh', [
+        fileURLToPath(new URL('../../../../scripts/production-start.sh', import.meta.url)),
+      ], {
+        env: { PATH: directory, NODE_ENV: 'production', LAUNCH_TRACE: trace, PREFLIGHT_EXIT: String(preflightExit) },
+        encoding: 'utf8',
+      });
+      expect(result.status).toBe(preflightExit);
+      expect(readFileSync(trace, 'utf8').trim().split('\n')).toEqual(preflightExit === 0
+        ? ['artifacts/api-server/dist/preflight.mjs', '--enable-source-maps artifacts/api-server/dist/index.mjs']
+        : ['artifacts/api-server/dist/preflight.mjs']);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

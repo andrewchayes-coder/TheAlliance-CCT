@@ -1,12 +1,18 @@
 ---
 name: Production migrations
-description: Production rollout safety and the reason migrations run in runtime context.
+description: Publish-owned production schema changes and safe verification of existing constraints.
 ---
-Use versioned migrations, never push or seed, for production rollout. Do not copy development fixtures into production.
+Production schema changes are managed by Replit Publish. Do not run Drizzle migrations, schema push, startup DDL or seed in production, and do not copy development fixtures.
 
-**Why:** the user explicitly requires a separate production database and no production seeding. Build-time database context is not a reliable substitute for the deployment's runtime production connection.
+**Why:** the user explicitly chose Publish-owned production schema changes and removal of the boot-time migration hook and guard. A separate runtime migrator competes with Replit's schema synchronization.
 
-**How to apply:** keep migrations in the runtime startup sequence before serving requests. Existing push-created schemas need reviewed reconciliation/baselining, not blind history stamping or deletion. Inspect schema metadata, not volunteer rows, during readiness work.
+**How to apply:** retain configuration validation but no schema mutations in startup. No Drizzle baseline is needed for Publish-managed operation. Inspect read-only metadata and Publish's proposed SQL; do not silently stamp history or modify production rows.
+
+Do not assume Publish replaces a named CHECK constraint whose expression changed.
+
+**Why:** Publish applied other schema changes but omitted two changed existing CHECK definitions even though development had the correct expressions.
+
+**How to apply:** look for explicit constraint replacements in the Publish diff and verify actual definitions afterward. If omitted, flag an operator-reviewed correction rather than adding a startup workaround.
 
 Drizzle's migration-history checker prepends a relative prefix to its output path; an absolute output path can generate successfully but fail history checks.
 

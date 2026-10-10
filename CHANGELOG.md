@@ -2,6 +2,12 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## Unreleased
+
+### Changed
+- Production schema changes are managed by Replit Publish only. Removed boot-time Drizzle migrations, migration-history guard and runner commands; configuration validation remains enabled.
+- Deployment instructions no longer require migration-history baselining and describe the two existing CHECK-constraint differences that Publish previously omitted.
+
 ## v1.0.0 — Initial Alliance Volunteer Portal
 
 ### Added
@@ -17,7 +23,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Administrator messages/blasts, branded email copies, volunteer inbox, unread badges and per-recipient read receipts.
 - Central Postmark-ready email service, deduplication, notification history/retries, monthly counts/usage alerts and six-month chart.
 - Private PDF/DOCX resource storage/downloads, markdown knowledge base, quick links, publishing/reordering and agreement update controls.
-- Public production readiness endpoint, fail-closed configuration checks, versioned SQL migrations and migration-locked deployment startup.
+- Public production readiness endpoint, fail-closed configuration checks and development/reference SQL migration files.
 - Isolated Playwright lifecycle smoke script, automated route/privacy/security/DST checks, UAT checklist and deployment/rollback guide.
 
 ### Security
@@ -30,5 +36,5 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 ### Deployment notes
 - Reserved VM with one scheduler and `RUN_JOBS=true` is the recommended configuration.
 - Production uses its own managed database; no production fixtures or real volunteer records are loaded by release setup.
-- Existing push-created schemas require reviewed baselining before the initial migration can run.
+- Replit Publish synchronizes the production schema; the app does not run migrations or require a baseline journal at startup.
 - Alternative Autoscale + Scheduled Deployment procedure is in `DEPLOY.md`.

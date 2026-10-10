@@ -5,8 +5,8 @@
 - Production uses **Replit's separate production PostgreSQL database**. The workspace `DATABASE_URL` is development; the deployment's managed `DATABASE_URL` is production. Never copy credentials into source or manually replace these managed values.
 - Do **not copy development data** when provisioning production. Development contains dummy identities/fixtures. Do not load real volunteer data during setup.
 - Never run `seed`, `verify-seed`, resource-seed migration utilities, `db push`, or `push-force` in production. The seed script refuses any environment except explicitly acknowledged development.
-- Versioned SQL lives in `lib/db/migrations`. Generate/review/commit migrations in development with `pnpm db:generate`; `drizzle-kit migrate` applies them in production. Never edit an already-applied migration.
-- Runtime startup is: validate configuration → acquire database migration lock → `drizzle-kit migrate` → start API/scheduler. Any failure stops the API. Migrations are **not** executed at build time, where the database context can differ.
+- **Replit Publish owns production schema changes**, using its development-to-production database diff. SQL files in `lib/db/migrations` are development/reference artifacts; the app does not execute them in production.
+- Runtime startup is: validate configuration → start API/scheduler. There are no boot-time migrations, schema mutations, migration locks or missing-journal guards. Configuration failures still stop the API.
 - Development tables are not proof that production is provisioned. Select the **production** environment in Replit's Database/Publishing tools and review the schema/data-copy choices before publishing.
 
 ## Required production configuration
@@ -32,35 +32,42 @@ Optional Google OAuth credentials/callback configuration are separate from this 
 
 Postmark must have a verified sender/domain and the `outbound` message stream. Production does **not** log email bodies/verification links when provider configuration is incomplete; delivery fails and the failure is recorded.
 
-## Database migration preparation
+## Database schema preparation
 
-At preparation, read-only production metadata confirmed Alliance tables already exist **without** a migration journal. Follow the existing-database procedure below before republishing. The production Postmark token also still needs secure configuration; saving deployment settings does not update the running release.
+Review Publishing's proposed development-to-production schema diff before publishing. Decline data-copy/overwrite options. A Drizzle migration journal or baseline is **not required** for app startup or Replit-managed schema synchronization. The production Postmark settings still need secure configuration; saving deployment settings does not update the running release.
 
 ### Fresh production database
 
 1. Provision a distinct production database through Publishing; decline development **data** copying.
-2. Ensure the schema is empty before the initial SQL migration. Review any automatic schema synchronization presented by Publishing; use this project's versioned migration path, not push.
-3. Publishing builds the API/frontend, then the production launcher runs migrations against the runtime production connection. The committed initial migration creates tables/enums/constraints, but inserts **no volunteers, administrators, resources or schedules**.
-4. Confirm `/api/health` and the migration journal `drizzle.__drizzle_migrations` using production metadata/SQL tools.
+2. Review the schema synchronization presented by Publishing; Publish provisions the schema from development without requiring copied development rows.
+3. Publishing builds the API/frontend and applies its schema diff. The production launcher validates configuration and starts the API; it never runs Drizzle migrations or seed scripts.
+4. Confirm `/api/health` and the resulting production schema using read-only production metadata tools.
 
-### Already-published database created with push or schema copying
+### Existing production database and CHECK constraints
 
-This project previously used push and may already have production tables. The new migrator deliberately refuses to replay the initial migration on existing Alliance tables without a journal.
+Preserve existing data and review Publish's proposed SQL. Do not replay the initial migration, create a baseline journal, delete tables, reseed or copy development rows.
 
-**Stop before republishing that database.** Back it up, inspect its schema (including named CHECK constraints), and reconcile it with the committed initial SQL/snapshot. An operator must review and baseline migration history only after exact schema agreement; do not blindly mark the initial migration applied. If there are differences, prepare an explicit reviewed migration plan. Do not delete tables, reseed, or copy development rows to make the error disappear.
+The read-only comparison found two older production CHECK definitions even though development already has the intended definitions:
 
-This preparation does not inspect or change production volunteer rows, apply production DDL, or baseline an existing production DB.
+| Constraint | Production | Intended development definition |
+|---|---|---|
+| `shift_slots_capacity_positive` | `capacity > 0` | `capacity BETWEEN 1 AND 10` |
+| `shift_assignments_date_order` | `end_date IS NULL OR end_date >= start_date` | Also permits `ended_reason IS NOT NULL` |
+
+The inspected Publish log applied other schema changes but omitted replacements for both existing CHECK constraints. Therefore another Publish cannot be assumed to repair them merely because their names match. Review the proposed SQL for explicit constraint replacements and verify their definitions afterward using read-only metadata. If they are still omitted, an explicit operator-reviewed correction is needed through the database administration process; do not add startup DDL as a workaround. Before tightening capacity, check for existing values outside 1–10 and agree on any required remediation; never silently change those rows.
+
+No production schema or records were modified by this launcher cleanup.
 
 ## First-time setup (no volunteer data)
 
 1. Configure required production keys and the separate database. Select **Reserved VM** in Publishing; keep one scheduler-bearing API instance and `RUN_JOBS=true`. The saved target is Reserved VM; compute size is selected in Publishing.
-2. Review migration SQL and confirm baseline requirements above. Publish using the user-controlled Publish action.
+2. Review Publishing's schema diff and the CHECK-constraint caveat above. Publish using the user-controlled Publish action; no Drizzle baseline is needed.
 3. Visit `/api/health`: expected HTTP 200 with `status=ok`, `db=ok`, `email.configured=true`. This checks connectivity/configuration, **not** Postmark token validity or mailbox delivery. `/api/healthz` remains a minimal compatibility liveness endpoint.
 4. Create the first administrator from an **operator shell explicitly configured for the production database**, never the ordinary workspace Shell:
    ```sh
    NODE_ENV=production npm run create-admin -- email@domain.org "First" "Last"
    ```
-   Use the managed production connection via Replit's secure environment tooling. This command prints an invite link for the named administrator. Treat it as a one-time credential; don't paste it into logs/tickets. Accept the invite, set a strong password, then sign in. No dummy admin is created by migrations.
+    Use the managed production connection via Replit's secure environment tooling. This command prints an invite link for the named administrator. Treat it as a one-time credential; don't paste it into logs/tickets. Accept the invite, set a strong password, then sign in. No dummy admin is created at boot or by schema synchronization.
 5. `/admin/schedule/settings`: configure Mon–Fri slots, times/capacity, copy Monday if appropriate, and add closure dates. Confirm Pacific operating hours.
 6. `/admin/resources`: upload and publish the actual User Agreement and Safety Guidelines under **Agreements** (PDF/DOCX, up to 15 MB). Review `agreementVersion`; use the re-acknowledgment option when agreement content changes. Delete/replace placeholder links, not operational data.
 7. Create and publish quick links for **Log in to Find Help** and **Open Phone Portal**, with their real HTTPS URLs (there are no seeded resources in production). Test both in a new tab. Review the configured Alliance contact details and finalize questionnaire copy before real onboarding.
@@ -114,12 +121,12 @@ Monitor Publishing runtime logs, notification failures/monthly usage, jobs last-
 
 1. Pause background scheduling (`RUN_JOBS=false`) if the faulty release could send incorrect mail. Preserve the environment and production DB; don't run seed/push.
 2. Review Publishing history for a previous successful release where available, or restore a known-good **code checkpoint** and publish that code again. Save current diagnostic details first.
-3. A code rollback does **not** reverse applied SQL migrations or sent email. Prefer backward-compatible additive migrations and forward fixes. Do not edit migration journal rows or applied SQL files.
+3. A code rollback does **not** reverse schema changes applied by Publish or sent email. Review the proposed schema diff when republishing older code, prefer backward-compatible changes and do not assume a schema rollback preserves data.
 4. If restoring production data is necessary, use an operator-approved production backup/PITR recovery plan in Replit's production database tooling. Workspace/development checkpoints are not a substitute for production recovery; confirm which environment a restore affects before approving it.
 5. Recheck health, administrator sign-in, resources, schedule rendering and jobs. Re-enable exactly one scheduler after confirming correct data/time behavior.
 
 ## Release procedure
 
-Review `CHANGELOG.md`, migrations, production key presence and UAT results; publish; check readiness/delivery/jobs; retain a rollback plan. Avoid destructive schema changes in the same release that first uses a field/table.
+Review `CHANGELOG.md`, Publishing's proposed schema diff, production key presence and UAT results; publish; check readiness/delivery/jobs; retain a rollback plan. Avoid destructive schema changes in the same release that first uses a field/table.
 
 References: [Databases](https://docs.replit.com/features/data-and-storage/development-and-production), [Deployment types](https://docs.replit.com/features/publishing/deployment-types), [Custom domains](https://docs.replit.com/features/publishing/custom-domains).
