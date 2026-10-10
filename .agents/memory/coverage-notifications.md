@@ -20,3 +20,9 @@ An enable flag does not provide cross-process exclusivity. Automatic timers, man
 **Why:** multiple web instances or an external wake-up can run together. An early rejected promise must not release the job lock while other recipient sends are still in flight.
 
 **How to apply:** gate only automatic timer registration with `RUN_JOBS`; authorized manual/external checks remain available when the timer is off. Use settled batches and preserve confirmation keys across restarts and partial failures.
+
+The user wants to stay on Autoscale and trigger scheduled jobs from cron-job.org instead of the built-in scheduler.
+
+**Why:** the user explicitly chose this deployment and scheduling approach.
+
+**How to apply:** proposals should use secret-header authenticated external POST requests, disable production automatic timers, retain notification-log deduplication, handle late triggers, and target responses within ten seconds.
