@@ -26,3 +26,9 @@ The user wants to stay on Autoscale and trigger scheduled jobs from cron-job.org
 **Why:** the user explicitly chose this deployment and scheduling approach.
 
 **How to apply:** use secret-header authenticated external POST requests and disable production automatic timers. The user approved an approximately 20-second application budget, calls every 15 minutes, catch-up of unsent work without a new queue/table, and no resending uncertain delivery; show uncertainty in the admin log.
+
+Database connection setup needs a separate allowance from established-connection SQL timing.
+
+**Why:** a 500-millisecond connection limit failed valid production cron requests during connection establishment, well before the overall job budget expired.
+
+**How to apply:** retain a bounded several-second connection allowance and check the shared budget before starting deliveries. Cover delayed database handshakes in regression tests rather than relying only on the faster development database.

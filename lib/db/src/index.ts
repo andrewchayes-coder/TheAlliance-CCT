@@ -14,8 +14,11 @@ if (!process.env.DATABASE_URL) {
 const applicationPool = new Pool({ connectionString: process.env.DATABASE_URL });
 // Only scheduled checks use this pool. Bound connection and SQL waits without
 // changing interactive requests, exports, or schema-management commands.
+// A new production connection includes DNS/TCP/TLS/authentication and can take
+// longer than a query on an established connection. Keep these limits distinct;
+// the shared job budget still decides whether another delivery can start.
 const jobPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10,
-  connectionTimeoutMillis: 500, statement_timeout: 500, query_timeout: 650 });
+  connectionTimeoutMillis: 5_000, statement_timeout: 500, query_timeout: 650 });
 const jobScope = new AsyncLocalStorage<boolean>();
 export function withJobDatabase<T>(work: () => Promise<T>): Promise<T> {
   return jobScope.run(true, work);

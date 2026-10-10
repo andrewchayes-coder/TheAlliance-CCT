@@ -3,12 +3,53 @@ import { automaticJobsEnabled, currentJobBudget, JobBudget, withJobBudget } from
 import { createScheduledCheck } from './scheduled-check';
 import { isUncertainDelivery, providerRejected } from './delivery-state';
 import { createEmailService } from '../email';
+import { createServer } from 'node:net';
+import { pool, withJobDatabase } from '@workspace/db';
 vi.hoisted(() => {
   process.env.NODE_ENV = 'development';
   process.env.APP_ORIGIN = 'https://budget-fixture.example.invalid';
 });
 
 describe('bounded external scheduling', () => {
+  it('allows a cold database handshake longer than 500ms while retaining bounded waits', async () => {
+    const options = await withJobDatabase(async () => {
+      const selected = pool as typeof pool & { options: {
+        connectionTimeoutMillis?: number; statement_timeout?: number; query_timeout?: number;
+      } };
+      return { connectionTimeoutMillis: selected.options.connectionTimeoutMillis,
+        statement_timeout: selected.options.statement_timeout, query_timeout: selected.options.query_timeout };
+    });
+    expect(options).toEqual({ connectionTimeoutMillis: 5000, statement_timeout: 500, query_timeout: 650 });
+    // A local protocol fixture exercises pg's actual connection timeout without
+    // connecting to production, changing data, or sending any email.
+    const server = createServer(socket => {
+      socket.once('data', () => {
+        const timer = setTimeout(() => {
+          if (!socket.destroyed) socket.write(Buffer.from([
+            82, 0, 0, 0, 8, 0, 0, 0, 0, // AuthenticationOk
+            90, 0, 0, 0, 5, 73, // ReadyForQuery (idle)
+          ]));
+        }, 750);
+        socket.once('close', () => clearTimeout(timer));
+      });
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as { port: number }).port;
+    // Reuse the installed driver's class; the API package does not depend on pg directly.
+    const FixturePool = Object.getPrototypeOf(pool).constructor as new (options: Record<string, unknown>) => typeof pool;
+    const fixture = new FixturePool({ ...options, host: '127.0.0.1', port,
+      user: 'fixture', database: 'fixture', ssl: false });
+    const budget = new JobBudget();
+    try {
+      const client = await fixture.connect();
+      client.release();
+      expect(budget.elapsedMs).toBeGreaterThanOrEqual(700);
+      expect(budget.canStart()).toBe(true);
+    } finally {
+      await fixture.end();
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+    }
+  });
   it('uses a shared twenty-second budget and defers before starting an unsafe batch', async () => {
     let elapsed = 0;
     const budget = new JobBudget(() => elapsed);
