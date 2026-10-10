@@ -65,6 +65,7 @@ export interface NotificationLogRow {
   /** @nullable */
   error: string | null;
   canRetry: boolean;
+  deliveryUncertain?: boolean;
 }
 
 export interface NotificationLogPage {
@@ -89,6 +90,8 @@ export interface ReminderRunCounts {
   failed: number;
   skipped: number;
   suppressed: number;
+  deferred?: number;
+  uncertain?: number;
 }
 
 export type ReminderJobRunSource = typeof ReminderJobRunSource[keyof typeof ReminderJobRunSource];
@@ -124,6 +127,9 @@ export interface ReminderJobRun {
 }
 
 export interface ReminderCheckResult {
+  elapsedMs?: number;
+  budgetMs?: number;
+  incomplete?: boolean;
   skippedRun: boolean;
   run: ReminderJobRun | null;
 }

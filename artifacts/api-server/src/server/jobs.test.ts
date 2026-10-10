@@ -2,9 +2,23 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import { and, eq, inArray } from 'drizzle-orm';
-import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable,
+import { db, pool, withJobDatabase, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable,
   shiftSkipsTable, notificationLogTable, reminderJobRunsTable } from '@workspace/db';
 import { slotInstant } from './scheduleService';
+import { JobBudget, withJobBudget } from './job-budget';
+import * as email from '../email';
+
+// All reminder enumerations are restricted to this file's fixture scope.
+vi.mock('./scheduleRepository', async original => {
+  const repo = await original<typeof import('./scheduleRepository')>();
+  return { ...repo, readScheduleData: async (...args: Parameters<typeof repo.readScheduleData>) => {
+    const data = await repo.readScheduleData(...args);
+    return { ...data, slots: data.slots.filter(s => s.label === tag),
+      assignments: data.assignments.filter(a => profiles.includes(a.volunteerProfileId)) };
+  } };
+});
+vi.mock('./coverageAlerts', async original => ({ ...await original<typeof import('./coverageAlerts')>(), runDailyDigest: vi.fn() }));
+vi.mock('./monthly-email-limit', async original => ({ ...await original<typeof import('./monthly-email-limit')>(), checkMonthlyEmailLimit: vi.fn() }));
 
 process.env.NODE_ENV = 'development';
 process.env.POSTMARK_SERVER_TOKEN = '';
@@ -52,7 +66,7 @@ beforeAll(async () => {
   inactive = (await person('volunteer', 'inactive')).profileId;
   unverified = (await person('volunteer', 'active', false)).userId;
   const skipped = await person('volunteer');
-  const [slot] = await db.insert(shiftSlotsTable).values({ dayOfWeek: 2, startTime: '23:07', endTime: '23:37', capacity: 3, label: tag }).returning();
+  const [slot] = await db.insert(shiftSlotsTable).values({ dayOfWeek: 2, startTime: '23:07', endTime: '23:37', capacity: 10, label: tag }).returning();
   slots.push(slot!.id);
   for (const profile of [active, inactive, skipped.profileId]) {
     const [a] = await db.insert(shiftAssignmentsTable).values({ shiftSlotId: slot!.id, volunteerProfileId: profile, startDate: '2030-01-01', createdByUserId: admin }).returning();
@@ -85,6 +99,10 @@ describe('Reminder job persistence, safeguards and delivery', () => {
     const schedule = vi.spyOn(cron, 'schedule').mockReturnValue({} as ReturnType<typeof cron.schedule>);
     expect(jobs.startReminderJobs({})).toBeNull();
     expect(jobs.startReminderJobs({ RUN_JOBS: 'false' })).toBeNull();
+    expect(jobs.startReminderJobs({ NODE_ENV: 'production', RUN_JOBS: 'true' })).toBeNull();
+    const coverage = await import('./coverageAlerts');
+    expect(coverage.startCoverageDigest({ NODE_ENV: 'production', RUN_JOBS: 'true' })).toBeNull();
+    expect(coverage.startCoverageDigest({ RUN_JOBS: 'false' })).toBeNull();
     expect(schedule).not.toHaveBeenCalled();
     jobs.startReminderJobs({ RUN_JOBS: 'true' });
     expect(schedule).toHaveBeenCalledWith('*/15 * * * *', expect.any(Function),
@@ -102,7 +120,7 @@ describe('Reminder job persistence, safeguards and delivery', () => {
     const first = await jobs.runReminderCheck({ at: fakeAt, source: 'command' });
     if (first.run) runs.push(first.run.id);
     expect(first.run?.status).toBe('completed');
-    expect(first.run?.counts).toEqual({ eligible: 1, sent: 0, logged: 1, failed: 0, skipped: 0, suppressed: 0 });
+    expect(first.run?.counts).toEqual({ eligible: 1, sent: 0, logged: 1, failed: 0, skipped: 0, suppressed: 0, deferred: 0, uncertain: 0 });
     const second = await jobs.runReminderCheck({ at: fakeAt, source: 'command' });
     if (second.run) runs.push(second.run.id);
     expect(second.run?.counts.skipped).toBe(1);
@@ -136,10 +154,70 @@ describe('Reminder job persistence, safeguards and delivery', () => {
     expect((await request('/jobs/run', 'POST')).status).toBe(401);
     expect((await request('/jobs/run', 'POST', { JOBS_SECRET: 'wrong' })).status).toBe(401);
     expect((await request('/jobs/run', 'POST', await session(admin))).status).toBe(401);
-    const response = await request('/jobs/run', 'POST', { JOBS_SECRET: testSecret });
+    const response = await request('/jobs/run', 'POST', { 'X-Jobs-Secret': testSecret });
     expect(response.status).toBe(200);
+    expect(await response.clone().json()).toMatchObject({ budgetMs: 20000, incomplete: false, elapsedMs: expect.any(Number) });
     const result = await response.json() as Awaited<ReturnType<typeof jobs.runReminderCheck>>; if (result.run) runs.push(result.run.id);
     const overrides = await request(`/jobs/run?at=${fakeAt.toISOString()}`, 'POST', { JOBS_SECRET: testSecret });
     expect(overrides.status).toBe(400);
+  });
+  it('resumes unsent recipients 15 minutes late without a queue or repeated deliveries', async () => {
+    let retryId: string | undefined;
+    for (let i = 0; i < 6; i++) {
+      const volunteer = await person('volunteer');
+      const [assignment] = await db.insert(shiftAssignmentsTable).values({ shiftSlotId: slots[0]!,
+        volunteerProfileId: volunteer.profileId, startDate: '2030-01-01', createdByUserId: admin }).returning();
+      assignments.push(assignment!.id);
+      if (i === 0) {
+        const to = (await db.select().from(usersTable).where(eq(usersTable.id, volunteer.userId)))[0]!.email;
+        const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'fixture@example.invalid' }),
+          deliveryClient: () => ({ sendEmail: async () => { throw Object.assign(new Error('Provider rejected'), { statusCode: 429 }); } }),
+          log: { info() {}, warn() {}, error() {} } });
+        await send({ type: 'reminder', to, toUserId: volunteer.userId,
+          relatedId: `${assignment!.id}:2030-01-08:24h`, subject: 'Retry fixture', html: '<p>Test</p>', text: 'Test' });
+        retryId = (await db.select().from(notificationLogTable).where(
+          eq(notificationLogTable.relatedId, `${assignment!.id}:2030-01-08:24h`)))[0]!.id;
+      }
+    }
+    let elapsed = 0;
+    const original = email.sendEmail;
+    const delivery = vi.spyOn(email, 'sendEmail').mockImplementation(async options => {
+      const result = await original(options);
+      elapsed += 1500; // Five settled deliveries consume the next batch's reserve.
+      return result;
+    });
+    try {
+      const budget = new JobBudget(() => elapsed);
+      const result = await withJobDatabase(() => withJobBudget(() => jobs.runReminderCheck({
+        at: new Date(fakeAt.getTime() + 15 * 60000), source: 'external' }), budget));
+      if (result.run) runs.push(result.run.id);
+      expect(result.run?.counts).toMatchObject({ logged: 5, skipped: 1, deferred: 1 });
+      expect(budget.deferred).toBe(true);
+    } finally { delivery.mockRestore(); }
+    const result = await jobs.runReminderCheck({ at: new Date(fakeAt.getTime() + 30 * 60000), source: 'external' });
+    if (result.run) runs.push(result.run.id);
+    expect(result.run?.counts).toMatchObject({ logged: 1, skipped: 6, deferred: 0 });
+    const again = await jobs.runReminderCheck({ at: new Date(fakeAt.getTime() + 45 * 60000) });
+    if (again.run) runs.push(again.run.id);
+    expect(again.run?.counts).toMatchObject({ logged: 0, skipped: 7 });
+    expect((await db.select().from(notificationLogTable).where(eq(notificationLogTable.id, retryId!)))[0]!.status).toBe('logged');
+  });
+  it('blocks uncertain delivery on every later catch-up run', async () => {
+    const volunteer = await person('volunteer');
+    const [assignment] = await db.insert(shiftAssignmentsTable).values({ shiftSlotId: slots[0]!,
+      volunteerProfileId: volunteer.profileId, startDate: '2030-01-01', createdByUserId: admin }).returning();
+    assignments.push(assignment!.id);
+    const to = (await db.select().from(usersTable).where(eq(usersTable.id, volunteer.userId)))[0]!.email;
+    const provider = vi.fn(async () => { throw new Error('Provider connection timed out'); });
+    const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'fixture@example.invalid' }),
+      deliveryClient: () => ({ sendEmail: provider }), log: { info() {}, warn() {}, error() {} } });
+    const options = { type: 'reminder' as const, to, toUserId: volunteer.userId,
+      relatedId: `${assignment!.id}:2030-01-08:24h`, subject: 'Fixture reminder', html: '<p>Test</p>', text: 'Test' };
+    expect(await send(options)).toMatchObject({ ok: false, uncertain: true });
+    expect(await send(options)).toMatchObject({ skipped: true, uncertain: true });
+    expect(provider).toHaveBeenCalledTimes(1);
+    const result = await jobs.runReminderCheck({ at: new Date(fakeAt.getTime() + 60 * 60000) });
+    if (result.run) runs.push(result.run.id);
+    expect(result.run?.counts).toMatchObject({ uncertain: 1, logged: 0, skipped: 7 });
   });
 });

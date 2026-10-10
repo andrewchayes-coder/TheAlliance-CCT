@@ -9,6 +9,7 @@ import { mintToken, verificationEmail, passwordResetEmail } from '../auth/accoun
 import { readScheduleData } from './scheduleRepository';
 import { createScheduleService } from './scheduleService';
 import { slotInstant } from './schedule-time';
+import { isUncertainDelivery } from './delivery-state';
 
 export class NotificationError extends Error { constructor(public status: number, message: string) { super(message); } }
 export async function notificationSummary() {
@@ -51,7 +52,9 @@ export async function listNotifications(filters: { type?: string; status?: strin
     (status='failed' AND (retry_payload IS NOT NULL OR type IN ('verification','password_reset','invite'))) AS "canRetry"
     FROM notification_log ${where} ORDER BY coalesce(sent_at,updated_at) DESC,id DESC LIMIT 30 OFFSET $${params.length + 1}`,
   [...params, (filters.page - 1) * 30]);
-  return { rows: rows.map(row => ({ ...row, time: row.time.toISOString() })), total: Number(totals[0]!.count), page: filters.page, pageSize: 30 };
+  return { rows: rows.map(row => ({ ...row, time: row.time.toISOString(),
+    deliveryUncertain: isUncertainDelivery(row.error), canRetry: row.canRetry && !isUncertainDelivery(row.error) })),
+    total: Number(totals[0]!.count), page: filters.page, pageSize: 30 };
 }
 export async function retryNotification(id: string) {
   const client = await pool.connect();
@@ -63,8 +66,8 @@ export async function retryNotification(id: string) {
     const [row] = await db.select().from(notificationLogTable).where(eq(notificationLogTable.id, id));
     if (!row) throw new NotificationError(404, 'Email not found.');
     if (row.status !== 'failed') return { ok: true, skipped: true, status: row.status, error: null };
-    if (row.error?.includes('Delivery started but has not been confirmed'))
-      throw new NotificationError(409, 'Delivery is unconfirmed. Check Postmark before retrying to avoid a duplicate.');
+    if (isUncertainDelivery(row.error))
+      throw new NotificationError(409, 'Delivery is uncertain. Resending is disabled to avoid a duplicate. Review this email in Postmark.');
     const [user] = row.recipientUserId ? await db.select().from(usersTable).where(eq(usersTable.id, row.recipientUserId)) : [];
     if (row.recipientUserId && (!user?.isActive || user.email !== row.recipientEmail))
       throw new NotificationError(409, 'The recipient is inactive or their email has changed. Send a new email from the original feature.');

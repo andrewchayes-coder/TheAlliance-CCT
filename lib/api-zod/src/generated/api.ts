@@ -246,7 +246,8 @@ export const GetNotificationLogResponse = zod.object({
   "subject": zod.string(),
   "status": zod.enum(['sent', 'logged', 'failed']),
   "error": zod.string().nullable(),
-  "canRetry": zod.boolean()
+  "canRetry": zod.boolean(),
+  "deliveryUncertain": zod.boolean().optional()
 })),
   "total": zod.number().int(),
   "page": zod.number().int(),
@@ -310,7 +311,9 @@ export const GetReminderJobStatusResponse = zod.object({
   "logged": zod.number().int(),
   "failed": zod.number().int(),
   "skipped": zod.number().int(),
-  "suppressed": zod.number().int()
+  "suppressed": zod.number().int(),
+  "deferred": zod.number().int().optional(),
+  "uncertain": zod.number().int().optional()
 })
 }),zod.null()]),
   "schedulerEnabled": zod.boolean(),
@@ -333,6 +336,9 @@ export const RunAdminReminderCheckQueryParams = zod.object({
 })
 
 export const RunAdminReminderCheckResponse = zod.object({
+  "elapsedMs": zod.number().int().optional(),
+  "budgetMs": zod.number().int().optional(),
+  "incomplete": zod.boolean().optional(),
   "skippedRun": zod.boolean(),
   "run": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -348,7 +354,9 @@ export const RunAdminReminderCheckResponse = zod.object({
   "logged": zod.number().int(),
   "failed": zod.number().int(),
   "skipped": zod.number().int(),
-  "suppressed": zod.number().int()
+  "suppressed": zod.number().int(),
+  "deferred": zod.number().int().optional(),
+  "uncertain": zod.number().int().optional()
 })
 }),zod.null()])
 })
@@ -366,15 +374,18 @@ export const SendAdminTestReminderResponse = zod.object({
 })
 
 
-export const runScheduledReminderCheckHeaderJOBSSECRETMin = 32;
+export const runScheduledReminderCheckHeaderXJobsSecretMin = 32;
 
 
 
 export const RunScheduledReminderCheckHeader = zod.object({
-  "JOBS_SECRET": zod.string().min(runScheduledReminderCheckHeaderJOBSSECRETMin)
+  "X-Jobs-Secret": zod.string().min(runScheduledReminderCheckHeaderXJobsSecretMin).describe('Secret machine token; JOBS_SECRET is accepted as a legacy header alias.')
 })
 
 export const RunScheduledReminderCheckResponse = zod.object({
+  "elapsedMs": zod.number().int().optional(),
+  "budgetMs": zod.number().int().optional(),
+  "incomplete": zod.boolean().optional(),
   "skippedRun": zod.boolean(),
   "run": zod.union([zod.object({
   "id": zod.string().uuid(),
@@ -390,7 +401,9 @@ export const RunScheduledReminderCheckResponse = zod.object({
   "logged": zod.number().int(),
   "failed": zod.number().int(),
   "skipped": zod.number().int(),
-  "suppressed": zod.number().int()
+  "suppressed": zod.number().int(),
+  "deferred": zod.number().int().optional(),
+  "uncertain": zod.number().int().optional()
 })
 }),zod.null()])
 })

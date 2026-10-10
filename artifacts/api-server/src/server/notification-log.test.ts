@@ -4,9 +4,13 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, notificationLogTable, authTokensTable } from '@workspace/db';
 import { createEmailService } from '../email';
 import { encryptEmailBody, decryptEmailBody } from './email-payload';
+import { pendingRecipients } from './delivery-history';
 
 vi.hoisted(() => { process.env.NODE_ENV = 'development'; process.env.APP_ORIGIN = 'https://portal.example.invalid';
   process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = ''; });
+// Never generate threshold alerts for unrelated development administrators.
+vi.mock('./monthly-email-limit', async original => ({ ...await original<typeof import('./monthly-email-limit')>(),
+  checkMonthlyEmailLimit: vi.fn() }));
 const tag = randomUUID();
 const userIds: string[] = [], ids: string[] = [], sids: string[] = [];
 let admin: string, volunteer: string, unverified: string;
@@ -22,7 +26,7 @@ async function cookie(userId: string) {
   return `alliance.sid=${encodeURIComponent(`s:${sid}.${signature}`)}`;
 }
 const transport = createEmailService({ settings: () => ({ token: 'synthetic-test-token', from: 'program@example.invalid' }),
-  deliveryClient: () => ({ sendEmail: async () => { throw new Error('Synthetic transport failure'); } }),
+  deliveryClient: () => ({ sendEmail: async () => { throw Object.assign(new Error('Synthetic rejection'), { statusCode: 422 }); } }),
   log: { info() {}, warn() {}, error() {} } });
 async function failed(type: 'message' | 'verification' | 'password_reset' | 'invite' = 'message', owner = admin) {
   const [user] = await db.select({ email: usersTable.email }).from(usersTable).where(eq(usersTable.id, owner));
@@ -56,6 +60,30 @@ afterAll(async () => {
   await pool.end();
 });
 describe('notification monitoring and safe retry', () => {
+  it('filters confirmed and uncertain admin recipients before a bounded digest batch', async () => {
+    const key = `digest-history:${randomUUID()}`;
+    await db.insert(notificationLogTable).values([
+      { type: 'admin_alert', recipientUserId: admin, recipientEmail: 'fixture-a@example.invalid', relatedId: key,
+        subject: 'Fixture', status: 'logged' },
+      { type: 'admin_alert', recipientUserId: volunteer, recipientEmail: 'fixture-b@example.invalid', relatedId: key,
+        subject: 'Fixture', status: 'failed', error: 'DELIVERY_UNCERTAIN: timeout' },
+      { type: 'admin_alert', recipientUserId: unverified, recipientEmail: 'fixture-c@example.invalid', relatedId: key,
+        subject: 'Fixture', status: 'failed', error: 'Provider rejected' },
+    ]);
+    expect(await pendingRecipients('admin_alert', key, [{ id: admin }, { id: volunteer }, { id: unverified }]))
+      .toEqual([{ id: unverified }]);
+  });
+  it('shows uncertain delivery and refuses both manual and API retries', async () => {
+    const row = await failed();
+    await db.update(notificationLogTable).set({ error: 'DELIVERY_UNCERTAIN: Provider timed out; review in Postmark.' })
+      .where(eq(notificationLogTable.id, row.id));
+    const list = await api.listNotifications({ search: row.recipientEmail, page: 1 });
+    expect(list.rows.find(r => r.id === row.id)).toMatchObject({ status: 'failed', deliveryUncertain: true, canRetry: false });
+    await expect(api.retryNotification(row.id)).rejects.toMatchObject({ status: 409 });
+    const headers = { Cookie: await cookie(admin), Origin: process.env.APP_ORIGIN!, 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
+    expect((await fetch(`${base}/admin/notifications/${row.id}/retry`, { method: 'POST', headers, body: '{}' })).status).toBe(409);
+    expect((await db.select().from(notificationLogTable).where(eq(notificationLogTable.id, row.id)))[0]!.status).toBe('failed');
+  });
   it('encrypts content and detects tampering without storing token email bodies', async () => {
     const encrypted = encryptEmailBody({ html: '<p>Private</p>', text: 'Private' });
     expect(encrypted).not.toContain('Private');
@@ -107,7 +135,7 @@ describe('notification monitoring and safe retry', () => {
     await db.update(notificationLogTable).set({ retryPayload: null }).where(eq(notificationLogTable.id, row.id));
     await expect(api.retryNotification(row.id)).rejects.toThrow('original content');
     await db.update(notificationLogTable).set({ error: 'Delivery started but has not been confirmed.' }).where(eq(notificationLogTable.id, row.id));
-    await expect(api.retryNotification(row.id)).rejects.toThrow('unconfirmed');
+    await expect(api.retryNotification(row.id)).rejects.toThrow('uncertain');
     const other = await failed();
     await db.update(usersTable).set({ isActive: false }).where(eq(usersTable.id, admin));
     await expect(api.retryNotification(other.id)).rejects.toThrow('inactive');

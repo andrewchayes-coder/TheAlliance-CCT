@@ -20,7 +20,7 @@ function Stat({ label, value, id }: { label: string; value: string | number; id:
 function Counts({ c, prefix }: { c: ReminderRunCounts; prefix: string }) {
   return (
     <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {(['eligible', 'sent', 'logged', 'failed', 'skipped', 'suppressed'] as const).map(k => <Stat key={k} id={`${prefix}-${k}`} label={k} value={c[k]} />)}
+      {(['eligible', 'sent', 'logged', 'failed', 'skipped', 'suppressed', 'deferred', 'uncertain'] as const).map(k => <Stat key={k} id={`${prefix}-${k}`} label={k} value={c[k] ?? 0} />)}
     </dl>
   );
 }

@@ -4,6 +4,8 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { pool, notificationLogTable, insertNotificationLogSchema, type NotificationLog } from '@workspace/db';
 import { logger } from './lib/logger';
+import { currentJobBudget } from './server/job-budget';
+import { isUncertainDelivery, uncertainDelivery, providerRejected } from './server/delivery-state';
 
 export { createEmailTemplate, emailFooter, type EmailTemplateOptions } from './email-template';
 
@@ -23,6 +25,8 @@ export interface SendEmailResult {
   ok: boolean;
   error?: string;
   skipped?: true;
+  uncertain?: true;
+  deferred?: true;
 }
 interface DeliveryMessage {
   From: string; To: string; Subject: string; HtmlBody: string; TextBody: string; MessageStream: 'outbound';
@@ -39,7 +43,7 @@ const defaults = {
     token: process.env.POSTMARK_SERVER_TOKEN?.trim(),
     from: process.env.EMAIL_FROM?.trim(),
   }),
-  deliveryClient: (token: string): DeliveryClient => new ServerClient(token, { timeout: 15 }),
+  deliveryClient: (token: string): DeliveryClient => new ServerClient(token, { timeout: currentJobBudget() ? 4 : 15 }),
   log: {
     info: (message: string) => emailLogger.info(message),
     warn: (message: string) => emailLogger.warn(message),
@@ -75,8 +79,11 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
     let auditId: string | undefined;
     let token: string | undefined;
     let deliveryConfirmed = false;
+    let providerAttempted = false;
     let providerMessageId: string | undefined;
     try {
+      const budget = currentJobBudget();
+      if (budget && !budget.canStart(8_000)) return { ok: false, deferred: true, error: 'Deferred to the next scheduled check.' };
       const settings = dependencies.settings();
       token = settings.token;
       const draft = {
@@ -103,8 +110,16 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
 
       if (keyed) {
         lockKey = JSON.stringify([values.type, values.recipientUserId, values.relatedId]);
-        // A session lock spans autocommitted audit writes and delivery. Other workers wait.
-        await client.query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [lockKey]);
+        // Scheduled checks never wait behind another delivery. Preserve the
+        // existing wait-and-deduplicate contract for interactive email callers.
+        const claim = budget
+          ? await client.query('SELECT pg_try_advisory_lock(hashtextextended($1, 0)) AS acquired', [lockKey])
+          : (await client.query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [lockKey]), { rows: [{ acquired: true }] });
+        if (!claim.rows[0]?.acquired) {
+          lockKey = undefined;
+          if (budget) budget.deferred = true;
+          return { ok: false, deferred: true, error: 'Another worker is handling this email. Check again shortly.' };
+        }
         const [handled] = await database.select({ id: notificationLogTable.id }).from(notificationLogTable)
           .where(and(keyCondition, inArray(notificationLogTable.status, ['sent', 'logged']))).limit(1);
         if (handled) return { ok: true, skipped: true };
@@ -116,9 +131,11 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         retryTarget.recipientEmail !== values.recipientEmail || retryTarget.recipientUserId !== values.recipientUserId))
         return { ok: false, error: 'The original email no longer matches this retry.' };
       if (retryTarget && retryTarget.status !== 'failed') return { ok: true, skipped: true };
-      const [previousFailure] = keyed ? await database.select({ id: notificationLogTable.id }).from(notificationLogTable)
+      const [previousFailure] = keyed ? await database.select({ id: notificationLogTable.id, error: notificationLogTable.error }).from(notificationLogTable)
         .where(and(keyCondition, eq(notificationLogTable.status, 'failed')))
         .orderBy(desc(notificationLogTable.updatedAt)).limit(1) : [];
+      const uncertain = [retryTarget, previousFailure].find(row => isUncertainDelivery(row?.error));
+      if (uncertain) return { ok: false, skipped: true, uncertain: true, error: uncertain.error! };
       // Persist the audit BEFORE any external side effect. A crash remains visibly unconfirmed.
       let retryPayload: string | null = null;
       let payloadFailure: string | undefined;
@@ -127,7 +144,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         catch { payloadFailure = 'Email retry content could not be saved. Check the server encryption configuration before sending again.'; }
       }
       const pending = {
-        ...values, status: 'failed' as const, error: 'Delivery started but has not been confirmed.',
+        ...values, status: 'failed' as const, error: uncertainDelivery('Delivery started but has not been confirmed.'),
         providerMessageId: null, sentAt: null,
         updatedAt: new Date(),
         retryPayload,
@@ -148,12 +165,14 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         if (!options.html?.trim()) throw new Error('A non-empty HTML email body is required.');
 
         if (settings.token && settings.from) {
+          providerAttempted = true;
           const response = await dependencies.deliveryClient(settings.token).sendEmail({
             From: settings.from, To: values.recipientEmail, Subject: values.subject,
             HtmlBody: options.html, TextBody: options.text, MessageStream: 'outbound',
             ...(options.replyTo ? { ReplyTo: options.replyTo } : {}),
           });
           if (response.ErrorCode !== 0 || !response.MessageID) {
+            if (response.ErrorCode > 0) providerAttempted = false;
             throw new Error(`Postmark did not confirm delivery: ${response.Message || response.ErrorCode}`);
           }
           deliveryConfirmed = true;
@@ -190,12 +209,13 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
           safeLog('warn', `Email ${auditId} was accepted by Postmark; its notification log update recovered after an error.`);
           return { ok: true };
         }
-        const message = failure;
+        const uncertain = providerAttempted && !providerRejected(error);
+        const message = uncertain ? uncertainDelivery(failure) : failure;
         await database.update(notificationLogTable).set({
           status: 'failed', error: message, providerMessageId: null, sentAt: null,
         }).where(eq(notificationLogTable.id, auditId));
         safeLog('error', `Email failed (${values.type}); notification ${auditId}: ${message}`);
-        return { ok: false, error: message };
+        return { ok: false, error: message, ...(uncertain ? { uncertain: true as const } : {}) };
       }
     } catch (error) {
       const failure = errorMessage(error, token);
@@ -204,7 +224,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         : failure;
       // With an unavailable/invalid audit store, fail closed: never send unrecorded mail.
       safeLog('error', `Email could not complete${auditId ? ` (notification ${auditId})` : ''}: ${message}`);
-      return { ok: false, error: message };
+      return { ok: false, error: message, ...(providerAttempted ? { uncertain: true as const } : {}) };
     } finally {
       if (client) {
         let destroyConnection = false;
@@ -225,7 +245,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
 const deliverEmail = createEmailService();
 export const sendEmail = async (options: SendEmailOptions): Promise<SendEmailResult> => {
   const result = await deliverEmail(options);
-  if (result.ok && !result.skipped && !options.relatedId?.startsWith('monthly-limit:')) {
+  if (result.ok && !result.skipped && !currentJobBudget() && !options.relatedId?.startsWith('monthly-limit:')) {
     try { await (await import('./server/monthly-email-limit')).checkMonthlyEmailLimit(); }
     catch { try { emailLogger.error('Monthly email limit check could not complete; the next send or staff dashboard visit will retry it.'); } catch { /* Never reject callers after delivery. */ } }
   }

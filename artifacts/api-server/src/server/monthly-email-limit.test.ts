@@ -24,6 +24,7 @@ function fixture() {
     connect: async () => ({ query: async () => ({ rows: [{ locked: !busy }] }), release } as unknown as PoolClient),
     settings: async () => ({ postmarkMonthlyLimit: 100, lastMonthlyAlertMonth: month } as Awaited<ReturnType<typeof emailSettings>>),
     count: async () => count, admins: async () => recipients, send,
+    pending: async (_type, _key, recipients) => recipients,
     acknowledge: async value => { month = value; return {} as never; },
   });
   return { checker, send, sent, release, setCount: (n: number) => { count = n; }, busy: () => { busy = true; },

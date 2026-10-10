@@ -3,6 +3,8 @@ import { db, pool, appSettingsTable, usersTable } from '@workspace/db';
 import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin } from '../auth/session';
 import { pacificDay, slotInstant } from './schedule-time';
+import { currentJobBudget } from './job-budget';
+import { pendingRecipients } from './delivery-history';
 
 export function monthRange(at = new Date(), offset = 0) {
   const current = pacificDay(at).slice(0, 7);
@@ -30,6 +32,7 @@ const dependencies = {
   admins: async () => await db.select({ id: usersTable.id, email: usersTable.email, firstName: usersTable.firstName })
     .from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), isNotNull(usersTable.emailVerifiedAt))),
   send: sendEmail,
+  pending: pendingRecipients,
   acknowledge: async (month: string) => await db.update(appSettingsTable).set({ lastMonthlyAlertMonth: month, updatedAt: new Date() })
     .where(eq(appSettingsTable.id, 'schedule')),
 };
@@ -37,6 +40,7 @@ const dependencies = {
 export function createMonthlyLimitChecker(overrides: Partial<typeof dependencies> = {}) {
  const deps = { ...dependencies, ...overrides };
  return async (at = new Date()) => {
+  if (currentJobBudget() && !currentJobBudget()!.canStart()) return;
   const client = await deps.connect();
   let locked = false;
   try {
@@ -52,7 +56,8 @@ export function createMonthlyLimitChecker(overrides: Partial<typeof dependencies
     if (!admins.length) return;
     const subject = `Heads up: the volunteer app has sent ${count} of ${settings.postmarkMonthlyLimit} emails this month`;
     let complete = true;
-    for (const admin of admins) {
+    for (const admin of await deps.pending('admin_alert', `monthly-limit:${range.month}`, admins)) {
+      if (currentJobBudget() && !currentJobBudget()!.canStart()) return;
       const result = await deps.send({ type: 'admin_alert', to: admin.email, toUserId: admin.id,
         subject, relatedId: `monthly-limit:${range.month}`, ...createEmailTemplate({
           heading: 'A quick update on monthly email use', firstName: admin.firstName,
@@ -61,7 +66,10 @@ export function createMonthlyLimitChecker(overrides: Partial<typeof dependencies
             'This count includes development log copies as well as delivered emails. This is a monitoring limit, not a delivery block.'],
           cta: { label: 'Review notification log', url: `${appOrigin}/admin/notifications` },
         }) });
-      if (!result.ok) complete = false;
+      if (!result.ok && !result.uncertain) {
+        complete = false;
+        if (currentJobBudget()) currentJobBudget()!.retryNeeded = true;
+      }
     }
     if (complete) await deps.acknowledge(range.month);
   } finally {

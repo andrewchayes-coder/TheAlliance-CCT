@@ -25,4 +25,4 @@ The user wants to stay on Autoscale and trigger scheduled jobs from cron-job.org
 
 **Why:** the user explicitly chose this deployment and scheduling approach.
 
-**How to apply:** proposals should use secret-header authenticated external POST requests, disable production automatic timers, retain notification-log deduplication, handle late triggers, and target responses within ten seconds.
+**How to apply:** use secret-header authenticated external POST requests and disable production automatic timers. The user approved an approximately 20-second application budget, calls every 15 minutes, catch-up of unsent work without a new queue/table, and no resending uncertain delivery; show uncertainty in the admin log.

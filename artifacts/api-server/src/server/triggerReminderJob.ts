@@ -10,7 +10,7 @@ if (!rawUrl || !secret || secret.length < 32) {
     const url = new URL(rawUrl);
     if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !url.pathname.endsWith('/api/jobs/run'))
       throw new Error('Use the HTTPS production /api/jobs/run endpoint without credentials or query parameters.');
-    const response = await fetch(url, { method: 'POST', headers: { JOBS_SECRET: secret, 'Content-Type': 'application/json' },
+    const response = await fetch(url, { method: 'POST', headers: { 'X-Jobs-Secret': secret, 'Content-Type': 'application/json' },
       body: '{}', signal: AbortSignal.timeout(240_000), redirect: 'error' });
     if (!response.ok) throw new Error(`Reminder trigger returned HTTP ${response.status}.`);
     const result = await response.json() as { skippedRun: boolean; run: { id: string; counts: unknown } | null };

@@ -255,7 +255,8 @@ paths:
       operationId: runScheduledReminderCheck
       parameters:
         - in: header
-          name: JOBS_SECRET
+          name: X-Jobs-Secret
+          description: Secret machine token; JOBS_SECRET is accepted as a legacy header alias.
           required: true
           schema: { type: string, minLength: 32 }
       responses:
@@ -1166,6 +1167,7 @@ components:
         status: { $ref: '#/components/schemas/EmailLogStatus' }
         error: { type: [string, "null"] }
         canRetry: { type: boolean }
+        deliveryUncertain: { type: boolean }
     NotificationLogPage:
       type: object
       required: [rows, total, page, pageSize]
@@ -1191,6 +1193,8 @@ components:
         failed: { type: integer }
         skipped: { type: integer }
         suppressed: { type: integer }
+        deferred: { type: integer }
+        uncertain: { type: integer }
     ReminderJobRun:
       type: object
       required: [id, source, status, checkedAt, startedAt, finishedAt, counts, error]
@@ -1207,6 +1211,9 @@ components:
       type: object
       required: [skippedRun, run]
       properties:
+        elapsedMs: { type: integer }
+        budgetMs: { type: integer }
+        incomplete: { type: boolean }
         skippedRun: { type: boolean }
         run:
           anyOf:

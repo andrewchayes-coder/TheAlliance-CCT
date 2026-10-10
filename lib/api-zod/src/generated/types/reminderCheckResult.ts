@@ -8,6 +8,9 @@
 import type { ReminderJobRun } from './reminderJobRun';
 
 export interface ReminderCheckResult {
+  elapsedMs?: number;
+  budgetMs?: number;
+  incomplete?: boolean;
   skippedRun: boolean;
   run: ReminderJobRun | null;
 }

@@ -22,7 +22,7 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 | `POSTMARK_SERVER_TOKEN` | Secret: Postmark server token for the production server. |
 | `EMAIL_FROM` | Bare email address verified with Postmark; no display-name wrapper. |
 | `JOBS_SECRET` | Secret: securely generated, at least 32 characters. External trigger sends it in `X-Jobs-Secret`. |
-| `RUN_JOBS` | Required literal `true` on Reserved VM; `false` for external scheduling. No implicit default in production. |
+| `RUN_JOBS` | Required literal `false` in production. Production automatic timers are disabled; cron-job.org invokes the external endpoint. Development may use `true` for timer testing. |
 | `DATABASE_URL` | Managed automatically by Replit; must point to the separate production DB at runtime. Do not set manually. |
 
 `APP_ORIGIN` is a legacy alias. If retained, it must match `APP_BASE_URL`; change both together for a custom domain. Development can continue to use `APP_ORIGIN` or the managed dev domain.
@@ -60,7 +60,7 @@ No production schema or records were modified by this launcher cleanup.
 
 ## First-time setup (no volunteer data)
 
-1. Configure required production keys and the separate database. Select **Reserved VM** in Publishing; keep one scheduler-bearing API instance and `RUN_JOBS=true`. The saved target is Reserved VM; compute size is selected in Publishing.
+1. Configure required production keys and the separate database. Keep **Autoscale** in Publishing and set production `RUN_JOBS=false`. Configure cron-job.org after publishing the new release.
 2. Review Publishing's schema diff and the CHECK-constraint caveat above. Publish using the user-controlled Publish action; no Drizzle baseline is needed.
 3. Visit `/api/health`: expected HTTP 200 with `status=ok`, `db=ok`, `email.configured=true`. This checks connectivity/configuration, **not** Postmark token validity or mailbox delivery. `/api/healthz` remains a minimal compatibility liveness endpoint.
 4. Create the first administrator from an **operator shell explicitly configured for the production database**, never the ordinary workspace Shell:
@@ -86,23 +86,33 @@ The deployment configuration does not publish automatically. Changing saved targ
 
 ## Scheduling
 
-### Recommended: Reserved VM
+### Autoscale + cron-job.org
 
-Always-on runtime, `RUN_JOBS=true`. Node-cron checks reminders every 15 minutes with `America/Los_Angeles`; the daily coverage digest runs at 7 AM Pacific on weekdays with restart catch-up and durable deduplication. Do not run a second external scheduler at the same time.
+Keep production `RUN_JOBS=false`. Both automatic reminder and coverage-digest timers are disabled in production, even if that flag accidentally becomes true. Development timers require `RUN_JOBS=true`.
 
-### Alternative: Autoscale + Scheduled Deployment
+Create one enabled cron-job.org job:
 
-1. Switch the portal target to Autoscale and set its production `RUN_JOBS=false`, so scaled instances don't each schedule jobs.
-2. Configure a separate Replit Scheduled Deployment to run every 15 minutes (`*/15 * * * *`). Its command is:
-   ```sh
-   pnpm --filter @workspace/api-server run reminder-trigger
-   ```
-3. In the scheduled runtime securely configure `JOBS_SECRET` to match the portal and set `JOBS_RUN_URL` to the **published** origin plus `/api/jobs/run`. Do not use `.replit.dev`, send secrets as query parameters, or put them in cron command text.
-4. The trigger sends HTTPS POST `{}` with `X-Jobs-Secret`; non-2xx responses fail the scheduled run. Verify scheduled-run logs and the admin jobs page.
-5. The endpoint runs reminders and the due weekday coverage digest. The daily digest's Pacific-clock gate and durable date dedupe prevent duplicate sends; running every 15 minutes also handles DST.
-6. If Publishing privacy gates external access, configure a production external-access token as required by Replit. The supplied trigger targets the current **public** deployment; private access needs an additional securely managed bearer header before switching privacy.
+| Setting | Value |
+|---|---|
+| URL | `https://the-alliance-cct.replit.app/api/jobs/run` |
+| Method | `POST` |
+| Header | `X-Jobs-Secret`: the existing production `JOBS_SECRET` value, entered securely in cron-job.org |
+| Header | `Content-Type`: `application/json` |
+| Request body | `{}` |
+| Schedule | Every 15 minutes, all hours, every day (`*/15 * * * *`; minutes `0,15,30,45`) |
+| Timezone | `America/Los_Angeles` |
+| Execution timeout | 30 seconds |
+| Notifications | Enable failure/recovery notifications; do not rely on automatic retries |
 
-Deployment privacy, scheduled deployment availability, timezone/cron and resource settings must be confirmed in Publishing. Scheduled runs do not need database access; they call the portal API.
+Publish this release before enabling the external job. Never put the token in a query string, source control, or log. The current deployment is public; if publishing privacy changes, an additional Replit external-access credential may be required.
+
+The shared application budget is approximately 20 seconds, excluding cold start/network latency. Job-only database waits and Postmark calls are bounded. All started work settles before responding; no background continuation or new queue/table is used. The JSON response contains `elapsedMs`, `budgetMs`, `incomplete`, and reminder counts. An incomplete 200 response means the next 15-minute invocation must continue; persistent errors or insufficient throughput require staff attention in execution history and `/admin/notifications/jobs`.
+
+Catch-up reevaluates due reminders from their 24-hour deadline until the shift starts. Enabled morning reminders catch up from their configured Pacific hour until shift start. Week-offs, closures, inactive/unverified volunteers and ended assignments remain excluded. Confirmed `sent`/`logged` recipients are filtered before batching, so they cannot starve unfinished recipients. Digest catch-up is for the current Pacific weekday after 7 AM, not stale past dates. Monthly usage alerts also share the budget.
+
+Uncertain delivery is recorded as `failed` with a `DELIVERY_UNCERTAIN:` error in the existing notification log. The admin log shows **Delivery uncertain** and disables Retry; review Postmark rather than resending. Old interrupted-delivery markers receive the same protection. Explicit provider rejections remain retryable. Confirmed provider acceptance followed by audit failure is never resent.
+
+The supplied `reminder-trigger` command remains available for an operator or a Replit Scheduled Deployment as an alternative caller. Do not enable two external schedulers. Scheduled callers need only HTTPS access and the secret, not database access.
 
 ## Custom domain
 
@@ -119,7 +129,7 @@ Monitor Publishing runtime logs, notification failures/monthly usage, jobs last-
 
 ## Rollback
 
-1. Pause background scheduling (`RUN_JOBS=false`) if the faulty release could send incorrect mail. Preserve the environment and production DB; don't run seed/push.
+1. Disable the cron-job.org job if the faulty release could send incorrect mail; `RUN_JOBS=false` does not disable authorized external requests. Preserve the environment and production DB; don't run seed/push.
 2. Review Publishing history for a previous successful release where available, or restore a known-good **code checkpoint** and publish that code again. Save current diagnostic details first.
 3. A code rollback does **not** reverse schema changes applied by Publish or sent email. Review the proposed schema diff when republishing older code, prefer backward-compatible changes and do not assume a schema rollback preserves data.
 4. If restoring production data is necessary, use an operator-approved production backup/PITR recovery plan in Replit's production database tooling. Workspace/development checkpoints are not a substitute for production recovery; confirm which environment a restore affects before approving it.

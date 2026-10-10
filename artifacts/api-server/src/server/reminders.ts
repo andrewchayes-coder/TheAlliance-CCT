@@ -18,14 +18,18 @@ export function reminderRange(now: Date, config: ReminderConfig) {
   return { from, to, fromDate: pacificDay(now), toDate: pacificDay(to) };
 }
 /** Half-open windows and Pacific calendar instants; delivery deduplication lives in email.ts. */
-export function selectReminders(snapshot: ReminderSnapshot, now: Date, config: ReminderConfig): ReminderCandidate[] {
+export function selectReminders(snapshot: ReminderSnapshot, now: Date, config: ReminderConfig, catchUp = false): ReminderCandidate[] {
   const range = reminderRange(now, config);
   const today = pacificDay(now);
-  const morning = config.sameMorningReminder && Number(localHour.format(now)) === config.sameMorningReminderHour;
+  const hour = Number(localHour.format(now));
+  const morning = config.sameMorningReminder && (catchUp ? hour >= config.sameMorningReminderHour : hour === config.sameMorningReminderHour);
   const people = new Map(snapshot.people.filter(p => p.status === 'active' && p.isActive && p.verified).map(p => [p.profileId, p]));
   return createScheduleService(snapshot.schedule).getOccurrences(range.fromDate, range.toDate).flatMap(occurrence => {
     const variants: ReminderCandidate['variant'][] = [];
-    if (occurrence.startsAt >= range.from && occurrence.startsAt < range.to) variants.push('24h');
+    // Late or budget-limited checks revisit every due, still-future occurrence.
+    // Confirmed/uncertain notification rows are filtered by the runner/service.
+    if (catchUp ? occurrence.startsAt > now && occurrence.startsAt <= range.from
+      : occurrence.startsAt >= range.from && occurrence.startsAt < range.to) variants.push('24h');
     if (morning && occurrence.date === today && occurrence.startsAt > now) variants.push('am');
     return occurrence.assignedVolunteers.flatMap(a => {
       const person = people.get(a.volunteerProfileId);

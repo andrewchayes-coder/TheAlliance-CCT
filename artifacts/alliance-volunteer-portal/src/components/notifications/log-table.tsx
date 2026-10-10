@@ -18,6 +18,7 @@ const sel = 'alliance-input';
 
 function RetryAction({ r, onRetry }: { r: NotificationLogRow; onRetry: (r: NotificationLogRow) => void }) {
   if (r.status !== 'failed') return null;
+  if (r.deliveryUncertain) return <span className="text-xs font-bold" data-testid={`text-uncertain-${r.id}`}>Delivery uncertain. Do not resend; review in Postmark.</span>;
   if (!r.canRetry) return <span className="text-xs" data-testid={`text-no-retry-${r.id}`}>Retry unavailable: older emails have no stored content.</span>;
   return <Button type="button" variant="secondary" onClick={() => onRetry(r)} data-testid={`button-retry-${r.id}`}>Retry</Button>;
 }
@@ -101,7 +102,7 @@ export function LogSection() {
               <tr key={r.id} className="border-t border-gray align-top" data-testid={`row-log-${r.id}`}>
                 <td className="whitespace-nowrap px-3 py-2">{when(r.time)}</td><td className="px-3 py-2">{typeLabel(r.type)}</td>
                 <td className="break-all px-3 py-2">{r.recipient}</td><td className="px-3 py-2">{r.subject}</td>
-                <td className="px-3 py-2"><StatusBadge status={tone(r.status)}>{r.status}</StatusBadge></td>
+                <td className="px-3 py-2"><StatusBadge status={tone(r.status)}>{r.deliveryUncertain ? 'Delivery uncertain' : r.status}</StatusBadge></td>
                 <td className="max-w-[200px] break-words px-3 py-2 text-xs">{r.error ?? ''}</td>
                 <td className="px-3 py-2"><RetryAction r={r} onRetry={setTarget} /></td>
               </tr>))}</tbody>
@@ -109,7 +110,7 @@ export function LogSection() {
         </div>
         <ul className="mt-3 space-y-2 xl:hidden">{d.rows.map(r => (
           <li key={r.id} className="rounded-xl border border-gray bg-white p-3 text-sm" data-testid={`card-log-${r.id}`}>
-            <div className="flex items-center justify-between gap-2"><b>{typeLabel(r.type)}</b><StatusBadge status={tone(r.status)}>{r.status}</StatusBadge></div>
+            <div className="flex items-center justify-between gap-2"><b>{typeLabel(r.type)}</b><StatusBadge status={tone(r.status)}>{r.deliveryUncertain ? 'Delivery uncertain' : r.status}</StatusBadge></div>
             <p className="mt-1 text-xs">{when(r.time)}</p><p className="mt-1 break-all">{r.recipient}</p><p className="break-words">{r.subject}</p>
             {r.error && <p className="mt-1 break-words text-xs">Error: {r.error}</p>}
             <div className="mt-2"><RetryAction r={r} onRetry={setTarget} /></div>

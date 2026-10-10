@@ -18,4 +18,5 @@ export interface NotificationLogRow {
   /** @nullable */
   error: string | null;
   canRetry: boolean;
+  deliveryUncertain?: boolean;
 }

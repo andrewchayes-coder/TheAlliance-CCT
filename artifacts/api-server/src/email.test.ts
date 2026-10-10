@@ -190,7 +190,7 @@ test('provider failures resolve normally, record errors, redact the token, and a
     settings: () => ({ token: 'fake-secret-token', from: 'alliance@example.org' }),
     deliveryClient: () => ({ sendEmail: async () => {
       deliveries++;
-      if (deliveries === 1) throw new Error('Provider rejected fake-secret-token');
+      if (deliveries === 1) throw Object.assign(new Error('Provider rejected fake-secret-token'), { statusCode: 422 });
       return successResponse;
     }}),
   });

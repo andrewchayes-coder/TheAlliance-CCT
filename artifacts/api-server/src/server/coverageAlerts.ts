@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { db, appSettingsTable, activityLogTable, volunteerProfilesTable, usersTable } from '@workspace/db';
+import { db, withJobDatabase, appSettingsTable, activityLogTable, volunteerProfilesTable, usersTable } from '@workspace/db';
 import { readScheduleData } from './scheduleRepository';
 import { addCalendarDays, createScheduleService, pacificDay, type ScheduleData, type ScheduleAssignment } from './scheduleService';
 import { mondayOf } from './coordinatorSchedule';
@@ -7,6 +7,8 @@ import { sendEmail, createEmailTemplate } from '../email';
 import { appOrigin } from '../auth/session';
 import { logger } from '../lib/logger';
 import type { ReleasedAssignments } from '../uncovered-shifts';
+import { automaticJobsEnabled, currentJobBudget, withJobBudget } from './job-budget';
+import { pendingRecipients } from './delivery-history';
 
 export function gaps(data: ScheduleData, now: Date, days: number) {
   return createScheduleService(data).getOccurrences(pacificDay(now), addCalendarDays(pacificDay(now), days - 1))
@@ -49,9 +51,13 @@ async function notify(rows: ReturnType<typeof gaps>, relatedId: string, reason?:
       ...weeks.slice(1).map(w => `Also review the week of ${w}: ${appOrigin}/admin/schedule?weekStart=${w}`)],
     cta: { label: 'Review the master schedule', url: `${appOrigin}/admin/schedule?weekStart=${weeks[0]}` } });
   let ok = true;
-  for (const admin of admins) {
+  for (const admin of await pendingRecipients('admin_alert', relatedId, admins)) {
+    if (currentJobBudget() && !currentJobBudget()!.canStart()) return false;
     const delivered = await sendEmail({ type: 'admin_alert', to: admin.email, toUserId: admin.id, subject, ...mail, relatedId });
-    if (!delivered.ok) ok = false;
+    if (!delivered.ok && !delivered.uncertain) {
+      ok = false;
+      if (currentJobBudget()) currentJobBudget()!.retryNeeded = true;
+    }
   }
   return ok;
 }
@@ -89,8 +95,10 @@ export function digestDue(now: Date) {
   // Catch up on restarts after 7 AM; the durable date and recipient log prevent repeat delivery.
   return !['Sat', 'Sun'].includes(value('weekday')) && Number(value('hour')) >= 7;
 }
-export async function runDailyDigest(now = new Date()) {
+export async function runDailyDigest(now = new Date()): Promise<void> {
+  if (!currentJobBudget()) return withJobDatabase(() => withJobBudget(() => runDailyDigest(now)));
   if (!digestDue(now)) return;
+  if (!currentJobBudget()!.canStart()) return;
   await db.transaction(async tx => {
     const locked = await tx.execute(sql`select pg_try_advisory_xact_lock(91847311) as locked`);
     if (!locked.rows[0]?.locked) return;
@@ -103,7 +111,8 @@ export async function runDailyDigest(now = new Date()) {
     await tx.update(appSettingsTable).set({ lastDigestDate: date, updatedAt: new Date() }).where(eq(appSettingsTable.id, 'schedule'));
   });
 }
-export function startCoverageDigest() {
+export function startCoverageDigest(env: NodeJS.ProcessEnv = process.env) {
+  if (!automaticJobsEnabled(env)) return null;
   let busy = false;
   const tick = async () => {
     if (busy) return;

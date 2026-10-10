@@ -13,4 +13,6 @@ export interface ReminderRunCounts {
   failed: number;
   skipped: number;
   suppressed: number;
+  deferred?: number;
+  uncertain?: number;
 }

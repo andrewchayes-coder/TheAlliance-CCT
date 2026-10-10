@@ -10,6 +10,33 @@ function data(): ReminderSnapshot {
     people: [{ ...person }], links: [{ label: 'Find Help', url: 'https://example.org/help' }, { label: 'Phone Portal', url: 'https://example.org/phone' }] };
 }
 describe('Pacific shift reminder selection and copy', () => {
+  it('catches reminders 15/30 minutes and hours late, but never before due or after shift start', () => {
+    const due = slotInstant('2026-10-12', '09:00');
+    expect(selectReminders(data(), new Date(due.getTime() - 1), config, true)).toHaveLength(0);
+    for (const minutes of [0, 15, 30, 120, 1439]) {
+      expect(selectReminders(data(), new Date(due.getTime() + minutes * 60000), config, true)
+        .map(c => c.relatedId)).toEqual(['assignment:2026-10-13:24h']);
+    }
+    expect(selectReminders(data(), slotInstant('2026-10-13', '09:00'), config, true)).toHaveLength(0);
+    expect(selectReminders(data(), slotInstant('2026-10-13', '09:15'), config, true)).toHaveLength(0);
+  });
+  it('catches a delayed same-morning reminder after the configured hour, without sending past shifts', () => {
+    const cfg = { ...config, sameMorningReminder: true };
+    expect(selectReminders(data(), slotInstant('2026-10-13', '06:59'), cfg, true).some(c => c.variant === 'am')).toBe(false);
+    expect(selectReminders(data(), slotInstant('2026-10-13', '08:15'), cfg, true)
+      .filter(c => c.variant === 'am').map(c => c.relatedId)).toEqual(['assignment:2026-10-13:am']);
+    expect(selectReminders(data(), slotInstant('2026-10-13', '09:00'), cfg, true)).toHaveLength(0);
+  });
+  it('keeps elapsed-hour catch-up and future-only checks correct on both DST transitions', () => {
+    for (const date of ['2026-03-08', '2026-11-01']) {
+      const d = data(); d.schedule.slots = [{ ...slot, dayOfWeek: 0 }];
+      const due = new Date(slotInstant(date, '09:00').getTime() - 24 * 3600000);
+      expect(selectReminders(d, new Date(due.getTime() + 15 * 60000), config, true).map(c => c.occurrence.date)).toEqual([date]);
+      expect(selectReminders(d, slotInstant(date, '09:00'), config, true)).toHaveLength(0);
+      d.schedule.closedDates = [{ date }];
+      expect(selectReminders(d, new Date(due.getTime() + 15 * 60000), config, true)).toHaveLength(0);
+    }
+  });
   it('uses the half-open 15 minute window, with the requested assignment/date key', () => {
     const at = slotInstant('2026-10-12', '09:00');
     const candidates = selectReminders(data(), at, config);
