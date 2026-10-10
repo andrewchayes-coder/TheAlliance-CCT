@@ -46,7 +46,7 @@ export async function inviteAdministrator(
     // Bootstrap is a shell-only operation. It never replaces existing administrators.
     if (options.bootstrap) await tx.execute(sql`SELECT pg_advisory_xact_lock(742183019)`);
     const admins = await lockActiveAdmins(tx, options.actor);
-    if (options.bootstrap && admins.length) {
+    if (options.bootstrap && admins.some(u => !u.isTestAccount)) {
       throw new AdminActionError(409, 'ALREADY_INITIALIZED', 'An active administrator already exists. Use /admin/team to invite another.');
     }
     const [existing] = await tx.select().from(usersTable).where(eq(usersTable.email, email)).for('update');
@@ -97,7 +97,7 @@ export function assertDeactivationAllowed(actorId: string, target: User, activeA
   if (target.id === actorId) {
     throw new AdminActionError(409, 'SELF_DEACTIVATION', 'You can’t deactivate your own account.');
   }
-  if (target.role === 'admin' && target.isActive && target.emailVerifiedAt && activeAdminCount <= 1) {
+  if (!target.isTestAccount && target.role === 'admin' && target.isActive && target.emailVerifiedAt && activeAdminCount <= 1) {
     throw new AdminActionError(409, 'LAST_ADMIN', 'The last active, verified administrator cannot be deactivated.');
   }
 }
@@ -110,7 +110,7 @@ export async function setAccountActive(actor: AdminActor, userId: string, isActi
     const [target] = await tx.select().from(usersTable).where(eq(usersTable.id, userId)).for('update');
     if (!target) throw new AdminActionError(404, 'USER_NOT_FOUND', 'This account could not be found.');
     if (!isActive) assertDeactivationAllowed(actor.id, target,
-      admins.length + (target.role === 'admin' && target.isActive && target.emailVerifiedAt
+      admins.filter(u => !u.isTestAccount).length + (!target.isTestAccount && target.role === 'admin' && target.isActive && target.emailVerifiedAt
         && !admins.some(admin => admin.id === target.id) ? 1 : 0));
     if (target.isActive === isActive) return target;
     const [updated] = await tx.update(usersTable).set({

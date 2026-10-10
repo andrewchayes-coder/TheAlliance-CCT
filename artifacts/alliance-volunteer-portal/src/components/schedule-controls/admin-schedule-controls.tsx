@@ -17,6 +17,7 @@ const stateOf = (d: { startsAt: string; endsAt: string }) => {
 type Props = { slotId?: string; userId?: string; closed?: boolean; closedReason?: string | null };
 type Confirm = { kind: 'remove'; a: AdminScheduleControlsAssignmentsItem } | { kind: 'off'; a: AdminScheduleControlsAssignmentsItem; date: string } | { kind: 'undo'; a: AdminScheduleControlsAssignmentsItem; date: string; skipId: string };
 
+import { TestBadge } from '@/components/test-badge';
 const who = (v: { firstName: string; lastName: string }) => `${v.firstName} ${v.lastName}`.trim();
 const field = 'alliance-input';
 
@@ -138,7 +139,7 @@ export function AdminScheduleControls({ slotId, userId, closed, closedReason }: 
                   <li key={v.userId} className="border-b border-gray last:border-0">
                     <button type="button" role="radio" aria-checked={on} disabled={off} onClick={() => setPickUser(v.userId)} data-testid={`option-volunteer-${v.userId}`}
                       className={`block min-h-11 w-full px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-60 ${on ? 'bg-teal/10 font-bold' : ''}`}>
-                      <span className="block">{who(v)} <span className="font-normal">holds {v.heldCount}</span></span>
+                      <span className="block">{who(v)}<TestBadge test={v.isTestAccount} /> <span className="font-normal">holds {v.heldCount}</span></span>
                       <span className="block break-all text-xs">{v.email}</span>
                       {off && <span className="block text-xs font-bold text-[var(--alliance-amber-ink)]">Not eligible: {v.blockedReasons.join('; ')}</span>}
                     </button>

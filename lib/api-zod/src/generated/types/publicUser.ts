@@ -18,6 +18,7 @@ export interface PublicUser {
   /** @nullable */
   emailVerifiedAt: Date | null;
   isActive: boolean;
+  isTestAccount?: boolean;
   /** @nullable */
   lastLoginAt: Date | null;
   createdAt: Date;

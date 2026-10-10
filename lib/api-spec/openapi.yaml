@@ -628,6 +628,7 @@ paths:
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
         - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+        - { name: showTestAccounts, in: query, schema: { type: string, enum: ['true', 'false'] } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
         - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
       responses:
@@ -1030,6 +1031,29 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/AuthSuccess"
+  /admin/test-accounts:
+    get:
+      operationId: getTestAccounts
+      responses:
+        '200':
+          description: QA personas when quick login is enabled; never includes credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestAccountsOverview' }
+  /admin/test-accounts/reset:
+    post:
+      operationId: resetTestAccounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TestAccountsResetInput' }
+      responses:
+        '200':
+          description: Restored QA personas
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TestAccountsOverview' }
   /admin/users:
     get:
       operationId: listTeamUsers
@@ -1117,7 +1141,7 @@ components:
       enum: [verification, password_reset, welcome, reminder, message, admin_alert, invite]
     EmailLogStatus:
       type: string
-      enum: [sent, logged, failed]
+      enum: [sent, logged, failed, suppressed]
     EmailTypeCount:
       type: object
       required: [type, count]
@@ -1368,6 +1392,7 @@ components:
               lastName: { type: string }
               email: { type: string }
               heldCount: { type: integer }
+              isTestAccount: { type: boolean }
               blockedReasons: { type: array, items: { type: string } }
         slots:
           type: array
@@ -1479,6 +1504,7 @@ components:
         phone: { type: [string, 'null'] }
         skipped: { type: boolean }
         accountActive: { type: boolean }
+        isTestAccount: { type: boolean }
     CoordinatorBlock:
       type: object
       required: [slotId, date, dayOfWeek, startTime, endTime, startsAt, endsAt, label, capacity, assignedCount, openSpots, state, closedReason, volunteers]
@@ -2012,6 +2038,25 @@ components:
           anyOf:
             - $ref: "#/components/schemas/PublicVolunteerProfile"
             - type: "null"
+    TestAccountsResetInput:
+      type: object
+      additionalProperties: false
+      properties: {}
+    TestAccountEntry:
+      type: object
+      required: [key, label, email, userId, lastLoginAt]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        email: { type: string, format: email }
+        userId: { type: [string, 'null'], format: uuid }
+        lastLoginAt: { type: [string, 'null'], format: date-time }
+    TestAccountsOverview:
+      type: object
+      required: [enabled, accounts]
+      properties:
+        enabled: { type: boolean }
+        accounts: { type: array, items: { $ref: '#/components/schemas/TestAccountEntry' } }
     PublicUser:
       type: object
       required: [id, email, firstName, lastName, phone, role, emailVerifiedAt, isActive, lastLoginAt, createdAt, updatedAt]
@@ -2024,6 +2069,7 @@ components:
         role: { type: string, enum: [admin, volunteer] }
         emailVerifiedAt: { type: [string, "null"], format: date-time }
         isActive: { type: boolean }
+        isTestAccount: { type: boolean }
         lastLoginAt: { type: [string, "null"], format: date-time }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }

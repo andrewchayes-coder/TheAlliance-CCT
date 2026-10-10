@@ -11,7 +11,7 @@ export async function pendingRecipients<T extends { id: string }>(
     status: notificationLogTable.status, error: notificationLogTable.error })
     .from(notificationLogTable).where(and(eq(notificationLogTable.type, type),
       eq(notificationLogTable.relatedId, relatedId), inArray(notificationLogTable.recipientUserId, recipients.map(r => r.id))));
-  const handled = new Set(rows.filter(r => r.status === 'sent' || r.status === 'logged' || isUncertainDelivery(r.error))
+  const handled = new Set(rows.filter(r => r.status === 'sent' || r.status === 'logged' || r.status === 'suppressed' || isUncertainDelivery(r.error))
     .map(r => r.userId));
   return recipients.filter(r => !handled.has(r.id));
 }

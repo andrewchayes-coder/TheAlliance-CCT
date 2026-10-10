@@ -65,7 +65,7 @@ export function csvCell(value: unknown): string {
 export async function exportOnboardingCsv() {
   const rows = await db.select({ user: usersTable, profile: volunteerProfilesTable }).from(usersTable)
     .leftJoin(volunteerProfilesTable, eq(usersTable.id, volunteerProfilesTable.userId))
-    .where(eq(usersTable.role, 'volunteer')).orderBy(usersTable.lastName, usersTable.firstName, usersTable.id);
+    .where(and(eq(usersTable.role, 'volunteer'), eq(usersTable.isTestAccount, false))).orderBy(usersTable.lastName, usersTable.firstName, usersTable.id);
   const headers = ['First name', 'Last name', 'Email', 'Phone', 'County', 'Status', 'Onboarding completed at', 'Agreement acknowledged at', 'Agreement version', ...onboardingQuestions.map(q => q.label)];
   const records = rows.map(({ user, profile }) => [user.firstName, user.lastName, user.email, user.phone, profile?.county,
     profile?.status, profile?.onboardingCompletedAt?.toISOString(), profile?.agreementAcknowledgedAt?.toISOString(),

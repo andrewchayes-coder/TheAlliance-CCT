@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, type RefObject } from 'react';
+import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation, useSearch } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Mail, Phone, RefreshCw, Settings } from 'lucide-react';
@@ -33,7 +34,7 @@ function BlockBody({ b, full }: { b: CoordinatorBlock; full?: boolean }) {
     <span className="block text-xs font-bold" data-testid={`filled-${b.slotId}-${b.date}`}>{b.assignedCount}/{b.capacity}</span>
     {bd && <span title={bd} className={`block truncate text-xs font-bold ${b.state === 'closed' ? '' : 'text-[var(--alliance-amber-ink)]'}`}>{bd}</span>}
     {b.volunteers.map(v => <span key={v.assignmentId} className="block text-xs">
-      <span className={`block truncate ${v.skipped ? 'line-through' : ''}`}>{full ? fullName(v) : shortName(v)}</span>
+      <span className={`block truncate ${v.skipped ? 'line-through' : ''}`}>{full ? fullName(v) : shortName(v)}<TestBadge test={v.isTestAccount} /></span>
       {v.skipped && <span className="block text-sm">week off</span>}
     </span>)}
   </>);
@@ -67,7 +68,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
             <ul className="mt-2 divide-y divide-gray">
               {block.volunteers.map(v => (
                 <li key={v.assignmentId} className="py-3" data-testid={`row-drawer-vol-${v.userId}`}>
-                  <Link href={`/admin/volunteers/${v.userId}`} className={`font-bold text-teal-text underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}</Link>
+                  <Link href={`/admin/volunteers/${v.userId}`} className={`font-bold text-teal-text underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}<TestBadge test={v.isTestAccount} /></Link>
                   {v.skipped && <span className="ml-2 text-xs font-bold">Off this week</span>}
                   {!v.accountActive && <span className="ml-2 text-xs font-bold">Inactive account</span>}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">

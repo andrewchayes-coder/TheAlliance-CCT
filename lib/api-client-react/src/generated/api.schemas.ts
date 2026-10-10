@@ -25,6 +25,7 @@ export const EmailLogStatus = {
   sent: 'sent',
   logged: 'logged',
   failed: 'failed',
+  suppressed: 'suppressed',
 } as const;
 
 export interface EmailTypeCount {
@@ -293,6 +294,7 @@ export type AdminScheduleControlsVolunteersItem = {
   lastName: string;
   email: string;
   heldCount: number;
+  isTestAccount?: boolean;
   blockedReasons: string[];
 };
 
@@ -407,6 +409,7 @@ export interface CoordinatorVolunteer {
   phone: string | null;
   skipped: boolean;
   accountActive: boolean;
+  isTestAccount?: boolean;
 }
 
 export type CoordinatorBlockState = typeof CoordinatorBlockState[keyof typeof CoordinatorBlockState];
@@ -609,6 +612,7 @@ export interface PublicUser {
   /** @nullable */
   emailVerifiedAt: string | null;
   isActive: boolean;
+  isTestAccount?: boolean;
   /** @nullable */
   lastLoginAt: string | null;
   createdAt: string;
@@ -1220,6 +1224,23 @@ export interface Me {
   profile: PublicVolunteerProfile | null;
 }
 
+export interface TestAccountsResetInput { [key: string]: unknown }
+
+export interface TestAccountEntry {
+  key: string;
+  label: string;
+  email: string;
+  /** @nullable */
+  userId: string | null;
+  /** @nullable */
+  lastLoginAt: string | null;
+}
+
+export interface TestAccountsOverview {
+  enabled: boolean;
+  accounts: TestAccountEntry[];
+}
+
 export type ProductionReadinessStatus = typeof ProductionReadinessStatus[keyof typeof ProductionReadinessStatus];
 
 
@@ -1351,6 +1372,7 @@ county?: string;
 certificationStatus?: ListVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ListVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ListVolunteerRosterNeedsAttention;
+showTestAccounts?: ListVolunteerRosterShowTestAccounts;
 /**
  * @minimum 1
  * @maximum 100
@@ -1400,6 +1422,14 @@ export const ListVolunteerRosterNeedsAttention = {
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+} as const;
+
+export type ListVolunteerRosterShowTestAccounts = typeof ListVolunteerRosterShowTestAccounts[keyof typeof ListVolunteerRosterShowTestAccounts];
+
+
+export const ListVolunteerRosterShowTestAccounts = {
+  true: 'true',
+  false: 'false',
 } as const;
 
 export type ExportVolunteerRosterParams = {

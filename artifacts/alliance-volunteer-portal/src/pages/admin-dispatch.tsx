@@ -1,4 +1,5 @@
 import { Link } from 'wouter';
+import { TestBadge } from '@/components/test-badge';
 import { AlertTriangle, CalendarDays, ChevronRight, ClipboardList, Mail, Phone, RefreshCw, Users } from 'lucide-react';
 import { getGetAdminOverviewQueryKey, useGetAdminOverview, type CoordinatorBlock } from '@workspace/api-client-react';
 import { AppLayout, Button } from '@/components/brand-system';
@@ -9,12 +10,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { clock } from '@/components/volunteer-detail/format';
 import { POLL, activeVols, activityTime, dayLabel, fullName, humanize, range, updatedLabel } from '@/lib/coordinator';
 
-type OnShift = { userId: string; name: string; phone: string | null; email: string; shifts: { id: string; end: string; label: string | null }[] };
+type OnShift = { userId: string; name: string; phone: string | null; email: string; isTestAccount?: boolean; shifts: { id: string; end: string; label: string | null }[] };
 
 function dedupe(blocks: CoordinatorBlock[]): OnShift[] {
   const m = new Map<string, OnShift>();
   for (const b of blocks) for (const v of activeVols(b)) {
-    const e = m.get(v.userId) ?? { userId: v.userId, name: fullName(v), phone: v.phone, email: v.email, shifts: [] };
+    const e = m.get(v.userId) ?? { userId: v.userId, name: fullName(v), phone: v.phone, email: v.email, isTestAccount: v.isTestAccount, shifts: [] };
     if (!e.shifts.some(s => s.id === b.slotId)) e.shifts.push({ id: b.slotId, end: b.endTime, label: b.label });
     m.set(v.userId, e);
   }
@@ -54,7 +55,7 @@ function Body() {
             <ul className="grid gap-3 md:grid-cols-2">
               {people.map(p => (
                 <li key={p.userId} className="alliance-card border-l-4 border-teal" data-testid={`card-on-shift-${p.userId}`}>
-                  <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{p.name}</Link>
+                  <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{p.name}<TestBadge test={p.isTestAccount} /></Link>
                   <p className="text-sm text-navy-soft" data-testid={`text-ends-${p.userId}`}>
                     {p.shifts.map(s => `Shift ends ${clock(s.end)}${s.label ? ` (${s.label})` : ''}`).join('; ')}
                   </p>
@@ -78,7 +79,7 @@ function Body() {
                   <li key={`${b.slotId}-${b.date}`} className="alliance-card" data-testid={`card-up-next-${b.slotId}`}>
                     <p className="font-bold">{dayLabel(b.date, { weekday: 'long', month: 'short', day: 'numeric' })}, {range(b)}{b.label ? ` · ${b.label}` : ''}</p>
                     {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-shift-${b.slotId}`}>Empty shift: no one assigned</p>
-                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-teal-text underline underline-offset-4">{fullName(x)}</Link></li>)}</ul>}
+                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-teal-text underline underline-offset-4">{fullName(x)}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
                   </li>
                 );
               })}

@@ -30,7 +30,7 @@ const dependencies = {
   settings: emailSettings,
   count: monthlyCount,
   admins: async () => await db.select({ id: usersTable.id, email: usersTable.email, firstName: usersTable.firstName })
-    .from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), isNotNull(usersTable.emailVerifiedAt))),
+    .from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), eq(usersTable.isTestAccount, false), isNotNull(usersTable.emailVerifiedAt))),
   send: sendEmail,
   pending: pendingRecipients,
   acknowledge: async (month: string) => await db.update(appSettingsTable).set({ lastMonthlyAlertMonth: month, updatedAt: new Date() })

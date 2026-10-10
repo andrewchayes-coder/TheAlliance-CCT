@@ -8,6 +8,7 @@
 import type { ListVolunteerRosterBackgroundCheckStatus } from './listVolunteerRosterBackgroundCheckStatus';
 import type { ListVolunteerRosterCertificationStatus } from './listVolunteerRosterCertificationStatus';
 import type { ListVolunteerRosterNeedsAttention } from './listVolunteerRosterNeedsAttention';
+import type { ListVolunteerRosterShowTestAccounts } from './listVolunteerRosterShowTestAccounts';
 import type { ListVolunteerRosterStatus } from './listVolunteerRosterStatus';
 
 export type ListVolunteerRosterParams = {
@@ -20,6 +21,7 @@ county?: string;
 certificationStatus?: ListVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ListVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ListVolunteerRosterNeedsAttention;
+showTestAccounts?: ListVolunteerRosterShowTestAccounts;
 /**
  * @minimum 1
  * @maximum 100

@@ -54,13 +54,13 @@ router.get('/google/callback', async (req, res): Promise<void> => {
       const [linked] = await tx.select().from(usersTable).where(eq(usersTable.googleSubject, identity.sub)).limit(1);
       if (linked) {
         const [updated] = await tx.update(usersTable).set({ lastLoginAt: new Date() })
-          .where(and(eq(usersTable.id, linked.id), eq(usersTable.isActive, true))).returning();
+          .where(and(eq(usersTable.id, linked.id), eq(usersTable.isActive, true), eq(usersTable.isTestAccount, false))).returning();
         if (!updated) throw new InactiveGoogleAccount();
         return updated;
       }
       const [existing] = await tx.select().from(usersTable).where(eq(usersTable.email, email)).limit(1).for('update');
       if (existing) {
-        if (!existing.isActive) throw new InactiveGoogleAccount();
+        if (!existing.isActive || existing.isTestAccount) throw new InactiveGoogleAccount();
         if (existing.role === 'admin' && !existing.emailVerifiedAt) {
           throw new Error('Accept the administrator invitation before using Google sign-in.');
         }

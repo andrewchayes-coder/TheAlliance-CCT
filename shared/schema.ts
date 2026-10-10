@@ -17,7 +17,7 @@ export const resourceType = pgEnum('resource_type', ['document', 'article', 'lin
 export const notificationType = pgEnum('notification_type', [
   'verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite',
 ]);
-export const notificationStatus = pgEnum('notification_status', ['logged', 'sent', 'failed']);
+export const notificationStatus = pgEnum('notification_status', ['logged', 'sent', 'failed', 'suppressed']);
 export const authTokenType = pgEnum('auth_token_type', ['email_verify', 'password_reset', 'admin_invite']);
 
 // Fresh column builders per table. Instants use timestamptz; calendar dates stay strings.
@@ -37,6 +37,7 @@ export const usersTable = pgTable('users', {
   role: userRole('role').notNull().default('volunteer'),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   isActive: boolean('is_active').notNull().default(true),
+  isTestAccount: boolean('is_test_account').notNull().default(false),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   googleSubject: text('google_subject'),
   sessionVersion: integer('session_version').notNull().default(0),

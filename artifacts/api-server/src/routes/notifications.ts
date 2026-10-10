@@ -23,7 +23,7 @@ const day = z.string().regex(/^\d{4}-\d\d-\d\d$/).refine(value => {
 router.get('/admin/notifications/summary', handle(async (_req, res) => { res.json(await notificationSummary()); }));
 router.get('/admin/notifications', handle(async (req, res) => {
   const input = z.object({ type: z.enum(['verification','password_reset','welcome','reminder','message','admin_alert','invite']).optional(),
-    status: z.enum(['sent','logged','failed']).optional(), from: day.optional(), to: day.optional(),
+    status: z.enum(['sent','logged','failed','suppressed']).optional(), from: day.optional(), to: day.optional(),
     search: z.string().trim().max(254).optional(), page: z.coerce.number().int().min(1).max(100000).default(1) }).strict()
     .refine(v => !v.from || !v.to || v.from <= v.to, 'The end date must be on or after the start date.').parse(req.query);
   res.json(await listNotifications(input));

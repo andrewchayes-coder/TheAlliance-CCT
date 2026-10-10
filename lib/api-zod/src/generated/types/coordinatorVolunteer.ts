@@ -16,4 +16,5 @@ export interface CoordinatorVolunteer {
   phone: string | null;
   skipped: boolean;
   accountActive: boolean;
+  isTestAccount?: boolean;
 }

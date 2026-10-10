@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'wouter';
+import { TestBadge } from '@/components/test-badge';
 import { ChevronLeft } from 'lucide-react';
 import { getGetAdminVolunteerQueryKey, useGetAdminVolunteer, type VolunteerActivity } from '@workspace/api-client-react';
 import { AppLayout, Button, EmptyState, StatusBadge } from '@/components/brand-system';
@@ -63,7 +64,7 @@ export function VolunteerDetail() {
       ) : (
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
-          <h1 className="alliance-display text-[22px] md:text-[28px]" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}</h1>
+          <h1 className="alliance-display text-[22px] md:text-[28px]" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <Pill map={STATUS} value={p.status} />
             <StatusBadge status="neutral">{p.county} County</StatusBadge>

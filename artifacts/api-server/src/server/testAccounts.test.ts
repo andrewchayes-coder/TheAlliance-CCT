@@ -1,0 +1,124 @@
+import { beforeAll, afterAll, it, expect, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { and, eq, inArray } from 'drizzle-orm';
+import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
+  messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable } from '@workspace/db';
+import { testAccounts } from '@workspace/shared/testAccounts';
+import { createTestAccountService, isQuickLoginEnabled } from './testAccounts';
+import { previewMessage } from './messaging';
+import { createEmailService } from '../email';
+import { filterRoster, rosterSnapshot, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
+import { monthlyCount, monthRange } from './monthly-email-limit';
+
+vi.hoisted(() => {
+  process.env.NODE_ENV = 'development';
+  process.env.APP_ORIGIN = 'https://qa-fixture.example.invalid';
+});
+const tag = `qa-fixture-${randomUUID()}`;
+const personas = testAccounts.map(p => ({ ...p, email: `${tag}-${p.key}@example.invalid` }));
+const service = createTestAccountService(personas, { NODE_ENV: 'production' });
+let ids: string[] = [], profiles: string[] = [];
+let ordinary: string, slotId: string;
+beforeAll(async () => {
+  const [user] = await db.insert(usersTable).values({ email: `${tag}-ordinary@example.invalid`, passwordHash: 'unusable-fixture-hash',
+    firstName: 'Fixture', lastName: tag, isActive: true, emailVerifiedAt: new Date() }).returning();
+  ordinary = user!.id;
+  await db.insert(volunteerProfilesTable).values({ userId: ordinary, status: 'active' });
+  const [slot] = await db.insert(shiftSlotsTable).values({ label: tag, dayOfWeek: 1, startTime: '10:00', endTime: '12:00', capacity: 2 }).returning();
+  slotId = slot!.id;
+});
+afterAll(async () => {
+  const owned = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.email,
+    [...personas.map(p => p.email), `${tag}-ordinary@example.invalid`]));
+  ids = owned.map(u => u.id);
+  const ps = await db.select({ id: volunteerProfilesTable.id }).from(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, ids));
+  profiles = ps.map(p => p.id);
+  await db.delete(messageRecipientsTable).where(inArray(messageRecipientsTable.recipientUserId, ids));
+  await db.delete(messagesTable).where(inArray(messagesTable.senderUserId, ids));
+  await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientEmail, [...personas.map(p => p.email), `${tag}-ordinary@example.invalid`]));
+  await db.delete(authTokensTable).where(inArray(authTokensTable.userId, ids));
+  await db.delete(activityLogTable).where(inArray(activityLogTable.volunteerProfileId, profiles));
+  await db.delete(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.volunteerProfileId, profiles));
+  await db.delete(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, ids));
+  await db.delete(usersTable).where(inArray(usersTable.id, ids));
+  await db.delete(shiftSlotsTable).where(eq(shiftSlotsTable.id, slotId));
+  await pool.end();
+});
+it('ensures twice without duplicates, repairs personas, and preserves ordinary users', async () => {
+  const first = await service.ensure();
+  ids = first.map(p => p.userId);
+  const active = first.find(p => p.key === 'vol-active')!;
+  await db.update(usersTable).set({ role: 'admin', isActive: false, emailVerifiedAt: null }).where(eq(usersTable.id, active.userId));
+  await db.update(volunteerProfilesTable).set({ status: 'inactive' }).where(eq(volunteerProfilesTable.id, active.profileId!));
+  const second = await service.ensure();
+  expect(second.map(p => p.userId)).toEqual(ids);
+  const rows = await db.select().from(usersTable).where(inArray(usersTable.email, personas.map(p => p.email)));
+  expect(rows).toHaveLength(5);
+  expect(rows.every(u => u.isTestAccount && u.isActive && u.emailVerifiedAt && /^\$2[aby]\$12\$/.test(u.passwordHash))).toBe(true);
+  expect(rows.find(u => u.id === active.userId)?.role).toBe('volunteer');
+  const [real] = await db.select().from(usersTable).where(eq(usersTable.id, ordinary));
+  expect(real?.isTestAccount).toBe(false); expect(real?.passwordHash).toBe('unusable-fixture-hash');
+  const standing = await db.select().from(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.volunteerProfileId, second.flatMap(p => p.profileId ? [p.profileId] : [])));
+  expect(standing).toHaveLength(0); // production never automatically takes capacity
+});
+it('refuses to take over a non-test email and rolls back the whole ensure', async () => {
+  const collision = personas.map(p => p.key === 'vol-applicant' ? { ...p, email: `${tag}-ordinary@example.invalid` } : p);
+  await expect(createTestAccountService(collision, { NODE_ENV: 'production' }).ensure()).rejects.toThrow('non-test account');
+  const [real] = await db.select().from(usersTable).where(eq(usersTable.id, ordinary));
+  expect(real?.isTestAccount).toBe(false); expect(real?.firstName).toBe('Fixture');
+});
+it('excludes QA from both blasts, allows a single QA recipient, and isolates roster/export counts', async () => {
+  for (const audience of ['active', 'all'] as const) {
+    const preview = await previewMessage({ audience, userIds: [], subject: 'Fixture', body: 'Thank you.', sendByEmail: false });
+    expect(preview.recipients.some(p => ids.includes(p.userId))).toBe(false);
+    expect(preview.recipients.some(p => p.userId === ordinary)).toBe(true);
+  }
+  const active = ids[1]!;
+  const single = await previewMessage({ audience: 'single', userIds: [active], subject: 'Fixture', body: 'Thank you.', sendByEmail: false });
+  expect(single.recipientCount).toBe(1);
+  const all = await rosterSnapshot();
+  const qa = all.filter(p => ids.includes(p.user.id));
+  expect(filterRoster(qa, {})).toHaveLength(0);
+  expect(filterRoster(qa, { showTestAccounts: 'true' })).toHaveLength(4);
+  expect(rosterSummary(qa)).toEqual({ applicant: 0, in_training: 0, active: 0, inactive: 0, needsAttention: 0 });
+  expect(rosterCsv(qa)).not.toContain(tag);
+  expect(scheduleCsv(qa)).not.toContain(tag);
+});
+it('suppresses QA mail with a configured provider, prints it in dev, deduplicates and excludes it from usage', async () => {
+  const deliveryClient = vi.fn(), info = vi.fn();
+  const send = createEmailService({ deliveryClient, settings: () => ({ token: 'fixture-provider-token', from: 'fixture@example.invalid' }),
+    log: { info, warn: vi.fn(), error: vi.fn() } });
+  const range = monthRange(new Date()), before = await monthlyCount(range.from, range.to);
+  const data = { type: 'message' as const, to: personas[1]!.email, toUserId: ids[1]!, relatedId: tag,
+    subject: 'QA thanks', html: '<p>Thank you.</p>', text: 'Thank you. https://qa-fixture.example.invalid/messages' };
+  expect(await send(data)).toEqual({ ok: true, suppressed: true });
+  expect(await send(data)).toEqual({ ok: true, skipped: true });
+  // Also suppress when a caller supplies only the email address.
+  expect(await send({ ...data, toUserId: undefined, relatedId: `${tag}:address-only` })).toMatchObject({ suppressed: true });
+  expect(deliveryClient).not.toHaveBeenCalled();
+  expect(info).toHaveBeenCalledWith(expect.stringContaining('QA EMAIL SUPPRESSED'));
+  const rows = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientEmail, data.to));
+  expect(rows).toHaveLength(2); expect(rows.every(r => r.status === 'suppressed' && !r.providerMessageId)).toBe(true);
+  expect(await monthlyCount(range.from, range.to)).toBe(before);
+});
+it('resets only QA shifts, skips, inbox membership and profile changes, and logs the reset', async () => {
+  const active = (await service.ensure()).find(p => p.key === 'vol-active')!;
+  const [assignment] = await db.insert(shiftAssignmentsTable).values({ volunteerProfileId: active.profileId!, shiftSlotId: slotId,
+    startDate: '2030-01-07', createdByUserId: ids[0]! }).returning();
+  await db.insert(shiftSkipsTable).values({ shiftAssignmentId: assignment!.id, skipDate: '2030-01-14' });
+  const [message] = await db.insert(messagesTable).values({ senderUserId: ids[0]!, audience: 'single', subject: tag, body: 'Fixture', sentByEmail: false }).returning();
+  await db.insert(messageRecipientsTable).values({ messageId: message!.id, recipientUserId: active.userId });
+  await db.update(volunteerProfilesTable).set({ onboardingAnswers: { fixture: 'edited' }, adminNotes: 'Fixture note', availabilityNotes: 'Edited' })
+    .where(eq(volunteerProfilesTable.id, active.profileId!));
+  await service.reset(ids[0]!);
+  expect(await db.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.volunteerProfileId, active.profileId!))).toHaveLength(0);
+  expect(await db.select().from(messageRecipientsTable).where(eq(messageRecipientsTable.recipientUserId, active.userId))).toHaveLength(0);
+  const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id, active.profileId!));
+  expect(profile).toMatchObject({ status: 'active', onboardingAnswers: {}, adminNotes: null, availabilityNotes: null });
+  expect(await db.select().from(activityLogTable).where(and(eq(activityLogTable.volunteerProfileId, active.profileId!), eq(activityLogTable.action, 'test_accounts_reset')))).toHaveLength(1);
+});
+it('uses an explicit enable flag only in production', () => {
+  expect(isQuickLoginEnabled({ NODE_ENV: 'development' })).toBe(true);
+  expect(isQuickLoginEnabled({ NODE_ENV: 'production' })).toBe(false);
+  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true' })).toBe(true);
+});

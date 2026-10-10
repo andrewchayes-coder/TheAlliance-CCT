@@ -15,3 +15,4 @@
 - [Brand accessibility](brand-accessibility.md) — AA takes priority over the original bright teal; home-screen support must not add generic caching of private data.
 - [Notification test isolation](security-test-isolation.md) — reminder/broadcast QA needs an isolated API and data scope; owned-user cleanup alone cannot undo sends to shared users.
 - [Production migrations](production-migrations.md) — use runtime production context; reconcile push-created schemas before baselining; never copy development fixtures.
+- [Production QA accounts](production-qa-accounts.md) — built-in synthetic personas are explicitly approved in production; never convert real users or copy other development fixtures.

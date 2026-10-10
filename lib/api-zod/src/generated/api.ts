@@ -230,7 +230,7 @@ export const getNotificationLogQueryPageDefault = 1;
 
 export const GetNotificationLogQueryParams = zod.object({
   "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']).optional(),
-  "status": zod.enum(['sent', 'logged', 'failed']).optional(),
+  "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']).optional(),
   "from": zod.date().optional(),
   "to": zod.date().optional(),
   "search": zod.coerce.string().optional(),
@@ -244,7 +244,7 @@ export const GetNotificationLogResponse = zod.object({
   "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
   "recipient": zod.string(),
   "subject": zod.string(),
-  "status": zod.enum(['sent', 'logged', 'failed']),
+  "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']),
   "error": zod.string().nullable(),
   "canRetry": zod.boolean(),
   "deliveryUncertain": zod.boolean().optional()
@@ -554,6 +554,7 @@ export const GetAdminScheduleControlsResponse = zod.object({
   "lastName": zod.string(),
   "email": zod.string(),
   "heldCount": zod.number().int(),
+  "isTestAccount": zod.boolean().optional(),
   "blockedReasons": zod.array(zod.string())
 })),
   "slots": zod.array(zod.object({
@@ -821,7 +822,8 @@ export const GetAdminOverviewResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
-  "accountActive": zod.boolean()
+  "accountActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional()
 }))
 })),
   "upNext": zod.array(zod.object({
@@ -846,7 +848,8 @@ export const GetAdminOverviewResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
-  "accountActive": zod.boolean()
+  "accountActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional()
 }))
 })),
   "openSpots": zod.number().int(),
@@ -901,7 +904,8 @@ export const GetAdminScheduleWeekResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
-  "accountActive": zod.boolean()
+  "accountActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional()
 }))
 })),
   "openSpots": zod.number().int(),
@@ -1265,6 +1269,7 @@ export const ListVolunteerRosterQueryParams = zod.object({
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
   "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']).optional(),
+  "showTestAccounts": zod.enum(['true', 'false']).optional(),
   "limit": zod.coerce.number().int().min(1).max(listVolunteerRosterQueryLimitMax).default(listVolunteerRosterQueryLimitDefault),
   "offset": zod.coerce.number().int().min(listVolunteerRosterQueryOffsetMin).default(listVolunteerRosterQueryOffsetDefault)
 })
@@ -1280,6 +1285,7 @@ export const ListVolunteerRosterResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1334,6 +1340,7 @@ export const GetAdminVolunteerResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1419,6 +1426,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1515,6 +1523,7 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1602,6 +1611,7 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1765,6 +1775,7 @@ export const UpdateVolunteerProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1880,6 +1891,7 @@ export const SaveOnboardingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -1957,6 +1969,7 @@ export const GetVolunteerOnboardingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -2186,6 +2199,34 @@ export const AcceptAdminInviteResponse = zod.object({
 })
 
 
+export const GetTestAccountsResponse = zod.object({
+  "enabled": zod.boolean(),
+  "accounts": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "email": zod.string().email(),
+  "userId": zod.string().uuid().nullable(),
+  "lastLoginAt": zod.coerce.date().nullable()
+}))
+})
+
+
+export const ResetTestAccountsBody = zod.object({
+
+})
+
+export const ResetTestAccountsResponse = zod.object({
+  "enabled": zod.boolean(),
+  "accounts": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "email": zod.string().email(),
+  "userId": zod.string().uuid().nullable(),
+  "lastLoginAt": zod.coerce.date().nullable()
+}))
+})
+
+
 /**
  * @summary Admin-only account directory
  */
@@ -2216,6 +2257,7 @@ export const ListTeamUsersResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -2265,6 +2307,7 @@ export const SetUserActiveStatusResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -2284,6 +2327,7 @@ export const GetMeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()

@@ -103,7 +103,7 @@ router.post('/signin', async (req, res): Promise<void> => {
   const { email, password } = parsed.data;
   if (!await ipAndEmailLimit(req, res, 'signin', email)) return;
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
-  if (!await checkPassword(password, existing?.passwordHash) || !existing) {
+  if (!await checkPassword(password, existing?.passwordHash) || !existing || existing.isTestAccount) {
     res.status(401).json({ error: 'The email or password is incorrect.' }); return;
   }
   if (!existing.isActive) {
@@ -173,7 +173,7 @@ router.post('/forgot-password', async (req, res): Promise<void> => {
   if (!await ipAndEmailLimit(req, res, 'reset', parsed.data.email)) return;
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, parsed.data.email)).limit(1);
   // Never expose existence, deactivation, or provider delivery outcome to this public endpoint.
-  if (user?.isActive && (user.role !== 'admin' || user.emailVerifiedAt)) {
+  if (user?.isActive && !user.isTestAccount && (user.role !== 'admin' || user.emailVerifiedAt)) {
     try { await passwordResetEmail(user); }
     catch { req.log.warn('A password reset email could not be prepared'); }
   }
@@ -198,7 +198,7 @@ router.post('/reset-password', async (req, res): Promise<void> => {
       if (!token) throw new InvalidLink();
       const [user] = await tx.update(usersTable).set({
         passwordHash, sessionVersion: sql`${usersTable.sessionVersion} + 1`,
-      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.isActive, true),
+      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.isActive, true), eq(usersTable.isTestAccount, false),
         or(eq(usersTable.role, 'volunteer'), isNotNull(usersTable.emailVerifiedAt)))).returning();
       if (!user) throw new InvalidLink();
       await tx.update(authTokensTable).set({ usedAt: new Date() })

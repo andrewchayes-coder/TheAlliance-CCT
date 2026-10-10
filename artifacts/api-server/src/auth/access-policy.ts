@@ -74,6 +74,8 @@ const declarations: Array<{ method: string; path: string | RegExp; guard: Guard 
   { method: 'PATCH', path: /^\/admin\/volunteers\/[^/]+\/notes$/, guard: 'admin' },
   { method: 'GET', path: /^\/admin\/volunteers\/[^/]+\/onboarding$/, guard: 'admin' },
   { method: 'GET', path: '/admin/users', guard: 'admin' },
+  { method: 'GET', path: '/admin/test-accounts', guard: 'admin' },
+  { method: 'POST', path: '/admin/test-accounts/reset', guard: 'admin' },
   { method: 'POST', path: '/admin/invites', guard: 'admin' },
   { method: 'PATCH', path: /^\/admin\/users\/[^/]+\/status$/, guard: 'admin' },
 ];

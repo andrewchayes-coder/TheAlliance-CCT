@@ -31,7 +31,7 @@ export async function adminScheduleControls(filter: { slotId?: string; userId?: 
       (!filter.userId || p.user.id === filter.userId) &&
       `${p.user.firstName} ${p.user.lastName} ${p.user.email}`.toLowerCase().includes(q));
     return { volunteers: candidates.slice(0, 100).map(p => ({
-      userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, email: p.user.email,
+      userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, email: p.user.email, isTestAccount: p.user.isTestAccount,
       heldCount: held.filter(a => a.volunteerProfileId === p.profile.id).length,
       blockedReasons: approvalRequirements(p.user, p.profile).filter(r => !r.met).map(r => r.label),
     })).sort((a, b) => a.lastName.localeCompare(b.lastName)),
@@ -46,7 +46,7 @@ export async function adminScheduleControls(filter: { slotId?: string; userId?: 
       // Include all stored upcoming weeks off, even if a later closure suppresses the occurrence.
       for (const skip of data.skips.filter(skip => skip.shiftAssignmentId === a.id && skip.skipDate >= today))
         dates.set(skip.skipDate, { date: skip.skipDate, skipId: skip.id });
-      return [{ id: a.id, userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, slotId: s.id,
+      return [{ id: a.id, userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, isTestAccount: p.user.isTestAccount, slotId: s.id,
         dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime, startDate: a.startDate,
         dates: [...dates.values()].sort((a, b) => a.date.localeCompare(b.date)).map(d => ({
           ...d, startsAt: slotInstant(d.date, s.startTime).toISOString(), endsAt: slotInstant(d.date, s.endTime).toISOString(),

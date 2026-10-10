@@ -3,7 +3,7 @@ import { attentionReasons } from '../volunteer-attention';
 type Profile = Parameters<typeof attentionReasons>[0];
 export type CoordinatorPerson = {
   profileId: string; userId: string; firstName: string; lastName: string; email: string;
-  phone: string | null; accountActive: boolean; profile: Profile;
+  phone: string | null; accountActive: boolean; profile: Profile; isTestAccount?: boolean;
 };
 export function mondayOf(date: string) {
   const d = calendarDay(date), weekday = new Date(`${d}T00:00:00Z`).getUTCDay();
@@ -34,7 +34,7 @@ export function coordinatorProjection(data: CoordinatorData,
       if (!p) return [];
       return [{ assignmentId: actual.find(v => v.volunteerProfileId === a.volunteerProfileId)?.assignmentId ?? a.assignmentId,
         userId: p.userId, firstName: p.firstName, lastName: p.lastName, email: p.email, phone: p.phone,
-        skipped: !assigned.has(a.volunteerProfileId), accountActive: p.accountActive }];
+        skipped: !assigned.has(a.volunteerProfileId), accountActive: p.accountActive, isTestAccount: Boolean(p.isTestAccount) }];
     });
     const count = assigned.size, open = Math.max(0, occ.slot.capacity - count);
     return { slotId: occ.slot.id, date: occ.date, dayOfWeek: occ.slot.dayOfWeek, startTime: occ.slot.startTime,
@@ -64,7 +64,7 @@ export function coordinatorProjection(data: CoordinatorData,
       onShiftNow: on.map(o => block(o)), upNext: service.getUpNext(now).map(o => block(o)),
       openSpots: coverage.reduce((n, c) => n + Math.max(0, c.capacity - c.assignedCount), 0),
       underCoveredShifts: coverage.filter(c => c.underCapacity).length,
-      needsAttention: people.filter(p => attentionReasons(p.profile, held.get(p.profileId) ?? 0, today).length > 0).length };
+      needsAttention: people.filter(p => !p.isTestAccount && attentionReasons(p.profile, held.get(p.profileId) ?? 0, today).length > 0).length };
   }
   return { week, overview };
 }

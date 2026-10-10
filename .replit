@@ -31,3 +31,6 @@ JOBS_RUN_URL = "https://the-alliance-cct.replit.app/api/jobs/run"
 APP_BASE_URL = "https://the-alliance-cct.replit.app"
 
 [userenv.development]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-965d8b49-ea2c-460f-97e3-224fbee4110b"

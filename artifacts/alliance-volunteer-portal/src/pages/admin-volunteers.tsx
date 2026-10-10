@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
 import { Download, Search } from 'lucide-react';
@@ -67,6 +68,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
   const [county, setCounty] = useState('');
   const [cert, setCert] = useState('');
   const [bg, setBg] = useState('');
+  const [showTests, setShowTests] = useState(false);
   const [attn, setAttn] = useState(() => { const v = new URLSearchParams(window.location.search).get('needsAttention'); return v === 'true' || v === 'any' ? 'any' : ''; });
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -76,14 +78,14 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
     return () => clearTimeout(t);
   }, [text]);
 
-  const filterKey = [search, status, county, cert, bg, attn].join('|');
+  const filterKey = [search, status, county, cert, bg, attn, showTests].join('|');
   useEffect(() => { setOffset(0); setSelected(new Set()); }, [filterKey]);
 
   const filters = {
     ...(search ? { search } : {}), ...(status ? { status } : {}), ...(county ? { county } : {}),
     ...(cert ? { certificationStatus: cert } : {}), ...(bg ? { backgroundCheckStatus: bg } : {}), ...(attn ? { needsAttention: attn } : {}),
   };
-  const params = { ...filters, limit: PAGE, offset } as ListVolunteerRosterParams;
+  const params = { ...filters, ...(showTests ? { showTestAccounts: 'true' } : {}), limit: PAGE, offset } as ListVolunteerRosterParams;
   const list = useListVolunteerRoster(params, {
     query: { queryKey: getListVolunteerRosterQueryKey(params), staleTime: FRESH_MS, refetchInterval: POLL_MS, refetchOnWindowFocus: 'always', retry: false, placeholderData: keepPreviousData },
     request: FETCH_CREDS,
@@ -127,11 +129,15 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
             </button>
           )) : [0, 1, 2, 3, 4].map(i => <Skeleton key={i} className="h-11 w-32 rounded-full" />)}
         </div>
-        <p className="mt-2 text-xs text-navy-soft">Summary counts cover all volunteers and ignore the filters below.</p>
+        <p className="mt-2 text-xs text-navy-soft">Summary counts cover real volunteers only and ignore the filters below.</p>
       </section>
 
       <section className="alliance-card mt-5" aria-labelledby="roster-h">
         <h2 id="roster-h" className="sr-only">Volunteers</h2>
+        <label className="mb-3 flex min-h-11 items-center gap-3 text-sm font-bold">
+          <input type="checkbox" checked={showTests} onChange={e => setShowTests(e.target.checked)}
+            className="h-5 w-5" data-testid="toggle-test-accounts" />Show test accounts
+        </label>
         <div className="relative">
           <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
           <input type="search" aria-label="Search volunteers" placeholder="Search by name, email, or phone…" maxLength={200}
@@ -209,7 +215,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                         onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
                         <td className="py-3"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
                         <td className="py-3 pr-3">
-                          <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}</Link>
+                          <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                           <span className="block break-all text-xs text-navy-soft">{e.user.email}</span>
                         </td>
                         <td className="pr-3">{e.profile.county}</td>
@@ -231,7 +237,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                     onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
                     <input type="checkbox" className="mt-1 shrink-0" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} />
                     <div className="min-w-0 flex-1">
-                      <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4">{fullName(e)}</Link>
+                      <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4">{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                       <span className="block break-words text-sm text-navy-soft">{e.user.email}</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Pill map={STATUS} value={e.profile.status} /><Pill map={CERT} value={e.profile.certificationStatus} /><Pill map={BG} value={e.profile.backgroundCheckStatus} />

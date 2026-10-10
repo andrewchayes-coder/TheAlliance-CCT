@@ -54,11 +54,13 @@ export type RosterPerson = Awaited<ReturnType<typeof rosterSnapshot>>[number];
 export type RosterFilters = {
   search?: string; status?: string; county?: string; certificationStatus?: string; backgroundCheckStatus?: string;
   needsAttention?: 'any' | AttentionReason;
+  showTestAccounts?: 'true' | 'false';
 };
 export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
   const search = filters.search?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
   const phoneSearch = search && /^[+\d()\s.-]+$/.test(search) ? search.replace(/\D/g, '') : '';
   return people.filter(({ user, profile, attention }) => {
+    if (user.isTestAccount && filters.showTestAccounts !== 'true') return false;
     if (filters.status && profile.status !== filters.status) return false;
     if (filters.county && profile.county !== filters.county) return false;
     if (filters.certificationStatus && profile.certificationStatus !== filters.certificationStatus) return false;
@@ -77,6 +79,7 @@ export function rosterEntry(person: RosterPerson) {
 export function rosterSummary(people: RosterPerson[]) {
   const counts = { applicant: 0, in_training: 0, active: 0, inactive: 0, needsAttention: 0 };
   for (const person of people) {
+    if (person.user.isTestAccount) continue;
     counts[person.profile.status]++;
     if (person.attention.length) counts.needsAttention++;
   }
@@ -94,7 +97,7 @@ export function rosterCsv(people: RosterPerson[]) {
   const fields = Object.keys(getTableColumns(volunteerProfilesTable)) as Array<keyof Profile>;
   const headers = ['First name', 'Last name', 'Email', 'Phone', 'Email verified at', 'Last login', 'Account active',
     ...fields.map(key => `Profile: ${key}`), ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
-  return csv(headers, people.map(person => [person.user.firstName, person.user.lastName, person.user.email, person.user.phone,
+  return csv(headers, people.filter(p => !p.user.isTestAccount).map(person => [person.user.firstName, person.user.lastName, person.user.email, person.user.phone,
     person.user.emailVerifiedAt?.toISOString(), person.user.lastLoginAt?.toISOString(), person.user.isActive,
     ...fields.map(key => {
       const value = person.profile[key];
@@ -103,7 +106,7 @@ export function rosterCsv(people: RosterPerson[]) {
 }
 export function scheduleCsv(people: RosterPerson[]) {
   return csv(['Volunteer', 'Email', 'Profile ID', 'Assignment ID', 'Day', 'Start time', 'End time', 'Start date', 'End date', 'Upcoming skip dates'],
-    people.flatMap(person => person.shifts.map(shift => [
+    people.filter(p => !p.user.isTestAccount).flatMap(person => person.shifts.map(shift => [
       `${person.user.firstName} ${person.user.lastName}`, person.user.email, person.profile.id, shift.assignmentId,
       weekdays[shift.dayOfWeek], shift.startTime, shift.endTime, shift.startDate, shift.endDate,
       shift.upcomingSkipDates.join('; '),

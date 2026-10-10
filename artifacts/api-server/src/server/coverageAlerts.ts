@@ -41,7 +41,7 @@ export const gapLine = (o: ReturnType<typeof gaps>[number]) =>
     .format(new Date(`${o.date}T12:00:00Z`))}, ${time(o.slot.startTime)}–${time(o.slot.endTime)} now has ${o.assignedVolunteers.length} of ${o.slot.capacity} volunteers`;
 async function notify(rows: ReturnType<typeof gaps>, relatedId: string, reason?: string) {
   const admins = await db.select({ id: usersTable.id, email: usersTable.email }).from(usersTable)
-    .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true)));
+    .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), eq(usersTable.isTestAccount, false)));
   const subject = reason ? `Coverage gap: ${gapLine(rows[0]!)} (${reason})${rows.length > 1 ? `; ${rows.length - 1} more` : ''}`
     : `Coverage digest: ${rows.length} shift${rows.length === 1 ? '' : 's'} need support`;
   const weeks = [...new Set(rows.map(o => mondayOf(o.date)))];

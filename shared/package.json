@@ -8,7 +8,8 @@
     "./schema": "./schema.ts",
     "./time": "./time.ts",
     "./markdown": "./markdown.ts",
-    "./onboardingQuestions": "./onboardingQuestions.ts"
+    "./onboardingQuestions": "./onboardingQuestions.ts",
+    "./testAccounts": "./testAccounts.ts"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

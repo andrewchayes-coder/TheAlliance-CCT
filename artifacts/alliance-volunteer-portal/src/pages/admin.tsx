@@ -3,6 +3,8 @@ import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ChevronLeft, Search } from 'lucide-react';
 import { AdminOverviewPage } from '@/pages/admin-dispatch';
+import { TestAccountsCard } from '@/components/test-accounts-card';
+import { TestBadge } from '@/components/test-badge';
 import {
   getGetVolunteerOnboardingQueryKey, getListTeamUsersQueryKey, useGetVolunteerOnboarding, useListTeamUsers, type AdminInviteResult, type ListTeamUsersParams, type Me, type PublicUser,
 } from '@workspace/api-client-react';
@@ -151,6 +153,7 @@ function TeamBody({ me }: { me: Me }) {
       <h1 className="alliance-display text-[22px] md:text-[28px]">Team accounts</h1>
       <p className="mb-6 mt-2 max-w-2xl">Invite admins and control who can sign in.</p>
       <InviteCard />
+      <TestAccountsCard />
       <section className="alliance-card" aria-labelledby="team-h">
         <h2 id="team-h" className="sr-only">Accounts</h2>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -188,7 +191,7 @@ function TeamBody({ me }: { me: Me }) {
                 return (
                   <li key={u.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center" data-testid={`row-user-${u.id}`}>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold">{u.firstName} {u.lastName}{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
+                      <p className="font-bold">{u.firstName} {u.lastName}<TestBadge test={u.isTestAccount} />{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
                       <p className="break-all text-sm">{u.email}</p>
                       <p className="mt-1 text-xs text-navy-soft">
                         {u.lastLoginAt ? `Last sign-in ${fmtDate(u.lastLoginAt)}` : 'Never signed in'} · Added {fmtDate(u.createdAt)}

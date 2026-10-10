@@ -57,6 +57,7 @@ async function recordDelivery(candidate: ReminderCandidate, links: ReminderSnaps
       eq(notificationLogTable.recipientUserId, valid.person.userId))).orderBy(desc(notificationLogTable.createdAt)).limit(1);
   if (delivery?.status === 'sent') counts.sent++;
   else if (delivery?.status === 'logged') counts.logged++;
+  else if (delivery?.status === 'suppressed') counts.suppressed++;
   else throw new Error('Reminder delivery did not have a confirmed audit row.');
 }
 /** RUN_JOBS gates the automatic scheduler, not authorized manual/external checks. */
@@ -92,7 +93,7 @@ export async function runReminderCheck({ at = new Date(), source = 'admin' as So
       inArray(notificationLogTable.relatedId, eligible.map(c => c.relatedId)))) : [];
     const candidates = eligible.filter(c => {
       const rows = previous.filter(r => r.relatedId === c.relatedId && r.recipientUserId === c.person.userId);
-      if (rows.some(r => r.status === 'sent' || r.status === 'logged')) { counts.skipped++; return false; }
+      if (rows.some(r => r.status === 'sent' || r.status === 'logged' || r.status === 'suppressed')) { counts.skipped++; return false; }
       if (rows.some(r => isUncertainDelivery(r.error))) { counts.uncertain++; return false; }
       return true;
     });

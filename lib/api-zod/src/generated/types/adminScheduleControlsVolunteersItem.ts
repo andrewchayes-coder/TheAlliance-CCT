@@ -12,5 +12,6 @@ export type AdminScheduleControlsVolunteersItem = {
   lastName: string;
   email: string;
   heldCount: number;
+  isTestAccount?: boolean;
   blockedReasons: string[];
 };

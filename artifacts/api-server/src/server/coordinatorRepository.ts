@@ -10,7 +10,7 @@ export async function coordinatorSnapshot(weekStart?: string, now = new Date()) 
     const from = weekStart ? mondayOf(weekStart) : mondayOf(pacificDay(now));
     const data = await readScheduleData(tx, undefined, { from, ...(weekStart ? { to: addCalendarDays(from, 4) } : {}) });
     const rows = await tx.select({ userId: usersTable.id, firstName: usersTable.firstName, lastName: usersTable.lastName,
-      email: usersTable.email, phone: usersTable.phone, accountActive: usersTable.isActive, profileId: volunteerProfilesTable.id,
+      email: usersTable.email, phone: usersTable.phone, accountActive: usersTable.isActive, isTestAccount: usersTable.isTestAccount, profileId: volunteerProfilesTable.id,
       profile: { status: volunteerProfilesTable.status, certificationExpiresAt: volunteerProfilesTable.certificationExpiresAt,
         backgroundCheckStatus: volunteerProfilesTable.backgroundCheckStatus, backgroundCheckSubmittedAt: volunteerProfilesTable.backgroundCheckSubmittedAt,
         onboardingCompletedAt: volunteerProfilesTable.onboardingCompletedAt } })

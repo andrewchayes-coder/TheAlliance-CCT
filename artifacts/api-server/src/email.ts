@@ -2,7 +2,7 @@ import { ServerClient } from 'postmark';
 import { encryptEmailBody, tokenEmailTypes } from './server/email-payload';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { pool, notificationLogTable, insertNotificationLogSchema, type NotificationLog } from '@workspace/db';
+import { pool, usersTable, notificationLogTable, insertNotificationLogSchema, type NotificationLog } from '@workspace/db';
 import { logger } from './lib/logger';
 import { currentJobBudget } from './server/job-budget';
 import { isUncertainDelivery, uncertainDelivery, providerRejected } from './server/delivery-state';
@@ -27,6 +27,7 @@ export interface SendEmailResult {
   skipped?: true;
   uncertain?: true;
   deferred?: true;
+  suppressed?: true;
 }
 interface DeliveryMessage {
   From: string; To: string; Subject: string; HtmlBody: string; TextBody: string; MessageStream: 'outbound';
@@ -121,7 +122,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
           return { ok: false, deferred: true, error: 'Another worker is handling this email. Check again shortly.' };
         }
         const [handled] = await database.select({ id: notificationLogTable.id }).from(notificationLogTable)
-          .where(and(keyCondition, inArray(notificationLogTable.status, ['sent', 'logged']))).limit(1);
+          .where(and(keyCondition, inArray(notificationLogTable.status, ['sent', 'logged', 'suppressed']))).limit(1);
         if (handled) return { ok: true, skipped: true };
       }
 
@@ -136,6 +137,22 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         .orderBy(desc(notificationLogTable.updatedAt)).limit(1) : [];
       const uncertain = [retryTarget, previousFailure].find(row => isUncertainDelivery(row?.error));
       if (uncertain) return { ok: false, skipped: true, uncertain: true, error: uncertain.error! };
+      // Match both identity and address so an omitted/incorrect toUserId cannot
+      // bypass suppression. The envelope still has its own validated audit row.
+      const recipients = await database.select({ id: usersTable.id, email: usersTable.email, isTestAccount: usersTable.isTestAccount })
+        .from(usersTable).where(eq(usersTable.email, values.recipientEmail)).limit(1);
+      const [byId] = values.recipientUserId ? await database.select({ isTestAccount: usersTable.isTestAccount }).from(usersTable)
+        .where(eq(usersTable.id, values.recipientUserId)).limit(1) : [];
+      if (recipients[0]?.isTestAccount || byId?.isTestAccount) {
+        const suppressed = { ...values, status: 'suppressed' as const, error: null, providerMessageId: null,
+          sentAt: null, retryPayload: null, updatedAt: new Date() };
+        const target = retryTarget ?? previousFailure;
+        if (target) await database.update(notificationLogTable).set(suppressed).where(eq(notificationLogTable.id, target.id));
+        else await database.insert(notificationLogTable).values(suppressed);
+        if (process.env.NODE_ENV !== 'production') dependencies.log.info(
+          `========== QA EMAIL SUPPRESSED — NO EMAIL SENT ==========\nTo: ${values.recipientEmail}\nSubject: ${values.subject}\n\n${options.text}\n\nLinks:\n${emailLinks(options.html ?? '', options.text ?? '').join('\n')}\n========== END QA EMAIL ==========`);
+        return { ok: true, suppressed: true };
+      }
       // Persist the audit BEFORE any external side effect. A crash remains visibly unconfirmed.
       let retryPayload: string | null = null;
       let payloadFailure: string | undefined;
@@ -245,7 +262,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
 const deliverEmail = createEmailService();
 export const sendEmail = async (options: SendEmailOptions): Promise<SendEmailResult> => {
   const result = await deliverEmail(options);
-  if (result.ok && !result.skipped && !currentJobBudget() && !options.relatedId?.startsWith('monthly-limit:')) {
+  if (result.ok && !result.skipped && !result.suppressed && !currentJobBudget() && !options.relatedId?.startsWith('monthly-limit:')) {
     try { await (await import('./server/monthly-email-limit')).checkMonthlyEmailLimit(); }
     catch { try { emailLogger.error('Monthly email limit check could not complete; the next send or staff dashboard visit will retry it.'); } catch { /* Never reject callers after delivery. */ } }
   }
