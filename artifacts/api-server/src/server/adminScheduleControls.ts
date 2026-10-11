@@ -1,5 +1,5 @@
 import { and, eq, gte } from 'drizzle-orm';
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { db, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, activityLogTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
 import { approvalRequirements, lockedVolunteer, WorkflowError } from '../admin-volunteer-detail';
@@ -164,7 +164,7 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
   if (input.kind === 'assign' || input.kind === 'remove' && input.emailVolunteer) {
     const copy = createEmailTemplate({ heading: input.kind === 'assign' ? 'Your weekly shift is confirmed' : 'Your schedule has been updated',
       firstName: result.user.firstName, paragraphs: [result.message,
-        `Thank you for the care you share with local families. Please contact ${staffContactText} if you have questions about this change.`],
+        `Thank you for the care you share with local families. Please contact ${volunteerContactText} if you have questions about this change.`],
       cta: { label: 'View my shifts', url: `${appOrigin}/shifts` } });
     const sent = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,
       subject: input.kind === 'assign' ? 'Your weekly shift is confirmed' : 'Your weekly shift has been released',

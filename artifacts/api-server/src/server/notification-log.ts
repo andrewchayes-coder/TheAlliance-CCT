@@ -1,3 +1,5 @@
+import { emailProviderStatus } from './email-identity';
+import { emailFooter } from '../email-template';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db, pool, notificationLogTable, usersTable, volunteerProfilesTable, notificationType } from '@workspace/db';
@@ -31,8 +33,7 @@ export async function notificationSummary() {
   const current = months[5]!;
   return { month: range.month, total: current.total, byType: current.byType, monthlyLimit: settings.postmarkMonthlyLimit,
     percent: current.total / settings.postmarkMonthlyLimit * 100, months,
-    postmark: { tokenConfigured: Boolean(process.env.POSTMARK_SERVER_TOKEN?.trim()), emailFrom: process.env.EMAIL_FROM?.trim() || null,
-      deliveryEnabled: Boolean(process.env.POSTMARK_SERVER_TOKEN?.trim() && process.env.EMAIL_FROM?.trim()) } };
+    postmark: emailProviderStatus() };
 }
 export async function listNotifications(filters: { type?: string; status?: string; from?: string; to?: string; search?: string; page: number }) {
   const clauses: string[] = [];
@@ -103,6 +104,9 @@ export async function retryNotification(id: string) {
       let content;
       try { content = decryptEmailBody(row.retryPayload); }
       catch { throw new NotificationError(409, 'Stored content cannot be decrypted. The encryption key may have changed; resend from the original feature.'); }
+      if (content.text.includes("You're receiving this because") && !content.text.includes(emailFooter)) {
+        throw new NotificationError(409, 'This saved email uses retired contact details. Send a new message or reminder so it uses the current team contact.');
+      }
       result = await sendEmail({ type: row.type, to: row.recipientEmail, toUserId: row.recipientUserId ?? undefined,
         subject: row.subject, relatedId: row.relatedId ?? undefined, retryLogId: row.id, ...content });
     }

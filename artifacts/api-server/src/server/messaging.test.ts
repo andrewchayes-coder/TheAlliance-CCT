@@ -32,9 +32,11 @@ beforeAll(async () => {
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   for (let i = 0; i < 5; i++) {
     const [user] = await db.insert(usersTable).values({ role: i ? 'volunteer' : 'admin', email: `${tag}-${i}@example.invalid`,
-      firstName: `${tag} ${i}`, lastName: 'Care', passwordHash: 'unusable', emailVerifiedAt: i === 4 ? null : new Date() }).returning();
+      firstName: `${tag} ${i}`, lastName: 'Care', phone: '5555550100', passwordHash: 'unusable', emailVerifiedAt: i === 4 ? null : new Date() }).returning();
     users.push(user!.id);
     if (i) await db.insert(volunteerProfilesTable).values({ userId: user!.id, status: i === 3 ? 'inactive' : i === 4 ? 'applicant' : 'active',
+      dateOfBirth: '1990-01-01', addressLine1: '123 Test St', city: 'Auburn', state: 'CA', zip: '95603',
+      emergencyContactName: 'Test Contact', emergencyContactRelationship: 'Friend', emergencyContactPhone: '5555550100',
       onboardingCompletedAt: new Date(), agreementAcknowledgedAt: new Date(), adminNotes: 'staff-private-do-not-expose' });
   }
   admin = await client(users[0]); a = await client(users[1]); b = await client(users[2]); unverified = await client(users[4]); anon = await client();
@@ -109,7 +111,10 @@ it('atomically sends selected recipients and bounded email copies, with concurre
 it('marks only owned messages read, preserves first read time, updates receipts/history and unread count', async () => {
   const [message] = (await a('/volunteer/messages')).data;
   expect((await b(`/volunteer/messages/${message.recipientId}/read`, 'PATCH')).status).toBe(404);
-  expect((await a('/volunteer/messages/context')).data.unreadCount).toBe(1);
+  const context = (await a('/volunteer/messages/context')).data;
+  expect(context.unreadCount).toBe(1);
+  expect(context.adminContact).toBe('cct@defendingthecause.org');
+  expect(JSON.stringify(context)).not.toContain(`${tag}-0@example.invalid`);
   const first = await a(`/volunteer/messages/${message.recipientId}/read`, 'PATCH');
   const again = await a(`/volunteer/messages/${message.recipientId}/read`, 'PATCH');
   expect(again.data.readAt).toBe(first.data.readAt);

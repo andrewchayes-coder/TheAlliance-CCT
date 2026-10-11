@@ -1,12 +1,12 @@
 import { Client } from '@replit/object-storage';
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { randomUUID } from 'node:crypto';
 import { ResourceError } from './resource-error';
 export const MAX_RESOURCE_FILE = 15 * 1024 * 1024;
 export const privateResourceKey = (key: string | null): key is string => /^private\/resources\/[\w.-]+$/.test(key ?? '');
 const client = () => {
   const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-  if (!bucketId) throw new ResourceError(`Private file storage is not configured. Please contact ${staffContactText}.`, 503);
+  if (!bucketId) throw new ResourceError(`Private file storage is not configured. Please contact ${volunteerContactText}.`, 503);
   return new Client({ bucketId });
 };
 export function documentKind(name: string, data: Buffer) {

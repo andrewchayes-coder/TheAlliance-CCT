@@ -1,5 +1,5 @@
 import express, { type Express } from "express";
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { resolve } from 'node:path';
 import cors from "cors";
 import helmet from 'helmet';
@@ -66,7 +66,7 @@ app.use((error: unknown, req: express.Request, res: express.Response, _next: exp
     res.status(status === 413 ? 413 : status === 400 ? 400 : 500).json({
       error: status === 413 ? 'This request is too large. Please shorten the text and try again.' :
         status === 400 ? 'This request could not be read. Please check the fields and try again.' :
-          `Something went wrong on our end. Please try again — if it keeps happening, contact ${staffContactText}.`,
+          `Something went wrong on our end. Please try again — if it keeps happening, contact ${volunteerContactText}.`,
     });
   }
 });

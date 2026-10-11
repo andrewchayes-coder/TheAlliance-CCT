@@ -10,6 +10,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
 - Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
 ### Changed
+- Volunteer-facing contact guidance now uses the Community Care Team mailbox exclusively. Email sender identity is parsed and validated; Reply-To is centrally configured, never inherited from a message author.
 - Master schedule uses a 30-minute grid with explicit odd/even-hour lanes, gray blocked occurrences and dashed-blue one-time shifts. Inactivation/deactivation also releases future one-time reservations.
 - Roster attention counts now flag active volunteers without shifts, incomplete onboarding older than seven days, and onboarding older than thirty days. Private-field edits record field names only; county editing is staff-only.
 - Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the old training/applicant identities in place, with updated fake profile defaults and labels.
@@ -20,7 +21,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - QA-suppressed email outcomes are accepted by workflow response contracts; ordinary QA preparation preserves saved profile progress and status.
 
 ### Changed
-- Refreshed the Community Care Team identity, Resource Coordinator-facing copy, Cindi contact guidance, Alliance Blue/Open Sans styling, approved static logos and home-screen icons, and branded email presentation. Workflows and data models are unchanged.
+- Refreshed the Community Care Team identity, Resource Coordinator-facing copy, team contact guidance, Alliance Blue/Open Sans styling, approved static logos and home-screen icons, and branded email presentation. Workflows and data models are unchanged.
 - Production schema changes are managed by Replit Publish only. Removed boot-time Drizzle migrations, migration-history guard and runner commands; configuration validation remains enabled.
 - Deployment instructions no longer require migration-history baselining and describe the two existing CHECK-constraint differences that Publish previously omitted.
 

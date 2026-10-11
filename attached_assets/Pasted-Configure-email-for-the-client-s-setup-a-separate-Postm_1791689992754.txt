@@ -1,0 +1,13 @@
+Configure email for the client's setup (a separate Postmark server for this app, sending from the defendingthecause.org domain) and fix the volunteer-facing contact.
+
+VOLUNTEER-FACING CONTACT
+Cindi (cindi@defendingthecause.org) is an internal staff contact only. Her name and email must not appear anywhere a volunteer can see them: UI, emails, email headers, or volunteer-reachable API responses. The volunteer-facing contact is the Community Care Team at cct@defendingthecause.org.
+- shared/appConfig.ts: replace staffContactName / staffContactEmail with volunteerContactName "the Community Care Team" and volunteerContactEmail "cct@defendingthecause.org". Update every usage, including: the inside-24-hours "Please contact…" message for weeks off and one-time shift cancels, the drop-only-shift message, the Messages page "Questions?" line, the inactive-status note, the deactivated-account sign-in message, error copy, and every email.
+- Search code, emails, tests, seed data, and docs (DEPLOY.md, QA-CHECKLIST.md, README, CHANGELOG.md) for "Cindi" and "cindi@" and remove every occurrence. Update any tests that assert the old values.
+
+EMAIL IDENTITY
+- EMAIL_FROM secret format: "The Alliance Community Care Team <cct@defendingthecause.org>". Parse the name and address; the startup check fails loudly if the format is invalid.
+- New optional secret EMAIL_REPLY_TO. Reply-To = EMAIL_REPLY_TO if set, otherwise the EMAIL_FROM address (cct@defendingthecause.org).
+- Every email footer: "Questions? Email the Community Care Team at cct@defendingthecause.org." + the missionLine + "You're receiving this because you serve with The Alliance Community Care Team."
+- /admin/notifications Postmark card: show the from name, from address, reply-to, whether POSTMARK_SERVER_TOKEN is set, and a note: "Before sending, the defendingthecause.org DKIM and Return-Path records must show Verified in Postmark."
+- Keep the log-only behavior when the token is missing. Add EMAIL_REPLY_TO to the DEPLOY.md secrets list.

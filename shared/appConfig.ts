@@ -5,8 +5,8 @@ export const appConfig = {
   programName: "Community Care Team",
   volunteerRoleName: "Resource Coordinator",
   volunteerRoleNamePlural: "Resource Coordinators",
-  staffContactName: "Cindi",
-  staffContactEmail: "cindi@defendingthecause.org",
+  volunteerContactName: "the Community Care Team",
+  volunteerContactEmail: "cct@defendingthecause.org",
   missionLine: "The Alliance is a united movement of organizations and individuals working together to serve vulnerable kids and families in the Greater Sacramento Area.",
   timezone: "America/Los_Angeles",
   trackCertificationInApp: false,
@@ -21,10 +21,9 @@ export const appConfig = {
   sameMorningReminder: false,
   sameMorningReminderHour: 7,
   agreementVersion: "v1",
-  adminContact: "cindi@defendingthecause.org",
 } as const;
 
-export const staffContactText = `${appConfig.staffContactName} at ${appConfig.staffContactEmail}`;
+export const volunteerContactText = `${appConfig.volunteerContactName} at ${appConfig.volunteerContactEmail}`;
 
 export const {
   appName,

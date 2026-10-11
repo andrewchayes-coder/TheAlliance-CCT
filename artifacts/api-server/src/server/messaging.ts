@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { and, count, desc, eq, exists, ilike, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, exists, ilike, inArray, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod/v4';
 import { db, usersTable, volunteerProfilesTable, messagesTable, messageRecipientsTable, notificationLogTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
@@ -67,7 +67,7 @@ export async function sendMessage(actor: Actor, input: z.infer<typeof messageSen
         (['single', 'selected'].includes(input.audience) && JSON.stringify([...input.userIds].sort()) !== JSON.stringify(priorPeople.map(p => p.userId).sort())) ||
         digest(input, priorPeople.map(p => p.userId)) !== input.previewHash)
         throw new WorkflowError(409, 'This send reference belongs to a different message. Preview your new draft.');
-      return { message: prior, people: priorPeople, reused: true, senderEmail: staff.email };
+      return { message: prior, people: priorPeople, reused: true };
     }
     const people = await recipients(tx, input);
     if (!people.length) throw new WorkflowError(422, 'There are no volunteers in this audience.');
@@ -78,7 +78,7 @@ export async function sendMessage(actor: Actor, input: z.infer<typeof messageSen
     // Snapshot recipients atomically, before any external email delivery.
     for (let i = 0; i < people.length; i += 500)
       await tx.insert(messageRecipientsTable).values(people.slice(i, i + 500).map(p => ({ messageId: message!.id, recipientUserId: p.userId })));
-    return { message: message!, people, reused: false, senderEmail: staff.email };
+    return { message: message!, people, reused: false };
   });
   let skipped = 0, failures = 0;
   if (saved.message.sentByEmail) {
@@ -89,7 +89,7 @@ export async function sendMessage(actor: Actor, input: z.infer<typeof messageSen
         cta: { label: 'View in the portal', url: `${appOrigin}/messages?messageId=${saved.message.id}` } });
       const result = await sendEmail({ type: 'message', to: person.email, toUserId: person.userId, subject: saved.message.subject,
         ...copy, relatedId: saved.message.id,
-        replyTo: z.email().safeParse(appConfig.adminContact?.trim()).success ? appConfig.adminContact!.trim() : saved.senderEmail });
+        });
       if (result.skipped) skipped++; if (!result.ok) failures++;
     }));
   }
@@ -127,8 +127,5 @@ export async function messageDetail(id: string) {
 export async function messageContext(userId: string) {
   const [unread] = await db.select({ n: count() }).from(messageRecipientsTable)
     .where(and(eq(messageRecipientsTable.recipientUserId, userId), isNull(messageRecipientsTable.readAt)));
-  const [staff] = await db.select({ email: usersTable.email }).from(usersTable)
-    .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), isNotNull(usersTable.emailVerifiedAt)))
-    .orderBy(usersTable.createdAt, usersTable.id).limit(1);
-  return { unreadCount: unread!.n, adminContact: appConfig.adminContact?.trim() || staff?.email || null };
+  return { unreadCount: unread!.n, adminContact: appConfig.volunteerContactEmail };
 }

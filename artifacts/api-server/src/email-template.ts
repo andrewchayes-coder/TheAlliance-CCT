@@ -12,7 +12,8 @@ export interface EmailTemplateOptions {
   markdownBody?: string;
 }
 
-export const emailFooter = `You're receiving this because you're part of The Alliance's ${appConfig.programName}.`;
+export const emailFooter = "You're receiving this because you serve with The Alliance Community Care Team.";
+export const emailContactLine = `Questions? Email ${appConfig.volunteerContactName} at ${appConfig.volunteerContactEmail}.`;
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => ({
@@ -58,14 +59,13 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
         ${markdown?.html ?? ''}
         ${button}
       </td></tr>
-      <tr><td class="email-padding" style="padding:24px 32px;border-top:1px solid #E6E6E6;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:15px;line-height:1.55;"><p>${escapeHtml(emailFooter)}</p><p>${escapeHtml(appConfig.missionLine)}</p><p>Questions? Contact <a href="mailto:${escapeHtml(appConfig.staffContactEmail)}" style="color:#0175aa;">${escapeHtml(appConfig.staffContactName)}</a>.</p></td></tr>
+      <tr><td class="email-padding" style="padding:24px 32px;border-top:1px solid #E6E6E6;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:15px;line-height:1.55;"><p>Questions? Email ${escapeHtml(appConfig.volunteerContactName)} at <a href="mailto:${escapeHtml(appConfig.volunteerContactEmail)}" style="color:#0175aa;">${escapeHtml(appConfig.volunteerContactEmail)}</a>.</p><p>${escapeHtml(appConfig.missionLine)}</p><p>${escapeHtml(emailFooter)}</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`,
     text: [
       appConfig.appName, options.heading, ...paragraphs, ...(markdown ? [markdown.text] : []),
-      ...ctas.map(cta => `${cta.label}: ${cta.url}`), emailFooter, appConfig.missionLine,
-      `Questions? Contact ${appConfig.staffContactName} at ${appConfig.staffContactEmail}.`,
+      ...ctas.map(cta => `${cta.label}: ${cta.url}`), emailContactLine, appConfig.missionLine, emailFooter,
     ].join('\n\n'),
   };
 }

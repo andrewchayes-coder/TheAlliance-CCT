@@ -1,5 +1,5 @@
 import session from 'express-session';
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { missingProfileFields } from '@workspace/shared/profileFields';
 import connectPgSimple from 'connect-pg-simple';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
@@ -35,7 +35,7 @@ if (originUrl.protocol !== 'https:' || originUrl.username || originUrl.password
 export const appOrigin = originUrl.origin;
 export const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 export const randomToken = () => randomBytes(32).toString('hex');
-export const inactiveMessage = `Your account isn't active. Please contact ${staffContactText}.`;
+export const inactiveMessage = `Your account isn't active. Please contact ${volunteerContactText}.`;
 export const sessionCookieName = 'alliance.sid';
 
 export function sameSecret(left?: string, right?: string): boolean {

@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import {
   Component,
   type ComponentType,
@@ -43,7 +44,7 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
           Something went wrong
         </h1>
         <p className="mt-3 text-navy">
-          Something went wrong on our end. Please try again. If it keeps happening, email Cindi.
+          {SOMETHING_WENT_WRONG}
         </p>
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (

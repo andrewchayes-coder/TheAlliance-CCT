@@ -1331,10 +1331,13 @@ components:
           items: { $ref: '#/components/schemas/EmailTypeCount' }
     EmailProviderStatus:
       type: object
-      required: [tokenConfigured, emailFrom, deliveryEnabled]
+      required: [tokenConfigured, emailFrom, fromName, fromAddress, replyTo, deliveryEnabled]
       properties:
         tokenConfigured: { type: boolean }
         emailFrom: { type: [string, "null"] }
+        fromName: { type: [string, "null"] }
+        fromAddress: { type: [string, "null"] }
+        replyTo: { type: [string, "null"] }
         deliveryEnabled: { type: boolean }
     NotificationSummary:
       type: object

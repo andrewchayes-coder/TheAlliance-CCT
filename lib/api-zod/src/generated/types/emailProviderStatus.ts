@@ -10,5 +10,11 @@ export interface EmailProviderStatus {
   tokenConfigured: boolean;
   /** @nullable */
   emailFrom: string | null;
+  /** @nullable */
+  fromName: string | null;
+  /** @nullable */
+  fromAddress: string | null;
+  /** @nullable */
+  replyTo: string | null;
   deliveryEnabled: boolean;
 }

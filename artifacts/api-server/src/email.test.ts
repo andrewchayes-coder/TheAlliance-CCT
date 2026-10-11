@@ -42,6 +42,21 @@ async function rows(relatedId: string) {
 }
 const successResponse = { MessageID: 'postmark-test-message', ErrorCode: 0, Message: 'OK' };
 
+test('provider headers use only configured identity, ignoring legacy per-message staff Reply-To', async () => {
+  const delivered: { From: string; ReplyTo?: string; MessageStream: string }[] = [];
+  for (const [i, replyTo] of [undefined, 'replies@example.invalid'].entries()) {
+    const options = { ...input(`central-headers-${i}`), replyTo: 'internal-staff@example.invalid' };
+    const result = await service({
+      settings: () => ({ token: 'fake-token', from: 'Test Team <team@example.invalid>', replyTo }),
+      deliveryClient: () => ({ sendEmail: async message => { delivered.push(message); return successResponse; } }),
+    })(options);
+    assert.equal(result.ok, true);
+    assert.equal(delivered[i]!.From, 'Test Team <team@example.invalid>');
+    assert.equal(delivered[i]!.ReplyTo, replyTo ?? 'team@example.invalid');
+    assert.equal(delivered[i]!.MessageStream, 'outbound');
+  }
+});
+
 test('production fails closed without complete delivery settings and never logs recovery credentials', async () => {
   const previous = process.env.NODE_ENV;
   const start = messages.info.length;
@@ -117,14 +132,15 @@ test('Postmark-ready transport sends both bodies on outbound and records its mes
   const options = input('sent', { toUserId: userIds[0], to: ` ${to.toUpperCase()} ` });
   let deliveries = 0;
   const send = service({
-    settings: () => ({ token: 'fake-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: token => {
       assert.equal(token, 'fake-token');
       return { sendEmail: async message => {
         deliveries++;
         assert.deepEqual(message, {
-          From: 'alliance@example.org', To: to, Subject: options.subject,
+          From: 'Test Team <alliance@example.org>', To: to, Subject: options.subject,
           HtmlBody: options.html, TextBody: options.text, MessageStream: 'outbound',
+          ReplyTo: 'alliance@example.org',
         });
         // An audit record is durable before the external side effect begins.
         assert.equal((await rows(options.relatedId!))[0]!.status, 'failed');
@@ -177,7 +193,7 @@ test('a transient final audit failure retries the log update, not delivery', asy
         },
       });
     },
-    settings: () => ({ token: 'fake-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: () => ({ sendEmail: async () => { deliveries++; return successResponse; } }),
   });
   assert.deepEqual(await send(options), { ok: true });
@@ -192,7 +208,7 @@ test('provider failures resolve normally, record errors, redact the token, and a
   const options = input('retry', { type: 'reminder', toUserId: userIds[0] });
   let deliveries = 0;
   const send = service({
-    settings: () => ({ token: 'fake-secret-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-secret-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: () => ({ sendEmail: async () => {
       deliveries++;
       if (deliveries === 1) throw Object.assign(new Error('Provider rejected fake-secret-token'), { statusCode: 422 });
@@ -216,7 +232,7 @@ test('provider failures resolve normally, record errors, redact the token, and a
 test('an unconfirmed provider response records failure rather than false success', async () => {
   const options = input('bad-response');
   const send = service({
-    settings: () => ({ token: 'fake-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: () => ({ sendEmail: async () => ({ MessageID: '', ErrorCode: 422, Message: 'Invalid message' }) }),
   });
   assert.equal((await send(options)).ok, false);
@@ -227,7 +243,7 @@ test('simultaneous keyed requests deliver only once across independent service i
   const options = input('concurrent', { type: 'reminder', toUserId: userIds[0] });
   let deliveries = 0;
   const overrides = {
-    settings: () => ({ token: 'fake-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: () => ({ sendEmail: async () => {
       deliveries++;
       await new Promise(resolve => setTimeout(resolve, 25));
@@ -285,7 +301,7 @@ test('console failures are audited, and database/logging outages never throw or 
   let externalCalls = 0;
   const unavailable = service({
     connect: async () => { throw new Error('Database unavailable'); },
-    settings: () => ({ token: 'fake-token', from: 'alliance@example.org' }),
+    settings: () => ({ token: 'fake-token', from: 'Test Team <alliance@example.org>' }),
     deliveryClient: () => { externalCalls++; throw new Error('Should not send'); },
     log: { info: () => {}, warn: () => {}, error: () => { throw new Error('Logger unavailable'); } },
   });

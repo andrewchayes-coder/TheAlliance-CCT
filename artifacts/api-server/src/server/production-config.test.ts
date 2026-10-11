@@ -10,7 +10,7 @@ import { createReadinessCheck } from './readiness';
 const valid = {
   NODE_ENV: 'production', SESSION_SECRET: 's'.repeat(32), JOBS_SECRET: 'j'.repeat(32),
   APP_BASE_URL: 'https://portal.example.invalid', POSTMARK_SERVER_TOKEN: 'synthetic-provider',
-  EMAIL_FROM: 'test@example.invalid', RUN_JOBS: 'true', DATABASE_URL: 'synthetic-private-database',
+  EMAIL_FROM: 'Test Team <test@example.invalid>', RUN_JOBS: 'true', DATABASE_URL: 'synthetic-private-database',
 };
 describe('production configuration and readiness', () => {
   it('lists every missing required key without values; leaves development alone', () => {

@@ -35,11 +35,19 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 | `NODE_ENV` | `production` (set in artifact runtime configuration). |
 | `SESSION_SECRET` | Secret: securely generated, at least 32 characters. Keep stable across restarts; rotating invalidates sessions and affects encrypted retry payloads. |
 | `APP_BASE_URL` | HTTPS origin of the published app, no path/query/credentials. Used for email links, redirects and CSRF. |
-| `POSTMARK_SERVER_TOKEN` | Secret: Postmark server token for the production server. |
-| `EMAIL_FROM` | Bare email address verified with Postmark; no display-name wrapper. |
+| `POSTMARK_SERVER_TOKEN` | Secret: server token from the separate Postmark server dedicated to this CCT app, not an account token or another app's server token. |
+| `EMAIL_FROM` | Secret: exactly `The Alliance Community Care Team <cct@defendingthecause.org>`. Display name plus address is required; malformed sender configuration stops startup without printing values. |
+| `EMAIL_REPLY_TO` | Optional secret: a single public team email address. If omitted/blank, replies go to the parsed `EMAIL_FROM` address (`cct@defendingthecause.org`). Never configure a named staff member's private mailbox. |
 | `JOBS_SECRET` | Secret: securely generated, at least 32 characters. External trigger sends it in `X-Jobs-Secret`. |
 | `RUN_JOBS` | Required literal `false` in production. Production automatic timers are disabled; cron-job.org invokes the external endpoint. Development may use `true` for timer testing. |
 | `DATABASE_URL` | Managed automatically by Replit; must point to the separate production DB at runtime. Do not set manually. |
+
+### Dedicated Postmark server and domain
+Use a separate Postmark server for this app and its `outbound` transactional stream. Add the `defendingthecause.org` sending domain in Postmark, install the exact DKIM and Return-Path DNS records provided there, and confirm both show **Verified** before sending. DNS verification and inbox delivery cannot be inferred from the token-configured indicator. Do not paste tokens into chat or documentation.
+
+The sender display name/address and effective Reply-To appear on `/admin/notifications`; volunteers do not receive staff mailbox addresses through message context or automatic headers. Development without a token retains log-only delivery. Production retains required-secret checks and does not log private recovery emails when delivery configuration is missing. Update secure development/production configuration and publish the updated release before live use.
+
+Previously saved failed emails with a retired branded footer are not replayed: create a fresh message/reminder using the current team contact. Authentication-email retries still regenerate links and current templates. Existing notification history is retained unchanged.
 
 `APP_ORIGIN` is a legacy alias. If retained, it must match `APP_BASE_URL`; change both together for a custom domain. Development can continue to use `APP_ORIGIN` or the managed dev domain.
 

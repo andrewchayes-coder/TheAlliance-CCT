@@ -1,5 +1,5 @@
 import { createEmailTemplate } from '../email-template';
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { createScheduleService, pacificDay, addCalendarDays, TIME_ZONE, type ScheduleData, type Occurrence } from './scheduleService';
 
 export type ReminderConfig = { reminderHoursBefore: number; sameMorningReminder: boolean; sameMorningReminderHour: number };
@@ -65,7 +65,7 @@ export function reminderEmail(candidate: ReminderCandidate, links: ReminderSnaps
       'Thank you for helping local families connect with the care and support they need. Your time makes a difference.',
       `Your shift: ${label}, ${time} (Pacific time).`,
       'Need the week off? Update it in the portal or let us know as soon as you can.',
-      ...(test ? [] : [`If your shift is less than 24 hours away, please contact ${staffContactText} so we can help arrange coverage.`]),
+      ...(test ? [] : [`If your shift is less than 24 hours away, please contact ${volunteerContactText} so we can help arrange coverage.`]),
     ],
     ctas: [...safeLinks, { label: 'Manage my shifts', url: `${origin}/shifts` }],
   });

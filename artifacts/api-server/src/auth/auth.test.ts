@@ -278,7 +278,7 @@ test('deactivation revokes sessions and links for admins and volunteers; reactiv
     await target.client.bootstrap();
     const disabled = await target.client.post('/auth/signin', { email: target.user.email, password });
     assert.equal(disabled.status, 403);
-    assert.equal(disabled.body.error, "Your account isn't active. Please contact Cindi at cindi@defendingthecause.org.");
+    assert.equal(disabled.body.error, "Your account isn't active. Please contact the Community Care Team at cct@defendingthecause.org.");
     const reactivated = await admin.client.request(`/admin/users/${target.user.id}/status`, 'PATCH', { isActive: true });
     assert.equal(reactivated.status, 200); assert.equal(reactivated.body.isActive, true);
     assert.equal((await target.client.request('/me')).status, 401);
@@ -302,7 +302,7 @@ test('self and last-admin safeguards hold, including two administrators attempti
   assert.equal(users.filter(user => user.isActive).length, 1);
 });
 
-test('signup creates bcrypt volunteer/applicant, logs verification, and denies every protected API', async () => {
+test('signup creates bcrypt volunteer/onboarding, logs verification, and denies every protected API', async () => {
   const { client, user } = await fixture();
   assert.equal(user.role, 'volunteer');
   assert.equal(user.emailVerifiedAt, null);
@@ -310,7 +310,7 @@ test('signup creates bcrypt volunteer/applicant, logs verification, and denies e
   assert.equal(bcrypt.getRounds(user.passwordHash), 12);
   assert.ok(await bcrypt.compare(password, user.passwordHash));
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id));
-  assert.equal(profile!.status, 'applicant');
+  assert.equal(profile!.status, 'onboarding');
   const [log] = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, user.id));
   assert.equal(log!.status, 'logged');
   assert.equal(log!.type, 'verification');
@@ -378,7 +378,7 @@ test('unverified signin updates lastLoginAt and routes to verification; credenti
   await db.update(usersTable).set({ isActive: false }).where(eq(usersTable.id, user.id));
   const inactive = await client.post('/auth/signin', { email, password });
   assert.equal(inactive.status, 403);
-  assert.equal(inactive.body.error, "Your account isn't active. Please contact Cindi at cindi@defendingthecause.org.");
+  assert.equal(inactive.body.error, "Your account isn't active. Please contact the Community Care Team at cct@defendingthecause.org.");
 });
 
 test('resends enforce one per minute and five per hour; old verification links are invalidated', async () => {

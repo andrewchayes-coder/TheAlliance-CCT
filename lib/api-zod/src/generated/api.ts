@@ -675,6 +675,9 @@ export const GetNotificationSummaryResponse = zod.object({
   "postmark": zod.object({
   "tokenConfigured": zod.boolean(),
   "emailFrom": zod.string().nullable(),
+  "fromName": zod.string().nullable(),
+  "fromAddress": zod.string().nullable(),
+  "replyTo": zod.string().nullable(),
   "deliveryEnabled": zod.boolean()
 })
 })

@@ -6,6 +6,7 @@ import { pool, usersTable, notificationLogTable, insertNotificationLogSchema, ty
 import { logger } from './lib/logger';
 import { currentJobBudget } from './server/job-budget';
 import { isUncertainDelivery, uncertainDelivery, providerRejected } from './server/delivery-state';
+import { emailIdentity } from './server/email-identity';
 
 export { createEmailTemplate, emailFooter, type EmailTemplateOptions } from './email-template';
 
@@ -19,7 +20,6 @@ export interface SendEmailOptions {
   html: string;
   text: string;
   relatedId?: string;
-  replyTo?: string;
 }
 export interface SendEmailResult {
   ok: boolean;
@@ -40,9 +40,10 @@ interface DeliveryClient {
 const emailLogger = logger.child({ component: 'email' }, { level: 'info' });
 const defaults = {
   connect: () => pool.connect(),
-  settings: (): { token?: string; from?: string } => ({
+  settings: (): { token?: string; from?: string; replyTo?: string } => ({
     token: process.env.POSTMARK_SERVER_TOKEN?.trim(),
     from: process.env.EMAIL_FROM?.trim(),
+    replyTo: process.env.EMAIL_REPLY_TO?.trim(),
   }),
   deliveryClient: (token: string): DeliveryClient => new ServerClient(token, { timeout: currentJobBudget() ? 4 : 15 }),
   log: {
@@ -157,7 +158,7 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
       let retryPayload: string | null = null;
       let payloadFailure: string | undefined;
       if (!tokenEmailTypes.has(values.type) && options.html?.trim() && options.text?.trim()) {
-        try { retryPayload = encryptEmailBody({ html: options.html, text: options.text, ...(options.replyTo ? { replyTo: options.replyTo } : {}) }); }
+        try { retryPayload = encryptEmailBody({ html: options.html, text: options.text }); }
         catch { payloadFailure = 'Email retry content could not be saved. Check the server encryption configuration before sending again.'; }
       }
       const pending = {
@@ -182,11 +183,12 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
         if (!options.html?.trim()) throw new Error('A non-empty HTML email body is required.');
 
         if (settings.token && settings.from) {
+          const identity = emailIdentity({ EMAIL_FROM: settings.from, EMAIL_REPLY_TO: settings.replyTo });
           providerAttempted = true;
           const response = await dependencies.deliveryClient(settings.token).sendEmail({
-            From: settings.from, To: values.recipientEmail, Subject: values.subject,
+            From: identity.from!.header, To: values.recipientEmail, Subject: values.subject,
             HtmlBody: options.html, TextBody: options.text, MessageStream: 'outbound',
-            ...(options.replyTo ? { ReplyTo: options.replyTo } : {}),
+            ReplyTo: identity.replyTo!,
           });
           if (response.ErrorCode !== 0 || !response.MessageID) {
             if (response.ErrorCode > 0) providerAttempted = false;

@@ -1,9 +1,9 @@
-import { STAFF_EMAIL, STAFF_NAME } from '@/lib/contact';
+import { VOLUNTEER_CONTACT_EMAIL, VOLUNTEER_CONTACT_NAME } from '@/lib/contact';
 import type { VolunteerShiftDate, VolunteerStandingShift } from '@workspace/api-client-react';
 import { dateLabel, slotTitle, ymd } from '@/lib/shift-utils';
 
 export function ContactLink({ children }: { email?: string | null; children?: string }) {
-  return <a href={`mailto:${STAFF_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${STAFF_NAME} (${STAFF_EMAIL})`}</a>;
+  return <a href={`mailto:${VOLUNTEER_CONTACT_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${VOLUNTEER_CONTACT_NAME} (${VOLUNTEER_CONTACT_EMAIL})`}</a>;
 }
 
 export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, onSkip, onUndo }: {

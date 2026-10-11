@@ -1,3 +1,4 @@
+import { emailIdentity } from './email-identity';
 export type RuntimeEnvironment = Record<string, string | undefined>;
 export const requiredProductionKeys = [
   'SESSION_SECRET', 'APP_BASE_URL', 'POSTMARK_SERVER_TOKEN', 'EMAIL_FROM', 'JOBS_SECRET', 'RUN_JOBS',
@@ -5,8 +6,12 @@ export const requiredProductionKeys = [
 
 /** Inspect configuration, never include values (or connection strings) in errors. */
 export function assertProductionConfig(env: RuntimeEnvironment = process.env): void {
-  if (env.NODE_ENV !== 'production') return;
   const errors: string[] = [];
+  try { emailIdentity(env); } catch (error) { errors.push((error as Error).message); }
+  if (env.NODE_ENV !== 'production') {
+    if (errors.length) throw new Error(`Email startup configuration refused:\n- ${errors.join('\n- ')}\nSee DEPLOY.md. No configuration values were printed.`);
+    return;
+  }
   for (const key of [...requiredProductionKeys, 'DATABASE_URL']) {
     if (!env[key]?.trim()) errors.push(`${key} is required`);
   }
@@ -14,9 +19,6 @@ export function assertProductionConfig(env: RuntimeEnvironment = process.env): v
     if (env[key] && env[key]!.length < 32) errors.push(`${key} must contain at least 32 characters`);
   }
   if (env.RUN_JOBS && !['true', 'false'].includes(env.RUN_JOBS)) errors.push('RUN_JOBS must be exactly true or false');
-  if (env.EMAIL_FROM && !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(env.EMAIL_FROM)) {
-    errors.push('EMAIL_FROM must be a sender email address');
-  }
   if (env.APP_BASE_URL) {
     try {
       const url = new URL(env.APP_BASE_URL);

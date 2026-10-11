@@ -1,5 +1,5 @@
 import { appConfig } from '@workspace/shared/appConfig';
-import { staffContactText } from '@workspace/shared/appConfig';
+import { volunteerContactText } from '@workspace/shared/appConfig';
 import { createScheduleService, assignmentIsHeld, slotIsActive, pacificDay, addCalendarDays, slotInstant,
   type ScheduleData, type ScheduleSlot } from './scheduleService';
 
@@ -7,7 +7,7 @@ export function bookingBlockers(profile: { status: string; agreementAcknowledged
   if (!profile) return ['Please complete your onboarding before choosing a weekly shift.'];
   const reasons: string[] = [];
   if (profile.status !== 'active') reasons.push(profile.status === 'inactive'
-    ? `Your Resource Coordinator status is inactive. Please contact ${staffContactText} if you would like to return.`
+    ? `Your Resource Coordinator status is inactive. Please contact ${volunteerContactText} if you would like to return.`
     : "Your profile is awaiting approval. We'll email you when you're ready to choose a shift.");
   if (appConfig.requireAgreementAcknowledgment && !profile.agreementAcknowledgedAt) reasons.push('Please acknowledge the volunteer agreement in onboarding.');
   else if (appConfig.requireAgreementAcknowledgment && currentVersion && profile.agreementVersion !== currentVersion) reasons.push('Please acknowledge the updated volunteer agreements before using shifts.');

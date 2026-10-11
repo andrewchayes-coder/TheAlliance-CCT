@@ -11,11 +11,13 @@
 | CCT-S06 | Admin cancel an assigned one-time shift; retry cancellation. Test reminders with an isolated API/data scope across Pacific DST, late runs and reruns. | Confirmation and assigned-recipient email; cancelled occurrence gone; no duplicate cancellation emails or custom reminders; keys `custom:shiftId:profileId:24h`; no real staff/volunteer sends during QA. |
 
 ## CCT brand and program identity
+- Confirm every volunteer contact link/error/inactive message and inside-24-hours cancellation instruction names only the Community Care Team mailbox. Messages context must never fall back to a staff member's email.
+- In notification settings, confirm parsed From name/address, effective Reply-To and token-configured status. Verify DKIM and Return-Path in Postmark before an explicitly authorized test send; missing token in development logs instead. Malformed configured sender or Reply-To must stop startup without printing values.
 - At 375px and 768px, check public pages show the stacked logo above the card and the mission below it; signed-in headers are white with a navy bottom rule, using the mark on phones and horizontal logo on desktop.
 - Check Open Sans sentence-case titles, navy field labels, gray inputs with blue focus rings, blue primary buttons, and white/blue secondary buttons with blue/white hover.
 - Check gray panels and inputs never use blue text; keyboard focus and existing navigation remain usable.
 - Check volunteer-facing role wording is Resource Coordinator; admin roster and code terminology remain volunteer.
-- Check contact guidance links to Cindi using shared configuration, and emails show the horizontal logo, navy rule, blue CTA, mission footer, and matching plain-text links.
+- Check all volunteer contact guidance points to the Community Care Team at cct@defendingthecause.org, never a named staff member. Emails show the horizontal logo, navy rule, blue CTA, team contact, mission footer, service explanation, and matching plain-text links.
 - Fetch all seven `/brand/*.png` files: expect PNG content, one-year public cache headers, and no session cookie.
 - Check `/style-guide` includes the new scale, colors, controls, logos and email preview in development, and remains unavailable in production.
 

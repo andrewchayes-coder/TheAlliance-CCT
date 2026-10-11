@@ -86,9 +86,12 @@ export function ProviderCard({ s, onDone }: { s: Summary; onDone: () => void }) 
       <h2 className="alliance-display">Email provider</h2>
       <dl className="mt-3 space-y-2 text-sm">
         <div className="flex flex-wrap justify-between gap-2"><dt>Postmark token</dt><dd><StatusBadge status={p.tokenConfigured ? 'good' : 'attention'}>{p.tokenConfigured ? 'Configured' : 'Not configured'}</StatusBadge></dd></div>
-        <div className="flex flex-wrap justify-between gap-2"><dt>From address</dt><dd className="break-all font-bold" data-testid="text-email-from">{p.emailFrom ?? 'Not configured'}</dd></div>
+        <div className="flex flex-wrap justify-between gap-2"><dt>From name</dt><dd className="break-all font-bold" data-testid="text-email-from-name">{p.fromName ?? 'Not configured'}</dd></div>
+        <div className="flex flex-wrap justify-between gap-2"><dt>From address</dt><dd className="break-all font-bold" data-testid="text-email-from">{p.fromAddress ?? 'Not configured'}</dd></div>
+        <div className="flex flex-wrap justify-between gap-2"><dt>Reply-To</dt><dd className="break-all font-bold" data-testid="text-email-reply-to">{p.replyTo ?? 'Not configured'}</dd></div>
         <div className="flex flex-wrap justify-between gap-2"><dt>Delivery</dt><dd><StatusBadge status={p.deliveryEnabled ? 'good' : 'neutral'}>{p.deliveryEnabled ? 'Enabled' : 'Log only'}</StatusBadge></dd></div>
       </dl>
+      <p className="mt-3 text-sm">Before sending, the defendingthecause.org DKIM and Return-Path records must show Verified in Postmark.</p>
       {import.meta.env.DEV && <Button className="mt-3" type="button" onClick={() => { void send(); }} disabled={test.isPending} data-testid="button-send-provider-test">{test.isPending ? 'Sending test' : 'Send test email to me'}</Button>}
       <p className="mt-2 text-xs text-navy-soft">Goes only to the signed-in admin's email. The address cannot be changed.{retrying ? ' Next click retries the previous request.' : ''}</p>
       <div aria-live="polite" className="mt-2 break-words">

@@ -170,7 +170,7 @@ describe('Reminder job persistence, safeguards and delivery', () => {
       assignments.push(assignment!.id);
       if (i === 0) {
         const to = (await db.select().from(usersTable).where(eq(usersTable.id, volunteer.userId)))[0]!.email;
-        const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'fixture@example.invalid' }),
+        const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'Test Team <fixture@example.invalid>' }),
           deliveryClient: () => ({ sendEmail: async () => { throw Object.assign(new Error('Provider rejected'), { statusCode: 429 }); } }),
           log: { info() {}, warn() {}, error() {} } });
         await send({ type: 'reminder', to, toUserId: volunteer.userId,
@@ -209,7 +209,7 @@ describe('Reminder job persistence, safeguards and delivery', () => {
     assignments.push(assignment!.id);
     const to = (await db.select().from(usersTable).where(eq(usersTable.id, volunteer.userId)))[0]!.email;
     const provider = vi.fn(async () => { throw new Error('Provider connection timed out'); });
-    const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'fixture@example.invalid' }),
+    const send = email.createEmailService({ settings: () => ({ token: 'synthetic', from: 'Test Team <fixture@example.invalid>' }),
       deliveryClient: () => ({ sendEmail: provider }), log: { info() {}, warn() {}, error() {} } });
     const options = { type: 'reminder' as const, to, toUserId: volunteer.userId,
       relatedId: `${assignment!.id}:2030-01-08:24h`, subject: 'Fixture reminder', html: '<p>Test</p>', text: 'Test' };

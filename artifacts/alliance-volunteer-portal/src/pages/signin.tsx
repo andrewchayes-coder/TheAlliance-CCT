@@ -1,4 +1,4 @@
-import { STAFF_EMAIL, STAFF_NAME } from '@/lib/contact';
+import { VOLUNTEER_CONTACT_EMAIL, VOLUNTEER_CONTACT_NAME } from '@/lib/contact';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicLayout, Button } from '@/components/brand-system';
@@ -10,7 +10,7 @@ function urlError(): string | null {
   const e = new URLSearchParams(window.location.search).get('error');
   if (e === 'google_failed') return 'Google sign-in didn’t complete. You can try again or use your email and password.';
   if (e === 'google_unavailable') return 'Google sign-in isn’t available right now. Please use your email and password.';
-  if (e === 'account_inactive') return `Your account isn't active. Please email ${STAFF_NAME} at ${STAFF_EMAIL}.`;
+  if (e === 'account_inactive') return `Your account isn't active. Please email ${VOLUNTEER_CONTACT_NAME} at ${VOLUNTEER_CONTACT_EMAIL}.`;
   return null;
 }
 

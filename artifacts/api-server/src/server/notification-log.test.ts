@@ -7,7 +7,7 @@ import { encryptEmailBody, decryptEmailBody } from './email-payload';
 import { pendingRecipients } from './delivery-history';
 
 vi.hoisted(() => { process.env.NODE_ENV = 'development'; process.env.APP_ORIGIN = 'https://portal.example.invalid';
-  process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = ''; });
+  process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = ''; process.env.EMAIL_REPLY_TO = ''; });
 // Never generate threshold alerts for unrelated development administrators.
 vi.mock('./monthly-email-limit', async original => ({ ...await original<typeof import('./monthly-email-limit')>(),
   checkMonthlyEmailLimit: vi.fn() }));
@@ -25,7 +25,7 @@ async function cookie(userId: string) {
   const signature = createHmac('sha256', process.env.SESSION_SECRET!).update(sid).digest('base64').replace(/=+$/, '');
   return `alliance.sid=${encodeURIComponent(`s:${sid}.${signature}`)}`;
 }
-const transport = createEmailService({ settings: () => ({ token: 'synthetic-test-token', from: 'program@example.invalid' }),
+const transport = createEmailService({ settings: () => ({ token: 'synthetic-test-token', from: 'Test Team <program@example.invalid>' }),
   deliveryClient: () => ({ sendEmail: async () => { throw Object.assign(new Error('Synthetic rejection'), { statusCode: 422 }); } }),
   log: { info() {}, warn() {}, error() {} } });
 async function failed(type: 'message' | 'verification' | 'password_reset' | 'invite' = 'message', owner = admin) {
@@ -93,6 +93,16 @@ describe('notification monitoring and safe retry', () => {
     const row = await failed('verification', unverified);
     expect(row.retryPayload).toBeNull();
   });
+  it('does not replay saved emails with a retired branded footer or alter their history', async () => {
+    const row = await failed('message', volunteer);
+    const oldText = "An older message.\n\nYou're receiving this because you volunteer with a previous program.";
+    await db.update(notificationLogTable).set({ retryPayload: encryptEmailBody({ html: '<p>An older message.</p>', text: oldText }) })
+      .where(eq(notificationLogTable.id, row.id));
+    await expect(api.retryNotification(row.id)).rejects.toThrow('retired contact details');
+    const [saved] = await db.select().from(notificationLogTable).where(eq(notificationLogTable.id, row.id));
+    expect(saved!.status).toBe('failed');
+    expect(decryptEmailBody(saved!.retryPayload!).text).toBe(oldText);
+  });
   it('retries a saved failure in place once; recipient and content are not editable', async () => {
     const row = await failed();
     expect(row.status).toBe('failed'); expect(row.retryPayload).not.toContain('Original content');
@@ -124,7 +134,7 @@ describe('notification monitoring and safe retry', () => {
     const summary = await api.notificationSummary();
     expect(summary.months).toHaveLength(6);
     for (const month of summary.months) expect(month.total).toBe(month.byType.reduce((n, x) => n + x.count, 0));
-    expect(summary.postmark).toEqual({ tokenConfigured: false, emailFrom: null, deliveryEnabled: false });
+    expect(summary.postmark).toEqual({ tokenConfigured: false, emailFrom: null, fromName: null, fromAddress: null, replyTo: null, deliveryEnabled: false });
   });
   it('locks concurrent retries, rejects legacy/unknown attempts and deactivated recipients', async () => {
     const row = await failed();

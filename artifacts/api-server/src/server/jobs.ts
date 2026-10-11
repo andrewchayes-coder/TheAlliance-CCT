@@ -1,5 +1,4 @@
 import cron from 'node-cron';
-import { z } from 'zod/v4';
 import { and, count, desc, eq, gte, inArray, isNotNull, sql } from 'drizzle-orm';
 import { db, pool, withJobDatabase, reminderJobRunsTable, notificationLogTable, resourcesTable, usersTable, volunteerProfilesTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
@@ -46,8 +45,7 @@ async function recordDelivery(candidate: ReminderCandidate, links: ReminderSnaps
   if (!valid) { counts.suppressed++; return; }
   const copy = reminderEmail(valid, links, freshNow, appOrigin);
   const result = await sendEmail({ type: 'reminder', to: valid.person.email, toUserId: valid.person.userId,
-    relatedId: valid.relatedId, ...copy,
-    ...(z.email().safeParse(appConfig.adminContact?.trim()).success ? { replyTo: appConfig.adminContact!.trim() } : {}) });
+    relatedId: valid.relatedId, ...copy });
   if (result.uncertain) { counts.uncertain++; return; }
   if (result.deferred) { counts.deferred++; return; }
   if (result.skipped) { counts.skipped++; return; }
