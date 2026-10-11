@@ -2,7 +2,13 @@
 
 ## Fixed profile / three-status release
 
-Publish manages this additive schema update: append `onboarding` to the existing `volunteer_status` enum, change the existing status default, and add the nine nullable profile columns (state defaults to CA). Review that diff before publishing. The reference migration is `lib/db/migrations/0002_cct_fixed_profile.sql`; do not run it at boot or restore a migration hook.
+Before Publish, an authorized operator must add the enum value in the production Database tool as a separate committed statement:
+
+```sql
+ALTER TYPE volunteer_status ADD VALUE IF NOT EXISTS 'onboarding';
+```
+
+Publish cannot add and use a new enum value in the same transaction. Publish manages the remaining additive update: change the existing status default and add the nine nullable profile columns (state defaults to CA). Review that diff before publishing. The reference migration is `lib/db/migrations/0002_cct_fixed_profile.sql`; do not run it at boot or restore a migration hook. This documentation change does not execute SQL or modify production data.
 
 Publish does not perform application data backfills. After the new enum value is available, the optional legacy-status backfill is one short statement:
 
@@ -12,7 +18,7 @@ UPDATE public.volunteer_profiles SET status = 'onboarding' WHERE status::text NO
 
 This has been applied in development only. No production data was changed for this release. Reads are compatible without running it; the deprecated enum values and legacy columns remain intact. Do not invent DOB/address/emergency-contact values for real volunteers: they complete the new profile themselves. Existing completed profiles missing required fields return to onboarding.
 
-New activation requires verified email and all required fixed-profile fields, not the disabled certification/background/agreement checks. First activation supplies today's Pacific start date if absent; staff can edit it. Onboarding questions are empty and the three tracking flags are false in `shared/appConfig.ts`. Training and paperwork take place with Alliance staff outside the portal.
+New activation requires verified email, recorded onboarding completion and all required fixed-profile fields, not the disabled certification/background/agreement checks. First activation supplies today's Pacific start date if absent; staff can edit it. Onboarding questions are empty and the three tracking flags are false in `shared/appConfig.ts`. Training and paperwork take place with Alliance staff outside the portal.
 
 Approved logos/icons ship with the web build at `/brand/`. That public path is served by the API artifact's static-file handler with `Cache-Control: public, max-age=31536000, immutable`, before sessions; it never reads Object Storage at runtime. Email headers use `${APP_BASE_URL}/brand/logo-horizontal.png`. Replace assets with versioned filenames/URLs if the artwork changes later, rather than expecting a year-cached URL to refresh immediately.
 
@@ -49,17 +55,13 @@ The sender display name/address and effective Reply-To appear on `/admin/notific
 
 Previously saved failed emails with a retired branded footer are not replayed: create a fresh message/reminder using the current team contact. Authentication-email retries still regenerate links and current templates. Existing notification history is retained unchanged.
 
-### Production-locked quick login
+### Quick login (testing)
 
-Production QA access uses these secret names only: `QUICK_LOGIN_ENABLED`, `QUICK_LOGIN_KEY`, and the existing `SESSION_SECRET`.
-Keep `QUICK_LOGIN_KEY` at least 32 characters and distribute it privately. Documentation uses only the placeholder `<QUICK_LOGIN_KEY>`.
-
-1. Enable `QUICK_LOGIN_ENABLED=true` and configure `QUICK_LOGIN_KEY` through secure production configuration; publish. Built-in synthetic personas are explicitly approved in both environments; never convert an ordinary volunteer or import development fixtures.
-2. On the device authorized for QA, open `/qa?key=<QUICK_LOGIN_KEY>` using the actual private key. It redirects to `/signin`, removes the key from the URL and sets a signed, secure device cookie. Do not share screenshots of the original link.
-3. Sign in with one of the five labeled TEST buttons. QA emails are suppressed and excluded from usage, blasts, digest recipients, ordinary roster/counts and both exports.
-4. Use the staff test-account reset action to restore the personas. It resets QA-only profile/scheduling/inbox data and cancels QA one-time reservations; it never removes real volunteers' assignments. Production does not automatically occupy standing capacity.
-5. Use “Hide test logins on this device” or `/qa/lock` to remove device access. Signing out alone does not revoke the device unlock.
-6. To disable production QA globally, set `QUICK_LOGIN_ENABLED=false` and republish. This overrides existing device cookies. Rotate `QUICK_LOGIN_KEY` privately when access must be revoked.
+1. Set `QUICK_LOGIN_ENABLED=true` and republish to enable production testing. Matching is case-insensitive and trims whitespace. No other testing credential is required. Development is always enabled.
+2. Anyone visiting `/signin` can use the five TEST buttons. **The Admin test button opens the real admin view.** Only synthetic personas are eligible; ordinary users are never converted or imported from development.
+3. QA mail is suppressed and excluded from usage, broadcasts, digest recipients, normal roster/counts and exports. TEST badges identify reservations, which intentionally use real capacity.
+4. After production testing, click **Reset test accounts**. This frees QA standing capacity, cancels QA one-time reservations, restores profiles/inboxes and invalidates QA sessions, without removing real volunteer assignments. Production reset does not automatically take a shift.
+5. Set `QUICK_LOGIN_ENABLED=false` and republish **before inviting real volunteers**. The card disappears and both quick-login endpoints return 404. Normal sign-in remains available.
 
 ### v1.1.0 schedule setup
 
@@ -101,6 +103,19 @@ The inspected Publish log applied other schema changes but omitted replacements 
 
 No production schema or records were modified by this launcher cleanup.
 
+For the operator-approved CHECK corrections, first run this read-only capacity check and resolve any invalid rows without silently changing data:
+
+```sql
+SELECT id, capacity FROM public.shift_slots WHERE capacity NOT BETWEEN 1 AND 10;
+```
+
+If there are no invalid capacities and Publish still omits the corrections, an authorized operator may run each of these as a separate one-line statement. These replace constraint definitions only; they do not rewrite volunteer records:
+
+```sql
+ALTER TABLE public.shift_slots DROP CONSTRAINT IF EXISTS shift_slots_capacity_positive, ADD CONSTRAINT shift_slots_capacity_positive CHECK (capacity BETWEEN 1 AND 10);
+ALTER TABLE public.shift_assignments DROP CONSTRAINT IF EXISTS shift_assignments_date_order, ADD CONSTRAINT shift_assignments_date_order CHECK (end_date IS NULL OR end_date >= start_date OR ended_reason IS NOT NULL);
+```
+
 ## First-time setup (no volunteer data)
 
 1. Configure required production keys and the separate database. Keep **Autoscale** in Publishing and set production `RUN_JOBS=false`. Configure cron-job.org after publishing the new release.
@@ -111,9 +126,9 @@ No production schema or records were modified by this launcher cleanup.
    NODE_ENV=production npm run create-admin -- email@domain.org "First" "Last"
    ```
     Use the managed production connection via Replit's secure environment tooling. This command prints an invite link for the named administrator. Treat it as a one-time credential; don't paste it into logs/tickets. Accept the invite, set a strong password, then sign in. No dummy admin is created at boot or by schema synchronization.
-5. `/admin/schedule/settings`: configure Mon–Fri slots, times/capacity, copy Monday if appropriate, and add closure dates. Confirm Pacific operating hours.
-6. `/admin/resources`: upload and publish the actual User Agreement and Safety Guidelines under **Agreements** (PDF/DOCX, up to 15 MB). Review `agreementVersion`; use the re-acknowledgment option when agreement content changes. Delete/replace placeholder links, not operational data.
-7. Create and publish quick links for **Log in to Find Help** and **Open Phone Portal**, with their real HTTPS URLs (there are no seeded resources in production). Test both in a new tab. Review the configured Alliance contact details and finalize questionnaire copy before real onboarding.
+5. `/admin/schedule/settings`: click **Load Community Care Team standard grid**, then review the 40 Mon–Fri overlapping two-hour slots and capacity 2. Configure closed dates and date-specific blocks as needed. Repeating the loader creates no duplicates.
+6. `/admin/resources`: upload and publish operational guides (PDF/DOCX, up to 15 MB). Training and paperwork are handled with staff outside the portal; no in-app compliance setup is required.
+7. Create and publish quick links for **Log in to Find Help** and **Open Phone Portal**, with their real HTTPS URLs (there are no seeded resources in production). Test both in a new tab and review the Community Care Team contact guidance.
 8. `/admin/notifications`: set the Postmark monthly limit (default 100); decide whether to enable the daily coverage digest in schedule settings.
 9. Test actual delivery **to the verified administrator only**, using the production-configured operator shell:
    ```sh

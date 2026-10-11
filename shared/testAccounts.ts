@@ -4,6 +4,8 @@ export const testProfileFields = {
   dateOfBirth: '1990-01-01', addressLine1: '123 Test St', city: 'Auburn', state: 'CA', zip: '95603',
   emergencyContactName: 'Test Contact', emergencyContactRelationship: 'Friend', emergencyContactPhone: '5555550100',
 } as const;
+// Remove the legacyEmail aliases only after production ensureTestAccounts has
+// migrated both replaced personas in place and an operator confirms no old identities remain.
 export const testAccounts = [
   { key: 'admin', label: 'Test Admin', description: 'Explore the staff tools with a QA administrator.', lastName: 'Admin', role: 'admin', email: 'qa-admin@example.org', ...testProfileFields },
   { key: 'vol-active', label: 'Test Volunteer Active', lastName: 'Active', role: 'volunteer', email: 'qa-vol-active@example.org',

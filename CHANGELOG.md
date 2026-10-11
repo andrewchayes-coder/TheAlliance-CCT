@@ -4,13 +4,14 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 
 ## v1.1.0 — Community Care Team refresh
 ### Added
-- Production-locked QA access for five test personas, device unlock/lock, quick-login role switching, persistent TEST indicators, suppressed delivery and QA-only reset.
+- Five built-in test personas, quick-login role switching, persistent TEST indicators, suppressed delivery and QA-only reset.
 - Community Care Team standard grid loader (40 overlapping weekday slots), date-specific shift blocks, and one-time shifts with volunteer signup and audited staff capacity overrides.
 - One-time shifts in live dispatch, coverage alerts, reminders, schedule CSV and volunteer upcoming shifts; date blocks suppress operational occurrences without cancelling standing assignments.
 - Staff roster with configurable per-admin columns, global sorting, contact links and new profile filters; private profile and inline start-date editors.
 - Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
 - Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
 ### Changed
+- Production quick login is now a single on/off switch (QUICK_LOGIN_ENABLED). The unlock key and unlock link were removed.
 - Volunteer-facing contact guidance now uses the Community Care Team mailbox exclusively. Email sender identity is parsed and validated; Reply-To is centrally configured, never inherited from a message author.
 - Master schedule uses a 30-minute grid with explicit odd/even-hour lanes, gray blocked occurrences and dashed-blue one-time shifts. Inactivation/deactivation also releases future one-time reservations.
 - Roster attention counts now flag active volunteers without shifts, incomplete onboarding older than seven days, and onboarding older than thirty days. Private-field edits record field names only; county editing is staff-only.
@@ -19,6 +20,8 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Disabled in-app certification, background-check and agreement tracking by default; extra onboarding questions are empty. Training and paperwork are handled by Alliance staff.
 - Private profile fields are available only to their owner and staff. Volunteer DOB/start-date changes are rejected.
 ### Fixed
+- Volunteer schedule responses use the public team contact; legacy statuses normalize in `/api/me`; activation requires recorded onboarding completion; signup phones use ten digits; external jobs accept only X-Jobs-Secret.
+- Readable CSV/job labels, the staff-only notes label and header county, Alliance Blue usage charts, and From/Reply-To in development email logs.
 - Test-account reset now cancels one-time reservations without touching real volunteers' assignments.
 - The `/api/me` renewal indicator respects the disabled agreement-tracking flag.
 - Updated guard/privacy regression tests and isolated end-to-end smoke coverage for the fixed profile, blocks, one-time shifts, reminders and messaging.
@@ -55,7 +58,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Dependency patches applied; the remaining unpatched development-only `braces` finding is tracked in `QA-SECURITY-REVIEW.md`.
 
 ### Deployment notes
-- Reserved VM with one scheduler and `RUN_JOBS=true` is the recommended configuration.
+- Production uses Autoscale with the built-in scheduler disabled; cron-job.org triggers the secret-protected runner every 15 minutes.
 - Production uses its own managed database; no production fixtures or real volunteer records are loaded by release setup.
 - Replit Publish synchronizes the production schema; the app does not run migrations or require a baseline journal at startup.
 - Alternative Autoscale + Scheduled Deployment procedure is in `DEPLOY.md`.

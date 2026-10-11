@@ -19,10 +19,7 @@ export async function volunteerSchedule(userId: string, now = new Date()) {
     const [profile] = await tx.select({ id: volunteerProfilesTable.id, status: volunteerProfilesTable.status,
       agreementAcknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt, agreementVersion: volunteerProfilesTable.agreementVersion })
       .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId));
-    const [contact] = await tx.select({ email: usersTable.email }).from(usersTable)
-      .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), isNotNull(usersTable.emailVerifiedAt)))
-      .orderBy(usersTable.createdAt, usersTable.id).limit(1);
-    return volunteerScheduleView(await readScheduleData(tx), profile?.id, profile, contact?.email ?? null, now, await agreementVersion(tx));
+    return volunteerScheduleView(await readScheduleData(tx), profile?.id, profile, appConfig.volunteerContactEmail, now, await agreementVersion(tx));
   }, { isolationLevel: 'repeatable read' });
 }
 type Actor = { id: string; sessionVersion: number };

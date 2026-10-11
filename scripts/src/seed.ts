@@ -48,7 +48,7 @@ async function main() {
     });
     await writeSeedDocuments();
     console.log('Development seed complete (safe to rerun).');
-    console.log('Fixtures: 1 verified admin, 18 volunteers, 20 slots, 18 assignments, 2 skips, 1 holiday closure, 2 messages, 19 recipients, 9 resources, 2 quick links.');
+    console.log('Fixtures: 1 verified admin, 18 volunteers, 40 slots, 18 assignments, 2 skips, 1 holiday closure, 2 messages, 19 recipients, 9 resources, 2 quick links.');
     console.log('No emails were sent. No existing rows were deleted or reset.');
   } finally {
     await pool.end();

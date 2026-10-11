@@ -2,37 +2,43 @@
 
 The five personas in `shared/testAccounts.ts` are created by app code at startup
 when quick login is enabled. Development enables them automatically; production
-requires `QUICK_LOGIN_ENABLED=true` and a `QUICK_LOGIN_KEY` of at least 32 characters. No password or quick-login key is returned,
+requires only `QUICK_LOGIN_ENABLED=true`. No password is returned,
 stored in the persona config, or displayed. Password and Google sign-in cannot
 be used to access these accounts.
 
-## Quick-login production lock
+## Quick login (testing)
 
-Open `/qa?key=<your QUICK_LOGIN_KEY>` over HTTPS to unlock this browser, then
-use the sign-in screen. The endpoint never echoes the key and request logs omit
-query strings. It sets the signed `qa_unlock` cookie for 30 days with HttpOnly,
-Secure, and SameSite=Lax. Rotating either signing secret invalidates the unlock.
-Use `/qa/lock` to clear the unlock cookie and return to sign-in; this does not
-end an already-established sign-in session.
+Development is always enabled. Production is enabled only when
+`QUICK_LOGIN_ENABLED`, trimmed and lowercased, equals `true`. Set it to
+`false` to disable testing and republish after either change.
+
+When enabled, anyone opening `/signin` can use all five test personas,
+including the Admin persona, which opens the real admin view. This is intentional
+while testing. Reset test accounts after production testing and turn the switch
+off before inviting real volunteers. Disabling the switch prevents new quick
+logins; reset also invalidates existing test-account sessions.
 
 `GET /api/auth/quick-login/status` returns only persona keys, labels, roles, and
-descriptions. Locked or disabled production requests return 404, including the
+descriptions. Disabled production requests return 404, including the
 status endpoint. `POST /api/auth/quick-login` accepts only `{ persona }`, uses
 the normal CSRF token/origin check, regenerates the session, updates last login,
-and returns the usual `nextPath`. An enabled, unlocked browser shows the
+and returns the usual `nextPath`. When enabled, every browser shows the
 **QUICK LOGIN — TESTING** card below the normal sign-in card, with one button per
-persona. Locked/disabled browsers show no testing card or hint.
+persona. Disabled production shows no testing card or hint.
 
 Signed-in test accounts have an amber banner above the app header, including
-during applicant onboarding. Use **Switch account** to choose another persona,
+during onboarding. Use **Switch account** to choose another persona,
 or **Sign out** to return to sign-in. Switching clears the previous user's
 cached data and refreshes the session and CSRF token before navigation.
-The **PRODUCTION** pill and **Hide test logins on this device** link are shown
+The **PRODUCTION** pill is shown
 on the sign-in testing card only when the API reports production mode.
 
-Unlock attempts are limited to 5 per IP/hour; login attempts to 30 per IP/hour.
-The runtime logs a loud warning and disables quick login if the production key
-is missing/short, without failing otherwise-valid app startup.
+Login attempts are limited to 30 per IP/hour. Only flagged, active, verified
+test users with the persona's expected role can be signed in. Ordinary accounts
+are never eligible. Normal CSRF/origin checks and session regeneration remain.
+
+Personas: Admin; Volunteer · Active; Volunteer · Active, no shift;
+Volunteer · Onboarding, ready to activate; Volunteer · Onboarding, new.
 
 Every quick login has a notification-free structured audit record with the
 test user as actor, persona, IP, and user agent. Volunteer logins also appear
@@ -50,7 +56,8 @@ seed script is added. Publish the schema change before starting the new release.
 
 Admin → Team → Test accounts lists all five personas and their last login.
 Reset requires confirmation and restores only these flagged QA identities.
-It clears their assignments, weeks off, inbox memberships, profile edits,
+It clears their standing assignments, cancels their one-time claims with
+`cancelledAt`, and clears weeks off, inbox memberships, profile edits,
 onboarding answers, and authentication tokens; invalidates their sessions;
 and records the action in activity history. Non-test email collisions stop
 the operation without changing any accounts.

@@ -153,12 +153,13 @@ describe('Reminder job persistence, safeguards and delivery', () => {
     process.env.JOBS_SECRET = testSecret;
     expect((await request('/jobs/run', 'POST')).status).toBe(401);
     expect((await request('/jobs/run', 'POST', { JOBS_SECRET: 'wrong' })).status).toBe(401);
+    expect((await request('/jobs/run', 'POST', { JOBS_SECRET: testSecret })).status).toBe(401);
     expect((await request('/jobs/run', 'POST', await session(admin))).status).toBe(401);
     const response = await request('/jobs/run', 'POST', { 'X-Jobs-Secret': testSecret });
     expect(response.status).toBe(200);
     expect(await response.clone().json()).toMatchObject({ budgetMs: 20000, incomplete: false, elapsedMs: expect.any(Number) });
     const result = await response.json() as Awaited<ReturnType<typeof jobs.runReminderCheck>>; if (result.run) runs.push(result.run.id);
-    const overrides = await request(`/jobs/run?at=${fakeAt.toISOString()}`, 'POST', { JOBS_SECRET: testSecret });
+    const overrides = await request(`/jobs/run?at=${fakeAt.toISOString()}`, 'POST', { 'X-Jobs-Secret': testSecret });
     expect(overrides.status).toBe(400);
   });
   it('resumes unsent recipients 15 minutes late without a queue or repeated deliveries', async () => {

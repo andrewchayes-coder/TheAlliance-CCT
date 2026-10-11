@@ -18,7 +18,7 @@ export function UsageCard({ s }: { s: Summary }) {
   const [ok, setOk] = useState(false);
   const value = draft ?? String(s.monthlyLimit);
   const pct = s.percent;
-  const tone = pct >= 95 ? '#a8302a' : pct >= 80 ? '#c9962b' : '#1a8a8a';
+  const tone = pct >= 95 ? '#a8302a' : pct >= 80 ? '#c9962b' : '#0175aa';
   const status = pct >= 95 ? 'blocked' : pct >= 80 ? 'attention' : 'good';
   const over = s.total - s.monthlyLimit;
 

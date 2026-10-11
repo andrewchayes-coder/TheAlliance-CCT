@@ -1,233 +1,100 @@
 # Community Care Team Volunteer Portal
 
-A mobile-first volunteer management portal for The Alliance's Community Care Team.
+Mobile-first volunteer management for The Alliance's Community Care Team.
 
-## Current scope
+## Product context and v2 model
 
-The brand foundation, database model, development seed, shared Postmark-ready email service, email/password authentication, onboarding, approvals, volunteer dashboards/profiles, roster, scheduling, coverage alerts, and messaging are implemented. Google OAuth is prepared but unavailable until its client credentials are configured. Resource publishing remains for a later step; volunteer resource reading is implemented. UI navigation samples on the style guide remain labelled previews.
+- The pilot is 12–15 volunteers in Placer County, growing to about 60 across five counties. Excellent phone usability is required. County choices are not a final service-area commitment.
+- Volunteers are Resource Coordinators helping local families find support. Use warm, specific, dignifying copy; staff UI may say volunteer.
+- The app writes only **onboarding / active / inactive**. Historical database statuses normalize to onboarding when read; their enum values and historical columns remain intact.
+- Onboarding is a fixed profile: names, ten-digit mobile, DOB, home address, emergency contact name/relationship/phone. DOB must be a valid date before today in Pacific time; there is no age cutoff.
+- County is staff-managed, defaults to Placer, and is not asked of volunteers. Start date is staff-editable and defaults to Pacific today on first activation.
+- Activation requires verified email, recorded onboarding completion and every required profile field. No compliance override is provided. Questionnaire configuration is empty; certification/background/agreement flags are false. Training and paperwork are handled with staff outside this app.
+- Google OAuth is prepared but unavailable until configured; email/password works independently.
 
-The `/style-guide` route and its lazy-loaded module are development-only. The root page is a restrained portal entry, not an authentication screen.
+## Structure and runtime
 
-## Product context
+- Frontend: `artifacts/alliance-volunteer-portal`, React/Vite, Wouter, TanStack Query and shared generated API clients.
+- Backend: `artifacts/api-server`, Express, PostgreSQL/Drizzle. Shared model/configuration lives under `shared`; libraries live under `lib`.
+- Managed workflows: `artifacts/alliance-volunteer-portal: web` and `artifacts/api-server: API Server`. Use the artifact routing helpers, not hardcoded localhost/browser API URLs.
+- The separate registered Canvas/component-preview artifact is workspace design infrastructure, not shipped portal UI. Preserve it; exclude its scaffold from CCT brand/legacy-flow scans.
+- Regenerate API contracts with `pnpm --filter @workspace/api-spec run codegen` after contract changes. Keep server validation, generated DTOs and client use consistent.
 
-- Volunteers will be verified and approved by staff, then sign up for recurring two-hour phone shifts Monday–Friday.
-- The pilot is 12–15 volunteers in Placer County, growing to about 60 across five counties.
-- Excellent phone usability is a requirement.
-- The counties in appConfig are placeholders, not a final service-area commitment.
+## Run, verify and publish
 
-## Run & operate
+- `npm test` / `pnpm test` runs all API Vitest tests, the client coordinator projection tests, and all TSX/Node suites in an isolated development schema with external email disabled. It refuses production.
+- `pnpm run typecheck` checks libraries and applications. Build the API and frontend before release.
+- Development fixtures only: `NODE_ENV=development SEED_DATABASE_ENVIRONMENT=development npm run seed`; repeat safely, then run `NODE_ENV=development SEED_DATABASE_ENVIRONMENT=development pnpm --filter @workspace/scripts run verify-seed`.
+- The seed contains 1 ordinary dummy admin, 18 complete fake volunteer profiles with canonical statuses, and 40 standing slots. Built-in QA accounts are separate synthetic identities. Never load these ordinary fixtures into production.
+- The smoke runner uses its own schema/API, exercises the v2 journey and collects Lighthouse reports under ignored `generated-artifacts`. No live email or shared operational data should be touched by regression tests.
+- Production remains **Autoscale**, **RUN_JOBS=false**, with cron-job.org calling `POST /api/jobs/run` every 15 minutes using **X-Jobs-Secret**.
+- **Replit Publish owns schema changes.** Do not restore startup migration hooks, invoke Drizzle migrate, create a baseline journal, run production seeds or copy development data. Migration files are reference records only.
+- Before Publish, a newly added status enum value needs its separate committed SQL statement. DEPLOY.md contains the operator-reviewed enum/CHECK runbook, required configuration, first admin setup, external cron settings and rollback instructions. Never execute production SQL as part of ordinary workspace tests.
+- Production uses its own managed database and HTTPS `APP_BASE_URL`. Secrets belong in secure environment configuration, never source, screenshots or docs.
 
-- Managed frontend workflow: `artifacts/alliance-volunteer-portal: web`
-- Managed backend workflow: `artifacts/api-server: API Server`
-- `pnpm run typecheck` checks all libraries and applications.
-- `pnpm --filter @workspace/api-spec run codegen` regenerates API types after contract changes.
-- `pnpm --filter @workspace/db run push` applies development schema changes.
-- `npm run seed` (or `pnpm run seed`) adds the development fixtures. It refuses production and other explicit non-development NODE_ENV values; an unset NODE_ENV is treated as a local development invocation.
-- `pnpm --filter @workspace/scripts run verify-seed` checks fixture counts, insert validation, safe profile projection, placeholder PDFs, and database constraints. Constraint probes roll back completely; never run this on production.
-- `pnpm --filter @workspace/api-server run test:email` checks the email service against the development DB using mocked delivery. It refuses production, never sends real mail, and cleans up its own temporary users/logs.
+## Authentication, roles and privacy
 
-## Stack and source map
+- Email/password uses bcrypt cost 12, PostgreSQL sessions, secure/httpOnly/SameSite=Lax production cookies and origin/CSRF enforcement. Unverified or deactivated users cannot enter protected APIs.
+- Every registered API route declares a guard; new routes default-deny. Admin routes require admin access. Volunteer reads/writes are scoped to that user.
+- Verification/reset/invitation tokens are random, hashed, single-use and expiring. Authentication and administrative sends have server rate limits. Recovery flows avoid account enumeration.
+- Deactivation invalidates sessions and unused authentication links. Staff cannot deactivate themselves or the last active verified administrator. Use the create-admin operator command only in its intended database context.
+- A session-changing action must refresh client identity and coordinate route guards before navigation. Do not keep a previous account's private query data after switching.
+- Schedule endpoints visible to volunteers expose counts and their own assignments only, never peer contacts or staff email. Public team contact comes from appConfig. Staff notes are stripped from every volunteer-accessible response.
+- Staff profile-edit audit details contain field names, not DOB, address or emergency-contact values. No generic service-worker/private-data caching.
 
-- Client: React, Vite, TypeScript, Tailwind, shadcn/ui, wouter, TanStack Query in `artifacts/alliance-volunteer-portal/src/`.
-- Server: Express and TypeScript in `artifacts/api-server/src/`.
-- Shared configuration: `shared/appConfig.ts`, imported as `@workspace/shared/appConfig`.
-- Shared date helpers: `shared/time.ts`, imported as `@workspace/shared/time`.
-- Drizzle schema source: `shared/schema.ts`, including all 11 tables, enums, indexes, insert schemas, inferred types, and safe public projections.
-- Seed script and fixtures: `scripts/src/seed.ts`, `scripts/src/seed-fixtures.ts`, `scripts/src/seed-support.ts`.
-- Shared email service: `artifacts/api-server/src/email.ts` (the managed server equivalent of `server/email.ts`).
-- Branded HTML/plain-text wrapper: `artifacts/api-server/src/email-template.ts`, re-exported by the email service.
-- PostgreSQL connection and Drizzle configuration: `lib/db/`.
-- API contract: `lib/api-spec/openapi.yaml`; health, authentication, safe `/me`, and development-only email check.
-- Brand CSS tokens: `artifacts/alliance-volunteer-portal/src/index.css`.
-- Themed shadcn controls: `artifacts/alliance-volunteer-portal/src/components/ui/`.
-- Brand layouts, status badges, and empty states: `artifacts/alliance-volunteer-portal/src/components/brand-system.tsx`.
+## Synthetic QA personas
 
-## Architecture decisions
+- Exactly five: Admin; Volunteer · Active; Volunteer · Active, no shift; Volunteer · Onboarding, ready to activate; Volunteer · Onboarding, new.
+- Development is always enabled. Production is enabled only when `QUICK_LOGIN_ENABLED`, trimmed and lowercased, equals true.
+- While enabled, **anyone can open these personas from /signin, including the real admin view**. This is intentional during testing. Reset after production QA, then turn the switch off and republish before inviting real volunteers.
+- Only flagged, active, verified test users of the expected role are eligible. Ordinary users must never be converted. CSRF/origin checks, session regeneration, 30/IP/hour login limits and audits remain.
+- Replaced personas reuse existing synthetic users and history; repeated preparation preserves tester progress. Keep legacy email aliases until both production identities have migrated and no old alias remains.
+- Production setup/reset does not occupy standing capacity automatically. Tester-selected standing/one-time reservations consume actual capacity and carry TEST labels.
+- Reset releases QA standing shifts, cancels QA one-time claims using cancelledAt, clears QA skips/inbox/progress and invalidates QA sessions. Never clear real-user data.
+- Test emails log suppressed status without delivery and do not count against usage. Test identities are excluded from normal roster counts, broadcasts, digest recipients and CSV exports. Persistent TEST banners and account switching are present on all signed-in layouts.
 
-- Development email check: `POST /api/dev/email-test`. Uses only the shared email service, fixed example.org recipient/content, and a fresh test key. Returns the ID of a confirmed `logged` notification row. Not mounted outside development and refuses to run with both live Postmark settings present. Test audit rows remain available for inspection.
+## Scheduling and coordinator dispatch
 
-- Client and server remain separate managed artifact packages rather than literal root `client/` and `server/` directories; shared files live in the requested root `shared/` directory.
-  **Why:** retain Replit's managed service routing and the existing pnpm workspace conventions without duplicating app code.
-- All app settings come from `shared/appConfig.ts`; do not scatter copies of product settings across screens or server code.
-- Store timestamps as UTC and display dates/times in `America/Los_Angeles`, including daylight-saving changes.
-- Calendar-only fields use validated YYYY-MM-DD strings, not timestamps; shift clock times are Pacific wall times.
-- Future volunteer queries must use `volunteerProfilePublicColumns` and the public schema/serializer. Never return a raw profile containing adminNotes. Never return passwordHash or tokenHash to a client.
-- `isActive = false` means a deactivated user; authentication refuses sign-in and the verified-user middleware also blocks existing sessions.
-- The seed uses stable UUIDs, a transaction, and conflict-do-nothing inserts. Reruns never delete rows, reset credentials, or overwrite edited fixtures.
-  **Why:** repeatable dummy data must not destroy existing development work.
-- New seed passwords use bcrypt cost 12. Existing scrypt fixture hashes remain usable and are upgraded only after a successful sign-in; rerunning the seed never overwrites passwords. Dummy volunteers receive randomized, undisclosed passwords; only the specified development admin credential is known.
+- Standard grid: Mon–Fri, starts 9–16, two-hour slots through 18:00, capacity 2 (40 total). Hourly overlap is intentional. The standard-grid loader is idempotent.
+- Shared schedule logic interprets date-only values and instants in America/Los_Angeles, including DST. Occurrences honor starts/ends, skips, closures, retirement, date-specific blocks and custom shifts.
+- Standing sign-up/change locks the slot inside a transaction. Enforce active/verified/completed eligibility, capacity, configured max/min and non-overlap. Future reservations consume standing seats; a week off does not free a standing seat.
+- Changes release the old commitment immediately. Reusing a cancelled enrollment preserves history but clears its stale future weeks off. Cancellation-before-start is permitted only with an ended reason; keep the date CHECK aligned.
+- Week-off/cancellation self-service requires at least 24 elapsed hours before the shift. Inside the cutoff, direct volunteers to the public Community Care Team contact.
+- Admin overrides of standing caps/capacity require an explicit audited reason; overlap is never overridden. Every assignment/removal/week-off writes activity. Date-specific blocking confirms and notifies affected volunteers.
+- One-time shifts are separate from standing counts, use date-specific capacity/non-overlap checks and appear in now/next, coverage, personal upcoming shifts, CSV and reminders.
+- `/admin` is the coordinator's primary Find Help dispatch tool. It refreshes every 60 seconds while foregrounded and on focus. Deduplicate contacts across overlapping shifts; display every relevant end time.
+- Display “outside shift hours” separately from an uncovered operating period. Failed refreshes may retain the last snapshot only with an explicit not-live warning; never present a stale schedule as live.
+- Desktop calendar uses overlap lanes; phones use a day picker/list. Coverage counts come from actual eligible occurrences, while a separate display projection preserves skipped names and closed cells.
+- Needs attention: active with no shift; onboarding with an incomplete profile for over 7 days; or onboarding for over 30 days. Closed/blocked dates do not produce coverage warnings.
 
-## Development fixtures
+## Email, jobs and notifications
 
-- One verified admin and 18 fictional volunteers: 7 onboarding, 10 active, 1 inactive. All emails use example.org and phone numbers use the reserved 555-01xx fictional range.
-- Twenty weekday slots (09:00–11:00, 11:00–13:00, 13:00–15:00, 15:00–17:00), capacity two; 18 standing assignments across the active volunteers leave intentional gaps.
-- Two occurrence skips and one upcoming observed US federal holiday closure. The closure is dummy data, not an Alliance holiday policy.
-- Two messages with recipients, and three documents, three articles, and three links; two links are quick links with placeholder URLs.
-- Three clearly marked placeholder PDFs are generated under the frontend's `public/seed-resources/`. These are static seed fixtures, not an upload or document-storage feature.
-- The seed does not send mail or generate live auth tokens.
+- All delivery goes through the single email service and central emailIdentity. Postmark outbound identity comes only from configured From/Reply-To; legacy per-message staff addresses are ignored.
+- Development without provider configuration logs full text/links plus From/Reply-To. Production fails closed if required email configuration is incomplete and must not log recovery credentials.
+- notification_log records sent/logged/failed/suppressed and uncertain delivery. Deduplication protects repeated confirmed sends. Uncertain delivery is never automatically resent or manually retried without reconciliation.
+- External jobs have an approximately 20-second application budget. No new queue/table: unfinished recipients remain unsent and a later 15-minute call catches them up. Closed/blocked/skipped/inactive occurrences are excluded.
+- The daily digest is Pacific 7 AM on weekdays, controlled by staff settings; no gaps means no digest. Use the date key to prevent duplicate sends. Immediate alerts report actual coverage reductions rather than pre-existing gaps.
+- Auth links must be regenerated for safe retries. Usage counts only sent/logged rows; historical dedupe must not inflate usage. Test mail/reminder actions remain explicit and staff-only; operator production checks target a verified administrator.
+- Node-cron is a development/testing alternative only for this deployment. Production runs no built-in scheduler even if the flag is mistakenly enabled.
 
-## Email rules
+## Roster, messages and resources
 
-- Every feature must call `sendEmail` from the shared email service. Do not import Postmark or call its API anywhere else.
-- Live delivery requires both `POSTMARK_SERVER_TOKEN` and `EMAIL_FROM`. With either missing, the full recipient, subject, text, and links are printed clearly using the email logger; no external email is sent.
-- The official Postmark SDK uses the outbound message stream and sends both HTML and plain text. A token is never logged.
-- Use `createEmailTemplate` to generate HTML and plain text together. Copy should thank people for their time, name the specific action, and avoid impersonal system language.
-- Successful provider acceptance is recorded as sent with its provider ID. Console-only emails are logged. Failures return `{ ok: false, error }` instead of throwing.
-- Keyed emails are deduplicated by type, recipientUserId (including null), and relatedId for both sent and logged records. A PostgreSQL session lock makes checks safe across workers. A console-logged key remains handled even if Postmark is enabled later; use a new key for a deliberately new email.
-- For email-only sends without a user ID, callers should use recipient-specific related IDs; different addresses with the same null user and related ID are intentionally the same deduplication key.
-- Failed keyed attempts can be retried using the same log row. Unkeyed emails are not deduplicated.
-- A durable audit row is created before delivery, temporarily marked failed with an explanatory unconfirmed-delivery message because the model has no pending status.
-  **Why:** no external email should be attempted without a durable audit trail, including if the process stops during delivery.
-- Database outages fail closed without sending. An unavailable DB cannot record a new row; the service reports the failure to the caller and server logger. A provider acceptance followed by persistent audit-write failure must be reviewed before retrying, since delivery and database writes cannot be one atomic transaction.
-- Real provider delivery has not been tested. Before launch, configure an approved sender securely and obtain approval for the recipient/content of a controlled delivery check.
+- Roster: desktop sticky table / mobile cards, contact links, city/start date/shifts/login, optional staff-private columns with safely persisted preferences, sorting and v2 filters. Detail pages show editable private profile/start/county and staff-only autosaving notes.
+- CSV is server-generated/admin-only, uses readable headers and formula escaping, includes current profile and standing/custom schedules, and omits disabled tracking fields and QA identities by default.
+- Staff messages support preview/counts, markdown, single/selected/status audiences, optional central-service email and read receipts. Volunteers have read-only inboxes and the public team reply guidance.
+- Documents are private authenticated PDF/DOCX uploads (15 MB maximum), articles use sanitized markdown, and quick links require HTTPS. Staff can reorder/publish/replace/delete; volunteers see published content only.
+- Use native anchors for document/new-tab links because this router intercepts target=_blank clicks. Do not emit public object-storage URLs for private documents.
+- Agreement categories/legacy data remain available, but agreement renewal is disabled by the v2 configuration and is not an onboarding/shift gate.
 
-## Authentication rules and operation
+## Approved CCT brand and accessibility
 
-- Auth pages: `/signup`, `/verify-email`, `/verify`, `/signin`, `/forgot-password`, `/reset-password`. Public forms use PublicLayout. `/onboarding` and all `/dashboard/*` paths require a verified account and successful protected `/api/me` response.
-- The server uses express-session and connect-pg-simple with the `sessions` Postgres table, SESSION_SECRET, and Secure/HttpOnly/SameSite=Lax cookies. New passwords are bcrypt cost 12; minimum 8 characters, maximum 72 UTF-8 bytes to avoid silent bcrypt truncation.
-- Every API request passes the explicit access-policy registry before any handler. Declare the HTTP method, path, and guard for each new route; undeclared paths are denied even to administrators. Guards are `requireAuth` (signed in, verified, active), `requireAdmin`, and `requireVolunteer`. Only the listed authentication endpoints, health, and fixed development email check are public.
-- `/api/me` derives ownership exclusively from the signed-in user, ignores requested user IDs, and excludes password hashes, Google subjects, session versions, and volunteer adminNotes. All future volunteer resource queries must derive ownership from the current user rather than client-supplied IDs. Future schedule projections must not expose other volunteers' names, emails, or phones. No schedule endpoint is currently declared.
-- Signup atomically creates a volunteer user and onboarding profile, then sends verification through the shared email service. Email failure leaves the account available for resend and is not presented as successful delivery.
-- Verification/reset tokens use random 32-byte values; auth_tokens stores only SHA-256 hashes. Verification lasts 48 hours, reset lasts one hour, and transactional consumption enforces single-use even under concurrent requests. Resends invalidate older verification tokens.
-- A session version is checked against the current user on every protected request. Password reset and verification increment it, invalidating older sessions; sign-in regenerates the session ID and updates lastLoginAt. Deactivation blocks sessions regardless of verification.
-- Obtain CSRF from GET `/api/auth/session` before mutations. Send `X-CSRF-Token` and same-origin credentials; refresh bootstrap after session-changing operations. Mutations also reject mismatched Origin headers. Signout destroys the stored session.
-- Postgres rate counters survive workers/restarts. Sign-in: 10/IP and 8/email per 15 minutes. Reset requests: 10/IP and 5/email per hour. Resend: one/minute and five/hour per user, with an additional IP limit. The initial signup email starts the minute cooldown, not the five-resend hourly quota.
-- Verification/reset links use APP_ORIGIN. It must be an HTTPS origin with no path/query. Development may default to the runtime development domain; production MUST explicitly configure the actual published origin. Never construct production links from a development domain.
-- Google uses authorization code exchange, state, nonce, PKCE, and Google's verified ID-token/email checks. Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET securely. Register `${APP_ORIGIN}/api/auth/google/callback` as the web client's redirect URI. Tokens from Google are not persisted.
-- Existing verified local accounts can be linked by verified Google email. Reclaiming an unverified volunteer registration replaces its potentially attacker-chosen password with an unknown random bcrypt credential, invalidates tokens/sessions, and clears the unverified phone. Pending admins cannot bypass invitation acceptance through Google, ordinary verification, or password reset. Google-only verified users can establish a local password through the reset flow.
-  **Why:** automatically verifying an old unverified registration while preserving its password/sessions would enable pre-registration account hijacking.
-- Live Google consent/token exchange has not been tested because credentials are absent. The UI must remain honest about availability; do not simulate a Google login.
-- Backend auth checks: `pnpm --filter @workspace/api-server run test:auth`. They refuse non-development NODE_ENV, use only temporary example.org accounts and reserved IPs, force console-only email in their process, and clean up their own fixtures. Email checks: `pnpm --filter @workspace/api-server run test:email`.
+- Open Sans 400/600/700, sentence-case headings, navy #06365D, Alliance Blue #0175aa, gray #E6E6E6 and white. Blue small text belongs on white, not gray; labels are navy.
+- Approved assets are bundled under the portal public/brand folder and served at /brand before sessions, with immutable caching. Version filenames if replacing artwork. Never invent fallback logos/wordmarks.
+- White desktop headers use the horizontal lockup, phones use the mark, and public pages use the stacked lockup. Email headers use the configured app URL plus the bundled horizontal PNG.
+- Visible focus, real labels, keyboard-operable dialogs/grids, polite announcements and 44px targets are required. Test 375px and 768px without horizontal scrolling.
+- `/style-guide` and time-override/test-email routes are development-only. The public root is a restrained portal entry. Manifest/icons allow home-screen installation without private-data caching.
 
-## Administrator access and team management
+## Release documentation
 
-- Verified admins land on `/admin`; `/admin/team` lists, searches, and paginates admin and volunteer accounts. Both activation directions require a confirmation dialog. Volunteers accessing any `/admin/*` path are redirected to `/dashboard`; anonymous and unverified visitors go to `/signin` and `/verify-email`.
-- Admin invitations create active but unverified pending admins with an unknown random bcrypt password. Only the one-time invitation sets their chosen password, verifies their email, and establishes an admin session. Invitation tokens are random 32-byte values stored only as SHA-256 hashes, expire after seven days, and are sent through the single email service.
-- Renewing an active pending invitation revokes its prior token. Existing volunteers or verified admins cannot be promoted/reinvited using this form. Inactive pending admins must first be reactivated, then invited again. Email delivery failure leaves a pending account and an honest retry message.
-- An admin cannot deactivate themselves or the last active, verified admin. Pending invitations do not count toward that safeguard.
-  **Why:** an unaccepted invitation does not provide anyone usable administrative access.
-- Administrator writes lock active verified admins in a consistent order and recheck the actor's session version. Deactivation increments the target's session version, deletes all their stored sessions, and revokes unused authentication links atomically. Reactivation does not revive old sessions or links. Token consumption locks the user before the token to match deactivation and invitation renewal.
-- First-time bootstrap command: `npm run create-admin -- email@domain.org "First" "Last"`. It creates a pending admin and prints a private, seven-day invitation link. It refuses once an active verified admin exists; use `/admin/team` thereafter. Production must have `APP_ORIGIN` set to the actual HTTPS published origin and use the production database/environment. Do not seed development dummy users into production.
-
-## Volunteer onboarding
-
-- `shared/onboardingQuestions.ts` is the question source for the two-step form, Zod validation, administrator review, and CSV columns. Question IDs are the JSON answer keys; keep IDs stable when only changing wording. Optional `profileField` mappings maintain county and availability notes without hardcoded question IDs.
-- Verified volunteers without completed onboarding are redirected from volunteer pages to `/onboarding`. Progress saves to the database between steps and through debounced saves/“Save progress”; no questionnaire/contact data is stored in browser local storage.
-- `/admin/team` → Volunteers offers “Review onboarding” and a CSV download. Only admins can review another volunteer or export personal information. CSV cells neutralize spreadsheet formulas.
-- Agreement resources must be published in the exact category `Agreements`, with titles `User Agreement` and `Safety Guidelines`. Both must have readable content before submission is enabled. Missing resources are not replaced with made-up legal text. Current resource viewing supports text articles, HTTPS links/documents, and existing static seed PDF paths; private App Storage file downloads will need the resource-storage feature.
-- Completion records the current `appConfig.agreementVersion` (default `v1`), acknowledgment time, completion time, and a deduplicated welcome email. It does not approve the volunteer or bypass training/background checks. Late drafts cannot overwrite completed onboarding.
-- Checks: `pnpm --filter @workspace/api-server run test:onboarding`. These use owned development-only fixtures, force console-only email in their process, and clean up their own records.
-
-## Volunteer home and profile
-
-- `/dashboard`, `/shifts`, `/messages`, `/resources`, and `/profile` use the volunteer AppLayout with five mobile tabs. Each requires a verified, active user account and completed onboarding; a volunteer-profile status of inactive is distinct from account deactivation and shows a contact-the-team message.
-- Dashboard cards use the current profile status, certification/background-check states, own standing assignments, active-only published quick links, and own unread message recipients. APIs under `/api/volunteer/*` derive identity from the session and require completed onboarding on the server.
-- Shift dates are a read-only projection of existing assignments, with skips and organization closures applied and times interpreted in `America/Los_Angeles`, including daylight-saving transitions. The projection is not a booking module: `schedulingOpen` remains false, and `/shifts` explicitly says selection is not open. Upcoming-shift components are reusable by the future scheduler.
-- Profile edits are limited to name, phone, county, availability notes, and answers validated by the shared question configuration. County/availability mappings stay synchronized; cleared notes are saved as null. Email, role, volunteer status, certification, background check, agreement acknowledgment/version, and admin notes cannot be changed through this endpoint.
-- Password changes require the current password, use bcrypt cost 12, and invalidate all sessions and unused auth tokens. The volunteer must sign in again; older passwords/sessions are rejected. Attempts are limited by user and IP.
-- Messages are limited to the current user's recipient rows; opening a message marks only that recipient read. Resources are read-only published content, with quick links hidden from nonactive volunteers. Resource management, sending messages, and shift booking are separate later modules.
-- Checks: `pnpm --filter @workspace/api-server run test:volunteer`; fixtures are development-only and cleaned up. Private volunteer query caches are removed when authentication state is refreshed.
-
-## Admin volunteer roster and exports
-
-- `/admin/volunteers` uses a desktop table and mobile cards, with name/email/normalized-phone search, status/county/certification/background filters, server pagination, and read-only detail links using user IDs. Global summary chips intentionally stay stable while filters change.
-- Attention means active profile with zero held shifts; a certification expiration from today through 30 days ahead inclusive; pending background checks submitted more than 14 calendar days ago; or incomplete onboarding. Dates and report filenames use the Pacific calendar. Expired certifications are not silently reclassified as “expiring within 30 days.”
-- A held/active assignment has an active slot and no end date before today, excluding `admin_removed` cancellations immediately. Future-start reservations count as held; ordinary end dates are inclusive. Rosters include all volunteer-profile statuses and account activation states; inactive profiles with assignments remain visible to staff.
-- Both CSV downloads are generated server-side and require an active, verified admin session. Exports respect current filters but ignore pagination and bulk selection. The roster includes every profile field, raw answer JSON (preserving legacy answers), one column per configured question, contact/verification/login metadata, and formatted held shifts. It includes internal admin notes: share only with authorized staff. Authentication secrets/hashes are never exported.
-- The schedule CSV has one row per held assignment, local weekday/time, start/end dates, and sorted future skip dates within that assignment's date range. All CSV cells are quoted/escaped and formula-neutralized; files use UTF-8 BOM and dated download filenames.
-- Bulk selection retains volunteer user IDs across pages and clears on filter changes. “Message selected” calls the messaging hook and shows an explicit coming-later notice; no messages are sent in this step.
-- Validation: `pnpm --filter @workspace/api-server run test:roster`, with owned, development-only fixtures and cleanup.
-
-## Admin volunteer detail workflow
-
-- `/admin/volunteers/:userId` provides contact links, joined/login dates, confirmed status transitions in any direction, training/background tracking, configured onboarding answers/agreement, staff shift/week-off controls, sent-message history/read status, autosaved staff-only notes, and the latest 50 activity entries.
-- Activation is server-enforced: verified email, completed onboarding, acknowledged agreement, complete certification, and cleared background check. The API rejects override fields and returns all missing requirements. Approval generates a warm `/shifts` email through the single email service, related to the status activity ID; UI distinguishes dev-logged from actually sent mail and reports delivery failures without undoing approval.
-- Inactive confirmation snapshots every unended assignment, including future reservations and inactive slots. The API compares the confirmed IDs and profile revision, then updates status, assignments (`admin_removed`, Pacific end date today), and activity atomically. Cancelled reservations retain their original start dates; only admin cancellations may end before a future start date. Ordinary end-date ordering remains enforced, including when the ending reason is null.
-- All status changes record actor, previous/new status, time, and released assignments in `activity_log`; tracking saves also record changed fields. Notes are not copied into the activity feed. Status/tracking revisions and exact prior-note compare-and-set prevent silent staff overwrites; drafts survive conflicts, and blank date inputs explicitly clear nullable columns.
-- Schedule writers acquire the shared schedule lock before user/profile and slot row locks, so bookings, staff overrides, account deactivation, and inactive releases cannot race. The uncovered-shift integration runs after commit and calculates actual coverage reductions before sending combined alerts.
-- Development schema changes have been applied; production schema changes use Replit's normal Publish diff, never startup or deploy-time migration scripts.
-
-## Schedule settings and occurrence rules
-
-- `/admin/schedule/settings` is staff-only: weekday slot CRUD (capacity 1–10, same-day times), advisory overlaps, additive Monday copying, and closed-date add/remove. Copying uses active Monday templates without scheduled retirement, preserves matching duplicate-slot multiplicity, and never overwrites existing slots or assignments.
-- Assignment counts include future reservations and count unique volunteers. Reducing capacity below that count is a validation error, not a stale-edit conflict. Slot edits compare the original revision and exact assignment IDs; a stale confirmation requires explicit review.
-- Ending a slot now cancels all ongoing assignments immediately with `admin_removed`, Pacific end date today, one centrally sent/logged email per volunteer, an activity entry, and the shared uncovered-shift hook. Inactive slots do not generate gap warnings. Reactivation never resurrects cancelled assignments.
-- Keeping assignments through a date stores a scheduled retirement and inclusive assignment end dates. The slot remains effective through that date; afterwards it is excluded even without a background job. Future reservations starting after the cutoff are cancelled now and emailed; current assignments continue through the cutoff. Pending-retirement slots are for existing assignments only: future booking code must reject new seats whenever `retireAfterDate` is set. Ordinary edits preserve the date; cancelling the retirement does not extend assignment end dates automatically.
-- `src/server/scheduleService.ts` is the single pure occurrence engine, bound to an immutable copied data snapshot via `createScheduleService`. Its `getOccurrences(fromDate,toDate)` uses inclusive Pacific calendar dates; `getOnShiftNow(at)` uses start-inclusive/end-exclusive instants; `getUpNext(at)` returns all slots tied for the earliest future start; `getCoverage(weekStart)` returns a seven-day range with distinct-person counts and empty/under-capacity flags. Clock defaults are injectable in tests.
-- Skips remove only the applicable assignment/day. Closures and effectively inactive slots emit no occurrences and therefore no reminder or coverage-gap candidates. Future reminder/alert jobs must use these methods, never construct a separate calendar. Existing volunteer upcoming-shift projections now delegate to this engine and are scoped to the signed-in volunteer's assignments; public APIs must never expose another volunteer's assignment/personnel records.
-- Schedule mutations take a shared transaction advisory lock. Future booking writers must acquire it before user/profile/slot row locks; use the user-then-profile lock order shared with profile-status changes. This prevents booking, capacity, and deactivation races.
-- Run `pnpm --filter @workspace/api-server run test:schedule` for the Vitest service/API suite. It covers both DST transitions, overlapping slots, skips, closures, retirement, capacity, confirmation conflicts, mail logging, and additive/idempotent copying. Closed-date HTTP values remain calendar strings, not midnight-UTC timestamps.
-
-## Notification monitoring and safe retries
-
-- `/admin/notifications` shows sent + logged usage by type for Pacific calendar months, including the current partial month and five previous months. Failure rows do not count. Usage uses successful-send time (`sent_at`, with legacy creation-time fallback), so an old failure retried successfully counts in its delivery month.
-- `app_settings.postmarkMonthlyLimit` defaults to 100 and is monitoring-only: the progress bar warns at 80% and 95%; delivery is not blocked. One monthly 80% alert goes to active, verified administrators through the central email service. A database lock, per-recipient related IDs and a month acknowledgment protect concurrent checks and recover partial failures without repeating confirmed recipients.
-- Every confirmed central send checks the limit after releasing its delivery connection/lock. Limit edits and staff summary visits also check it, allowing interrupted checks to recover. Alert emails use `monthly-limit:YYYY-MM` and bypass recursive quota checks.
-- Future non-authentication emails save authenticated, encrypted HTML/plain-text/reply-to content for safe manual retry. The encryption key is purpose-derived from `SESSION_SECRET`; rotating it makes older retry payloads unreadable, and retry fails explicitly rather than fabricating content.
-- Verification, password-reset and administrator-invite bodies are never saved. Retry issues fresh hash-only, single-use tokens with the original 48-hour / 1-hour / 7-day expiry. Already verified accounts or accepted invitations cannot be reissued by the log.
-- Retry targets the original metadata row, preserves the original recipient, uses a per-row database lock, and never repeats confirmed sent/logged keys. Inactive/changed-address recipients, unknown delivery outcomes, obsolete standing-shift reminders and legacy rows without content fail explicitly. Metadata APIs never expose encrypted or decrypted bodies. Tests always target the signed-in administrator and keep an idempotent request ID across uncertain network retries.
-- The notification APIs are default-deny admin routes; mutations require CSRF. Provider status exposes only token presence and the requested From address, never the token. Development test copies are labelled logged/not delivered. Run `pnpm --filter @workspace/api-server run test:notifications` for quota, retry, privacy, filter and access tests.
-
-## Resource hub and agreement renewal
-
-- Admin resource management lives at `/admin/resources`: documents, Markdown articles, HTTPS links, publication, replacement, deletion and per-type ordering.
-- PDF/DOCX uploads are limited to 15 MiB, validated server-side, and stored privately through `@replit/object-storage`. The SDK receives the configured default bucket explicitly; it is externalized in the API bundle.
-- Document downloads always use authenticated `/api/resources/:id/file` routes; no public or signed storage URL is sent to a browser. Drafts are staff-only, and operational quick links remain active-volunteer-only.
-- The `Agreements` category is reserved for `User Agreement` and `Safety Guidelines` documents or compatible existing articles. Staff must publish both before opting into a new agreement version. Do not invent legal copy.
-- Agreement versions are persisted in app settings. A bump routes returning volunteers to renewal and server-blocks volunteer schedule APIs until acknowledgment; it does not end standing assignments or clear onboarding answers.
-- Seed PDFs reside under the API artifact, not web public assets. `pnpm --filter @workspace/api-server migrate-resource-seeds` privately upgrades existing legacy seed document records without changing their IDs; the authenticated download handler also upgrades remaining legacy references on first access.
-- `pnpm --filter @workspace/api-server test:resources` verifies real storage uploads/downloads, replacement, guards/publication, validation, ordering and agreement renewal with temporary fixtures cleaned afterward.
-
-## Automated shift reminders
-
-- `src/server/jobs.ts` schedules `*/15 * * * *` with node-cron in America/Los_Angeles only when `RUN_JOBS=true`. Manual staff checks and secret-authenticated external checks intentionally work even with automatic scheduling disabled.
-- Reminder candidates come from the shared occurrence engine: assignment dates, week-offs, closed dates, active/retired slots, active volunteer profiles/accounts and verification all apply. Eligibility is freshly checked immediately before each delivery.
-- The main reminder uses elapsed `appConfig.reminderHoursBefore` hours and a half-open 15-minute start window. Its related ID is `assignmentId:Pacific-date:24h`, regardless of configured hours. Optional morning checks run during the configured Pacific hour for today's not-yet-started occurrences and use `:am`; later quarter-hour checks retry failures without repeating confirmed mail.
-- A cross-process PostgreSQL advisory lock prevents overlapping checks. Central email-service deduplication prevents sent/logged retries across workers/restarts. Each email batch settles before the job lock is released. Interrupted run diagnostics are recovered by the next successful lock owner.
-- Persisted `reminder_job_runs` diagnostics power `/admin/notifications/jobs`. Seven-day delivery totals count actual standing-shift reminders; labelled test emails to the authenticated admin do not inflate those totals. Sent, logged and failed are distinct. Staff mutations require admin authentication plus CSRF.
-- Machine callers POST `/api/jobs/run` with the `JOBS_SECRET` header (at least 32 characters). This is the sole narrow, separately guarded machine route exempt from session/CSRF. Missing/unconfigured credentials fail closed. Secrets are never in URLs or browser code. Production rejects clock overrides; development staff checks accept an ISO `?at=` for controlled testing.
-- The existing published app is Autoscale, which cannot guarantee an in-process timer stays awake. Use an always-running API or a Scheduled Deployment every 15 minutes in America/Los_Angeles. `pnpm --filter @workspace/api-server run reminder-trigger` performs the HTTP POST using `JOBS_RUN_URL` and `JOBS_SECRET`; it does not start the server or connect to a database. `reminder-check` is a direct database CLI alternative.
-- Production `RUN_JOBS=true` and the production `JOBS_RUN_URL` are configured. Development is enabled only for testing and restored afterwards. `JOBS_SECRET` is configured through Secrets; the authenticated trigger was verified through the development proxy, while unauthenticated requests return 401. Publish the updated code before using the production trigger. Schema changes are applied through publishing, not production startup DDL.
-
-## Messaging
-
-- `/admin/messages` supports active-volunteer blasts, all-status blasts, roster selections, and single recipients (including launching from volunteer detail). The active audience requires an active account and active profile; all-status and explicitly selected audiences may include inactive/unverified volunteer accounts. Admin accounts are never recipients of volunteer messages.
-- Preview counts are bound to the canonical draft and exact recipient IDs. Sending revalidates the audience and returns a conflict if it changed. A client request UUID is the persisted message ID; retrying that ID preserves the original message/recipient snapshot instead of duplicating it. Portal recipients are committed atomically before email delivery.
-- Optional email copies use bounded batches through `src/email.ts`, shared branding and safe Markdown, one notification per recipient on initial send, and deduplication by message ID. Failed attempts remain logged; same-ID retries can retry failures while skipping sent/logged recipients. Reply-To is centrally controlled by `EMAIL_REPLY_TO`, otherwise the parsed `EMAIL_FROM` address, never the authenticated sender's email.
-- Supported Markdown is bold, HTTP(S)/mailto links, and ordered/bullet lists. Raw HTML is escaped and other URL schemes are rejected. The same renderer is used for preview, email HTML/plain text, and inbox reading.
-- `/messages` only returns the current volunteer's recipients; opening marks only their row read, preserves the first read timestamp, and refreshes navigation/dashboard unread state. No in-app reply endpoint exists. Staff lists, detail history and per-recipient receipts refresh every minute.
-- `appConfig.volunteerContactName` and `volunteerContactEmail` are the sole public program contact. Inbox context returns the team mailbox without fetching or falling back to staff identities.
-- Named staff contacts are internal only: never expose them in volunteer UI, automatic emails, email headers, or volunteer-reachable API responses. The client requires program-level communication, not personal staff contact details.
-- Development `message_audience` gained `active` and `selected` values, preserving existing `all`/`single` seed data. Production schema changes go through publishing, never startup DDL.
-
-## Volunteer standing shifts
-
-### Staff overrides and coverage notifications
-
-- Staff controls are shared by the master schedule drawer and volunteer detail. Only active accounts/profiles meeting all approval requirements can be assigned. Staff can exceed the configured shift maximum or slot capacity with an explicit override plus a nonblank reason, audited alongside the limits exceeded. Neither checkbox nor reason bypasses eligibility or overlapping standing shifts.
-- Staff can remove standing assignments with optional volunteer email, and add/undo weeks off without the volunteer's 24-hour cutoff. All actions write an activity event. Account deactivation also ends reservations and checks coverage; reactivation does not restore released seats.
-- Release alerts compare actual before/after occurrences, send one combined email per event to all active admins, and deduplicate by event ID. Weeks off use a seven-calendar-day window; other releases use fourteen days. Only reduced counts below capacity trigger a message. Closed and inactive slots produce no alerts.
-- The daily digest uses `app_settings` and checks at 7 AM Pacific Monday–Friday. It records the processed Pacific date (including empty checks), uses that date as each recipient's notification related ID, and retries failed deliveries without repeating sent/logged emails. A cross-process database lock prevents overlapping runs. The API polls every 30 seconds and catches up once after a restart after 7 AM.
-- **Production scheduling:** in-process timers require an always-running API (Reserved VM), not a web process that sleeps with no traffic. Alternatively schedule `pnpm --filter @workspace/api-server run coverage-digest` with `0 7 * * 1-5`, timezone `America/Los_Angeles`, and the existing production environment. No production deployment configuration was changed by this build.
-- `app_settings` was created in development, matching the shared schema. Publish applies the production schema change; do not add startup DDL or a production migration command.
-
-- `/shifts` is verified-volunteer self-service, including an explanation for onboarding or inactive profiles. Availability exposes counts and only the volunteer's own assignment/skip IDs; no peer contact information. Contact links use the Community Care Team mailbox.
-- Booking/change/drop/skip/undo all recheck the user/session and profile inside a transaction. Writers follow the shared advisory schedule-lock order, lock the user/profile, and row-lock the target slot; capacity is reread after that slot lock. Standing reservations, including future starts, consume capacity and the configured maximum. Skipping an occurrence never frees its standing seat.
-- New starts must be future, match the weekday, fall within 28 calendar days, and avoid closures/retirement. Changes immediately release the previous assignment; drops require the configured minimum to remain. Since end dates are inclusive, immediate cancellation uses yesterday with `changed` or `dropped`; the assignment-date CHECK permits pre-start ends only when an ended reason exists.
-- Rebooking an identical cancelled reservation reuses its unique row, records the prior cancellation in activity, and clears future weeks off from that cancelled enrollment. Confirmation emails go only through `email.ts`, use the activity ID for deduplication, and report any delivery failure separately from a successfully saved shift.
-- Weeks off require at least 24 elapsed hours before the Pacific shift start; undo remains available until the start. Own standing cards show the next four potential occurrences with weeks-off markers and all upcoming stored skips. The dashboard uses actual occurrences, excluding skips and closures, and is invalidated after all self-service changes.
-- The development assignment CHECK was explicitly updated and verified. Keep the schema source in sync and apply production schema changes through Publish; no runtime/startup DDL is used.
-
-## Coordinator dispatch and master schedule
-
-- `/admin` is the live coordinator dispatch view; `/admin/schedule` is the Monday–Friday master calendar with a phone day picker. Both read admin-only, no-store endpoints and refresh every 60 seconds while foregrounded, plus on window focus. The displayed update time is the server snapshot time in America/Los_Angeles; failed refreshes retain the last snapshot with an explicit not-live warning.
-- The coordinator projection uses `scheduleService` for current/next occurrences and coverage. The weekly display uses a skip-free/closure-free shadow of the same engine solely to show "week off" names and closed cells; counts and gaps always come from the actual engine, never the shadow. Contact data is joined only inside the admin projection, not added to the shared scheduling engine.
-- Closed days remain visible even without configured slots and never contribute open spots. Repeated current contacts across overlapping assignments are deduplicated in the dispatch UI, retaining all shift end times. Drawer details follow the latest polled block; removed blocks do not retain old personnel details.
-- Weekday time columns share a locally expanding axis so short slots and long volunteer lists fit without extending a card beyond its actual end time. Overlapping intervals use separate lanes, including transitive overlap groups. Assignment/skip mutation actions remain for subsequent schedule steps.
-- Needs-attention rules are shared with the roster. Overview queries select only required contact/attention fields, omit notes and answer blobs, bound recent activity, and read a repeatable snapshot; no persistent private-data cache is used. Settings writes invalidate overview and calendar queries immediately in the current client.
-
-## Approved CCT brand assets
-
-Approved PNGs are bundled in `artifacts/alliance-volunteer-portal/public/brand/`, served as plain static files at `/brand/`. `public/logo-horizontal.png` and `public/logo-stacked.png` were copied from App Storage to the same filenames; the mark, favicon, touch icon, and 192/512 icons use their supplied filenames. The bucket also contains `public/CCT Logo1.png` and `public/CCT Logo2.png`; these additional source files are not served at runtime.
-
-Use Open Sans 400/600/700 only, sentence-case headings, navy #06365D, Alliance Blue #0175aa, gray #E6E6E6, and white. Blue text belongs on white, never gray; field labels are navy. White app headers show the horizontal lockup on desktop and mark on mobile; public pages show the stacked lockup. Never invent a replacement logo or text-wordmark fallback. Product identity, mission, and staff contact are defined in shared/appConfig.ts; volunteer-facing role copy says Resource Coordinator, while admin UI and code retain volunteer terminology.
+QA-CHECKLIST.md is the workflow-based UAT tracker; docs/Alliance Persona Test Run.md is the unchanged master. Keep matching IDs, NEW/CHANGED tags, optional milestone/notification tests and a complete coverage table.
+CHANGELOG.md records delivered releases; DEPLOY.md is the operational source of truth.

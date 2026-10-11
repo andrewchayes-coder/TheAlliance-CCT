@@ -206,9 +206,11 @@ export function createEmailService(overrides: Partial<typeof defaults> = {}) {
           if (settings.token || settings.from || process.env.NODE_ENV === 'production') {
             safeLog('warn', 'Postmark is not fully configured. Both POSTMARK_SERVER_TOKEN and EMAIL_FROM are required; this email will only be logged, not delivered.');
           }
+          const identity = emailIdentity({ EMAIL_FROM: settings.from, EMAIL_REPLY_TO: settings.replyTo });
           dependencies.log.info([
             '========== EMAIL LOGGED — NO EMAIL SENT ==========',
-            `Type: ${values.type}`, `To: ${values.recipientEmail}`, `Subject: ${values.subject}`,
+            `Type: ${values.type}`, `From: ${identity.from?.header ?? '(not configured)'}`,
+            `Reply-To: ${identity.replyTo ?? '(not configured)'}`, `To: ${values.recipientEmail}`, `Subject: ${values.subject}`,
             '', 'Plain-text body:', options.text, '', 'Links:',
             ...emailLinks(options.html, options.text),
             '========== END LOGGED EMAIL ==========',

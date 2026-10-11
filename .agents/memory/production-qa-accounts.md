@@ -16,16 +16,11 @@ non-test email collision as a stop, not permission to convert an existing user.
 Production QA starts/resets without shifts; subsequent tester-selected shifts
 intentionally consume real capacity.
 
-Locked or disabled production QA endpoints intentionally return 404 rather than
-403. A 404 may mean the browser has not been unlocked, not that routing is broken.
-An enabled flag with a missing/short access key disables QA access with a warning;
-it must not prevent ordinary staff sign-in or application startup.
+Production quick login is controlled only by QUICK_LOGIN_ENABLED. When on, anyone who opens /signin can use the test personas; that's intentional while the app is in testing. When off, the routes return 404.
 
-**Why:** The user requested non-disclosure of the QA feature and continued
-availability of the normal application when the optional QA key is misconfigured.
+**Why:** The user explicitly requested a single production on/off switch for testing.
 
-**How to apply:** Preserve the production enable/unlock gates when investigating
-missing QA controls. Do not bypass them just to make a button appear.
+**How to apply:** Check only the flag when investigating missing test controls. Turn it off and republish before inviting real volunteers; reset QA accounts after production testing.
 
 Persona replacements must reuse the existing synthetic identity and history,
 not create a second user. Ordinary preparation preserves saved QA progress;

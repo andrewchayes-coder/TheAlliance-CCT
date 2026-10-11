@@ -5,14 +5,14 @@ generated = []
 id = "6FGN_gJ0DRtGwW8ses28E"
 uri = "file://QA-CHECKLIST.md"
 type = "text"
-title = "QA / UAT checklist"
-description = "Workflow-by-workflow steps and expected results, ready to copy into your UAT tracker."
+title = "CCT QA Checklist — synced to all 124 persona tests"
+description = "Workflow tables with test IDs, NEW/CHANGED tags, conditional milestone/preference tests, discrepancies and complete coverage mapping."
 logical_id = "38b77d8e-c16c-4ed8-a7b7-329cbeecba52"
-content_hash = "sha256:2d512dbb33aed4c147ec4d2b2e16f58620a386306b048a7d0b5ac2a736ead274"
-size = 19524
-mtime_ms = 1791481325490
-storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/38b77d8e-c16c-4ed8-a7b7-329cbeecba52/44ab76f4-1466-4e2e-83b7-4759b2289d8b"
-storage_version_token = "1791481704265100"
+content_hash = "sha256:26b1b4ed11d8eeee6f8475e43be18c4844336639c8f848db5d528aaa84b4f97e"
+size = 53179
+mtime_ms = 1791696230271
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/38b77d8e-c16c-4ed8-a7b7-329cbeecba52/1e5d6827-64ca-4c99-9848-ab073b46f2f3"
+storage_version_token = "1791696755303437"
 content_type = "text/markdown"
 
 [[outputs]]

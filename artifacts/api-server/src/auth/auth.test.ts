@@ -89,6 +89,7 @@ async function fixture() {
   assert.equal(signup.status, 200);
   const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
   assert.ok(user);
+  assert.equal(user.phone, '2125550123');
   createdUsers.push(user.id);
   trackRate(user.id);
   await client.bootstrap();
@@ -306,7 +307,7 @@ test('signup creates bcrypt volunteer/onboarding, logs verification, and denies 
   const { client, user } = await fixture();
   assert.equal(user.role, 'volunteer');
   assert.equal(user.emailVerifiedAt, null);
-  assert.equal(user.phone, '+12125550123');
+  assert.equal(user.phone, '2125550123');
   assert.equal(bcrypt.getRounds(user.passwordHash), 12);
   assert.ok(await bcrypt.compare(password, user.passwordHash));
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id));

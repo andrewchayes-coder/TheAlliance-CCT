@@ -145,8 +145,16 @@ export function rosterCsv(people: RosterPerson[]) {
     (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) &&
     (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment) &&
     (key !== 'onboardingAnswers' || onboardingQuestions.length > 0));
+  const labels: Partial<Record<keyof Profile, string>> = {
+    dateOfBirth: 'Date of birth', addressLine1: 'Address', zip: 'ZIP',
+    emergencyContactName: 'Emergency contact name', emergencyContactRelationship: 'Emergency contact relationship',
+    emergencyContactPhone: 'Emergency contact phone', onboardingCompletedAt: 'Onboarding completed at',
+    adminNotes: 'Admin notes', userId: 'User ID', id: 'Profile ID',
+  };
+  const profileLabel = (key: keyof Profile) => labels[key] ??
+    (key.charAt(0).toUpperCase() + key.slice(1).replace(/[A-Z]/g, letter => ` ${letter.toLowerCase()}`));
   const headers = ['First name', 'Last name', 'Email', 'Phone', 'Email verified at', 'Last login', 'Account active',
-    ...fields.map(key => `Profile: ${key}`), ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
+    ...fields.map(profileLabel), ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
   return csv(headers, people.filter(p => !p.user.isTestAccount).map(person => [person.user.firstName, person.user.lastName, person.user.email, person.user.phone,
     person.user.emailVerifiedAt?.toISOString(), person.user.lastLoginAt?.toISOString(), person.user.isActive,
     ...fields.map(key => {

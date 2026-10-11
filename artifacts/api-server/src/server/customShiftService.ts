@@ -8,6 +8,7 @@ import {bookingBlockers} from './volunteerScheduleView';
 import {lockAgreementVersion} from './agreements';
 import {sendEmail,createEmailTemplate} from '../email';
 import {appOrigin} from '../auth/session';
+import {volunteerContactText} from '@workspace/shared/appConfig';
 import {notifyCustomReduction} from './coverageAlerts';
 import {logger} from '../lib/logger';
 export type ScheduleActor={id:string;sessionVersion:number};
@@ -74,7 +75,7 @@ export async function customAssignmentAction(actor:ScheduleActor,input:CustomAct
     }else{
       if(!existing || staff && existing.id!==input.assignmentId) throw new WorkflowError(404,'This reservation could not be found.');
       if(!staff && slotInstant(shift.date,shift.startTime).getTime()-now.getTime()<24*3600000)
-        throw new WorkflowError(422,'Please contact The Alliance. One-time shifts must be cancelled at least 24 hours before they start.');
+        throw new WorkflowError(422,`Please contact ${volunteerContactText}. One-time shifts must be cancelled at least 24 hours before they start.`);
       await tx.update(customShiftAssignmentsTable).set({cancelledAt:now}).where(eq(customShiftAssignmentsTable.id,existing.id));
       id=existing.id;reason={customShiftId:shift.id,assignmentId:id};
     }

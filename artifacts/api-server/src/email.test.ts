@@ -109,7 +109,7 @@ test('template is branded, escaped, mobile-friendly, and has the same CTA in pla
 
 test('development mode logs the full text, subject, recipient, and HTML-only links', async () => {
   const options = input('logged', { html: `${body.html}<a href="https://example.org/html-only?a=1&amp;b=2">Another link</a>` });
-  assert.deepEqual(await service()(options), { ok: true });
+  assert.deepEqual(await service({ settings: () => ({ from: 'QA Team <team@example.invalid>', replyTo: 'reply@example.invalid' }) })(options), { ok: true });
   const [row] = await rows(options.relatedId!);
   assert.equal(row!.status, 'logged');
   assert.equal(row!.providerMessageId, null);
@@ -117,10 +117,12 @@ test('development mode logs the full text, subject, recipient, and HTML-only lin
   const output = messages.info.at(-1)!;
   for (const value of [to, options.subject, options.text, 'https://example.org/html-only?a=1&b=2']) assert.ok(output.includes(value));
   assert.ok(output.includes('NO EMAIL SENT'));
+  assert.ok(output.includes('From: QA Team <team@example.invalid>'));
+  assert.ok(output.includes('Reply-To: reply@example.invalid'));
 });
 
 test('either missing Postmark setting means logged-only, never an external send', async () => {
-  for (const [name, settings] of [['token-only', { token: 'fake-token' }], ['from-only', { from: 'alliance@example.org' }]] as const) {
+  for (const [name, settings] of [['token-only', { token: 'fake-token' }], ['from-only', { from: 'QA Team <alliance@example.org>' }]] as const) {
     const options = input(name);
     assert.deepEqual(await service({ settings: () => settings })(options), { ok: true });
     assert.equal((await rows(options.relatedId!))[0]!.status, 'logged');

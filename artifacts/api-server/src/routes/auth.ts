@@ -19,6 +19,7 @@ import { accountPath, claimToken, passwordResetEmail, verificationEmail } from '
 import googleRouter from './google-auth';
 import quickLoginRouter from './quick-login';
 import { mountApiRouter } from '../auth/route-catalog';
+import { phoneDigits } from '@workspace/shared/profileFields';
 
 const router: IRouter = Router();
 router.use(csrfGuard);
@@ -69,9 +70,9 @@ router.post('/signup', async (req, res): Promise<void> => {
   if (!await ipAndEmailLimit(req, res, 'signup', data.email)) return;
   const firstName = data.firstName.trim();
   const lastName = data.lastName.trim();
-  const phone = normalizePhone(data.phone);
+  const phone = phoneDigits(data.phone);
   const passwordError = validNewPassword(data.password, data.confirmPassword);
-  if (!firstName || !lastName || !phone || passwordError) {
+  if (!firstName || !lastName || !normalizePhone(data.phone) || phone.length !== 10 || passwordError) {
     res.status(400).json({ error: passwordError ?? 'Please enter your name and a valid mobile phone number.' }); return;
   }
   const passwordHash = await hashPassword(data.password);

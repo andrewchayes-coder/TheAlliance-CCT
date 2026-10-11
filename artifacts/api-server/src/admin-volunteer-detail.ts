@@ -18,6 +18,7 @@ export const ongoingAssignments = (profileId: string, today: string) => and(
 export function approvalRequirements(user: typeof usersTable.$inferSelect, profile: typeof volunteerProfilesTable.$inferSelect) {
   return [
     { key: 'email_verified' as const, label: 'Email verified', met: !!user.emailVerifiedAt },
+    { key: 'onboarding_completed' as const, label: 'Onboarding completed', met: !!profile.onboardingCompletedAt },
     ...missingProfileFields(user, profile),
     ...(appConfig.requireAgreementAcknowledgment ? [{ key: 'agreement_acknowledged', label: 'Agreement acknowledged', met: !!profile.agreementAcknowledgedAt }] : []),
     ...(appConfig.trackCertificationInApp ? [{ key: 'certification_complete', label: 'Certification complete', met: profile.certificationStatus === 'complete' }] : []),

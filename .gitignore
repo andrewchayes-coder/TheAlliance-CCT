@@ -47,4 +47,5 @@ Thumbs.db
 # Replit
 .cache/
 /generated-artifacts/
+/attached_assets/
 .local/

@@ -7,7 +7,7 @@ export const requireJobsSecret: RequestHandler = (req, res, next) => {
   if (!expected || expected.length < 32) {
     res.status(503).json({ error: 'The scheduled trigger is not configured.' }); return;
   }
-  const supplied = req.get('X-Jobs-Secret') ?? req.get('JOBS_SECRET');
+  const supplied = req.get('X-Jobs-Secret');
   if (!supplied || supplied.length > 1024 ||
     !timingSafeEqual(createHash('sha256').update(expected).digest(), createHash('sha256').update(supplied).digest())) {
     res.status(401).json({ error: 'Unauthorized.' }); return;

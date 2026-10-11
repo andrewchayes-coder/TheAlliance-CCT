@@ -82,6 +82,19 @@ afterAll(async()=>{
   await pool.end();
 });
 describe('fixed profile validation and compatibility',()=>{
+  it('normalizes stored legacy status values in the authenticated me endpoint',async()=>{
+    const [before]=await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,volunteerId));
+    try {
+      for(const status of retiredVolunteerStatuses) {
+        await db.update(volunteerProfilesTable).set({status}).where(eq(volunteerProfilesTable.userId,volunteerId));
+        const result=await own.request('/me');
+        expect(result.status).toBe(200); expect(result.data.profile.status).toBe('onboarding');
+        expect(result.data.profile.adminNotes).toBeUndefined();
+      }
+    } finally {
+      await db.update(volunteerProfilesTable).set({status:before!.status}).where(eq(volunteerProfilesTable.userId,volunteerId));
+    }
+  });
   it('accepts newborns, rejects today/future and invalid calendar days, and formats digit phones',()=>{
     const today=pacificToday(), yesterday=new Date(`${today}T12:00:00Z`);yesterday.setUTCDate(yesterday.getUTCDate()-1);
     expect(profileCompletionSchema.safeParse({...complete,dateOfBirth:yesterday.toISOString().slice(0,10)}).success).toBe(true);
@@ -103,7 +116,19 @@ describe('fixed profile validation and compatibility',()=>{
     expect((await own.request('/volunteer/profile','PATCH',{dateOfBirth:'2000-01-01'})).status).toBe(400);
     expect((await own.request('/volunteer/profile','PATCH',{startDate:'2026-01-01'})).status).toBe(400);
   });
-  it('activates with complete profile only, sets start date, audits edits, and rejects legacy status writes',async()=>{
+  it('refuses activation of a complete profile until onboarding completion is recorded',async()=>{
+    const [before]=await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,volunteerId));
+    try {
+      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:null}).where(eq(volunteerProfilesTable.userId,volunteerId));
+      const detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
+      const result=await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
+      expect(result.status).toBe(422);
+      expect(result.data.missing.map((entry:{key:string})=>entry.key)).toEqual(['onboarding_completed']);
+    } finally {
+      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:before!.onboardingCompletedAt}).where(eq(volunteerProfilesTable.userId,volunteerId));
+    }
+  });
+  it('activates after complete onboarding, sets start date, audits edits, and rejects legacy status writes',async()=>{
     let detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
     expect(detail.approvalRequirements.every((entry:{met:boolean})=>entry.met)).toBe(true);
     expect((await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:retiredVolunteerStatuses[0],expectedUpdatedAt:detail.entry.profile.updatedAt})).status).toBe(400);
@@ -120,6 +145,7 @@ describe('fixed profile validation and compatibility',()=>{
     expect(sendEmail).toHaveBeenCalled();
   });
   it('never returns another volunteer private fields or staff notes through me, schedule, inbox, resources or admin routes',async()=>{
+    const [staff]=await db.select().from(usersTable).where(eq(usersTable.id,adminId));
     const [privateRow]=await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,otherId));
     for(const path of ['/me','/volunteer/dashboard','/volunteer/schedule','/volunteer/messages','/volunteer/resources']) {
       const response=await own.request(path);expect(response.status).toBe(200);
@@ -127,6 +153,8 @@ describe('fixed profile validation and compatibility',()=>{
       for(const value of [privateRow!.addressLine1,privateRow!.emergencyContactName,privateRow!.dateOfBirth,privateRow!.adminNotes])
         expect(json).not.toContain(value);
       expect(json).not.toContain('adminNotes');
+      expect(json).not.toContain(staff!.email);
+      if(path==='/volunteer/schedule') expect(response.data.contactEmail).toBe(appConfig.volunteerContactEmail);
     }
     expect((await own.request(`/admin/volunteers/${otherId}`)).status).toBe(403);
     const [user]=await db.select().from(usersTable).where(eq(usersTable.id,volunteerId));
@@ -138,9 +166,9 @@ describe('fixed profile validation and compatibility',()=>{
     } finally {Object.assign(appConfig,previous);}
     const snapshot=await rosterSnapshot();
     const csv=rosterCsv(snapshot);
-    expect(csv).not.toContain('Profile: certification');expect(csv).not.toContain('Profile: backgroundCheck');
-    expect(csv).not.toContain('Profile: agreement');expect(csv).not.toContain('Profile: onboardingAnswers');
-    expect(csv).toContain('Profile: dateOfBirth');
+    expect(csv).not.toContain('Certification');expect(csv).not.toContain('Background check');
+    expect(csv).not.toContain('Agreement');expect(csv).not.toContain('Onboarding answers');
+    expect(csv).toContain('Date of birth');
   });
   it('lets staff edit private fields, filters the complete roster, and audits names without values',async()=>{
     const path=`/admin/volunteers/${volunteerId}`;
@@ -172,6 +200,6 @@ describe('fixed profile validation and compatibility',()=>{
     const incomplete=await admin.request(`/admin/volunteers?search=${encodeURIComponent(detail.entry.user.email)}&profileIncomplete=true`);
     expect(incomplete.data.volunteers.map((row:{user:{id:string}})=>row.user.id)).toContain(volunteerId);
     const csv=rosterCsv(await rosterSnapshot());
-    for(const column of ['Profile: startDate','Profile: dateOfBirth','Profile: addressLine1','Profile: city','Profile: state','Profile: zip','Profile: emergencyContactName','Profile: emergencyContactRelationship','Profile: emergencyContactPhone','Profile: county','Shifts held']) expect(csv).toContain(column);
+    for(const column of ['Start date','Date of birth','Address','City','State','ZIP','Emergency contact name','Emergency contact relationship','Emergency contact phone','County','Shifts held']) expect(csv).toContain(column);
   });
 });

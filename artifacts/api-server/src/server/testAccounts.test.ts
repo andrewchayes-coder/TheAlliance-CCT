@@ -189,8 +189,13 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   expect(await db.select().from(activityLogTable).where(and(eq(activityLogTable.volunteerProfileId, active.profileId!), eq(activityLogTable.action, 'test_accounts_reset')))).toHaveLength(1);
 });
 it('uses an explicit enable flag only in production', () => {
-  expect(isQuickLoginEnabled({ NODE_ENV: 'development' })).toBe(true);
-  expect(isQuickLoginEnabled({ NODE_ENV: 'production' })).toBe(false);
-  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true' })).toBe(false);
-  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true', QUICK_LOGIN_KEY: 'k'.repeat(32) })).toBe(true);
+  for (const flag of [undefined, '', 'false', 'FALSE', 'yes', '1', 'true-ish']) {
+    expect(isQuickLoginEnabled({ NODE_ENV: 'development', QUICK_LOGIN_ENABLED: flag })).toBe(true);
+    expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: flag })).toBe(false);
+  }
+  for (const flag of ['true', 'TRUE', ' true ']) {
+    expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: flag })).toBe(true);
+  }
+  expect(isQuickLoginEnabled({ NODE_ENV: 'test' })).toBe(true);
+  expect(isQuickLoginEnabled({})).toBe(true);
 });

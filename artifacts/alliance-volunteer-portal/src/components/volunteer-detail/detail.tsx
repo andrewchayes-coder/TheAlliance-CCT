@@ -77,7 +77,7 @@ export function VolunteerDetail() {
           <h1 className="alliance-display" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <Pill map={STATUS} value={normalizeVolunteerStatus(p.status)} />
-            {onboardingQuestions.length > 0 && p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}
+            {p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}
             {e.attention.filter(attnVisible).map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
           </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">

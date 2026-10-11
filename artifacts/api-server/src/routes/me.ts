@@ -5,6 +5,7 @@ import { GetMeResponse } from '@workspace/api-zod';
 import { agreementVersion } from '../server/agreements';
 import { testAccounts } from '@workspace/shared/testAccounts';
 import { appConfig } from '@workspace/shared/appConfig';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 
 const router: IRouter = Router();
 router.get('/me', async (req, res): Promise<void> => {
@@ -17,7 +18,8 @@ router.get('/me', async (req, res): Promise<void> => {
     testPersona: user.isTestAccount ? testAccounts.find(persona => persona.email === user.email)?.key : undefined,
     agreementRequired: appConfig.requireAgreementAcknowledgment && !!profile?.onboardingCompletedAt &&
       (!profile.agreementAcknowledgedAt || profile.agreementVersion !== version),
-    user: userPublicSchema.parse(user), role: user.role, verified: Boolean(user.emailVerifiedAt), profile: profile ?? null,
+    user: userPublicSchema.parse(user), role: user.role, verified: Boolean(user.emailVerifiedAt),
+    profile: profile ? { ...profile, status: normalizeVolunteerStatus(profile.status) } : null,
   }));
 });
 export default router;

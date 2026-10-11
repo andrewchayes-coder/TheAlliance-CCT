@@ -117,7 +117,7 @@ it('requires CSRF, rotates sessions, routes every persona normally, audits witho
   expect(await db.select().from(notificationLogTable).where(inArray(notificationLogTable.recipientUserId, userIds))).toHaveLength(0);
   const boot = await request('/api/auth/session');
   const { csrfToken } = await identityBody(boot);
-  const headers = { cookie: `${cookiePart(boot, 'alliance.sid')}; ${unlock}`, 'content-type': 'application/json',
+  const headers = { cookie: cookiePart(boot, 'alliance.sid'), 'content-type': 'application/json',
     origin: appOrigin, 'x-csrf-token': csrfToken };
   const post = (persona: string) => request('/api/auth/quick-login', { method: 'POST', headers, body: JSON.stringify({ persona }) });
   await db.update(usersTable).set({ isTestAccount: false }).where(eq(usersTable.id, userIds[0]!));
@@ -125,6 +125,11 @@ it('requires CSRF, rotates sessions, routes every persona normally, audits witho
   await db.update(usersTable).set({ isTestAccount: true, isActive: false }).where(eq(usersTable.id, userIds[0]!));
   expect((await post('admin')).status).toBe(404);
   await db.update(usersTable).set({ isActive: true }).where(eq(usersTable.id, userIds[0]!));
+  await db.update(usersTable).set({ role: 'volunteer' }).where(eq(usersTable.id, userIds[0]!));
+  expect((await post('admin')).status).toBe(404);
+  await db.update(usersTable).set({ role: 'admin', emailVerifiedAt: null }).where(eq(usersTable.id, userIds[0]!));
+  expect((await post('admin')).status).toBe(404);
+  await db.update(usersTable).set({ emailVerifiedAt: new Date() }).where(eq(usersTable.id, userIds[0]!));
   expect((await post('unknown-real-user')).status).toBe(404);
 });
 it('development is always enabled even with a false flag and POST is limited to 30 per IP/hour', async () => {

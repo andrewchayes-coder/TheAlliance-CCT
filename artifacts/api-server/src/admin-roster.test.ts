@@ -150,12 +150,12 @@ test('CSV exports include all fields/config answers, safe cells, all filtered pa
   assert.equal(roster.status, 200);
   assert.equal(roster.headers.get('content-disposition'), `attachment; filename="alliance-roster-${today}.csv"`);
   assert.ok(roster.headers.get('content-type')!.startsWith('text/csv'));
-  assert.ok(roster.data.includes('Profile: dateOfBirth')); assert.ok(roster.data.includes('Profile: emergencyContactPhone'));
+  assert.ok(roster.data.includes('Date of birth')); assert.ok(roster.data.includes('Emergency contact phone'));
   for (const question of onboardingQuestions) assert.ok(roster.data.includes(`(${question.id})`));
   for (let i = 0; i < 5; i++) assert.ok(roster.data.includes(`roster-${namespace}-${i}@example.org`));
   assert.ok(roster.data.includes(`"'=2+2"`));
-  assert.equal(roster.data.includes('Profile: certificationStatus'), false);
-  assert.equal(roster.data.includes('Profile: backgroundCheckStatus'), false);
+  assert.equal(roster.data.includes('Certification status'), false);
+  assert.equal(roster.data.includes('Background check status'), false);
   assert.ok(roster.data.includes('""Quoted""'));
   assert.equal(roster.data.includes('Answer:'), false);
   assert.ok(roster.data.includes('Mon 9:00–11:00; Wed 13:00–15:00'));
@@ -168,7 +168,7 @@ test('CSV exports include all fields/config answers, safe cells, all filtered pa
   assert.equal((schedule.data.match(new RegExp(`roster-${namespace}-1@example.org`, 'g')) ?? []).length, 2);
   assert.ok(!(await request(`/admin/volunteers/schedule.csv?search=${namespace}&status=inactive`)).data.includes(`roster-${namespace}-1@example.org`));
 });
-test('workflow mutations are admin-only and approval reports exactly all five missing checks with no override', async () => {
+test('workflow mutations are admin-only and approval lists verification, completed onboarding and missing profile fields', async () => {
   for (const actor of [undefined, volunteers[0], unverified, deactivated]) {
     const request = await client(actor);
     for (const [suffix, method, body] of [['status', 'POST', { status: 'active' }], ['notes', 'PATCH', { adminNotes: 'forbidden' }], ['tracking', 'PATCH', {}]] as const) {
@@ -180,7 +180,7 @@ test('workflow mutations are admin-only and approval reports exactly all five mi
   const blocked = await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
   assert.equal(blocked.status, 422);
   assert.deepEqual(blocked.data.missing.map((check: { key: string }) => check.key),
-     ['email_verified', ...Object.keys(testProfileFields).filter(key => key !== 'state').map(key => `profile_${key}`)]);
+     ['email_verified', 'onboarding_completed', ...Object.keys(testProfileFields).filter(key => key !== 'state').map(key => `profile_${key}`)]);
   assert.equal((await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt, overrideBackgroundCheck: true })).status, 400);
   assert.equal((await request(`/admin/volunteers/${volunteers[3]}`)).data.entry.profile.status, 'onboarding');
 });

@@ -127,9 +127,9 @@ function Body() {
             <h2 className="alliance-display">Schedule</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex flex-wrap justify-between gap-2"><dt>Schedule</dt><dd className="font-bold" data-testid="text-schedule">every 15 min {d.timezone}{d.cron ? ` (${d.cron})` : ''}</dd></div>
-              <div className="flex flex-wrap justify-between gap-2"><dt>RUN_JOBS</dt><dd><StatusBadge status={d.schedulerEnabled ? 'good' : 'attention'}>{d.schedulerEnabled ? 'enabled' : 'disabled'}</StatusBadge></dd></div>
-              <div className="flex flex-wrap justify-between gap-2"><dt>externalTriggerConfigured</dt><dd className="font-bold" data-testid="text-external">{d.externalTriggerConfigured ? 'true' : 'false'}</dd></div>
-              <div className="flex flex-wrap justify-between gap-2"><dt>reminderHoursBefore</dt><dd className="font-bold" data-testid="text-hours-before">{d.reminderHoursBefore}</dd></div>
+              <div className="flex flex-wrap justify-between gap-2"><dt>Automatic scheduler</dt><dd><StatusBadge status={d.schedulerEnabled ? 'good' : 'attention'}>{d.schedulerEnabled ? 'enabled' : 'disabled'}</StatusBadge></dd></div>
+              <div className="flex flex-wrap justify-between gap-2"><dt>External trigger</dt><dd className="font-bold" data-testid="text-external">{d.externalTriggerConfigured ? 'configured' : 'not configured'}</dd></div>
+              <div className="flex flex-wrap justify-between gap-2"><dt>Reminder lead time</dt><dd className="font-bold" data-testid="text-hours-before">{d.reminderHoursBefore} hours</dd></div>
               <div className="flex flex-wrap justify-between gap-2"><dt>Same-morning reminder</dt><dd className="font-bold" data-testid="text-am-hour">{d.sameMorningReminder ? hour(d.sameMorningReminderHour) : 'off'}</dd></div>
             </dl>
             <p className="mt-3 text-xs text-navy-soft">Timers can pause when the app autoscales to zero. Reliable timing needs an always-on runtime or a scheduled POST trigger, configured on the server.</p>

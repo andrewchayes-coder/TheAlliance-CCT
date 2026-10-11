@@ -72,7 +72,7 @@ export function NotesPanel({ userId, serverNotes, onPending }: { userId: string;
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-notes">
       <h2 id="v-notes" className="alliance-display">Admin notes</h2>
-      <label htmlFor="admin-notes" className="mt-3 block text-sm font-bold">Visible to staff only.</label>
+      <label htmlFor="admin-notes" className="mt-3 block text-sm font-bold">Visible to Alliance staff only.</label>
       <textarea id="admin-notes" className="alliance-input mt-1 min-h-32" maxLength={20000} value={draft} data-testid="input-admin-notes"
         onChange={e => edit(e.target.value)} onBlur={() => { void flushRef.current(); }} />
       <div className="mt-2 text-sm" role="status" aria-live="polite" data-testid="text-notes-state">

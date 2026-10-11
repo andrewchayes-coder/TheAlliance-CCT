@@ -85,7 +85,7 @@ export async function sendMessage(actor: Actor, input: z.infer<typeof messageSen
     // Bounded concurrent batches avoid exhausting the database/email connections.
     for (let i = 0; i < saved.people.length; i += 5) await Promise.all(saved.people.slice(i, i + 5).map(async person => {
       const copy = createEmailTemplate({ heading: saved.message.subject, firstName: person.firstName,
-        paragraphs: ['Here is a note from The Alliance’s Resource Coordination team.'], markdownBody: saved.message.body,
+        paragraphs: ['Here is a note from The Alliance’s Community Care Team.'], markdownBody: saved.message.body,
         cta: { label: 'View in the portal', url: `${appOrigin}/messages?messageId=${saved.message.id}` } });
       const result = await sendEmail({ type: 'message', to: person.email, toUserId: person.userId, subject: saved.message.subject,
         ...copy, relatedId: saved.message.id,
