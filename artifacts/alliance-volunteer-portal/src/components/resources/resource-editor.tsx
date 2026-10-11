@@ -85,6 +85,7 @@ export function ResourceEditor({ type, item, ctx, onClose }: { type: T; item: Re
             <div>
               <label className={lbl} htmlFor="r-file">{item ? 'Replace file (optional)' : 'File'}</label>
               <input id="r-file" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="block w-full min-w-0 cursor-pointer rounded-lg text-navy file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-lg file:border-[1.5px] file:border-blue file:bg-white file:px-4 file:py-2 file:font-bold file:text-blue hover:file:bg-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue"
                 onChange={e => { const x = e.target.files?.[0] ?? null; setFile(x); setFileErr(x ? fileError(x) : null); }} />
               <p className="mt-1 text-sm">PDF or DOCX, up to {MAX_FILE / 1024 ** 2} MB.{item?.fileName ? ` Current: ${item.fileName}.` : ''}{file ? ` Selected: ${file.name}.` : ''}</p>
               {fileErr && <p role="alert" className="mt-1 text-sm font-bold text-[var(--alliance-red-ink)]">{fileErr}</p>}
