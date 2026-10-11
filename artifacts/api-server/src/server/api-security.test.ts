@@ -28,6 +28,7 @@ describe('actual API registrations and security boundaries', () => {
       expect(guard, `${method} ${path}`).toBeDefined();
       if (path.startsWith('/admin/') || path === '/dev/email-test') expect(guard).toBe('admin');
       else if (path === '/jobs/run') expect(guard).toBe('job');
+      else if (path.startsWith('/auth/quick-login')) expect(guard).toBe('public:quick-login');
       else if (path.startsWith('/auth/') || path === '/healthz' || path === '/health') expect(guard).toBe('public');
       else expect(['auth', 'volunteer', 'onboardedVolunteer']).toContain(guard);
       if (method === 'GET') expect(declaredGuard('HEAD', concrete(path))).toBe(guard);
@@ -35,7 +36,7 @@ describe('actual API registrations and security boundaries', () => {
   });
   it('every non-public registered API denies anonymous requests before its handler', async () => {
     for (const { method, path } of registeredApiRoutes()) {
-      if (declaredGuard(method, concrete(path)) === 'public') continue;
+      if (declaredGuard(method, concrete(path))?.startsWith('public')) continue;
       const req = { method, path: concrete(path), session: {}, get: () => undefined } as unknown as Request;
       const res = reply(); let reached = false;
       await apiAccessPolicy(req, res, () => { reached = true; });

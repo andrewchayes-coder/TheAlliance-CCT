@@ -6,6 +6,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { appOrigin, sessionMiddleware } from "./auth/session";
+import { qaUnlockRouter } from './routes/quick-login';
 
 const app: Express = express();
 app.set('trust proxy', 1);
@@ -36,6 +37,7 @@ app.use(cors({ origin: appOrigin, credentials: true }));
 app.use(express.json({ limit: '128kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(sessionMiddleware());
+app.use(qaUnlockRouter);
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Referrer-Policy', 'no-referrer');

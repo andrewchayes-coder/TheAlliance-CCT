@@ -70,6 +70,8 @@ import type {
   PasswordChangeResult,
   ProductionReadiness,
   PublicUser,
+  QuickLoginInput,
+  QuickLoginStatus,
   ReminderCheckResult,
   ReminderJobStatus,
   ReorderResources200,
@@ -5464,6 +5466,159 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSignupMutationOptions(options));
+    }
+
+export const getGetQuickLoginStatusUrl = () => {
+
+
+
+
+  return `/api/auth/quick-login/status`
+}
+
+export const getQuickLoginStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<QuickLoginStatus> => {
+
+  return customFetch<QuickLoginStatus>(getGetQuickLoginStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuickLoginStatusQueryKey = () => {
+    return [
+    `/api/auth/quick-login/status`
+    ] as const;
+    }
+
+
+export const getGetQuickLoginStatusQueryOptions = <TData = Awaited<ReturnType<typeof getQuickLoginStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuickLoginStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuickLoginStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuickLoginStatus>>> = ({ signal }) => getQuickLoginStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuickLoginStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuickLoginStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getQuickLoginStatus>>>
+export type GetQuickLoginStatusQueryError = ErrorType<void>
+
+
+
+export function useGetQuickLoginStatus<TData = Awaited<ReturnType<typeof getQuickLoginStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuickLoginStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuickLoginStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getQuickLoginUrl = () => {
+
+
+
+
+  return `/api/auth/quick-login`
+}
+
+export const quickLogin = async (quickLoginInput: QuickLoginInput, options?: Parameters<typeof customFetch>[1]): Promise<AuthSuccessResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AuthSuccessResponse>(getQuickLoginUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(quickLoginInput)
+  }
+);}
+
+
+
+
+
+export const getQuickLoginMutationKey = () => ['quickLogin'] as const;
+
+export const getQuickLoginMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quickLogin>>, TError,QuickLoginMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof quickLogin>>, TError,QuickLoginMutationVariables, TContext> => {
+
+const mutationKey = getQuickLoginMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof quickLogin>>, QuickLoginMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  quickLogin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type QuickLoginMutationResult = NonNullable<Awaited<ReturnType<typeof quickLogin>>>
+    export type QuickLoginMutationBody = BodyType<QuickLoginInput>
+    export type QuickLoginMutationError = ErrorType<void>
+    export type QuickLoginMutationVariables = {data: BodyType<QuickLoginInput>}
+
+    export const useQuickLogin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof quickLogin>>, TError,QuickLoginMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof quickLogin>>,
+        TError,
+        QuickLoginMutationVariables,
+        TContext
+      > => {
+      return useMutation(getQuickLoginMutationOptions(options));
     }
 
 export const getSigninUrl = () => {

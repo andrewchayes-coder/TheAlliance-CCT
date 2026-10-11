@@ -1,9 +1,12 @@
 import type { RequestHandler } from 'express';
 import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer } from './session';
 import { requireJobsSecret } from '../server/jobs-auth';
+import { hasQuickLoginAccess, quickLoginNotFound } from './quick-login-lock';
 
-export type Guard = 'public' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
+export type Guard = 'public' | 'public:quick-login' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: '/auth/quick-login/status', guard: 'public:quick-login' },
+  { method: 'POST', path: '/auth/quick-login', guard: 'public:quick-login' },
   { method: 'GET', path: '/admin/resources', guard: 'admin' },
   { method: 'GET', path: '/admin/resources/context', guard: 'admin' },
   { method: 'POST', path: '/admin/resources', guard: 'admin' },
@@ -99,7 +102,11 @@ export const apiAccessPolicy: RequestHandler = (req, res, next) => {
     res.status(403).json({ error: 'This API route is not available.', code: 'ROUTE_NOT_DECLARED' });
     return;
   }
-  const guards: Record<Exclude<Guard, 'public'>, RequestHandler> = {
+  if (guard === 'public:quick-login') {
+    if (!hasQuickLoginAccess(req)) { quickLoginNotFound(res); return; }
+    next(); return;
+  }
+  const guards: Record<Exclude<Guard, 'public' | 'public:quick-login'>, RequestHandler> = {
     auth: requireAuth, admin: requireAdmin, volunteer: requireVolunteer, onboardedVolunteer: requireOnboardedVolunteer, job: requireJobsSecret,
   };
   if (guard === 'public') { next(); return; }

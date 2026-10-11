@@ -1224,6 +1224,34 @@ export interface Me {
   profile: PublicVolunteerProfile | null;
 }
 
+export interface QuickLoginInput {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  persona: string;
+}
+
+export type QuickLoginStatusPersonasItemRole = typeof QuickLoginStatusPersonasItemRole[keyof typeof QuickLoginStatusPersonasItemRole];
+
+
+export const QuickLoginStatusPersonasItemRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
+export type QuickLoginStatusPersonasItem = {
+  key: string;
+  label: string;
+  role: QuickLoginStatusPersonasItemRole;
+  description: string;
+};
+
+export interface QuickLoginStatus {
+  enabled: boolean;
+  personas: QuickLoginStatusPersonasItem[];
+}
+
 export interface TestAccountsResetInput { [key: string]: unknown }
 
 export interface TestAccountEntry {

@@ -2087,6 +2087,33 @@ export const SignupResponse = zod.object({
 })
 
 
+export const GetQuickLoginStatusResponse = zod.object({
+  "enabled": zod.boolean(),
+  "personas": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "description": zod.string()
+}))
+})
+
+
+export const quickLoginBodyPersonaMax = 80;
+
+
+
+export const QuickLoginBody = zod.object({
+  "persona": zod.string().min(1).max(quickLoginBodyPersonaMax)
+})
+
+export const QuickLoginResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string(),
+  "email": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
 export const signinBodyEmailMax = 254;
 
 export const signinBodyPasswordMax = 1000;

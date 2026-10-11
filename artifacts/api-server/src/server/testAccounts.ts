@@ -10,8 +10,8 @@ import { pacificDay, addCalendarDays } from './scheduleService';
 import { WorkflowError } from '../admin-volunteer-detail';
 import { hashPassword } from '../auth/security';
 
-export const isQuickLoginEnabled = (env: NodeJS.ProcessEnv = process.env) =>
-  env.NODE_ENV !== 'production' || env.QUICK_LOGIN_ENABLED === 'true';
+import { isQuickLoginEnabled } from '../auth/quick-login-lock';
+export { isQuickLoginEnabled } from '../auth/quick-login-lock';
 
 type FixtureEmail<P> = P extends unknown ? Omit<P, 'email'> & { email: string } : never;
 type Persona = FixtureEmail<typeof testAccounts[number]>;

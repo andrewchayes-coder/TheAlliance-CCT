@@ -1,0 +1,22 @@
+Add a quick-login endpoint that signs in as a test persona with one click, safe for production.
+
+ENABLE RULES
+- Dev (NODE_ENV !== 'production'): enabled automatically.
+- Production: enabled ONLY when QUICK_LOGIN_ENABLED === 'true' AND QUICK_LOGIN_KEY is set and at least 32 characters. Otherwise every quick-login route returns 404 (not 403 — don't reveal it exists).
+
+UNLOCK (production only)
+- GET /qa?key=<QUICK_LOGIN_KEY> — compare with crypto.timingSafeEqual. On match: set an httpOnly, secure, sameSite=lax signed cookie "qa_unlock" valid for 30 days, then redirect to /signin. On mismatch: 404. Rate limit by IP (5/hour).
+- GET /qa/lock — clears the cookie and redirects to /signin.
+- In dev, no unlock is needed.
+
+ENDPOINTS
+- GET /api/auth/quick-login/status → { enabled: boolean, personas: [{ key, label, role, description }] }. enabled is true only if quick login is enabled AND (dev OR a valid qa_unlock cookie is present). Never return emails or IDs.
+- POST /api/auth/quick-login { persona } → same enable/unlock check (404 if not allowed). Looks up the user by the persona's email and REQUIRES isTestAccount === true and isActive === true — it must be impossible to quick-login as a real user, even by editing the request. Regenerate the session (prevent fixation), sign in exactly the way the normal sign-in does (update lastLoginAt), and return the same redirect target normal sign-in uses (admin → /admin, volunteer → /dashboard or /onboarding).
+- Log every quick login to activity_log/notification-free audit (actor = the test user, action "quick_login", details: persona, IP, user agent).
+- Rate limit POST by IP (30/hour).
+- Keep the origin check / CSRF protection on the POST.
+
+SECURITY TESTS
+- Register these routes with an explicit guard tag (e.g. "public:quick-login") so the existing "every /api route has a guard" test still passes.
+- Tests: in production mode without the env vars → 404; with env vars but no cookie → 404; with a wrong key → 404; with cookie → works; attempting a persona key that maps to a non-test user (simulate by flipping isTestAccount false) → 404/refused.
+- Update the startup secrets check: if QUICK_LOGIN_ENABLED=true in production but QUICK_LOGIN_KEY is missing or short, log a loud warning and keep quick login disabled (don't crash the app).

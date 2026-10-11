@@ -2,9 +2,32 @@
 
 The five personas in `shared/testAccounts.ts` are created by app code at startup
 when quick login is enabled. Development enables them automatically; production
-requires `QUICK_LOGIN_ENABLED=true`. No password or quick-login key is returned,
+requires `QUICK_LOGIN_ENABLED=true` and a `QUICK_LOGIN_KEY` of at least 32 characters. No password or quick-login key is returned,
 stored in the persona config, or displayed. Password and Google sign-in cannot
-be used to access these accounts. Quick-login entry points belong to the next prompt.
+be used to access these accounts.
+
+## Quick-login production lock
+
+Open `/qa?key=<your QUICK_LOGIN_KEY>` over HTTPS to unlock this browser, then
+use the sign-in screen. The endpoint never echoes the key and request logs omit
+query strings. It sets the signed `qa_unlock` cookie for 30 days with HttpOnly,
+Secure, and SameSite=Lax. Rotating either signing secret invalidates the unlock.
+Use `/qa/lock` to clear the unlock cookie and return to sign-in; this does not
+end an already-established sign-in session.
+
+`GET /api/auth/quick-login/status` returns only persona keys, labels, roles, and
+descriptions. Locked or disabled production requests return 404, including the
+status endpoint. `POST /api/auth/quick-login` accepts only `{ persona }`, uses
+the normal CSRF token/origin check, regenerates the session, updates last login,
+and returns the usual `nextPath`. The browser buttons belong to the next UI prompt.
+
+Unlock attempts are limited to 5 per IP/hour; login attempts to 30 per IP/hour.
+The runtime logs a loud warning and disables quick login if the production key
+is missing/short, without failing otherwise-valid app startup.
+
+Every quick login has a notification-free structured audit record with the
+test user as actor, persona, IP, and user agent. Volunteer logins also appear
+in their activity history. No schema changes or migrations are needed here.
 
 ## Schema and publishing
 
@@ -41,5 +64,6 @@ Active — No Shift always starts without a shift.
 - The test administrator does not count toward first-admin setup or the
   last-real-admin protection.
 
-The quick-login key must stay in Replit Secrets and must never appear in
-frontend code, logs, URLs, or this document.
+The quick-login key must stay in Replit Secrets and must never be embedded in
+frontend code, logs, or this document. Use the dedicated unlock URL only in a
+trusted browser; do not share it or paste the full URL into screenshots or logs.

@@ -959,6 +959,29 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/AuthSuccess"
+  /auth/quick-login/status:
+    get:
+      operationId: getQuickLoginStatus
+      responses:
+        '200':
+          description: Enabled and unlocked QA personas; no account identifiers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QuickLoginStatus' }
+        '404':
+          description: Quick login is disabled or locked
+  /auth/quick-login:
+    post:
+      operationId: quickLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuickLoginInput' }
+      responses:
+        '200': { $ref: '#/components/responses/AuthSuccess' }
+        '404': { description: Quick login is unavailable or the persona is not eligible }
+        '429': { description: Please wait before trying again }
   /auth/signin:
     post:
       operationId: signin
@@ -2038,6 +2061,27 @@ components:
           anyOf:
             - $ref: "#/components/schemas/PublicVolunteerProfile"
             - type: "null"
+    QuickLoginInput:
+      type: object
+      additionalProperties: false
+      required: [persona]
+      properties:
+        persona: { type: string, minLength: 1, maxLength: 80 }
+    QuickLoginStatus:
+      type: object
+      required: [enabled, personas]
+      properties:
+        enabled: { type: boolean }
+        personas:
+          type: array
+          items:
+            type: object
+            required: [key, label, role, description]
+            properties:
+              key: { type: string }
+              label: { type: string }
+              role: { type: string, enum: [admin, volunteer] }
+              description: { type: string }
     TestAccountsResetInput:
       type: object
       additionalProperties: false

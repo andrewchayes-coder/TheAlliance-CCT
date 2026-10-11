@@ -120,5 +120,6 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
 it('uses an explicit enable flag only in production', () => {
   expect(isQuickLoginEnabled({ NODE_ENV: 'development' })).toBe(true);
   expect(isQuickLoginEnabled({ NODE_ENV: 'production' })).toBe(false);
-  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true' })).toBe(true);
+  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true' })).toBe(false);
+  expect(isQuickLoginEnabled({ NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true', QUICK_LOGIN_KEY: 'k'.repeat(32) })).toBe(true);
 });
