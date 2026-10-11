@@ -1,4 +1,6 @@
-# Alliance Volunteer Portal — production deployment
+# Community Care Team Volunteer Portal — production deployment
+
+Approved logos/icons ship with the web build at `/brand/`. That public path is served by the API artifact's static-file handler with `Cache-Control: public, max-age=31536000, immutable`, before sessions; it never reads Object Storage at runtime. Email headers use `${APP_BASE_URL}/brand/logo-horizontal.png`. Replace assets with versioned filenames/URLs if the artwork changes later, rather than expecting a year-cached URL to refresh immediately.
 
 ## Safety rules
 

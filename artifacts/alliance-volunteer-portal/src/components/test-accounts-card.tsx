@@ -24,7 +24,7 @@ export function TestAccountsCard() {
   }
   if (!list.data?.enabled) return null;
   return <section className="alliance-card mb-6" aria-labelledby="qa-accounts-heading" data-testid="test-accounts-card">
-    <h2 id="qa-accounts-heading" className="alliance-display text-[20px]">Test accounts</h2>
+    <h2 id="qa-accounts-heading" className="alliance-display">Test accounts</h2>
     <p className="mt-2 text-sm">These QA personas never receive real emails and are excluded from blasts, reports, and volunteer totals.
       In production, resets release all test shifts; testers must choose shifts themselves.</p>
     <ul className="my-4 divide-y divide-[#ECEEEE]">

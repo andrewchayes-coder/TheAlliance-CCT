@@ -41,7 +41,7 @@ export function ClosedDates({ items, onDone }: { items: Item[]; onDone: (t: stri
 
   return (
     <section className="alliance-card mt-6" aria-labelledby="closed-h" data-testid="section-closed-dates">
-      <h2 id="closed-h" className="alliance-display text-[15px]">Closed dates</h2>
+      <h2 id="closed-h" className="alliance-display">Closed dates</h2>
       <p className="mt-2 text-sm">On a closed date no occurrences are scheduled, no shift reminders go out, and staffing gap checks skip the day. Assignments themselves stay in place.</p>
       <form noValidate onSubmit={e => { e.preventDefault(); submit(); }} className="mt-4 grid gap-3 lg:grid-cols-[11rem_1fr_auto] sm:items-end">
         <label className="text-sm font-bold">Date<input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputCls} data-testid="input-closed-date" /></label>

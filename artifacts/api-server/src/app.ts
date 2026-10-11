@@ -1,4 +1,6 @@
 import express, { type Express } from "express";
+import { staffContactText } from '@workspace/shared/appConfig';
+import { resolve } from 'node:path';
 import cors from "cors";
 import helmet from 'helmet';
 import { errorEnvelope } from './middlewares/request-hardening';
@@ -12,6 +14,18 @@ const app: Express = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet());
+// Public, bundled artwork only. Register before sessions and private API caching.
+app.use('/brand', express.static(resolve(import.meta.dirname,
+  `../../alliance-volunteer-portal/${process.env.NODE_ENV === 'production' ? 'dist/public' : 'public'}/brand`), {
+  maxAge: '365d',
+  immutable: true,
+  index: false,
+  dotfiles: 'deny',
+  setHeaders(res) {
+    // Email clients may load the public logo from a different origin.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 app.use(errorEnvelope);
 
 app.use(
@@ -52,7 +66,7 @@ app.use((error: unknown, req: express.Request, res: express.Response, _next: exp
     res.status(status === 413 ? 413 : status === 400 ? 400 : 500).json({
       error: status === 413 ? 'This request is too large. Please shorten the text and try again.' :
         status === 400 ? 'This request could not be read. Please check the fields and try again.' :
-          'Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.',
+          `Something went wrong on our end. Please try again — if it keeps happening, contact ${staffContactText}.`,
     });
   }
 });

@@ -44,7 +44,7 @@ function Confirm({ snap, current, busy, error, onCancel, onConfirm }: {
   return (
     <dialog ref={ref} onCancel={e => { e.preventDefault(); if (!busy) onCancel(); }} aria-labelledby="status-dlg-h" data-testid="dialog-status"
       className="m-auto w-[min(92vw,34rem)] max-h-[88dvh] overflow-y-auto rounded-2xl bg-white p-5 text-navy">
-      <h2 id="status-dlg-h" className="alliance-display text-[18px]">Change status to {label}?</h2>
+      <h2 id="status-dlg-h" className="alliance-display">Change status to {label}?</h2>
       <p className="mt-2 text-sm">{COPY[snap.target]}</p>
       {snap.target === 'inactive' && (
         snap.shifts.length === 0 ? <p className="mt-3 text-sm font-bold">No current or future shifts will be released.</p> : (
@@ -106,7 +106,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
 
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-status">
-      <h2 id="v-status" className="alliance-display text-[15px]">Program status</h2>
+      <h2 id="v-status" className="alliance-display">Program status</h2>
       <ol className="mt-3 grid gap-2 sm:grid-cols-4" aria-label="Volunteer status steps">
         {STATUS_ORDER.map((s, i) => {
           const on = s === cur;
@@ -114,7 +114,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
           return (
             <li key={s}>
               <button type="button" disabled={dis} aria-current={on ? 'step' : undefined} onClick={() => !on && open(s)} data-testid={`step-${s}`}
-                className={`flex min-h-11 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-bold focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-50 ${on ? 'border-navy bg-navy text-white' : 'border-gray bg-white'}`}>
+                className={`flex min-h-11 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-bold focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50 ${on ? 'border-navy bg-navy text-white' : 'border-gray bg-white'}`}>
                 <span className="tabular-nums" aria-hidden="true">{i + 1}.</span>{STATUS[s][0]}{on && <span className="sr-only"> (current)</span>}
               </button>
             </li>

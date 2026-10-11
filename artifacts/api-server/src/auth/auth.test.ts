@@ -278,7 +278,7 @@ test('deactivation revokes sessions and links for admins and volunteers; reactiv
     await target.client.bootstrap();
     const disabled = await target.client.post('/auth/signin', { email: target.user.email, password });
     assert.equal(disabled.status, 403);
-    assert.equal(disabled.body.error, "Your account isn't active. Please contact The Alliance.");
+    assert.equal(disabled.body.error, "Your account isn't active. Please contact Cindi at cindi@defendingthecause.org.");
     const reactivated = await admin.client.request(`/admin/users/${target.user.id}/status`, 'PATCH', { isActive: true });
     assert.equal(reactivated.status, 200); assert.equal(reactivated.body.isActive, true);
     assert.equal((await target.client.request('/me')).status, 401);
@@ -378,7 +378,7 @@ test('unverified signin updates lastLoginAt and routes to verification; credenti
   await db.update(usersTable).set({ isActive: false }).where(eq(usersTable.id, user.id));
   const inactive = await client.post('/auth/signin', { email, password });
   assert.equal(inactive.status, 403);
-  assert.equal(inactive.body.error, "Your account isn't active. Please contact The Alliance.");
+  assert.equal(inactive.body.error, "Your account isn't active. Please contact Cindi at cindi@defendingthecause.org.");
 });
 
 test('resends enforce one per minute and five per hour; old verification links are invalidated', async () => {

@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useState } from 'react';
 import { useGetScheduleSettings, useCopyMondaySlots, type ScheduleSlot } from '@workspace/api-client-react';
 import { AppLayout, Button, StatusBadge } from '@/components/brand-system';
@@ -58,7 +59,7 @@ function Body() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="alliance-label">Admin</p>
-          <h1 className="alliance-display text-[22px]">Schedule settings</h1>
+          <h1 className="alliance-display">Schedule settings</h1>
           <p className="mt-1 max-w-xl text-sm">Weekly volunteer time slots and the dates the office is closed.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -74,7 +75,7 @@ function Body() {
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>}
       {q.isError && (
-        <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
+        <div className="mt-4"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice>
           <Button type="button" className="mt-3" onClick={() => { void q.refetch(); }} data-testid="button-retry-settings">Try again</Button></div>
       )}
       {data && (<>
@@ -83,7 +84,7 @@ function Body() {
           return (
             <section key={d} className="alliance-card mt-4" aria-labelledby={`day-${d}`} data-testid={`section-day-${d}`}>
               <div className="flex items-center justify-between gap-2">
-                <h2 id={`day-${d}`} className="alliance-display text-[15px]">{DAYS[d]}</h2>
+                <h2 id={`day-${d}`} className="alliance-display">{DAYS[d]}</h2>
                 <Button type="button" variant="secondary" onClick={() => setEditing({ slot: null, day: d })} data-testid={`button-add-slot-${d}`}>Add to {DAYS[d]}</Button>
               </div>
               {list.length === 0 ? <p className="mt-3 text-sm" data-testid={`empty-day-${d}`}>No slots yet for {DAYS[d]}.</p> : (

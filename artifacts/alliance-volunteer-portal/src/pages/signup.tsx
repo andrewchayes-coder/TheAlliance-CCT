@@ -41,7 +41,7 @@ function Form() {
 
   return (
     <PublicLayout>
-      <AuthHeading label="Volunteer sign up" title="Create your volunteer account">
+      <AuthHeading label="Resource Coordinator sign up" title="Create your Resource Coordinator account">
         Thank you for helping local families find the support they need.
       </AuthHeading>
       {err && <Notice>{err}</Notice>}
@@ -52,14 +52,14 @@ function Form() {
         </div>
         <Field label="Email" type="email" required autoComplete="email" maxLength={254} value={v.email} onChange={set('email')} />
         <Field label="Mobile phone" type="tel" required autoComplete="tel" inputMode="tel" minLength={10} maxLength={30}
-          hint="We use this only to coordinate your volunteer work." value={v.phone} onChange={set('phone')} />
+          hint="We use this only to coordinate your Resource Coordinator work." value={v.phone} onChange={set('phone')} />
         <PasswordField label="Password" required autoComplete="new-password" minLength={8} maxLength={72}
           error={pwErr} hint="At least 8 characters." value={v.password} onChange={set('password')} />
         <PasswordField label="Confirm password" required autoComplete="new-password" minLength={8} maxLength={72}
           error={matchErr} value={v.confirmPassword} onChange={set('confirmPassword')} />
         <SubmitButton busy={busy} busyText="Creating your account">Create account</SubmitButton>
       </form>
-      <p className="mt-6 text-sm">Already volunteering with us? <Link href="/signin" className="font-bold text-teal-text underline underline-offset-4">Sign in</Link></p>
+      <p className="mt-6 text-sm">Already serving as a Resource Coordinator? <Link href="/signin" className="font-bold text-blue underline underline-offset-4">Sign in</Link></p>
     </PublicLayout>
   );
 }

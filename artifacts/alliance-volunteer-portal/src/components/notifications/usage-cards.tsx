@@ -35,7 +35,7 @@ export function UsageCard({ s }: { s: Summary }) {
   return (
     <Card className="p-4" data-testid="card-usage">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="alliance-display text-[15px]">{monthName(s.month, true)} usage</h2>
+        <h2 className="alliance-display">{monthName(s.month, true)} usage</h2>
         <StatusBadge status={status}>{pct >= 95 ? 'At limit' : pct >= 80 ? 'Approaching limit' : 'Within limit'}</StatusBadge>
       </div>
       <p className="mt-3 text-3xl font-bold tabular-nums" data-testid="text-total">{s.total.toLocaleString()} <span className="text-base font-semibold">of {s.monthlyLimit.toLocaleString()} emails</span></p>
@@ -83,7 +83,7 @@ export function ProviderCard({ s, onDone }: { s: Summary; onDone: () => void }) 
   const msg = res ? (res.status === 'sent' ? 'Sent to your signed-in admin email.' : res.status === 'logged' ? 'Logged only. It was not delivered to an inbox.' : 'Failed to send.') : '';
   return (
     <Card className="p-4" data-testid="card-provider">
-      <h2 className="alliance-display text-[15px]">Email provider</h2>
+      <h2 className="alliance-display">Email provider</h2>
       <dl className="mt-3 space-y-2 text-sm">
         <div className="flex flex-wrap justify-between gap-2"><dt>Postmark token</dt><dd><StatusBadge status={p.tokenConfigured ? 'good' : 'attention'}>{p.tokenConfigured ? 'Configured' : 'Not configured'}</StatusBadge></dd></div>
         <div className="flex flex-wrap justify-between gap-2"><dt>From address</dt><dd className="break-all font-bold" data-testid="text-email-from">{p.emailFrom ?? 'Not configured'}</dd></div>

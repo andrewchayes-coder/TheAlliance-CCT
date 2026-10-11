@@ -10,7 +10,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         neutral: 'bg-gray text-navy',
-        good: 'bg-teal-text text-white',
+        good: 'bg-blue text-white',
         attention: 'bg-[#FFF0D2] text-[#785213]',
         blocked: 'bg-[#FBE4E1] text-[#8E332A]',
         default:

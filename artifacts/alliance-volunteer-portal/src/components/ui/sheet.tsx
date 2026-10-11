@@ -63,7 +63,7 @@ const SheetContent = React.forwardRef<
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
-      <SheetPrimitive.Close className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-lg text-navy hover:bg-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal">
+      <SheetPrimitive.Close className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-lg text-navy hover:bg-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue">
         <X className="h-5 w-5" aria-hidden="true" />
         <span className="sr-only">Close</span>
       </SheetPrimitive.Close>

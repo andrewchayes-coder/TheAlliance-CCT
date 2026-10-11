@@ -51,7 +51,7 @@ export async function verificationEmail(user: User, retryLogId?: string) {
     firstName: user.firstName,
     paragraphs: [
       'Thank you for helping local families find the support they need.',
-      'Please confirm your email so we can welcome you into the volunteer portal and help you get started. This link is valid for 48 hours.',
+      'Please confirm your email so we can welcome you as a Resource Coordinator and help you get started. This link is valid for 48 hours.',
       "If you didn't create this account, you can safely ignore this email.",
     ],
     cta: { label: 'Verify my email', url: `${appOrigin}/verify?token=${token.raw}` },
@@ -62,7 +62,7 @@ export async function verificationEmail(user: User, retryLogId?: string) {
 export async function passwordResetEmail(user: User, retryLogId?: string) {
   const token = await mintToken(user.id, 'password_reset');
   const content = createEmailTemplate({
-    heading: 'Let’s get you back into the volunteer portal',
+    heading: 'Let’s get you back into the CCT Portal',
     firstName: user.firstName,
     paragraphs: [
       'We received a request to reset your password. Use the link below to choose a new password and continue supporting your community.',
@@ -72,5 +72,5 @@ export async function passwordResetEmail(user: User, retryLogId?: string) {
     cta: { label: 'Reset my password', url: `${appOrigin}/reset-password?token=${token.raw}` },
   });
   return sendEmail({ type: 'password_reset', to: user.email, toUserId: user.id,
-    subject: 'Reset your Alliance Volunteer Portal password', relatedId: token.id, retryLogId, ...content });
+    subject: 'Reset your Community Care Team Volunteer Portal password', relatedId: token.id, retryLogId, ...content });
 }

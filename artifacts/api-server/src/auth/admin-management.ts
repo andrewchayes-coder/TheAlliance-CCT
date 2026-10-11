@@ -72,7 +72,7 @@ export async function inviteAdministrator(
     heading: 'You’re invited to help coordinate community care',
     firstName,
     paragraphs: [
-      "You’ve been invited to join The Alliance's Resource Coordination Program as an administrator.",
+      "You’ve been invited to join The Alliance's Community Care Team as an administrator.",
       'Your care and coordination help volunteers connect local families with the support they need. Set your password to accept this invitation and confirm your email address.',
       'This invitation is valid for seven days and can be used once. If you weren’t expecting it, you can safely ignore this email.',
     ],
@@ -80,7 +80,7 @@ export async function inviteAdministrator(
   });
   const result = await sendEmail({
     type: 'invite', to: user.email, toUserId: user.id,
-    subject: 'Your invitation to The Alliance Volunteer Portal', relatedId: tokenId, ...content,
+    subject: 'Your invitation to the Community Care Team Volunteer Portal', relatedId: tokenId, ...content,
   });
   const [log] = await db.select({ status: notificationLogTable.status }).from(notificationLogTable)
     .where(eq(notificationLogTable.relatedId, tokenId)).limit(1);

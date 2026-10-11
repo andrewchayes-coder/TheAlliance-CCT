@@ -1,13 +1,19 @@
 ---
 name: Brand accessibility
-description: Resolve the original teal palette and home-screen support against accessibility and private-resource requirements.
+description: CCT contrast constraints, exact placeholder styling, and private-resource-safe home-screen support.
 ---
 
-Use accessible teal variants for white-text actions and small labels on gray surfaces, rather than restoring the exact bright teal fill from the original brand brief.
+Use the final CCT Alliance Blue for actions and text on white. Gray surfaces need navy text, not blue.
 
-**Why:** The requested AA contrast takes priority when the original bright teal fails contrast for small white text. Labels must work on gray as well as white.
+**Why:** Blue on white measures 5.09:1, but blue on brand gray is only 4.08:1. The client's final guide explicitly prohibits blue text on gray and supersedes the earlier palette.
 
-**How to apply:** Keep the original hue for accents and focus rings; use the accessible action/text variants for controls and labels when extending the design.
+**How to apply:** Audit effective backgrounds, including selected filters and nested cards. Keep navy field labels and blue rings; white text on blue actions passes AA.
+
+The final guide explicitly specifies 60% navy placeholders on gray, which are below 4.5:1. Preserve that exact requirement unless the user authorizes a contrast change, and disclose the exception rather than claiming full AA.
+
+**Why:** This was a conflict between the final supplied styling and the earlier accessibility goal.
+
+**How to apply:** Maintain full-contrast labels and do not use placeholders as the only instructions. If asked to achieve full AA, flag this required adjustment.
 
 Measure native checkbox and radio targets in the browser rather than assuming padding enlarges them.
 

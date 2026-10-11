@@ -31,10 +31,10 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
     const a = dlg.a;
     if (schedule.assignments.length <= schedule.minShifts) return (
       <ShiftModal title="You need at least one shift" onClose={onClose}
-        description={`Volunteers keep at least ${schedule.minShifts} weekly ${schedule.minShifts === 1 ? 'shift' : 'shifts'}. You can swap this one for a different time instead.`}
+        description={`Resource Coordinators keep at least ${schedule.minShifts} weekly ${schedule.minShifts === 1 ? 'shift' : 'shifts'}. You can swap this one for a different time instead.`}
         footer={<>{cancel}<button type="button" className="alliance-button alliance-button-primary" data-testid="button-dialog-change"
           onClick={() => { onClose(); act.startChange(a); }}>Change this shift</button></>}>
-        <p className="text-sm">If you need to step back entirely, please contact <ContactLink email={email}>The Alliance</ContactLink>.</p>
+        <p className="text-sm">If you need to step back entirely, please contact <ContactLink />.</p>
       </ShiftModal>
     );
     return (
@@ -57,7 +57,7 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
             {options.map(d => <option key={d.date} value={d.date}>{dateLabel(d.date)}</option>)}
           </select>
         </label>
-        {a.nextDates.some(d => !d.skipped && !d.canSkip) && <p className="text-sm">Closer than 24 hours? Please contact <ContactLink email={email}>The Alliance</ContactLink>.</p>}
+        {a.nextDates.some(d => !d.skipped && !d.canSkip) && <p className="text-sm">Closer than 24 hours? Please contact <ContactLink />.</p>}
       </ShiftModal>
     );
   }

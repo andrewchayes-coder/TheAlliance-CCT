@@ -5,6 +5,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 ## Unreleased
 
 ### Changed
+- Refreshed the Community Care Team identity, Resource Coordinator-facing copy, Cindi contact guidance, Alliance Blue/Open Sans styling, approved static logos and home-screen icons, and branded email presentation. Workflows and data models are unchanged.
 - Production schema changes are managed by Replit Publish only. Removed boot-time Drizzle migrations, migration-history guard and runner commands; configuration validation remains enabled.
 - Deployment instructions no longer require migration-history baselining and describe the two existing CHECK-constraint differences that Publish previously omitted.
 

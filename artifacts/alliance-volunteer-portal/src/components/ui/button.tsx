@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const buttonVariants = cva(
-  'alliance-button whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'alliance-button whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -16,7 +16,7 @@ const buttonVariants = cva(
         secondary: 'alliance-button-secondary',
         // @replit no hover, transparent border
         ghost: 'border border-transparent',
-        link: 'text-teal-text underline-offset-4 hover:underline',
+        link: 'text-blue underline-offset-4 hover:underline',
       },
       size: {
         // @replit changed sizes

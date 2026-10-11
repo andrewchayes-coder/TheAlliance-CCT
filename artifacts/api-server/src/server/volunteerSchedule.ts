@@ -1,4 +1,5 @@
 import { and, eq, gte, isNotNull } from 'drizzle-orm';
+import { staffContactText } from '@workspace/shared/appConfig';
 import { db, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, activityLogTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
 import { readScheduleData, ongoingForSlot } from './scheduleRepository';
@@ -106,7 +107,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
       message = `You're on the schedule: ${weekdayNames[slot.dayOfWeek]}, ${clock(slot.startTime)}–${clock(slot.endTime)}, starting ${dateLabel(first)}.`;
     } else if (input.kind === 'drop') {
       if (own.length <= appConfig.minShiftsPerVolunteer) throw new WorkflowError(422,
-        `Please keep at least ${appConfig.minShiftsPerVolunteer} weekly shift${appConfig.minShiftsPerVolunteer === 1 ? '' : 's'}. Choose Change shift instead, or contact The Alliance if you need to step back.`);
+        `Please keep at least ${appConfig.minShiftsPerVolunteer} weekly shift${appConfig.minShiftsPerVolunteer === 1 ? '' : 's'}. Choose Change shift instead, or contact ${staffContactText} if you need to step back.`);
       await tx.update(shiftAssignmentsTable).set({ endDate: addCalendarDays(today, -1), endedReason: 'dropped', updatedAt: now })
         .where(eq(shiftAssignmentsTable.id, old!.id));
       release = true; message = 'Your weekly shift has been released. Thank you for keeping your schedule up to date.';
@@ -116,7 +117,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
         .find(o => o.slot.id === oldSlot!.id && o.assignedVolunteers.some(a => a.assignmentId === old!.id));
       if (!occurrence || date > addCalendarDays(today, 365)) throw new WorkflowError(422, 'Choose an upcoming date from this standing shift.');
       if (occurrence.startsAt.getTime() - now.getTime() < 24 * hour) throw new WorkflowError(422,
-        'Please contact The Alliance. Weeks off must be requested at least 24 hours before the shift.');
+        `Please contact ${staffContactText}. Weeks off must be requested at least 24 hours before the shift.`);
       const inserted = await tx.insert(shiftSkipsTable).values({ shiftAssignmentId: old!.id, skipDate: date }).onConflictDoNothing()
         .returning({ id: shiftSkipsTable.id });
       release = inserted.length > 0; message = `Your week off on ${dateLabel(date)} is recorded. Thank you for letting us know.`;
@@ -124,7 +125,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
       const [skip] = await tx.select().from(shiftSkipsTable).where(and(
         eq(shiftSkipsTable.id, input.skipId), eq(shiftSkipsTable.shiftAssignmentId, old!.id))).for('update');
       if (!skip) throw new WorkflowError(404, 'This week off could not be found.');
-      if (slotInstant(skip.skipDate, oldSlot!.startTime) <= now) throw new WorkflowError(422, 'This shift has already started. Please contact The Alliance.');
+      if (slotInstant(skip.skipDate, oldSlot!.startTime) <= now) throw new WorkflowError(422, `This shift has already started. Please contact ${staffContactText}.`);
       await tx.delete(shiftSkipsTable).where(eq(shiftSkipsTable.id, skip.id));
       message = `You're back on the schedule for ${dateLabel(skip.skipDate)}. Thank you for your help.`;
     }

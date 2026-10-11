@@ -25,7 +25,7 @@ function ForgotForm() {
       {done ? (
         <>
           <Notice kind="success">{done}</Notice>
-          <Link href="/signin" className="inline-flex min-h-11 items-center text-sm font-bold text-teal-text underline underline-offset-4">Back to sign in</Link>
+          <Link href="/signin" className="inline-flex min-h-11 items-center text-sm font-bold text-blue underline underline-offset-4">Back to sign in</Link>
         </>
       ) : (
         <>
@@ -34,7 +34,7 @@ function ForgotForm() {
             <Field label="Email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} />
             <SubmitButton busy={busy} busyText="Sending">Send reset link</SubmitButton>
           </form>
-          <p className="mt-6 text-sm"><Link href="/signin" className="font-bold text-teal-text underline underline-offset-4">Back to sign in</Link></p>
+          <p className="mt-6 text-sm"><Link href="/signin" className="font-bold text-blue underline underline-offset-4">Back to sign in</Link></p>
         </>
       )}
     </PublicLayout>

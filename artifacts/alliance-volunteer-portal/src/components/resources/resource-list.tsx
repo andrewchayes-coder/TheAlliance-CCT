@@ -69,7 +69,7 @@ export function ResourceList({ type, all, onEdit }: { type: T; all: ResourceItem
             <div className="flex items-start gap-2">
               <span className="mt-2 cursor-grab touch-none text-navy-soft" aria-hidden="true"><GripVertical size={20} /></span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase"><TypeIcon type={r.type} size={14} />{r.category}
+                <div className="flex items-center gap-2 text-xs font-bold"><TypeIcon type={r.type} size={14} />{r.category}
                   <StatusBadge status={r.isPublished ? 'good' : 'neutral'}>{r.isPublished ? 'Published' : 'Draft'}</StatusBadge></div>
                 <p className="break-words font-bold">{r.title}</p>
                 {r.fileName && <p className="break-all text-sm">{r.fileName}</p>}

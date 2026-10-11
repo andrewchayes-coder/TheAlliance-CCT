@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import {
@@ -76,7 +77,7 @@ export function LogSection() {
 
   return (
     <section aria-labelledby="log-h" data-testid="section-log">
-      <h2 id="log-h" className="alliance-display text-[15px]">Email log</h2>
+      <h2 id="log-h" className="alliance-display">Email log</h2>
       <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-6">
         <label className="text-xs font-bold">Type<select className={`${sel} mt-1 w-full`} value={type} onChange={e => set(setType)(e.target.value)} data-testid="select-type"><option value="">All types</option>{TYPES.map(t => <option key={t.type} value={t.type}>{t.label}</option>)}</select></label>
         <label className="text-xs font-bold">Status<select className={`${sel} mt-1 w-full`} value={status} onChange={e => set(setStatus)(e.target.value)} data-testid="select-status"><option value="">All statuses</option><option value="sent">Sent</option><option value="logged">Logged</option><option value="failed">Failed</option><option value="suppressed">Suppressed (test account)</option></select></label>
@@ -91,13 +92,13 @@ export function LogSection() {
       <div className="mt-2">{outcome && <div data-testid="retry-outcome"><Notice kind={outcome.kind}>{outcome.msg}</Notice></div>}</div>
 
       {q.isLoading && !dateErr && <div className="mt-3 space-y-2" role="status" aria-busy="true"><span className="sr-only">Loading log</span>{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>}
-      {q.isError && <div className="mt-3"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-log">Try again</Button></div>}
+      {q.isError && <div className="mt-3"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-log">Try again</Button></div>}
       {d && !dateErr && (d.rows.length === 0 ? (
         <div className="mt-3"><EmptyState title={filtered ? 'No emails match' : 'No emails logged yet'} description={filtered ? 'Try widening or clearing the filters.' : 'Sent and logged emails will appear here.'} action={filtered ? <Button type="button" onClick={clear}>Clear filters</Button> : undefined} /></div>
       ) : (<>
         <div className="mt-3 hidden max-h-[560px] overflow-auto rounded-xl border border-gray bg-white xl:block">
           <table className="w-full min-w-[860px] text-left text-sm" data-testid="table-log">
-            <thead className="sticky top-0 bg-navy text-white"><tr>{['Time (Pacific)', 'Type', 'Recipient', 'Subject', 'Status', 'Error'].map(h => <th key={h} className="px-3 py-2 text-xs uppercase">{h}</th>)}<th className="px-3 py-2"><span className="sr-only">Actions</span></th></tr></thead>
+            <thead className="sticky top-0 bg-navy text-white"><tr>{['Time (Pacific)', 'Type', 'Recipient', 'Subject', 'Status', 'Error'].map(h => <th key={h} className="px-3 py-2 text-xs">{h}</th>)}<th className="px-3 py-2"><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>{d.rows.map(r => (
               <tr key={r.id} className="border-t border-gray align-top" data-testid={`row-log-${r.id}`}>
                 <td className="whitespace-nowrap px-3 py-2">{when(r.time)}</td><td className="px-3 py-2">{typeLabel(r.type)}</td>

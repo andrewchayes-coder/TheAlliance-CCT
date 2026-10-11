@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { ArrowLeft, ExternalLink, FileText } from 'lucide-react';
@@ -25,7 +26,7 @@ function issuesToErrors(issues: { path: PropertyKey[]; message: string }[]): Err
   return out;
 }
 
-const choiceClass = 'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg bg-gray px-3.5 py-2.5 text-[15px] has-[:checked]:bg-[#d7efee] has-[:checked]:ring-2 has-[:checked]:ring-teal has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-teal';
+const choiceClass = 'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg bg-gray px-3.5 py-2.5 text-[15px] has-[:checked]:bg-[#d6e9f3] has-[:checked]:ring-2 has-[:checked]:ring-blue has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue';
 
 export function QuestionField({ q, value, error, onChange }: { q: OnboardingQuestion; value: unknown; error?: string; onChange: (v: unknown) => void }) {
   const id = useId();
@@ -45,7 +46,7 @@ export function QuestionField({ q, value, error, onChange }: { q: OnboardingQues
   if (control) {
     return (
       <div>
-        <label htmlFor={id} className="mb-1.5 block text-sm font-bold">{q.label}{q.required && <span className="text-teal-text"> (required)</span>}</label>
+        <label htmlFor={id} className="mb-1.5 block text-sm font-bold">{q.label}{q.required && <span className="text-blue"> (required)</span>}</label>
         {control}
         <FieldNote id={descId} error={error} help={q.helpText} />
       </div>
@@ -55,21 +56,21 @@ export function QuestionField({ q, value, error, onChange }: { q: OnboardingQues
   const arr = Array.isArray(value) ? (value as string[]) : [];
   return (
     <fieldset aria-describedby={described} aria-invalid={!!error}>
-      <legend className="mb-1.5 text-sm font-bold">{q.label}{q.required && <span className="text-teal-text"> (required)</span>}</legend>
+      <legend className="mb-1.5 text-sm font-bold">{q.label}{q.required && <span className="text-blue"> (required)</span>}</legend>
       <div className="grid gap-2 sm:grid-cols-2">
         {q.type === 'yesno' && [true, false].map(b => (
           <label key={String(b)} className={choiceClass}>
-            <input type="radio" name={id} className="size-4 accent-[#02928f]" checked={value === b} onChange={() => onChange(b)} />{b ? 'Yes' : 'No'}
+            <input type="radio" name={id} className="size-4 accent-[#0175aa]" checked={value === b} onChange={() => onChange(b)} />{b ? 'Yes' : 'No'}
           </label>
         ))}
         {q.type === 'radio' && q.options?.map(o => (
           <label key={o} className={choiceClass}>
-            <input type="radio" name={id} className="size-4 accent-[#02928f]" checked={str === o} onChange={() => onChange(o)} />{o}
+            <input type="radio" name={id} className="size-4 accent-[#0175aa]" checked={str === o} onChange={() => onChange(o)} />{o}
           </label>
         ))}
         {q.type === 'multiselect' && q.options?.map(o => (
           <label key={o} className={choiceClass}>
-            <input type="checkbox" className="size-4 accent-[#02928f]" checked={arr.includes(o)}
+            <input type="checkbox" className="size-4 accent-[#0175aa]" checked={arr.includes(o)}
               onChange={e => onChange(e.target.checked ? [...arr, o] : arr.filter(x => x !== o))} />{o}
           </label>
         ))}
@@ -92,18 +93,18 @@ function AgreementsBlock({ checked, onCheck, error, onReady }: { checked: boolea
   useEffect(() => { onReadyRef.current({ ready: !!d?.ready, version: d?.version ?? '' }); }, [d?.ready, d?.version]);
   return (
     <section className="rounded-2xl border border-gray p-5" aria-labelledby="agree-h">
-      <h2 id="agree-h" className="alliance-display text-[14px]">Our agreements</h2>
+      <h2 id="agree-h" className="alliance-display">Our agreements</h2>
       {q.isPending ? <Skeleton className="mt-4 h-24 w-full" /> : q.isError ? (
-        <div className="mt-3"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" variant="secondary" onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        <div className="mt-3"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button type="button" variant="secondary" onClick={() => { void q.refetch(); }}>Try again</Button></div>
       ) : d && (
         <>
-          {!d.ready && <div className="mt-3"><Notice kind="info">The User Agreement and Safety Guidelines aren't both available yet, so onboarding can't be finished today. You can save your progress and return later. Please check back soon, or contact the Alliance.</Notice></div>}
+          {!d.ready && <div className="mt-3"><Notice kind="info">The User Agreement and Safety Guidelines aren't both available yet, so onboarding can't be finished today. You can save your progress and return later. Please check back soon, or contact <ContactLink />.</Notice></div>}
           {d.resources.length > 0 && (
             <ul className="mt-3 divide-y divide-gray">
               {d.resources.map(r => (
                 <li key={r.id}>
                    <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/onboarding/agreements/${encodeURIComponent(r.id)}`} target="_blank" rel="noopener noreferrer" data-testid={`link-agreement-${r.id}`}
-                    className="flex min-h-11 items-center gap-3 py-2 font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal">
+                    className="flex min-h-11 items-center gap-3 py-2 font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue">
                     <FileText size={18} aria-hidden="true" />{r.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" className="ml-auto" />
                    </a>
                 </li>
@@ -111,7 +112,7 @@ function AgreementsBlock({ checked, onCheck, error, onReady }: { checked: boolea
             </ul>
           )}
           <label className={`${choiceClass} mt-4 ${d.ready ? '' : 'opacity-60'}`}>
-            <input type="checkbox" className="size-5 shrink-0 accent-[#02928f]" checked={checked} disabled={!d.ready} data-testid="checkbox-agreement"
+            <input type="checkbox" className="size-5 shrink-0 accent-[#0175aa]" checked={checked} disabled={!d.ready} data-testid="checkbox-agreement"
               onChange={e => onCheck(e.target.checked)} />
             <span>I have read and agree to the Volunteer User Agreement and Safety Guidelines.</span>
           </label>
@@ -263,12 +264,12 @@ function OnboardingForm({ me }: { me: Me }) {
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
         <p className="alliance-label">Step {step} of 2</p>
-        <h1 className="alliance-display mt-3 text-[24px] text-navy md:text-[30px]">Welcome, {me.user.firstName}</h1>
+        <h1 className="alliance-display mt-3 text-navy">Welcome, {me.user.firstName}</h1>
         <p className="mt-3">
           {step === 1 ? "Thank you for stepping up. Tell us a little about you so we can match you with the right support." : 'Almost there. A few optional notes, then review our agreements.'}
         </p>
         <div className="mt-5 flex gap-2" aria-hidden="true">
-          {[1, 2].map(n => <span key={n} className={`h-1.5 flex-1 rounded-full transition-colors ${n <= step ? 'bg-teal' : 'bg-gray'}`} />)}
+          {[1, 2].map(n => <span key={n} className={`h-1.5 flex-1 rounded-full transition-colors ${n <= step ? 'bg-blue' : 'bg-gray'}`} />)}
         </div>
         <div className="mt-5">{formErr && <Notice>{formErr}</Notice>}</div>
         <form noValidate onSubmit={e => { e.preventDefault(); void (step === 1 ? next() : finish()); }} className="mt-4 grid gap-6" data-testid="form-onboarding">
@@ -280,7 +281,7 @@ function OnboardingForm({ me }: { me: Me }) {
                 <Field label="First name" required autoComplete="given-name" maxLength={100} value={contact.firstName} error={errors.firstName} onChange={e => setC('firstName', e.target.value)} data-testid="input-first-name" />
                 <Field label="Last name" required autoComplete="family-name" maxLength={100} value={contact.lastName} error={errors.lastName} onChange={e => setC('lastName', e.target.value)} data-testid="input-last-name" />
                 <Field className="sm:col-span-2" label="Mobile phone" type="tel" required autoComplete="tel" maxLength={40} value={contact.phone} error={errors.phone}
-                  hint="We use this only to coordinate your volunteer shifts." onChange={e => setC('phone', e.target.value)} data-testid="input-phone" />
+                  hint="We use this only to coordinate your shifts." onChange={e => setC('phone', e.target.value)} data-testid="input-phone" />
               </fieldset>
               {qs(1).map(q => <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={v => setAnswer(q.id, v)} />)}
             </>
@@ -327,7 +328,7 @@ function AgreementBody() {
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
-        <Link href="/onboarding" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ArrowLeft size={16} aria-hidden="true" />Back to onboarding</Link>
+        <Link href="/onboarding" className="mb-4 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ArrowLeft size={16} aria-hidden="true" />Back to onboarding</Link>
         {q.isPending ? <div role="status" aria-busy="true"><span className="sr-only">Loading</span><Skeleton className="h-10 w-2/3" /><Skeleton className="mt-6 h-48 w-full" /></div>
           : q.isError || !r ? (
             <>
@@ -337,14 +338,14 @@ function AgreementBody() {
           ) : (
             <article>
               <p className="alliance-label">{r.type === 'article' ? 'Article' : r.type === 'document' ? 'Document' : 'Link'}</p>
-              <h1 className="alliance-display mt-3 text-[22px] md:text-[28px]" data-testid="text-agreement-title">{r.title}</h1>
+              <h1 className="alliance-display mt-3" data-testid="text-agreement-title">{r.title}</h1>
               {r.body && <div className="mt-5 whitespace-pre-wrap break-words" data-testid="text-agreement-body">{r.body}</div>}
               {href && (
                 <a href={href} target="_blank" rel="noopener noreferrer" className="alliance-button alliance-button-primary mt-6" data-testid="link-agreement-open">
                   {r.type === 'link' ? 'Open link' : 'Open document'}<ExternalLink size={16} aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span>
                 </a>
               )}
-              {!r.body && !href && <Notice kind="info">This resource has no readable content yet. Please contact the Alliance.</Notice>}
+              {!r.body && !href && <Notice kind="info">This resource has no readable content yet. Please contact <ContactLink />.</Notice>}
             </article>
           )}
       </div>

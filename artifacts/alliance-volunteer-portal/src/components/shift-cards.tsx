@@ -1,10 +1,9 @@
+import { STAFF_EMAIL, STAFF_NAME } from '@/lib/contact';
 import type { VolunteerShiftDate, VolunteerStandingShift } from '@workspace/api-client-react';
 import { dateLabel, slotTitle, ymd } from '@/lib/shift-utils';
 
-export function ContactLink({ email, children }: { email: string | null; children?: string }) {
-  return email
-    ? <a href={`mailto:${email}`} className="font-bold text-teal-text underline underline-offset-4" data-testid="link-contact-alliance">{children ?? email}</a>
-    : <span className="font-bold">The Alliance</span>;
+export function ContactLink({ children }: { email?: string | null; children?: string }) {
+  return <a href={`mailto:${STAFF_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${STAFF_NAME} (${STAFF_EMAIL})`}</a>;
 }
 
 export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, onSkip, onUndo }: {
@@ -24,7 +23,7 @@ export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, 
         return (
           <li key={a.id} className="rounded-2xl bg-white p-5 shadow-sm" data-testid={`card-shift-${a.id}`}>
             <p className="alliance-section-kicker">Every {slotTitle(a).split(',')[0]}</p>
-            <h3 className="alliance-display mt-1 text-[15px]">{slotTitle(a).split(', ')[1]}</h3>
+            <h3 className="alliance-display mt-1">{slotTitle(a).split(', ')[1]}</h3>
             {a.label && <p className="text-sm text-navy-soft">{a.label}</p>}
             <p className="mt-1 text-xs text-navy-soft">Started {dateLabel(a.startDate)}</p>
             <ul className="mt-3 divide-y divide-gray">
@@ -34,7 +33,7 @@ export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, 
                   {d.skipped && <span className="rounded-full bg-[var(--alliance-amber)] px-2 py-0.5 text-xs font-bold text-[var(--alliance-amber-ink)]">Week off</span>}
                   {d.skipped && d.canUndo && d.skipId && (
                     <button type="button" disabled={busy} onClick={() => onUndo(a, d)} data-testid={`button-undo-${a.id}-${d.date}`}
-                      className="ml-auto min-h-11 px-2 font-bold text-teal-text underline underline-offset-4 disabled:opacity-50">
+                      className="ml-auto min-h-11 px-2 font-bold text-blue underline underline-offset-4 disabled:opacity-50">
                       Undo<span className="sr-only"> week off for {dateLabel(d.date)}</span>
                     </button>
                   )}
@@ -43,7 +42,7 @@ export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, 
             </ul>
             {tooLate && (
               <p className="mt-2 text-sm" data-testid={`text-late-${a.id}`}>
-                A shift within 24 hours can't be skipped online. Please contact <ContactLink email={contactEmail}>The Alliance</ContactLink>.
+                A shift within 24 hours can't be skipped online. Please contact <ContactLink />.
               </p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">

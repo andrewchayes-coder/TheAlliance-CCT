@@ -33,7 +33,7 @@ export function RecipientPicker({ audience, ids, names, disabled, onAdd, onRemov
               <button type="button" disabled={disabled} onClick={() => onRemove(id)} aria-label={`Remove ${v ? nm(v) : 'recipient'}`}
                 className="flex size-9 items-center justify-center rounded-full hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-white"><X size={16} aria-hidden="true" /></button>
             </li>); })}
-          <li><button type="button" disabled={disabled} onClick={onClear} className="min-h-11 px-2 text-sm font-bold text-teal-text underline underline-offset-4" data-testid="button-clear-recipients">Clear all</button></li>
+          <li><button type="button" disabled={disabled} onClick={onClear} className="min-h-11 px-2 text-sm font-bold text-blue underline underline-offset-4" data-testid="button-clear-recipients">Clear all</button></li>
         </ul>
       ) : <p className="mt-1 text-sm text-navy-soft">No one chosen yet. Search below.</p>}
       <div className="relative mt-4">

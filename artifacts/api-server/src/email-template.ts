@@ -1,7 +1,5 @@
 import { appConfig } from '@workspace/shared/appConfig';
 import { renderMessageMarkdown } from '@workspace/shared/markdown';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 export interface EmailTemplateOptions {
   heading: string;
@@ -14,7 +12,7 @@ export interface EmailTemplateOptions {
   markdownBody?: string;
 }
 
-export const emailFooter = "You're receiving this because you volunteer with The Alliance's Resource Coordination Program.";
+export const emailFooter = `You're receiving this because you're part of The Alliance's ${appConfig.programName}.`;
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => ({
@@ -31,24 +29,17 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
   const greeting = options.firstName?.trim() ? `Hi ${options.firstName.trim()},` : undefined;
   const paragraphs = [...(greeting ? [greeting] : []), ...options.paragraphs];
   const markdown = options.markdownBody ? renderMessageMarkdown(options.markdownBody) : null;
-  // Use the approved asset only when present; never substitute an invented Alliance logo.
-  const logoPath = resolve(import.meta.dirname, '../../alliance-volunteer-portal/public/brand/logo.svg');
-  let logoUrl: string | undefined;
-  if (existsSync(logoPath) && process.env.APP_ORIGIN) {
-    try {
-      const origin = new URL(process.env.APP_ORIGIN);
-      if (origin.protocol === 'https:' && !origin.username && !origin.password)
-        logoUrl = new URL('/brand/logo.svg', origin).href;
-    } catch { /* The readable app name remains the fallback. */ }
-  }
+  // Production startup validates APP_BASE_URL; development can infer it from a CTA.
+  const baseUrl = process.env.APP_BASE_URL?.trim() || (ctas[0] ? new URL(ctas[0].url).origin : 'http://localhost:80');
+  const logoUrl = `${baseUrl.replace(/\/$/, '')}/brand/logo-horizontal.png`;
   const button = ctas.map(cta => `
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-      <tr><td bgcolor="#027A77" style="border-radius:8px;">
-        <a class="email-cta" href="${escapeHtml(cta.url)}" style="display:inline-block;min-height:20px;padding:14px 22px;color:#FFFFFF;background-color:#027A77;border-radius:8px;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;">${escapeHtml(cta.label)}</a>
+      <tr><td bgcolor="#0175aa" style="border-radius:8px;">
+        <a class="email-cta" href="${escapeHtml(cta.url)}" style="display:inline-block;min-height:20px;padding:14px 22px;color:#FFFFFF;background-color:#0175aa;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(cta.label)}</a>
       </td></tr>
     </table>
     <p style="margin:0 0 20px;font-size:15px;line-height:1.6;overflow-wrap:anywhere;">If the button doesn’t open, this link will take you to the same place:<br>
-      <a href="${escapeHtml(cta.url)}" style="color:#027A77;word-break:break-all;">${escapeHtml(cta.url)}</a>
+      <a href="${escapeHtml(cta.url)}" style="color:#0175aa;word-break:break-all;">${escapeHtml(cta.url)}</a>
     </p>`).join('\n');
   return {
     html: `<!doctype html>
@@ -60,20 +51,21 @@ export function createEmailTemplate(options: EmailTemplateOptions): { html: stri
   <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${escapeHtml(options.preheader ?? options.paragraphs[0] ?? '')}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF"><tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#FFFFFF;">
-      <tr><td class="email-padding" bgcolor="#06365D" style="padding:28px 32px;color:#FFFFFF;font-family:'Open Sans',Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;">${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(appConfig.appName)}" width="180" style="display:block;max-width:100%;height:auto;margin-bottom:16px;">` : ''}${escapeHtml(appConfig.appName.toUpperCase())}</td></tr>
-      <tr><td class="email-padding" style="padding:32px;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:17px;line-height:1.6;">
-        <h1 style="margin:0 0 24px;font-family:'Lulo Clean',Montserrat,Arial,sans-serif;font-size:28px;font-weight:700;line-height:1.3;letter-spacing:.04em;text-transform:uppercase;color:#06365D;">${escapeHtml(options.heading)}</h1>
+      <tr><td class="email-padding" bgcolor="#FFFFFF" style="padding:28px 32px;border-bottom:4px solid #06365D;"><img src="${escapeHtml(logoUrl)}" alt="The Alliance Community Care Team" width="240" style="display:block;width:240px;max-width:100%;height:auto;"></td></tr>
+      <tr><td class="email-padding" style="padding:32px;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:17px;line-height:1.55;">
+        <h1 style="margin:0 0 24px;font-family:'Open Sans',Arial,sans-serif;font-size:28px;font-weight:700;line-height:1.3;color:#06365D;">${escapeHtml(options.heading)}</h1>
         ${paragraphs.map(paragraph => `<p style="margin:0 0 18px;">${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`).join('\n')}
         ${markdown?.html ?? ''}
         ${button}
       </td></tr>
-      <tr><td class="email-padding" style="padding:24px 32px;border-top:1px solid #E6E6E6;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:13px;line-height:1.6;">${escapeHtml(emailFooter)}</td></tr>
+      <tr><td class="email-padding" style="padding:24px 32px;border-top:1px solid #E6E6E6;color:#06365D;font-family:'Open Sans',Arial,sans-serif;font-size:15px;line-height:1.55;"><p>${escapeHtml(emailFooter)}</p><p>${escapeHtml(appConfig.missionLine)}</p><p>Questions? Contact <a href="mailto:${escapeHtml(appConfig.staffContactEmail)}" style="color:#0175aa;">${escapeHtml(appConfig.staffContactName)}</a>.</p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`,
     text: [
-      appConfig.appName.toUpperCase(), options.heading, ...paragraphs, ...(markdown ? [markdown.text] : []),
-      ...ctas.map(cta => `${cta.label}: ${cta.url}`), emailFooter,
+      appConfig.appName, options.heading, ...paragraphs, ...(markdown ? [markdown.text] : []),
+      ...ctas.map(cta => `${cta.label}: ${cta.url}`), emailFooter, appConfig.missionLine,
+      `Questions? Contact ${appConfig.staffContactName} at ${appConfig.staffContactEmail}.`,
     ].join('\n\n'),
   };
 }

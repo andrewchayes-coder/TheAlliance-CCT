@@ -138,7 +138,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
           </p>
         )}
         <label className="flex min-h-11 items-center gap-3 text-sm font-bold">
-          <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="h-5 w-5 accent-teal" data-testid="toggle-slot-active" />
+          <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="h-5 w-5 accent-blue" data-testid="toggle-slot-active" />
           Active slot
         </label>
         {snap && !snap.isActive && active && <p className="text-xs text-navy-soft">Reactivating opens the slot again. Seats that already ended are not restored.</p>}
@@ -146,7 +146,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
           <div className="rounded-lg border border-navy/30 p-3 text-sm">
             <p>Scheduled inactive after {calDate(snap.retireAfterDate)}. Existing assignments only until then. Saving other changes keeps this date.</p>
             <label className="mt-2 flex min-h-11 items-center gap-3 font-bold">
-              <input type="checkbox" checked={cancelRet} onChange={e => setCancelRet(e.target.checked)} className="h-5 w-5 accent-teal" data-testid="checkbox-cancel-retirement" />
+              <input type="checkbox" checked={cancelRet} onChange={e => setCancelRet(e.target.checked)} className="h-5 w-5 accent-blue" data-testid="checkbox-cancel-retirement" />
               Cancel the scheduled end date and keep this slot active
             </label>
           </div>
@@ -155,7 +155,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
           <fieldset className="rounded-lg border border-navy/30 p-3 text-sm" data-testid="group-deactivation">
             <legend className="px-1 font-bold">{plural(assigned, 'volunteer')} assigned to this slot</legend>
             <label className="flex min-h-11 items-start gap-3 py-2">
-              <input type="radio" name="deact" checked={choice === 'keep_until'} onChange={() => setChoice('keep_until')} className="mt-1 h-5 w-5 accent-teal" data-testid="radio-keep-until" />
+              <input type="radio" name="deact" checked={choice === 'keep_until'} onChange={() => setChoice('keep_until')} className="mt-1 h-5 w-5 accent-blue" data-testid="radio-keep-until" />
               <span><b>Keep until a date.</b> The slot takes no new bookings. Planned assignments end on that date, inclusive. Future reservations after it are cancelled now, and those volunteers get a cancellation email.</span>
             </label>
             {choice === 'keep_until' && (
@@ -165,7 +165,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
               </label>
             )}
             <label className="flex min-h-11 items-start gap-3 py-2">
-              <input type="radio" name="deact" checked={choice === 'now'} onChange={() => setChoice('now')} className="mt-1 h-5 w-5 accent-teal" data-testid="radio-end-now" />
+              <input type="radio" name="deact" checked={choice === 'now'} onChange={() => setChoice('now')} className="mt-1 h-5 w-5 accent-blue" data-testid="radio-end-now" />
               <span><b>End now.</b> Every assignment ends today and volunteers are emailed. You will confirm next.</span>
             </label>
             {errs.choice && tried && <p role="alert" className="text-xs font-bold">{errs.choice}</p>}

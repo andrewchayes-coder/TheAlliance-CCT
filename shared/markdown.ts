@@ -16,7 +16,7 @@ function inline(text: string): string {
     if (match[2]) result += `<strong>${escapeHtml(match[2])}</strong>`;
     else {
       const href = safeMessageLink(match[4]!);
-      result += href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="color:#027A77;text-decoration:underline;">${escapeHtml(match[3]!)}</a>` : escapeHtml(match[3]!);
+      result += href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" style="color:#0175aa;text-decoration:underline;">${escapeHtml(match[3]!)}</a>` : escapeHtml(match[3]!);
     }
     end = match.index! + match[0].length;
   }

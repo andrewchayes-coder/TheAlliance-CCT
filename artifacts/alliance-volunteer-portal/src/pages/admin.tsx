@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
@@ -48,7 +49,7 @@ function InviteCard() {
     : res ? `${res.email} was added as a pending admin, but the invitation email could not be sent. Submit the same details again to retry.` : '';
   return (
     <section className="alliance-card mb-6" aria-labelledby="invite-h">
-      <h2 id="invite-h" className="alliance-display text-[15px]">Invite an admin</h2>
+      <h2 id="invite-h" className="alliance-display">Invite an admin</h2>
       <p className="mt-2 text-sm">They will have 7 days to accept and set a password. Submitting the same details again resends the invitation.</p>
       <div aria-live="polite" className="mt-4">
         {err && <Notice>{err}</Notice>}
@@ -80,7 +81,7 @@ function ConfirmStatus({ target, selfId, onClose }: { target: { user: PublicUser
     <AlertDialog open={!!target} onOpenChange={o => { if (!o && !busy) { setErr(null); onClose(); } }}>
       <AlertDialogContent className="bg-white text-navy">
         <AlertDialogHeader>
-          <AlertDialogTitle className="alliance-display text-base">
+          <AlertDialogTitle className="alliance-display">
             {target?.next ? 'Reactivate' : 'Deactivate'} {u?.firstName} {u?.lastName}?
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
@@ -149,8 +150,8 @@ function TeamBody({ me }: { me: Me }) {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>
-      <h1 className="alliance-display text-[22px] md:text-[28px]">Team accounts</h1>
+      <Link href="/admin" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>
+      <h1 className="alliance-display">Team accounts</h1>
       <p className="mb-6 mt-2 max-w-2xl">Invite admins and control who can sign in.</p>
       <InviteCard />
       <TestAccountsCard />
@@ -170,14 +171,14 @@ function TeamBody({ me }: { me: Me }) {
               className="alliance-input pl-10" value={text} onChange={e => setText(e.target.value)} data-testid="input-search" />
           </div>
         </div>
-        {role === 'volunteer' && <p className="mt-4 text-sm"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/admin/volunteers/onboarding.csv`} download className="font-bold text-teal-text underline underline-offset-4" data-testid="link-onboarding-csv">Download onboarding CSV</a></p>}
+        {role === 'volunteer' && <p className="mt-4 text-sm"><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/api/admin/volunteers/onboarding.csv`} download className="font-bold text-blue underline underline-offset-4" data-testid="link-onboarding-csv">Download onboarding CSV</a></p>}
         <div className="mt-4">{note && <Notice kind={note.kind}>{note.text}</Notice>}</div>
 
         {list.isPending ? (
           <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading accounts</span>
             {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : list.isError && !data ? (
-          <div className="mt-4"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
+          <div className="mt-4"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
         ) : data && data.users.length === 0 ? (
           <div className="mt-4"><EmptyState title={q ? 'No matches' : `No ${role}s yet`}
             description={q ? 'Try a different name or email.' : role === 'admin' ? 'Invite an admin above to get started.' : 'Volunteers appear here after they sign up.'} /></div>
@@ -301,14 +302,14 @@ function VolunteerOnboardingBody() {
   const p = d?.profile;
   return (
     <AppLayout role="admin">
-      <Link href="/admin/team" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
-      <h1 className="alliance-display text-[22px] md:text-[28px]">Volunteer onboarding</h1>
+      <Link href="/admin/team" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
+      <h1 className="alliance-display">Volunteer onboarding</h1>
       {q.isPending ? <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
-        : q.isError || !d ? <div className="mt-6"><Notice>We couldn’t open this volunteer’s onboarding details just now. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        : q.isError || !d ? <div className="mt-6"><Notice>We couldn’t open this volunteer’s onboarding details just now. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
         : (
           <>
             <section className="alliance-card mt-6" aria-labelledby="ob-contact">
-              <h2 id="ob-contact" className="alliance-display text-[15px]">{d.user.firstName} {d.user.lastName}</h2>
+              <h2 id="ob-contact" className="alliance-display">{d.user.firstName} {d.user.lastName}</h2>
               <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                 <div><dt className="alliance-label">Email</dt><dd className="break-all">{d.user.email}</dd></div>
                 <div><dt className="alliance-label">Phone</dt><dd>{d.user.phone || 'Not provided'}</dd></div>
@@ -321,7 +322,7 @@ function VolunteerOnboardingBody() {
               </dl>
             </section>
             <section className="alliance-card mt-6" aria-labelledby="ob-answers">
-              <h2 id="ob-answers" className="alliance-display text-[15px]">Answers</h2>
+              <h2 id="ob-answers" className="alliance-display">Answers</h2>
               <dl className="mt-3 divide-y divide-gray">
                 {onboardingQuestions.map(qn => {
                   const v = p?.onboardingAnswers?.[qn.id];

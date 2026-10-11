@@ -74,7 +74,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      'absolute right-1 top-1 inline-flex size-11 items-center justify-center rounded-md text-navy hover:bg-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal',
+      'absolute right-1 top-1 inline-flex size-11 items-center justify-center rounded-md text-navy hover:bg-gray focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue',
       className,
     )}
     toast-close=""

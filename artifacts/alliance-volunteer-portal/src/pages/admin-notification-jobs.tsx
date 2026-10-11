@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,7 +15,7 @@ const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.g
 const hour = (h: number) => `${h % 12 === 0 ? 12 : h % 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
 
 function Stat({ label, value, id }: { label: string; value: string | number; id: string }) {
-  return <div className="min-w-0 rounded-lg bg-gray px-3 py-2"><dt className="text-xs font-bold uppercase">{label}</dt><dd className="mt-1 break-words text-lg font-bold tabular-nums" data-testid={id}>{value}</dd></div>;
+  return <div className="min-w-0 rounded-lg bg-gray px-3 py-2"><dt className="text-xs font-bold">{label}</dt><dd className="mt-1 break-words text-lg font-bold tabular-nums" data-testid={id}>{value}</dd></div>;
 }
 
 function Counts({ c, prefix }: { c: ReminderRunCounts; prefix: string }) {
@@ -98,23 +99,23 @@ function Body() {
   return (
     <>
       <p className="alliance-label">Admin</p>
-      <h1 className="alliance-display text-[22px]">Reminder jobs</h1>
+      <h1 className="alliance-display">Reminder jobs</h1>
       <p className="mt-1 max-w-xl text-sm">What the automated shift reminders did, and safe ways to check them.</p>
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-28 w-full" />)}</div>}
       {q.isError && (
-        <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
+        <div className="mt-4"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice>
           <Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-jobs">Try again</Button></div>
       )}
       {d && (
         <div className="mt-4 space-y-4">
           <Card className="p-4">
-            <h2 className="alliance-display text-[15px]">Last run</h2>
+            <h2 className="alliance-display">Last run</h2>
             <div className="mt-3">{d.lastRun ? <RunCard run={d.lastRun} /> : (
               <p className="text-sm" data-testid="empty-last-run">No reminder check has been recorded yet. Run one below to see results here.</p>)}</div>
           </Card>
           <Card className="p-4">
-            <h2 className="alliance-display text-[15px]">Reminders, last 7 days</h2>
+            <h2 className="alliance-display">Reminders, last 7 days</h2>
             <dl className="mt-3 grid grid-cols-3 gap-2">
               <Stat id="text-7d-sent" label="Sent" value={d.last7Days.sent} />
               <Stat id="text-7d-logged" label="Logged" value={d.last7Days.logged} />
@@ -123,7 +124,7 @@ function Body() {
             <p className="mt-2 text-xs text-navy-soft">Logged means a development copy was written to the log. It was not delivered.</p>
           </Card>
           <Card className="p-4">
-            <h2 className="alliance-display text-[15px]">Schedule</h2>
+            <h2 className="alliance-display">Schedule</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex flex-wrap justify-between gap-2"><dt>Schedule</dt><dd className="font-bold" data-testid="text-schedule">every 15 min {d.timezone}{d.cron ? ` (${d.cron})` : ''}</dd></div>
               <div className="flex flex-wrap justify-between gap-2"><dt>RUN_JOBS</dt><dd><StatusBadge status={d.schedulerEnabled ? 'good' : 'attention'}>{d.schedulerEnabled ? 'enabled' : 'disabled'}</StatusBadge></dd></div>
@@ -134,7 +135,7 @@ function Body() {
             <p className="mt-3 text-xs text-navy-soft">Timers can pause when the app autoscales to zero. Reliable timing needs an always-on runtime or a scheduled POST trigger, configured on the server.</p>
           </Card>
           <Card className="p-4">
-            <h2 className="alliance-display text-[15px]">Safe checks</h2>
+            <h2 className="alliance-display">Safe checks</h2>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <Button type="button" onClick={() => { void doRun(); }} disabled={busy} data-testid="button-run-check">Run reminder check now</Button>
         {import.meta.env.DEV && <Button type="button" variant="secondary" onClick={() => { void doTest(); }} disabled={busy} data-testid="button-send-test">Send test reminder to me</Button>}

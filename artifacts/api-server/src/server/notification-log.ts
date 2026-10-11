@@ -127,7 +127,7 @@ export async function testProviderEmail(userId: string, requestId: string = rand
   if (!user?.emailVerifiedAt) throw new NotificationError(403, 'A verified, active administrator is required.');
   const relatedId = `provider-test:${user.id}:${requestId}`;
   const result = await sendEmail({ type: 'admin_alert', to: user.email, toUserId: user.id, relatedId,
-    subject: '[Test] Alliance Volunteer Portal email', ...createEmailTemplate({ heading: 'Your email service test', firstName: user.firstName,
+    subject: '[Test] Community Care Team Volunteer Portal email', ...createEmailTemplate({ heading: 'Your email service test', firstName: user.firstName,
       paragraphs: ['Thank you for keeping our volunteer communications reliable. This test was requested from the notification log.',
         'When Postmark is configured this email is delivered to you. Otherwise it is logged only; no email is delivered.'],
       cta: { label: 'Return to notification log', url: `${appOrigin}/admin/notifications` } }) });

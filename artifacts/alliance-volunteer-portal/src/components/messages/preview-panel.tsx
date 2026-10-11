@@ -15,16 +15,16 @@ export function PreviewPanel({ preview, subject, body, byEmail, busy, onSend }: 
   const shown = renderMessageMarkdown(body).text.length > 0;
   return (
     <section className="alliance-card mt-5" aria-labelledby="pv-h" data-testid="panel-preview">
-      <h2 id="pv-h" className="alliance-display text-[15px]">Preview</h2>
+      <h2 id="pv-h" className="alliance-display">Preview</h2>
       <p className="mt-2 font-bold" data-testid="text-recipient-count">{none ? 'This reaches no one. Change the audience before sending.' : `This will reach ${preview.recipientCount} volunteer${preview.recipientCount === 1 ? '' : 's'}.`}</p>
       <p className="text-sm">{byEmail ? 'Also emailed to each recipient.' : 'In-portal only. No email is sent.'}</p>
       <div className="mt-3 rounded-lg border border-gray bg-white p-4">
-        <p className="text-xs font-bold uppercase text-navy-soft">Subject</p>
+        <p className="text-xs font-bold text-navy-soft">Subject</p>
         <p className="font-bold" data-testid="text-preview-subject">{subject}</p>
         <div className="mt-3 border-t border-gray pt-3">{shown ? <MarkdownView body={body} testId="text-preview-body" /> : null}</div>
       </div>
       {preview.recipients.length > 0 && (
-        <details className="mt-3"><summary className="min-h-11 cursor-pointer py-2 font-bold text-teal-text">Recipient list ({preview.recipients.length})</summary>
+        <details className="mt-3"><summary className="min-h-11 cursor-pointer py-2 font-bold text-blue">Recipient list ({preview.recipients.length})</summary>
           <ul className="max-h-60 divide-y divide-gray overflow-y-auto text-sm">
             {preview.recipients.map(r => <li key={r.userId} className="py-2"><span className="font-bold">{r.firstName} {r.lastName}</span> <span className="break-all text-navy-soft">{r.email}</span></li>)}
           </ul></details>

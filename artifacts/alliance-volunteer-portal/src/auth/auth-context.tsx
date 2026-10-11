@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -11,7 +12,7 @@ export const FRESH_MS = 15_000;
 
 export type ApiFailure = { message: string; code?: string; nextPath?: string; retryAfterSeconds?: number; status?: number };
 
-export function readError(e: unknown, fallback = 'Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.'): ApiFailure {
+export function readError(e: unknown, fallback = SOMETHING_WENT_WRONG): ApiFailure {
   const err = e as { status?: number; data?: unknown } | null;
   const d = (err && typeof err === 'object' ? err.data : null) as Record<string, unknown> | null;
   const message = d && typeof d.error === 'string' && d.error ? d.error : fallback;

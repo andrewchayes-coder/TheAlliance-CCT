@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppLayout, Button, Card } from '@/components/brand-system';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +17,7 @@ export function VolunteerPage({ kicker, title, children }: { kicker: string; tit
   return (
     <>
       <p className="alliance-label">{kicker}</p>
-      <h1 className="alliance-display mt-2 text-[22px] text-navy md:text-[28px]">{title}</h1>
+      <h1 className="alliance-display mt-2 text-navy">{title}</h1>
       <div className="mt-6 grid gap-5">{children}</div>
     </>
   );
@@ -37,7 +38,7 @@ export function LoadingBlock() {
 export function ErrorBlock({ onRetry, what }: { onRetry: () => void; what: string }) {
   return (
     <Card>
-      <Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice>
+      <Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice>
       <Button variant="secondary" onClick={onRetry} data-testid="button-retry" data-what={what}>Try again</Button>
     </Card>
   );
@@ -53,7 +54,7 @@ export function UpcomingShifts({ shifts, schedulingOpen, max, now }: { shifts: S
           {list.map(s => (
             <li key={`${s.assignmentId}-${s.date}`} className="flex items-center gap-4 rounded-xl bg-white px-4 py-3 shadow-sm" data-testid={`shift-${s.assignmentId}-${s.date}`}>
               <div className="w-14 shrink-0 rounded-lg bg-navy py-1.5 text-center text-white">
-                <span className="block text-xs font-bold uppercase">{dayLabel(s.date, now).slice(0, 3)}</span>
+                <span className="block text-xs font-bold">{dayLabel(s.date, now).slice(0, 3)}</span>
                 <span className="block text-lg font-bold leading-tight">{Number(s.date.slice(8))}</span>
               </div>
               <div className="min-w-0"><p className="font-bold">{shiftWhen(s, now)}</p>{s.label && <p className="text-sm text-navy-soft">{s.label}</p>}</div>

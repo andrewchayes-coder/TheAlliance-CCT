@@ -20,7 +20,7 @@ function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => vo
   return (
     <section className="rounded-2xl bg-navy p-6 text-white shadow-md" data-testid="screen-shift-confirmation" role="status">
       <CheckCircle2 size={28} aria-hidden="true" />
-      <h2 className="alliance-display mt-3 text-[18px]" tabIndex={-1} ref={el => el?.focus()}>{r.message}</h2>
+      <h2 className="alliance-display mt-3" tabIndex={-1} ref={el => el?.focus()}>{r.message}</h2>
       {r.emailWarning && <p className="mt-3 rounded-lg bg-white/15 px-3 py-2 text-sm" data-testid="text-email-warning">{r.emailWarning}</p>}
       <div className="mt-5 flex flex-wrap gap-3">
         <button type="button" onClick={onBack} className="alliance-button alliance-button-primary" data-testid="button-back-to-shifts">Back to my shifts</button>

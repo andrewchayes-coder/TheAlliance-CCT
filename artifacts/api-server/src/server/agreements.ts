@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { staffContactText } from '@workspace/shared/appConfig';
 import { db, appSettingsTable, resourcesTable, volunteerProfilesTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
 import { ResourceError } from './resource-error';
@@ -38,7 +39,7 @@ export async function acknowledgeAgreement(userId: string, expected: string) {
     if (version !== expected) throw new ResourceError('The agreements changed while you were reading. Reload and review the current version.');
     const docs = await tx.select().from(resourcesTable).where(and(eq(resourcesTable.category, 'Agreements'), eq(resourcesTable.isPublished, true)));
     if (!agreementTitles.every(title => docs.some(r => r.title === title && readable(r))))
-      throw new ResourceError('The current agreements are not available. Please contact The Alliance.');
+      throw new ResourceError(`The current agreements are not available. Please contact ${staffContactText}.`);
     const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId)).for('update');
     if (!profile?.onboardingCompletedAt) throw new ResourceError('Please complete onboarding first.', 403);
     if (profile.agreementVersion === version && profile.agreementAcknowledgedAt)

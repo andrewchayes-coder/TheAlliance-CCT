@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useState } from 'react';
 import { getGetAdminMessageQueryKey, getListAdminMessagesQueryKey, useGetAdminMessage, useListAdminMessages, type AdminMessage } from '@workspace/api-client-react';
 import { Button, EmptyState, StatusBadge } from '@/components/brand-system';
@@ -18,7 +19,7 @@ export function useAdminMessages(userId?: string) {
 function Receipts({ id }: { id: string }) {
   const q = useGetAdminMessage(id, { query: { queryKey: getGetAdminMessageQueryKey(id), staleTime: FRESH_MS, refetchInterval: POLL, refetchOnWindowFocus: 'always', retry: false }, request: FETCH_CREDS });
   if (q.isPending) return <div className="space-y-2" role="status"><span className="sr-only">Loading</span><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>;
-  if (q.isError || !q.data) return <div><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
+  if (q.isError || !q.data) return <div><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
   return (
     <ul className="max-h-80 divide-y divide-gray overflow-y-auto text-sm" aria-label="Read receipts" data-testid={`list-receipts-${id}`}>
       {q.data.recipients.map(r => (
@@ -36,7 +37,7 @@ export function MessageHistory({ userId, receipts = false, step = 50 }: { userId
   const q = useAdminMessages(userId);
   const [open, setOpen] = useState<string | null>(null);
   if (q.isPending) return <div className="mt-3 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>;
-  if (q.isError && !q.data) return <div className="mt-3"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
+  if (q.isError && !q.data) return <div className="mt-3"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button type="button" onClick={() => { void q.refetch(); }}>Try again</Button></div>;
   const rows: AdminMessage[] = q.data ?? [];
   if (rows.length === 0) return <div className="mt-3"><EmptyState title="No messages yet" description={userId ? 'Nothing has been sent to this volunteer.' : 'Messages you send will be listed here with read receipts.'} /></div>;
   return (
@@ -46,7 +47,7 @@ export function MessageHistory({ userId, receipts = false, step = 50 }: { userId
         {rows.slice(0, shown).map(m => (
           <li key={m.id} className="rounded-xl border border-gray bg-white" data-testid={`message-${m.id}`}>
             <button type="button" aria-expanded={open === m.id} onClick={() => setOpen(o => o === m.id ? null : m.id)}
-              className="flex min-h-14 w-full flex-col items-start gap-1 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-teal">
+              className="flex min-h-14 w-full flex-col items-start gap-1 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-blue">
               <span className="font-bold">{m.subject}</span>
               <span className="text-xs text-navy-soft">{shortDateTime(m.sentAt)} · {AUD[m.audience] ?? m.audience} · {m.sentByEmail ? 'Portal and email' : 'Portal only'}</span>
               <span className="flex flex-wrap gap-2 text-xs font-bold">

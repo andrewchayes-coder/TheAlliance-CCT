@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=Open+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -7,16 +7,15 @@
 
 @theme inline {
   --color-navy: var(--alliance-navy);
-  --color-teal: var(--alliance-teal);
+  --color-blue: var(--alliance-blue);
   --color-gray: var(--alliance-gray);
   --color-white: #FFFFFF;
-  --color-teal-text: var(--alliance-teal-text);
   --color-navy-soft: var(--alliance-soft-navy);
   --color-background: hsl(var(--background));
   --color-foreground: var(--alliance-navy);
   --color-border: hsl(var(--border));
   --color-input: var(--alliance-gray);
-  --color-ring: var(--alliance-teal);
+  --color-ring: var(--alliance-blue);
 
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
@@ -26,7 +25,7 @@
   --color-popover-foreground: hsl(var(--popover-foreground));
   --color-popover-border: hsl(var(--popover-border));
 
-  --color-primary: var(--alliance-teal-action);
+  --color-primary: var(--alliance-blue);
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-primary-border: var(--primary-border);
 
@@ -98,27 +97,27 @@
   --sidebar: 0 0% 98%;
   --sidebar-foreground: 205 88% 19%;
   --sidebar-border: 0 0% 90%;
-  --sidebar-primary: 178 97% 29%;
+  --sidebar-primary: 199 99% 33%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 178 28% 94%;
+  --sidebar-accent: 199 30% 94%;
   --sidebar-accent-foreground: 205 88% 19%;
-  --sidebar-ring: 178 97% 29%;
+  --sidebar-ring: 199 99% 33%;
   --popover: 0 0% 100%;
   --popover-foreground: 205 88% 19%;
   --popover-border: 0 0% 90%;
-  --primary: 178 97% 29%;
+  --primary: 199 99% 33%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 90%;
   --secondary-foreground: 205 88% 19%;
   --muted: 0 0% 90%;
   --muted-foreground: 205 88% 19%;
-  --accent: 178 28% 94%;
+  --accent: 199 30% 94%;
   --accent-foreground: 205 88% 19%;
   --destructive: 0 60% 92%;
   --destructive-foreground: 0 65% 32%;
   --input: 0 0% 90%;
-  --ring: 178 97% 29%;
-  --chart-1: 178 97% 29%;
+  --ring: 199 99% 33%;
+  --chart-1: 199 99% 33%;
   --chart-2: 205 88% 19%;
   --chart-3: 38 90% 70%;
   --chart-4: 0 60% 75%;
@@ -217,15 +216,15 @@
   --sidebar: 205 48% 12%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 205 25% 28%;
-  --sidebar-primary: 178 97% 35%;
+  --sidebar-primary: 201 99% 38%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 205 35% 22%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 178 97% 35%;
+  --sidebar-ring: 201 99% 38%;
   --popover: 205 44% 16%;
   --popover-foreground: 0 0% 98%;
   --popover-border: 205 25% 28%;
-  --primary: 178 97% 35%;
+  --primary: 201 99% 38%;
   --primary-foreground: 0 0% 100%;
   --secondary: 205 35% 22%;
   --secondary-foreground: 0 0% 98%;
@@ -236,8 +235,8 @@
   --destructive: 0 45% 30%;
   --destructive-foreground: 0 0% 98%;
   --input: 205 25% 28%;
-  --ring: 178 97% 35%;
-  --chart-1: 178 97% 42%;
+  --ring: 201 99% 38%;
+  --chart-1: 201 99% 42%;
   --chart-2: 205 88% 60%;
   --chart-3: 38 90% 70%;
   --chart-4: 0 60% 75%;
@@ -274,11 +273,9 @@
 
 :root {
   --alliance-navy: #06365d;
-  --alliance-teal: #02928f;
-  --alliance-teal-text: #006e6b; /* 6.1:1 on white, 4.9:1 on #E6E6E6 */
+  --alliance-blue: #0175aa; /* 5.3:1 on white; never used as text on gray */
   --alliance-gray: #e6e6e6;
   --alliance-soft-navy: #385e7d; /* 6.8:1 on white, 5.5:1 on #E6E6E6 */
-  --alliance-teal-action: #027a77; /* white text 5.2:1; same hue as brand teal #02928F */
   --alliance-amber: #fff0d2;
   --alliance-amber-ink: #785213;
   --alliance-red: #fbe4e1;
@@ -286,21 +283,18 @@
 }
 
 .alliance-display {
-  font-family: 'Lulo Clean', 'Montserrat', sans-serif;
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
   color: var(--alliance-navy);
-  text-transform: uppercase;
-  letter-spacing: .06em;
 }
-.bg-navy .alliance-display { color: white; }
 
 .alliance-label {
-  color: var(--alliance-teal-text);
-  font-size: 15px;
+  color: var(--alliance-blue);
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: .04em;
   line-height: 1.3;
-  text-transform: uppercase;
 }
+.bg-gray .alliance-label, .alliance-input-label { color: var(--alliance-navy); }
 
 .alliance-button {
   display: inline-flex;
@@ -313,25 +307,24 @@
   padding: 11px 20px;
   font-size: 15px;
   font-weight: 700;
-  letter-spacing: .045em;
-  text-transform: uppercase;
   transition: color .18s ease, background-color .18s ease, border-color .18s ease;
 }
 
 .alliance-button-primary {
   color: white;
-  background: var(--alliance-teal-action);
+  background: var(--alliance-blue);
 }
 
 .alliance-button-primary:hover { background: var(--alliance-navy); }
+.alliance-button-primary { background: var(--alliance-blue); }
 .alliance-button-secondary {
-  color: var(--alliance-teal-text);
+  color: var(--alliance-blue);
   background: white;
-  border: 1.5px solid var(--alliance-teal);
+  border: 1.5px solid var(--alliance-blue);
 }
 .alliance-button-secondary:hover {
   color: white;
-  background: var(--alliance-teal-action);
+  background: var(--alliance-blue);
 }
 
 .alliance-input {
@@ -343,25 +336,28 @@
   padding: 12px 14px;
   color: var(--alliance-navy);
   background: var(--alliance-gray);
-  font-size: 17px;
+  font-size: 15px;
   outline: none;
 }
-.alliance-input::placeholder { color: var(--alliance-soft-navy); }
+.alliance-input::placeholder { color: rgb(6 54 93 / 60%); opacity: 1; }
 .alliance-input:focus,
 .alliance-input:focus-visible {
-  box-shadow: 0 0 0 2px var(--alliance-teal);
+  box-shadow: 0 0 0 2px var(--alliance-blue);
 }
-input[type='checkbox'], input[type='radio'] { accent-color: var(--alliance-teal-action); }
+input[type='checkbox'], input[type='radio'] { accent-color: var(--alliance-blue); }
 a, button, summary, [role='button'] { -webkit-tap-highlight-color: transparent; }
 :where(a, button, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--alliance-teal);
+  outline: 2px solid var(--alliance-blue);
   outline-offset: 2px;
 }
 html, body { overflow-wrap: anywhere; }
-/* Brand headings: display font, uppercase, navy. Page + topic headings 28px. */
-:where(h1, h2) { font-family: 'Lulo Clean', 'Montserrat', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; }
-:where(h3, h4) { font-family: 'Lulo Clean', 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; line-height: 1.3; letter-spacing: .04em; text-transform: uppercase; }
-@media (max-width: 480px) { :where(h1, h2) { letter-spacing: .02em; } }
+@layer base {
+  h1, h2, h3, h4 { font-family: 'Open Sans', sans-serif; font-weight: 700; letter-spacing: 0; text-transform: none; }
+  h1 { font-size: 22px; line-height: 1.25; color: var(--alliance-navy); }
+  h2 { font-size: 22px; line-height: 1.25; color: var(--alliance-navy); }
+  h3, h4 { font-size: 18px; line-height: 1.3; color: var(--alliance-blue); }
+  @media (min-width: 768px) { h1 { font-size: 28px; } }
+}
 button:not(:disabled):not(.absolute):not([data-radix-collection-item].hidden), select:not(:disabled), summary,
 input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not(:disabled):not(:read-only) { min-height: 44px; }
 button:not(:disabled):not(.absolute) { min-width: 44px; }
@@ -373,12 +369,16 @@ a[href^='mailto:']:not([class*='flex']), a[href^='tel:']:not([class*='flex']), a
 a[href] { min-height: 44px; min-width: 44px; max-width: 100%; overflow-wrap: anywhere; }
 a[href]:not(.alliance-card):not([class*='flex']):not([class*='block']):not([class*='grid']) { display: inline-flex; align-items: center; }
 :where(p, li, dd) { font-size: 17px; }
-:where(label, legend) { color: var(--alliance-teal-text); font-family: 'Open Sans', Arial, sans-serif; font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+:where(label, legend) { color: var(--alliance-navy); font-family: 'Open Sans', sans-serif; font-size: 15px; font-weight: 700; }
 :where(input, textarea, select) { text-transform: none; letter-spacing: normal; }
-:where(th, dt) { color: var(--alliance-teal-text); font-size: 15px; font-weight: 700; text-transform: uppercase; }
+:where(th, dt) { color: var(--alliance-navy); font-size: 15px; font-weight: 700; }
 /* Retire low-contrast legacy brand swatches in the original style-guide examples. */
 [class*="text-[#06365D]/"] { color: var(--alliance-soft-navy); }
-[class*="text-[#027A77]"] { color: var(--alliance-teal-text); }
+/* Blue text never sits on gray: gray surfaces use navy; white cards nested inside keep blue. */
+.bg-gray :is(h3, h4, .alliance-label, .alliance-section-kicker, .text-blue), .bg-gray.text-blue { color: var(--alliance-navy); }
+.bg-gray :is(.alliance-card, .bg-white) :is(h3, h4, .alliance-label, .alliance-section-kicker, .text-blue) { color: var(--alliance-blue); }
+:is(.alliance-card, .bg-white) .bg-gray :is(h3, h4, .alliance-label, .alliance-section-kicker, .text-blue) { color: var(--alliance-navy); }
+[role='alert'] .text-blue, [role='status'] .text-blue { color: var(--alliance-navy); }
 /* Preserve stacked card content and avoid native fieldset intrinsic-width overflow. */
 a.alliance-card { display: block; }
 fieldset { min-inline-size: 0; min-width: 0; max-width: 100%; }
@@ -402,12 +402,10 @@ fieldset { min-inline-size: 0; min-width: 0; max-width: 100%; }
 }
 
 .alliance-section-kicker {
-  color: var(--alliance-teal-text);
-  font-size: 15px;
+  color: var(--alliance-blue);
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: .04em;
   line-height: 1.3;
-  text-transform: uppercase;
 }
 
 @media (max-width: 767px) {

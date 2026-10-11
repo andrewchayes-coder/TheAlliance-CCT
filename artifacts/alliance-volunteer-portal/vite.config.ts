@@ -1,5 +1,4 @@
 import path from 'path';
-import { existsSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -30,11 +29,16 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
-  define: {
-    __HAS_BRAND_LOGO__: JSON.stringify(existsSync(path.resolve(import.meta.dirname, 'public/brand/logo.svg'))),
-    __HAS_LULO_FONT__: JSON.stringify(existsSync(path.resolve(import.meta.dirname, 'public/fonts/LuloClean.woff2'))),
-  },
   plugins: [
+    {
+      name: 'brand-static-cache',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url?.includes('/brand/')) res.setHeader('Cache-Control', 'public, max-age=31536000');
+          next();
+        });
+      },
+    },
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

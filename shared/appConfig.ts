@@ -1,6 +1,13 @@
 export const appConfig = {
-  appName: "Alliance Volunteer Portal",
+  appName: "Community Care Team Volunteer Portal",
+  shortName: "CCT Portal",
   orgName: "The Alliance",
+  programName: "Community Care Team",
+  volunteerRoleName: "Resource Coordinator",
+  volunteerRoleNamePlural: "Resource Coordinators",
+  staffContactName: "Cindi",
+  staffContactEmail: "cindi@defendingthecause.org",
+  missionLine: "The Alliance is a united movement of organizations and individuals working together to serve vulnerable kids and families in the Greater Sacramento Area.",
   timezone: "America/Los_Angeles",
   defaultCounty: "Placer",
   counties: ["Placer", "Sacramento", "Nevada", "El Dorado", "Sutter"],
@@ -10,9 +17,10 @@ export const appConfig = {
   sameMorningReminder: false,
   sameMorningReminderHour: 7,
   agreementVersion: "v1",
-  // Set the program's preferred contact address here. Until then, use the active staff contact.
-  adminContact: null as string | null,
+  adminContact: "cindi@defendingthecause.org",
 } as const;
+
+export const staffContactText = `${appConfig.staffContactName} at ${appConfig.staffContactEmail}`;
 
 export const {
   appName,

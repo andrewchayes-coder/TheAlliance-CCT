@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useMemo, useRef, useState } from 'react';
 import { getGetAdminScheduleControlsQueryKey, useAddAdminWeekOff, useAssignAdminShift, useGetAdminScheduleControls, useRemoveAdminShift, useRemoveAdminWeekOff, type AdminScheduleControlsAssignmentsItem, type VolunteerShiftResult } from '@workspace/api-client-react';
 import { Button } from '@/components/brand-system';
@@ -90,7 +91,7 @@ export function AdminScheduleControls({ slotId, userId, closed, closedReason }: 
       <div>{ok && <Notice kind="success">{ok}</Notice>}</div>
       {err && <div><Notice>{err}</Notice></div>}
       {ctl.isError && !data && (
-        <div><Notice>{readError(ctl.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice>
+        <div><Notice>{readError(ctl.error, SOMETHING_WENT_WRONG).message}</Notice>
           <Button type="button" onClick={() => { void ctl.refetch(); }} data-testid="button-retry-controls">Try again</Button></div>
       )}
       {ctl.isPending && <div role="status" aria-busy="true"><span className="sr-only">Loading controls</span><Skeleton className="h-24 w-full" /></div>}
@@ -138,7 +139,7 @@ export function AdminScheduleControls({ slotId, userId, closed, closedReason }: 
                 return (
                   <li key={v.userId} className="border-b border-gray last:border-0">
                     <button type="button" role="radio" aria-checked={on} disabled={off} onClick={() => setPickUser(v.userId)} data-testid={`option-volunteer-${v.userId}`}
-                      className={`block min-h-11 w-full px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-60 ${on ? 'bg-teal/10 font-bold' : ''}`}>
+                      className={`block min-h-11 w-full px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-60 ${on ? 'bg-blue/10 font-bold' : ''}`}>
                       <span className="block">{who(v)}<TestBadge test={v.isTestAccount} /> <span className="font-normal">holds {v.heldCount}</span></span>
                       <span className="block break-all text-xs">{v.email}</span>
                       {off && <span className="block text-xs font-bold text-[var(--alliance-amber-ink)]">Not eligible: {v.blockedReasons.join('; ')}</span>}

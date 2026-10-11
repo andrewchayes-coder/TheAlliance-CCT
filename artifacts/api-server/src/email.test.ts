@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { appConfig } from '@workspace/shared/appConfig';
 import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
 import { eq, inArray } from 'drizzle-orm';
@@ -73,8 +74,12 @@ after(async () => {
 });
 
 test('template is branded, escaped, mobile-friendly, and has the same CTA in plain text', () => {
-  assert.ok(body.html.includes('ALLIANCE VOLUNTEER PORTAL'));
-  assert.ok(body.html.includes('#06365D') && body.html.includes('#027A77'));
+  assert.ok(body.html.includes('The Alliance Community Care Team'));
+  assert.ok(body.html.includes('#06365D') && body.html.includes('#0175aa'));
+  assert.ok(body.html.includes('/brand/logo-horizontal.png') && body.html.includes('width="240"'));
+  assert.ok(body.html.includes('border-bottom:4px solid #06365D'));
+  assert.ok(body.html.includes(appConfig.missionLine) && body.text.includes(appConfig.missionLine));
+  assert.ok(!body.html.includes('text-transform:uppercase'));
   assert.ok(body.html.includes('font-size:17px') && body.html.includes('font-size:28px'));
   assert.ok(body.html.includes("'Open Sans',Arial,sans-serif"));
   assert.ok(body.html.includes('role="presentation"') && body.html.includes('max-width:600px'));

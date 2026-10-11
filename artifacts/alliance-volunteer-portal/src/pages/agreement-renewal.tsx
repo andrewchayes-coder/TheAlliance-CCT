@@ -11,7 +11,7 @@ import { FileActions } from '@/components/resources/resource-files';
 import { useSeo } from '@/components/resources/use-seo';
 
 function Body() {
-  useSeo('Updated agreements', 'Review and acknowledge the updated volunteer agreements.');
+  useSeo('Updated agreements', 'Review and acknowledge the updated Resource Coordinator agreements.');
   const auth = useAuth();
   const qc = useQueryClient();
   const q = useGetOnboardingAgreements({ query: { queryKey: getGetOnboardingAgreementsQueryKey() }, request: FETCH_CREDS });
@@ -32,7 +32,7 @@ function Body() {
     <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
       <p className="alliance-section-kicker">Agreements</p>
       <h1 className="font-display text-3xl font-bold">We’ve updated our agreements</h1>
-      <p className="mt-2 text-lg">Thanks for volunteering with us. Please read the latest version{q.data ? ` (${q.data.version})` : ''} and confirm. Your shifts stay as they are.</p>
+      <p className="mt-2 text-lg">Thank you for serving as a Resource Coordinator. Please read the latest version{q.data ? ` (${q.data.version})` : ''} and confirm. Your shifts stay as they are.</p>
       <div className="mt-6 grid gap-4">
         {q.isPending ? <LoadingBlock /> : q.isError ? <ErrorBlock what="the agreements" onRetry={() => { void q.refetch(); }} /> : (
           <>

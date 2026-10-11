@@ -12,7 +12,7 @@
 - [Email retry safety](email-retry-policy.md) — regenerate authentication links, review uncertain delivery, and avoid inflating usage from historical dedupe.
 - [Postgres test clients](postgres-test-clients.md) — infer clients from an async connect wrapper; the overloaded method's return type can resolve to void.
 - [Private storage SDK](private-storage-sdk.md) — default discovery can fail after provisioning; keep the SDK intact in bundled APIs under pnpm.
-- [Brand accessibility](brand-accessibility.md) — AA takes priority over the original bright teal; home-screen support must not add generic caching of private data.
+- [Brand accessibility](brand-accessibility.md) — CCT blue works on white, not gray; the exact placeholder style has a contrast exception; never cache private data generically.
 - [Notification test isolation](security-test-isolation.md) — reminder/broadcast QA needs an isolated API and data scope; owned-user cleanup alone cannot undo sends to shared users.
 - [Production migrations](production-migrations.md) — use runtime production context; reconcile push-created schemas before baselining; never copy development fixtures.
 - [Production QA accounts](production-qa-accounts.md) — built-in synthetic personas are explicitly approved in production; never convert real users or copy other development fixtures.

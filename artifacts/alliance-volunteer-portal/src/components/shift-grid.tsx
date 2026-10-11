@@ -22,7 +22,7 @@ export function ShiftGrid({ schedule, changing, disabled, onPick }: {
     <div role="group" aria-label="Choose a day" className="mb-4 grid grid-cols-5 gap-1 rounded-xl bg-gray p-1 lg:hidden" data-testid="tabs-shift-days">
       {WEEKDAYS.map(d => (
         <button key={d} type="button" aria-pressed={d === day} aria-label={DAYS[d]} onClick={() => setDay(d)} data-testid={`button-shift-day-${d}`}
-          className={`min-h-11 min-w-11 rounded-lg text-sm font-bold focus-visible:outline-2 focus-visible:outline-teal ${d === day ? 'bg-white shadow-sm' : ''}`}>{DAYS[d].slice(0, 3)}</button>
+          className={`min-h-11 min-w-11 rounded-lg text-sm font-bold focus-visible:outline-2 focus-visible:outline-blue ${d === day ? 'bg-white shadow-sm' : ''}`}>{DAYS[d].slice(0, 3)}</button>
       ))}
     </div>
     <div className="grid gap-4 lg:grid-cols-5" data-testid="grid-shifts">
@@ -41,11 +41,11 @@ export function ShiftGrid({ schedule, changing, disabled, onPick }: {
                   <li key={s.id}>
                     <button type="button" disabled={!can} onClick={() => onPick(s)} data-testid={`slot-${s.id}`}
                       aria-label={`${DAYS[d]} ${timeRange(s.startTime, s.endTime)}${s.label ? `, ${s.label}` : ''}: ${badge(st, s.openSpots)}${hint[st] ? `. ${hint[st]}` : ''}`}
-                      className={`flex min-h-16 w-full flex-col items-start rounded-xl px-3 py-2.5 text-left shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-teal ${
+                      className={`flex min-h-16 w-full flex-col items-start rounded-xl px-3 py-2.5 text-left shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-blue ${
                         own ? 'bg-navy text-white' : can ? 'bg-white hover:bg-white/70' : 'bg-white/60 text-navy-soft'} disabled:cursor-not-allowed`}>
                       <span className="font-bold">{timeRange(s.startTime, s.endTime)}</span>
                       {s.label && <span className="text-sm">{s.label}</span>}
-                      <span className={`mt-1 text-[14px] font-bold uppercase tracking-wide ${can ? 'text-teal-text' : ''}`}>{badge(st, s.openSpots)}</span>
+                      <span className={`mt-1 text-[14px] font-bold ${can ? 'text-blue' : ''}`}>{badge(st, s.openSpots)}</span>
                       {hint[st] && <span className="text-sm">{hint[st]}</span>}
                     </button>
                   </li>

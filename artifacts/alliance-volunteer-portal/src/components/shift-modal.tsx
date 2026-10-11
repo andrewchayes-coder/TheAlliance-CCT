@@ -15,7 +15,7 @@ export function ShiftModal({ title, description, children, footer, onClose, busy
           (el && el.isConnected ? el : document.getElementById('shifts-heading'))?.focus();
         }}>
         <DialogHeader>
-          <DialogTitle className="alliance-display text-base">{title}</DialogTitle>
+          <DialogTitle className="alliance-display">{title}</DialogTitle>
           {description && <DialogDescription className="text-navy">{description}</DialogDescription>}
         </DialogHeader>
         {children}

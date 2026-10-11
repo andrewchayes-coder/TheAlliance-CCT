@@ -10,7 +10,7 @@ export function AuthHeading({ label, title, children }: { label: string; title: 
   return (
     <header className="mb-6">
       <p className="alliance-label">{label}</p>
-      <h1 className="alliance-display mt-3 text-[22px] text-navy md:text-[26px]">{title}</h1>
+      <h1 className="alliance-display mt-3 text-navy">{title}</h1>
       {children && <p className="mt-3">{children}</p>}
     </header>
   );
@@ -56,7 +56,7 @@ export function PasswordField({ label, ...props }: FieldProps) {
           {...{ ...props, label: undefined, error: undefined, hint: undefined, className: undefined } as InputHTMLAttributes<HTMLInputElement>} />
         <button type="button" onClick={() => setShow(s => !s)} aria-pressed={show}
           aria-label={show ? 'Hide password' : 'Show password'}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-navy focus-visible:outline-2 focus-visible:outline-teal">
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-navy focus-visible:outline-2 focus-visible:outline-blue">
           {show ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
         </button>
       </div>

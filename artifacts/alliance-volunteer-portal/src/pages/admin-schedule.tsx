@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useMemo, useState, useRef, type RefObject } from 'react';
 import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation, useSearch } from 'wouter';
@@ -16,7 +17,7 @@ import { POLL, addDays, dayLabel, fullName, layoutBlocks, timeGeometry, mondayOf
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 const STATE_CLS: Record<string, string> = {
-  covered: 'border-teal bg-white', under: 'border-[var(--alliance-amber-ink)] bg-gray',
+  covered: 'border-blue bg-white', under: 'border-[var(--alliance-amber-ink)] bg-gray',
   empty: 'border-[var(--alliance-amber-ink)] bg-[var(--alliance-amber)]', closed: 'border-navy-soft bg-gray opacity-80',
 };
 function badge(b: CoordinatorBlock) {
@@ -50,11 +51,11 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
           else document.querySelector<HTMLButtonElement>('[data-testid="button-prev-week"]')?.focus();
         }}>
         {gone || !block ? (
-          <SheetHeader><SheetTitle className="alliance-display text-base text-navy">Shift no longer available</SheetTitle>
+          <SheetHeader><SheetTitle className="alliance-display text-navy">Shift no longer available</SheetTitle>
             <SheetDescription data-testid="text-drawer-removed">This shift was changed or removed. Volunteer details are hidden to avoid showing stale names.</SheetDescription></SheetHeader>
         ) : (<>
           <SheetHeader className="text-left">
-            <SheetTitle className="alliance-display break-words pr-10 text-base text-navy">{block.label || 'Shift'}</SheetTitle>
+            <SheetTitle className="alliance-display break-words pr-10 text-navy">{block.label || 'Shift'}</SheetTitle>
             <SheetDescription>{dayLabel(block.date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}, {range(block)} PT</SheetDescription>
           </SheetHeader>
           <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
@@ -68,7 +69,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
             <ul className="mt-2 divide-y divide-gray">
               {block.volunteers.map(v => (
                 <li key={v.assignmentId} className="py-3" data-testid={`row-drawer-vol-${v.userId}`}>
-                  <Link href={`/admin/volunteers/${v.userId}`} className={`font-bold text-teal-text underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}<TestBadge test={v.isTestAccount} /></Link>
+                  <Link href={`/admin/volunteers/${v.userId}`} className={`font-bold text-blue underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}<TestBadge test={v.isTestAccount} /></Link>
                   {v.skipped && <span className="ml-2 text-xs font-bold">Off this week</span>}
                   {!v.accountActive && <span className="ml-2 text-xs font-bold">Inactive account</span>}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -93,7 +94,7 @@ function Desktop({ week, onOpen }: { week: CoordinatorWeek; onOpen: (b: Coordina
       <div className="grid min-w-[760px]" style={{ gridTemplateColumns: '56px repeat(5, minmax(0, 1fr))' }}>
         <div />
         {week.days.map(day => (
-          <div key={day.date} className={`border-b border-gray px-2 pb-2 text-center ${day.date === week.today ? 'font-bold text-teal-text' : ''}`} data-testid={`head-day-${day.date}`}>
+          <div key={day.date} className={`border-b border-gray px-2 pb-2 text-center ${day.date === week.today ? 'font-bold text-blue' : ''}`} data-testid={`head-day-${day.date}`}>
             {dayLabel(day.date)}{day.date === week.today && <span className="ml-1 text-xs">Today</span>}
             {day.closedReason && <span className="block text-xs font-bold text-navy-soft">Closed - {day.closedReason}</span>}
           </div>
@@ -104,13 +105,13 @@ function Desktop({ week, onOpen }: { week: CoordinatorWeek; onOpen: (b: Coordina
         {week.days.map(day => {
           const lay = layoutBlocks(week.blocks.filter(b => b.date === day.date));
           return (
-            <div key={day.date} className={`relative border-l border-gray ${day.date === week.today ? 'bg-teal/5' : ''} ${day.closedReason ? 'bg-gray/60' : ''}`} style={{ height }}>
+            <div key={day.date} className={`relative border-l border-gray ${day.date === week.today ? 'bg-blue/5' : ''} ${day.closedReason ? 'bg-gray/60' : ''}`} style={{ height }}>
               {hours.map(h => <div key={h} className="absolute inset-x-0 border-t border-gray" style={{ top: position(h) }} />)}
               {lay.map(({ b, lane, lanes }) => {
                 return (
                   <button key={`${b.slotId}-${b.date}`} type="button" onClick={event => onOpen(b, event.currentTarget)} data-testid={`block-${b.slotId}-${b.date}`}
                     aria-label={`${range(b)}, ${b.state}, ${b.assignedCount} of ${b.capacity} assigned`}
-                    className={`absolute overflow-hidden rounded-md border-l-4 p-1 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-teal ${STATE_CLS[b.state]}`}
+                    className={`absolute overflow-hidden rounded-md border-l-4 p-1 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-blue ${STATE_CLS[b.state]}`}
                     style={{ top: position(mins(b.startTime)), height: position(mins(b.endTime)) - position(mins(b.startTime)) - 2, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 4px)` }}>
                     <BlockBody b={b} />
                   </button>
@@ -132,7 +133,7 @@ function Mobile({ week, pick, setPick, onOpen }: { week: CoordinatorWeek; pick: 
       <div role="group" aria-label="Choose a day" className="grid grid-cols-5 gap-1 rounded-lg bg-gray p-1">
         {week.days.map(d => (
           <button key={d.date} type="button" aria-pressed={d.date === pick} onClick={() => setPick(d.date)} data-testid={`button-day-${d.date}`}
-            className={`min-h-12 min-w-11 rounded-md text-xs font-bold ${d.date === pick ? 'bg-white shadow-sm' : ''} ${d.date === week.today ? 'text-teal-text' : ''}`}>
+            className={`min-h-12 min-w-11 rounded-md text-xs font-bold ${d.date === pick ? 'bg-white shadow-sm' : ''} ${d.date === week.today ? (d.date === pick ? 'text-blue' : 'underline decoration-blue decoration-2 underline-offset-4') : ''}`}>
             {dayLabel(d.date, { weekday: 'short' })}<span className="block font-normal">{dayLabel(d.date, { day: 'numeric' })}{d.date === week.today ? ' Today' : ''}</span>
           </button>
         ))}
@@ -178,8 +179,8 @@ function Body() {
     <AppLayout role="admin">
       <div data-testid="view-admin-schedule">
         <div className="flex flex-wrap items-end justify-between gap-2">
-          <div><p className="alliance-label">Coordinator</p><h1 className="alliance-display mt-2 text-[22px] md:text-[28px]">Master schedule</h1></div>
-          <Link href="/admin/schedule/settings" data-testid="link-schedule-settings" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-teal-text underline underline-offset-4"><Settings size={16} aria-hidden="true" />Schedule settings</Link>
+          <div><p className="alliance-label">Coordinator</p><h1 className="alliance-display mt-2">Master schedule</h1></div>
+          <Link href="/admin/schedule/settings" data-testid="link-schedule-settings" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue underline underline-offset-4"><Settings size={16} aria-hidden="true" />Schedule settings</Link>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="nav-week">
           <Button variant="secondary" onClick={() => go(addDays(weekStart, -7))} aria-label="Previous week" data-testid="button-prev-week"><ChevronLeft size={18} aria-hidden="true" /></Button>
@@ -199,7 +200,7 @@ function Body() {
           {q.isPending || stale ? (
             <div role="status" aria-busy="true" data-testid="loading-week"><span className="sr-only">Loading week</span><Skeleton className="h-96 w-full" /></div>
           ) : !week ? (
-            <div><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-week">Try again</Button></div>
+            <div><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-week">Try again</Button></div>
           ) : (<>
             {week.blocks.length === 0 && <p className="alliance-card mb-3" data-testid="text-empty-week">No shifts are scheduled for this week.</p>}
             <Desktop week={week} onOpen={openBlock} />

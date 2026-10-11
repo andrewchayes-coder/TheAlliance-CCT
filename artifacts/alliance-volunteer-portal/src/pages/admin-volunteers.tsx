@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useMemo, useState } from 'react';
 import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation } from 'wouter';
@@ -117,14 +118,14 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
   return (
     <AppLayout role="admin">
       <p className="alliance-label">Administration</p>
-      <h1 className="alliance-display mt-3 text-[22px] md:text-[28px]">Volunteer roster</h1>
+      <h1 className="alliance-display mt-3">Volunteer roster</h1>
       <p className="mt-2 max-w-2xl">Everyone in the program, with what needs a follow-up.</p>
 
       <section aria-label="Roster summary" className="mt-5">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by summary">
           {sum ? chips.map(c => (
             <button key={c.key} type="button" aria-pressed={c.on} onClick={c.set} data-testid={`chip-${c.key}`}
-              className={`min-h-11 rounded-full px-4 text-sm font-bold focus-visible:outline-2 focus-visible:outline-teal ${c.on ? 'bg-navy text-white' : 'bg-white shadow-sm'}`}>
+              className={`min-h-11 rounded-full px-4 text-sm font-bold focus-visible:outline-2 focus-visible:outline-blue ${c.on ? 'bg-navy text-white' : 'bg-white shadow-sm'}`}>
               {c.label} <span className="ml-1 tabular-nums">{c.n}</span>
             </button>
           )) : [0, 1, 2, 3, 4].map(i => <Skeleton key={i} className="h-11 w-32 rounded-full" />)}
@@ -171,9 +172,9 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
             </select></label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-          <a href={csv('roster')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-roster-csv">
+          <a href={csv('roster')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-roster-csv">
             <Download size={16} aria-hidden="true" />Download roster CSV</a>
-          <a href={csv('schedule')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-teal-text underline underline-offset-4" data-testid="link-schedule-csv">
+          <a href={csv('schedule')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-schedule-csv">
             <Download size={16} aria-hidden="true" />Download schedule CSV</a>
           <span className="text-navy-soft">Exports include all {hasFilters ? 'matching' : ''} volunteers, not just this page.</span>
           <p className="w-full text-navy-soft">Roster exports include personal information and internal admin notes. Share only with authorized staff.</p>
@@ -182,14 +183,14 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
 
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg bg-gray px-4 py-3" role="region" aria-label="Selection" data-testid="bar-selection">
           <span className="font-bold" aria-live="polite" data-testid="text-selected-count">{selected.size} selected</span>
-          {selected.size > 0 && <button type="button" className="text-sm font-bold text-teal-text underline underline-offset-4" onClick={() => setSelected(new Set())}>Clear selection</button>}
+          {selected.size > 0 && <button type="button" className="text-sm font-bold text-blue underline underline-offset-4" onClick={() => setSelected(new Set())}>Clear selection</button>}
           <Button type="button" className="ml-auto" disabled={selected.size === 0} data-testid="button-message-selected"
             onClick={() => onMessageSelected(Array.from(selected), nav)}>Message selected</Button>
         </div>
 
         {list.isPending ? <Loading />
           : list.isError && !data ? (
-            <div className="mt-4"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
+            <div className="mt-4"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void list.refetch(); }}>Try again</Button></div>
           ) : data && rows.length === 0 ? (
             <div className="mt-4"><EmptyState title={hasFilters ? 'No volunteers match' : 'No volunteers yet'}
               description={hasFilters ? 'Loosen a filter or try a different search.' : 'Volunteers appear here after they sign up.'}
@@ -202,7 +203,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                 <table className="w-full min-w-[960px] text-left text-sm" data-testid="table-roster">
                   <caption className="sr-only">Volunteer roster</caption>
                   <thead>
-                    <tr className="border-b border-gray text-xs uppercase tracking-wide">
+                    <tr className="border-b border-gray text-xs">
                       <th scope="col" className="w-10 py-2"><input type="checkbox" className="h-5 w-5" aria-label="Select all volunteers on this page" checked={allOnPage} onChange={togglePage} data-testid="checkbox-page" /></th>
                       <th scope="col" className="py-2 pr-3">Name</th><th scope="col" className="pr-3">County</th><th scope="col" className="pr-3">Status</th>
                       <th scope="col" className="pr-3">Certification</th><th scope="col" className="pr-3">Background</th><th scope="col" className="pr-3">Shifts held</th>
@@ -215,7 +216,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                         onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
                         <td className="py-3"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
                         <td className="py-3 pr-3">
-                          <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-teal" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
+                          <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                           <span className="block break-all text-xs text-navy-soft">{e.user.email}</span>
                         </td>
                         <td className="pr-3">{e.profile.county}</td>
@@ -237,7 +238,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                     onClick={event => { if (!(event.target as Element).closest('input,button,a,label')) nav(`/admin/volunteers/${e.user.id}`); }}>
                     <input type="checkbox" className="mt-1 shrink-0" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} />
                     <div className="min-w-0 flex-1">
-                      <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4">{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
+                      <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4">{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                       <span className="block break-words text-sm text-navy-soft">{e.user.email}</span>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Pill map={STATUS} value={e.profile.status} /><Pill map={CERT} value={e.profile.certificationStatus} /><Pill map={BG} value={e.profile.backgroundCheckStatus} />

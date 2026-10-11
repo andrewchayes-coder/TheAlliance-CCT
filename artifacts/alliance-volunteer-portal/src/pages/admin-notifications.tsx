@@ -1,3 +1,4 @@
+import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getGetNotificationLogQueryKey, getGetNotificationSummaryQueryKey, getGetReminderJobStatusQueryKey, useGetNotificationSummary } from '@workspace/api-client-react';
@@ -22,17 +23,17 @@ function Body() {
   return (
     <>
       <p className="alliance-label">Admin</p>
-      <h1 className="alliance-display text-[22px]">Email notifications</h1>
+      <h1 className="alliance-display">Email notifications</h1>
       <p className="mt-1 max-w-xl text-sm">Monthly email volume, the provider connection, and every message the portal has sent or logged.</p>
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>}
-      {q.isError && <div className="mt-4"><Notice>{readError(q.error, "Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.").message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-summary">Try again</Button></div>}
+      {q.isError && <div className="mt-4"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-summary">Try again</Button></div>}
       {s && (
         <div className="mt-4 space-y-4">
           <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
             <UsageCard key={s.monthlyLimit} s={s} />
             <ProviderCard s={s} onDone={refresh} />
           </div>
-          <Card className="p-4"><h2 className="alliance-display text-[15px]">Last 6 months by type</h2><p className="mb-2 text-xs text-navy-soft">The current month is still in progress.</p><UsageChart s={s} /></Card>
+          <Card className="p-4"><h2 className="alliance-display">Last 6 months by type</h2><p className="mb-2 text-xs text-navy-soft">The current month is still in progress.</p><UsageChart s={s} /></Card>
         </div>
       )}
       <div className="mt-6"><LogSection /></div>
@@ -43,9 +44,9 @@ function Body() {
 export function AdminNotifications() {
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Email notifications | Alliance Volunteer Portal';
+    document.title = 'Email notifications | Community Care Team Volunteer Portal';
     const descriptions = [
-      ['name', 'description', 'Monitor monthly email use, delivery status and notification history for The Alliance Volunteer Portal.'],
+      ['name', 'description', 'Monitor monthly email use, delivery status and notification history for the Community Care Team Volunteer Portal.'],
       ['property', 'og:title', document.title],
       ['property', 'og:description', 'Staff email monitoring and safe notification retries.'],
     ];

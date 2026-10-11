@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'wouter';
 import { TestBadge } from '@/components/test-badge';
@@ -56,36 +57,36 @@ export function VolunteerDetail() {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin/volunteers" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-teal-text underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
+      <Link href="/admin/volunteers" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
       {q.isPending ? (
         <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       ) : !d || !e || !p ? (
-        <div className="mt-6"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
+        <div className="mt-6"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
       ) : (
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
-          <h1 className="alliance-display text-[22px] md:text-[28px]" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
+          <h1 className="alliance-display" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <Pill map={STATUS} value={p.status} />
             <StatusBadge status="neutral">{p.county} County</StatusBadge>
             {e.attention.map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
           </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-            <Item label="Email"><a href={`mailto:${e.user.email}`} className="break-all font-bold text-teal-text underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
-            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-teal-text underline underline-offset-4" data-testid="link-phone">{e.user.phone}</a> : 'Not provided'}</Item>
+            <Item label="Email"><a href={`mailto:${e.user.email}`} className="break-all font-bold text-blue underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
+            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-blue underline underline-offset-4" data-testid="link-phone">{e.user.phone}</a> : 'Not provided'}</Item>
             <Item label="Joined">{stamp(e.user.createdAt)}</Item>
             <Item label="Last login">{stamp(e.user.lastLoginAt) ?? 'Never'}</Item>
           </dl>
           <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold">
-            <Link href={`/admin/volunteers/${e.user.id}/onboarding`} className="text-teal-text underline underline-offset-4" data-testid="link-review-onboarding">Review onboarding</Link>
-            <Link href="/admin/team" className="text-teal-text underline underline-offset-4" data-testid="link-manage-account">Manage account</Link>
+            <Link href={`/admin/volunteers/${e.user.id}/onboarding`} className="text-blue underline underline-offset-4" data-testid="link-review-onboarding">Review onboarding</Link>
+            <Link href="/admin/team" className="text-blue underline underline-offset-4" data-testid="link-manage-account">Manage account</Link>
           </div>
 
           <StatusPanel userId={userId} detail={d} blockedReason={statusBlock} />
           <TrackingPanel userId={userId} detail={d} blockedReason={trackBlock} onDirty={setTrackDirty} />
 
           <section className="alliance-card mt-6" aria-labelledby="v-onb">
-            <h2 id="v-onb" className="alliance-display text-[15px]">Onboarding</h2>
+            <h2 id="v-onb" className="alliance-display">Onboarding</h2>
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               <Item label="Agreement acknowledged">{stamp(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>
               <Item label="Agreement version">{p.agreementVersion ?? 'None'}</Item>
@@ -107,7 +108,7 @@ export function VolunteerDetail() {
           </section>
 
           <section className="alliance-card mt-6" aria-labelledby="v-shifts">
-            <h2 id="v-shifts" className="alliance-display text-[15px]">Current shifts</h2>
+            <h2 id="v-shifts" className="alliance-display">Current shifts</h2>
             {d.shifts.length === 0 ? (
               <div className="mt-3"><EmptyState title="No shifts assigned" description="This volunteer does not hold a recurring shift." /></div>
             ) : (
@@ -125,7 +126,7 @@ export function VolunteerDetail() {
           </section>
 
           <section className="alliance-card mt-6" aria-labelledby="v-msg">
-            <h2 id="v-msg" className="alliance-display text-[15px]">Messages</h2>
+            <h2 id="v-msg" className="alliance-display">Messages</h2>
             <MessageHistory userId={userId} step={10} />
             <Link href={`/admin/messages?userId=${userId}`} className="alliance-button mt-4" data-testid="link-message-volunteer">Message this volunteer</Link>
           </section>
@@ -133,7 +134,7 @@ export function VolunteerDetail() {
           <NotesPanel userId={userId} serverNotes={d.adminNotes} onPending={setNotesPending} />
 
           <section className="alliance-card mt-6" aria-labelledby="v-act">
-            <h2 id="v-act" className="alliance-display text-[15px]">Recent activity</h2>
+            <h2 id="v-act" className="alliance-display">Recent activity</h2>
             {d.activity.length === 0 ? <p className="mt-2 text-sm text-navy-soft">No activity recorded yet.</p>
               : <ul className="mt-2 divide-y divide-gray">{d.activity.slice(0, 50).map(a => <ActivityLine key={a.id} a={a} />)}</ul>}
             <p className="mt-2 text-xs text-navy-soft">Showing the latest 50 entries.</p>

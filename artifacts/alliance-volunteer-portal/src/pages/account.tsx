@@ -21,14 +21,14 @@ function Landing({ me, mode }: { me: Me; mode: 'dashboard' }) {
   }
   const rows: { name: string; value: string; good: boolean }[] = [
     { name: 'Email verified', value: fmt(me.user.emailVerifiedAt) ?? 'Verified', good: true },
-    { name: 'Volunteer status', value: p ? label(p.status) : 'Not started', good: p?.status === 'active' },
+    { name: 'Resource Coordinator status', value: p ? label(p.status) : 'Not started', good: p?.status === 'active' },
     { name: 'Onboarding', value: p?.onboardingCompletedAt ? `Completed ${fmt(p.onboardingCompletedAt)}` : 'Not completed yet', good: !!p?.onboardingCompletedAt },
   ];
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
         <p className="alliance-label">Your account</p>
-        <h1 className="alliance-display mt-3 text-[24px] text-navy md:text-[32px]">
+        <h1 className="alliance-display mt-3 text-navy">
           Hello, {me.user.firstName}
         </h1>
         <p className="mt-3">

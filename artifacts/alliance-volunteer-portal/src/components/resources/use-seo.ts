@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export function useSeo(title: string, description: string) {
   useEffect(() => {
     const prev = document.title;
-    document.title = `${title} | Alliance Volunteer Portal`;
+    document.title = `${title} | Community Care Team Volunteer Portal`;
     const restore: Array<() => void> = [];
     for (const [attr, key, val] of [['name', 'description', description], ['property', 'og:title', document.title], ['property', 'og:description', description]]) {
       let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);

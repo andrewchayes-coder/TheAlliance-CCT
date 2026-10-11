@@ -61,7 +61,7 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
   const sel = 'alliance-input mt-1 font-normal';
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-tracking">
-      <h2 id="v-tracking" className="alliance-display text-[15px]">Training and clearance</h2>
+      <h2 id="v-tracking" className="alliance-display">Training and clearance</h2>
       <p className="mt-1 text-sm text-navy-soft">Track status only. Don't upload or paste background check reports here.</p>
       <div className="mt-4 grid gap-6 md:grid-cols-2">
         <fieldset className="space-y-3">

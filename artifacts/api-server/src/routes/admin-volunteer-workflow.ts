@@ -68,7 +68,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
     let emailDelivery = null;
     if (result.activityId && input.status === 'active') {
       const copy = createEmailTemplate({ heading: "You're approved! Choose your weekly shift", firstName: result.user.firstName,
-        paragraphs: ["Thank you for preparing to support local families. You're approved to volunteer with The Alliance's Resource Coordination Program.",
+        paragraphs: ["Thank you for preparing to support local families. You're approved to serve as a Resource Coordinator with The Alliance's Community Care Team.",
           'Choose a weekly shift that works for you. We look forward to serving alongside you.'],
         cta: { label: 'Choose your weekly shift', url: `${appOrigin}/shifts` } });
       emailDelivery = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,

@@ -1,3 +1,4 @@
+import { ContactLink } from '@/components/shift-cards';
 import { Link } from 'wouter';
 import { TestBadge } from '@/components/test-badge';
 import { AlertTriangle, CalendarDays, ChevronRight, ClipboardList, Mail, Phone, RefreshCw, Users } from 'lucide-react';
@@ -31,13 +32,13 @@ function Body() {
   return (
     <AppLayout role="admin">
       <div className="flex flex-wrap items-end justify-between gap-2" data-testid="view-admin-overview">
-        <div><p className="alliance-label">Coordinator dispatch</p><h1 className="alliance-display mt-2 text-[22px] md:text-[28px]">Who to call</h1></div>
+        <div><p className="alliance-label">Coordinator dispatch</p><h1 className="alliance-display mt-2">Who to call</h1></div>
         {d && <p className="text-sm text-navy-soft" data-testid="text-updated" aria-live="off">Updated {updatedLabel(d.updatedAt)}</p>}
       </div>
       {q.isPending ? (
         <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading dispatch</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       ) : !d ? (
-        <div className="mt-6"><Notice>Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-overview">Try again</Button></div>
+        <div className="mt-6"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void q.refetch(); }} data-testid="button-retry-overview">Try again</Button></div>
       ) : (<>
         {q.isError && (
           <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--alliance-red)] p-3 text-[var(--alliance-red-ink)]" data-testid="banner-refresh-error">
@@ -54,7 +55,7 @@ function Body() {
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {people.map(p => (
-                <li key={p.userId} className="alliance-card border-l-4 border-teal" data-testid={`card-on-shift-${p.userId}`}>
+                <li key={p.userId} className="alliance-card border-l-4 border-blue" data-testid={`card-on-shift-${p.userId}`}>
                   <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{p.name}<TestBadge test={p.isTestAccount} /></Link>
                   <p className="text-sm text-navy-soft" data-testid={`text-ends-${p.userId}`}>
                     {p.shifts.map(s => `Shift ends ${clock(s.end)}${s.label ? ` (${s.label})` : ''}`).join('; ')}
@@ -79,7 +80,7 @@ function Body() {
                   <li key={`${b.slotId}-${b.date}`} className="alliance-card" data-testid={`card-up-next-${b.slotId}`}>
                     <p className="font-bold">{dayLabel(b.date, { weekday: 'long', month: 'short', day: 'numeric' })}, {range(b)}{b.label ? ` · ${b.label}` : ''}</p>
                     {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-shift-${b.slotId}`}>Empty shift: no one assigned</p>
-                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-teal-text underline underline-offset-4">{fullName(x)}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
+                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-blue underline underline-offset-4">{fullName(x)}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
                   </li>
                 );
               })}
@@ -100,7 +101,7 @@ function Body() {
             <ul className="alliance-card divide-y divide-gray py-0">
               {d.recentActivity.map(a => (
                 <li key={a.id} className="py-3" data-testid={`row-activity-${a.id}`}>
-                  <p><span className="font-bold">{humanize(a.action)}</span> for <Link href={`/admin/volunteers/${a.userId}`} className="font-bold text-teal-text underline underline-offset-4">{a.volunteerName}</Link></p>
+                  <p><span className="font-bold">{humanize(a.action)}</span> for <Link href={`/admin/volunteers/${a.userId}`} className="font-bold text-blue underline underline-offset-4">{a.volunteerName}</Link></p>
                   <p className="text-xs text-navy-soft">By {a.actorName} · {activityTime(a.createdAt)}</p>
                 </li>
               ))}
@@ -110,7 +111,7 @@ function Body() {
       </>)}
       <nav aria-label="Admin shortcuts" className="mt-8 grid gap-3 md:grid-cols-3">
         {[{ href: '/admin/schedule', t: 'Master schedule', I: CalendarDays, id: 'link-admin-schedule' }, { href: '/admin/volunteers', t: 'Roster', I: ClipboardList, id: 'link-admin-roster' }, { href: '/admin/team', t: 'Team accounts', I: Users, id: 'link-admin-team' }].map(({ href, t, I, id }) => (
-          <Link key={href} href={href} data-testid={id} className="alliance-card flex items-center gap-3 hover:shadow-md"><I size={22} aria-hidden="true" className="text-teal-text" /><span className="font-bold">{t}</span><ChevronRight size={18} aria-hidden="true" className="ml-auto" /></Link>
+          <Link key={href} href={href} data-testid={id} className="alliance-card flex items-center gap-3 hover:shadow-md"><I size={22} aria-hidden="true" className="text-blue" /><span className="font-bold">{t}</span><ChevronRight size={18} aria-hidden="true" className="ml-auto" /></Link>
         ))}
       </nav>
     </AppLayout>

@@ -1,6 +1,6 @@
-# Alliance Volunteer Portal
+# Community Care Team Volunteer Portal
 
-A mobile-first volunteer management portal for The Alliance's Resource Coordination Program.
+A mobile-first volunteer management portal for The Alliance's Community Care Team.
 
 ## Current scope
 
@@ -225,8 +225,8 @@ The `/style-guide` route and its lazy-loaded module are development-only. The ro
 - Weekday time columns share a locally expanding axis so short slots and long volunteer lists fit without extending a card beyond its actual end time. Overlapping intervals use separate lanes, including transitive overlap groups. Assignment/skip mutation actions remain for subsequent schedule steps.
 - Needs-attention rules are shared with the roster. Overview queries select only required contact/attention fields, omit notes and answer blobs, bound recent activity, and read a repeatable snapshot; no persistent private-data cache is used. Settings writes invalidate overview and calendar queries immediately in the current client.
 
-## Optional brand assets
+## Approved CCT brand assets
 
-Place the logo at `artifacts/alliance-volunteer-portal/public/brand/logo.svg` and the licensed Lulo Clean font at `artifacts/alliance-volunteer-portal/public/fonts/LuloClean.woff2`. Restart the frontend workflow after adding either asset.
+Approved PNGs are bundled in `artifacts/alliance-volunteer-portal/public/brand/`, served as plain static files at `/brand/`. `public/logo-horizontal.png` and `public/logo-stacked.png` were copied from App Storage to the same filenames; the mark, favicon, touch icon, and 192/512 icons use their supplied filenames. The bucket also contains `public/CCT Logo1.png` and `public/CCT Logo2.png`; these additional source files are not served at runtime.
 
-Absent assets use the display-font wordmark and Montserrat 800. Open Sans 400/600/700 and Montserrat 800 load from Google Fonts. Do not invent a replacement logo.
+Use Open Sans 400/600/700 only, sentence-case headings, navy #06365D, Alliance Blue #0175aa, gray #E6E6E6, and white. Blue text belongs on white, never gray; field labels are navy. White app headers show the horizontal lockup on desktop and mark on mobile; public pages show the stacked lockup. Never invent a replacement logo or text-wordmark fallback. Product identity, mission, and staff contact are defined in shared/appConfig.ts; volunteer-facing role copy says Resource Coordinator, while admin UI and code retain volunteer terminology.

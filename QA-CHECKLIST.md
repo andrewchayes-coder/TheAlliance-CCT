@@ -1,4 +1,13 @@
-# Alliance Volunteer Portal — UAT checklist
+# Community Care Team Volunteer Portal — UAT checklist
+
+## CCT brand and program identity
+- At 375px and 768px, check public pages show the stacked logo above the card and the mission below it; signed-in headers are white with a navy bottom rule, using the mark on phones and horizontal logo on desktop.
+- Check Open Sans sentence-case titles, navy field labels, gray inputs with blue focus rings, blue primary buttons, and white/blue secondary buttons with blue/white hover.
+- Check gray panels and inputs never use blue text; keyboard focus and existing navigation remain usable.
+- Check volunteer-facing role wording is Resource Coordinator; admin roster and code terminology remain volunteer.
+- Check contact guidance links to Cindi using shared configuration, and emails show the horizontal logo, navy rule, blue CTA, mission footer, and matching plain-text links.
+- Fetch all seven `/brand/*.png` files: expect PNG content, one-year public cache headers, and no session cookie.
+- Check `/style-guide` includes the new scale, colors, controls, logos and email preview in development, and remains unavailable in production.
 
 Use one tracker row per ID below. Record tester, date, browser/device, result, and evidence.
 Unless a test explicitly says production, use the development preview and synthetic accounts.

@@ -57,7 +57,7 @@ function PasswordSection() {
   }
   return (
     <Card>
-      <h2 className="alliance-display text-[14px]">Password</h2>
+      <h2 className="alliance-display">Password</h2>
       <p className="mt-2 text-sm">Changing your password signs you out everywhere.</p>
       <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-4" data-testid="form-password">
         <input type="email" name="username" autoComplete="username" value={auth.session?.email ?? ''} readOnly tabIndex={-1} aria-label="Account email" className="sr-only" />
@@ -127,13 +127,13 @@ function ProfileForm({ me }: { me: Me }) {
   return (
     <VolunteerPage kicker="Your profile" title="Profile and settings">
       <Card>
-        <h2 className="alliance-display text-[14px]">Your account</h2>
+        <h2 className="alliance-display">Your account</h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="profile-readonly">
           {ro.map(([k, v]) => <div key={k}><dt className="alliance-label">{k}</dt><dd className="mt-0.5 break-all">{v ?? 'Not available'}</dd></div>)}
         </dl>
       </Card>
       <Card>
-        <h2 className="alliance-display text-[14px]">Your details</h2>
+        <h2 className="alliance-display">Your details</h2>
         <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-5" data-testid="form-profile">
           <div>{msg && <Notice kind={msg.kind}>{msg.text}</Notice>}</div>
           <fieldset disabled={busy} className="contents">

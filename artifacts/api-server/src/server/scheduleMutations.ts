@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { staffContactText } from '@workspace/shared/appConfig';
 import {
   db, shiftSlotsTable, shiftAssignmentsTable, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable,
 } from '@workspace/db';
@@ -91,7 +92,7 @@ export async function updateSlot(slotId: string, input: SlotUpdate, actorUserId:
           `The Alliance is retiring the ${weekday} shift, ${result.slot.startTime}–${result.slot.endTime}, after ${effect.keepUntilDate}. Your future reservation will not begin because its start date is after the slot closes.${effect.keptCount ? ` Your current assignment continues through ${effect.keepUntilDate}.` : ''}` :
           `The Alliance is updating its shift grid. Your ${weekday} shift, ${result.slot.startTime}–${result.slot.endTime}, has been released as of ${today}.`,
         "Thank you for the care and time you share with local families. This is a schedule change, not a reflection of your contribution.",
-        "Please choose another weekly shift when you're ready, or contact The Alliance if you'd like help finding a time that works for you.",
+        `Please choose another weekly shift when you're ready, or contact ${staffContactText} if you'd like help finding a time that works for you.`,
       ], cta: { label: 'Review my shifts', url: `${appOrigin}/shifts` } });
     const delivery = await sendEmail({ type: 'message', to: effect.user.email, toUserId: effect.user.id,
       subject: 'An update to your weekly Alliance shift', ...copy, relatedId: effect.activityId });

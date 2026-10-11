@@ -23,7 +23,7 @@ function OpenLink({ r, big = false }: { r: VolunteerResource; big?: boolean }) {
 }
 
 function Body() {
-  useSeo('Resources', 'Guides, documents and quick links for Alliance volunteers.');
+  useSeo('Resources', 'Guides, documents and quick links for Resource Coordinators.');
   const q = useGetVolunteerResources({ query: { queryKey: getGetVolunteerResourcesQueryKey() }, request: FETCH_CREDS });
   const [term, setTerm] = useState('');
   const [cat, setCat] = useState<string | null>(null);
@@ -35,7 +35,7 @@ function Body() {
   return (
     <VolunteerPage kicker="Resources" title="Guides and documents">
       {q.isPending ? <LoadingBlock /> : q.isError ? <ErrorBlock what="resources" onRetry={() => { void q.refetch(); }} /> : list.length === 0 ? (
-        <EmptyState title="No resources yet" description="Guides and documents from the Alliance will appear here." />
+        <EmptyState title="No resources yet" description="Guides and documents from the Community Care Team will appear here." />
       ) : (
         <div className="grid gap-5">
           {quick.length > 0 && <div className="grid gap-2 sm:grid-cols-2" data-testid="quick-links">{quick.map(r => <OpenLink key={r.id} r={r} big />)}</div>}
@@ -50,7 +50,7 @@ function Body() {
           {shown.length === 0 ? <EmptyState title="No matches" description="Try a different word or category." /> : (
             <ul className="grid gap-3">{shown.map(r => (
               <li key={r.id} className="rounded-xl bg-white p-5 shadow-sm" data-testid={`resource-${r.id}`}>
-                <p className="flex items-center gap-2 text-xs font-bold uppercase text-teal-text"><TypeIcon type={r.type} size={14} />{r.category}</p>
+                <p className="flex items-center gap-2 text-xs font-bold text-blue"><TypeIcon type={r.type} size={14} />{r.category}</p>
                 <h2 className="mt-1 text-lg font-bold">{r.title}</h2>
                 {r.summary && <p className="mt-1">{r.summary}</p>}
                 {r.type === 'article' && <Link href={`/resources/${r.id}`} className="alliance-button alliance-button-secondary mt-3">Read article</Link>}
@@ -68,7 +68,7 @@ function Body() {
 function ArticleBody() {
   const { id = '' } = useParams<{ id: string }>();
   const q = useGetResource(id, { query: { queryKey: getGetResourceQueryKey(id), enabled: !!id }, request: FETCH_CREDS });
-  useSeo(q.data?.title ?? 'Article', q.data?.summary ?? 'A guide for Alliance volunteers.');
+  useSeo(q.data?.title ?? 'Article', q.data?.summary ?? 'A guide for Resource Coordinators.');
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
       <Link href="/resources" className="inline-flex min-h-11 items-center text-sm font-bold underline">Back to Resources</Link>

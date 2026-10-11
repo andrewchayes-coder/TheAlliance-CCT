@@ -42,21 +42,21 @@ export function QuickLoginCard() {
     <section aria-labelledby="ql-title" data-testid="card-quick-login" className="mt-6 w-full max-w-xl rounded-xl border-[1.5px] border-dashed border-amber-500 bg-white p-5">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="ql-title" className="alliance-label">Quick login — testing</h2>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-amber-900">Test accounts</span>
-        {prod && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-red-900" data-testid="pill-production">Production</span>}
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-900">Test accounts</span>
+        {prod && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-900" data-testid="pill-production">Production</span>}
       </div>
       {error && <p role="alert" className="mt-3 text-sm font-semibold">{error}</p>}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {status.personas.map(p => (
           <button key={p.key} type="button" disabled={!!pending} onClick={() => { void go(p.key); }} data-testid={`button-quick-${p.key}`}
-            className="flex min-h-11 items-center justify-between gap-2 rounded-lg border-2 border-teal bg-white px-4 py-3 text-left text-navy hover:border-navy hover:bg-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal disabled:opacity-50"
+            className="flex min-h-11 items-center justify-between gap-2 rounded-lg border-[1.5px] border-blue bg-white px-4 py-3 text-left text-[15px] text-blue hover:bg-blue hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue disabled:opacity-50"
             aria-busy={pending === p.key}>
              <span className="min-w-0"><span className="block font-bold">{personaLabel(p.key, p.label)}</span><span className="block truncate text-sm" title={p.description}>{p.description}</span></span>
             {pending === p.key && <Loader2 className="shrink-0 animate-spin" size={18} aria-label="Signing in" />}
           </button>
         ))}
       </div>
-      {prod && <p className="mt-4 text-sm"><a href="/qa/lock" className="inline-flex min-h-11 items-center font-bold text-teal-text underline underline-offset-4" data-testid="link-qa-lock">Hide test logins on this device</a></p>}
+      {prod && <p className="mt-4 text-sm"><a href="/qa/lock" className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4" data-testid="link-qa-lock">Hide test logins on this device</a></p>}
     </section>
   );
 }
@@ -98,7 +98,7 @@ export function TestAccountBanner() {
             <ul aria-label="Switch account" className="absolute left-0 z-30 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-xl bg-white p-2 text-navy shadow-lg sm:left-auto sm:right-0">
               {others.map(p => (
                 <li key={p.key}><button type="button" disabled={!!pending || out} onClick={() => { void go(p.key); }} data-testid={`button-switch-${p.key}`}
-                   className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-left font-bold hover:bg-gray focus-visible:outline-2 focus-visible:outline-teal disabled:opacity-50">{personaLabel(p.key, p.label)}{pending === p.key && <Loader2 className="animate-spin" size={16} aria-hidden="true" />}</button></li>
+                   className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-left font-bold hover:bg-gray focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-50">{personaLabel(p.key, p.label)}{pending === p.key && <Loader2 className="animate-spin" size={16} aria-hidden="true" />}</button></li>
               ))}
             </ul>
           </details>

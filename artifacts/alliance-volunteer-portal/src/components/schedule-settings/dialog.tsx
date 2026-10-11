@@ -12,7 +12,7 @@ export function Dlg({ title, id, onClose, busy = false, testid, children }: {
   return (
     <dialog ref={ref} aria-labelledby={id} data-testid={testid} onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}
       className="m-auto w-[min(94vw,36rem)] max-h-[90dvh] overflow-y-auto rounded-2xl bg-white p-5 text-navy">
-      <h2 id={id} className="alliance-display text-[18px]">{title}</h2>
+      <h2 id={id} className="alliance-display">{title}</h2>
       {children}
     </dialog>
   );

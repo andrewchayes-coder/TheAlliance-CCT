@@ -39,11 +39,11 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
   return (
     <div className="flex min-h-[100dvh] w-full items-center justify-center bg-gray p-4" role="alert">
       <div className="w-full max-w-lg rounded-[14px] bg-white p-6 text-center shadow-[0_3px_14px_rgb(6_54_93/8%)] md:p-8">
-        <h1 className="alliance-display text-[22px] text-navy md:text-[28px]">
+        <h1 className="alliance-display text-navy">
           Something went wrong
         </h1>
         <p className="mt-3 text-navy">
-          Something went wrong on our end. Please try again — if it keeps happening, let The Alliance know.
+          Something went wrong on our end. Please try again. If it keeps happening, email Cindi.
         </p>
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (
