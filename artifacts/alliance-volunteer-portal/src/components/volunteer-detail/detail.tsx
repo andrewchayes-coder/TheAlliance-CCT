@@ -1,3 +1,4 @@
+import { AccountEditor } from '@/components/account-editor';
 import { ContactLink } from '@/components/shift-cards';
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'wouter';
@@ -91,6 +92,8 @@ export function VolunteerDetail() {
             <Link href={`/admin/volunteers/${e.user.id}/onboarding`} className="text-blue underline underline-offset-4" data-testid="link-review-onboarding">Review onboarding</Link>
             <Link href="/admin/team" className="text-blue underline underline-offset-4" data-testid="link-manage-account">Manage account</Link>
           </div>
+
+          <div className="mt-6"><h2 className="alliance-display mb-3">Account</h2><AccountEditor key={userId} userId={userId} managed /></div>
 
           <StatusPanel userId={userId} detail={d} blockedReason={statusBlock} />
           <ProfileCard userId={userId} detail={d} blockedReason={trackBlock} />

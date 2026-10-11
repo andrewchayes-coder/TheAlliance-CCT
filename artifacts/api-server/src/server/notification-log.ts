@@ -2,12 +2,12 @@ import { emailProviderStatus } from './email-identity';
 import { emailFooter } from '../email-template';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import { db, pool, notificationLogTable, usersTable, volunteerProfilesTable, notificationType } from '@workspace/db';
+import { db, pool, notificationLogTable, usersTable, volunteerProfilesTable, notificationType, authTokensTable } from '@workspace/db';
 import { sendEmail, createEmailTemplate } from '../email';
 import { decryptEmailBody, tokenEmailTypes } from './email-payload';
 import { monthRange, emailSettings, checkMonthlyEmailLimit } from './monthly-email-limit';
 import { appOrigin } from '../auth/session';
-import { mintToken, verificationEmail, passwordResetEmail } from '../auth/accounts';
+import { mintToken, verificationEmail, verificationEmailForChange, passwordResetEmail } from '../auth/accounts';
 import { readScheduleData } from './scheduleRepository';
 import { createScheduleService } from './scheduleService';
 import { slotInstant } from './schedule-time';
@@ -70,14 +70,24 @@ export async function retryNotification(id: string) {
     if (isUncertainDelivery(row.error))
       throw new NotificationError(409, 'Delivery is uncertain. Resending is disabled to avoid a duplicate. Review this email in Postmark.');
     const [user] = row.recipientUserId ? await db.select().from(usersTable).where(eq(usersTable.id, row.recipientUserId)) : [];
-    if (row.recipientUserId && (!user?.isActive || user.email !== row.recipientEmail))
+    const [emailChange] = row.type === 'verification' && row.relatedId && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(row.relatedId)
+      ? await db.select().from(authTokensTable).where(and(eq(authTokensTable.id, row.relatedId),
+        eq(authTokensTable.userId, row.recipientUserId!), eq(authTokensTable.type, 'email_verify')))
+      : [];
+    if (row.recipientUserId && (!user?.isActive || (user.email !== row.recipientEmail && !emailChange?.pendingEmail)))
       throw new NotificationError(409, 'The recipient is inactive or their email has changed. Send a new email from the original feature.');
     let result;
     if (tokenEmailTypes.has(row.type)) {
       if (!user) throw new NotificationError(409, 'The original account is unavailable.');
       if (row.type === 'verification') {
-        if (user.emailVerifiedAt) throw new NotificationError(409, 'This email is already verified.');
-        result = await verificationEmail(user, row.id);
+        if (emailChange?.pendingEmail) {
+          if (emailChange.usedAt || emailChange.pendingEmail !== row.recipientEmail)
+            throw new NotificationError(409, 'This email change was cancelled or replaced. Request a new change from the profile page.');
+          result = await verificationEmailForChange(user, emailChange.pendingEmail, undefined, row.id);
+        } else {
+          if (user.emailVerifiedAt) throw new NotificationError(409, 'This email is already verified.');
+          result = await verificationEmail(user, row.id);
+        }
       } else if (row.type === 'password_reset') result = await passwordResetEmail(user, row.id);
       else {
         if (user.role !== 'admin' || user.emailVerifiedAt) throw new NotificationError(409, 'This administrator invitation is no longer pending.');

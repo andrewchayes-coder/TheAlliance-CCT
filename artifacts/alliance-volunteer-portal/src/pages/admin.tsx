@@ -18,6 +18,7 @@ import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { AccountEditor } from '@/components/account-editor';
 import { RequireAdmin } from '@/auth/guards';
 import { Field, Notice, PasswordField, AuthHeading, SubmitButton, PublicAuthGate } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
@@ -123,6 +124,7 @@ function TeamBody({ me }: { me: Me }) {
   const [q, setQ] = useState('');
   const [offset, setOffset] = useState(0);
   const [target, setTarget] = useState<{ user: PublicUser; next: boolean } | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
   const [note, setNote] = useState<{ kind: 'success' | 'info' | 'error'; text: string } | null>(null);
 
@@ -192,7 +194,7 @@ function TeamBody({ me }: { me: Me }) {
                 const self = u.id === me.user.id;
                 const pending = u.role === 'admin' && !u.emailVerifiedAt;
                 return (
-                  <li key={u.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:items-center" data-testid={`row-user-${u.id}`}>
+                  <li key={u.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:flex-wrap lg:items-center" data-testid={`row-user-${u.id}`}>
                     <div className="min-w-0 flex-1">
                       <p className="font-bold">{u.firstName} {u.lastName}<TestBadge test={u.isTestAccount} />{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
                       <p className="break-all text-sm">{u.email}</p>
@@ -202,6 +204,9 @@ function TeamBody({ me }: { me: Me }) {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {u.role === 'volunteer' && <Button asChild variant="secondary"><Link href={`/admin/volunteers/${u.id}/onboarding`} data-testid={`link-onboarding-${u.id}`}>Review onboarding</Link></Button>}
+                      {u.role === 'admin' && (self
+                        ? <Button asChild variant="secondary"><Link href="/profile" data-testid={`link-edit-${u.id}`}>My profile</Link></Button>
+                        : <Button type="button" variant="secondary" aria-expanded={editing === u.id} onClick={() => setEditing(editing === u.id ? null : u.id)} data-testid={`button-edit-${u.id}`}>{editing === u.id ? 'Close editor' : 'Edit account'}</Button>)}
                       {pending && <StatusBadge status="attention">Invitation pending</StatusBadge>}
                       <StatusBadge status={u.isActive ? 'good' : 'blocked'}>{u.isActive ? 'Active' : 'Inactive'}</StatusBadge>
                       {pending && u.isActive && (
@@ -216,6 +221,7 @@ function TeamBody({ me }: { me: Me }) {
                         {u.isActive ? 'Deactivate' : 'Reactivate'}
                       </Button>
                     </div>
+                    {editing === u.id && u.role === 'admin' && !self && <div className="w-full lg:basis-full"><AccountEditor key={u.id} userId={u.id} managed /></div>}
                   </li>
                 );
               })}

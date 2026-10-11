@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { db, usersTable, authTokensTable, volunteerProfilesTable, type User } from '@workspace/db';
 import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin, randomToken } from './session';
@@ -33,17 +33,44 @@ export async function accountPath(user: User): Promise<string> {
   if (!appConfig.requireAgreementAcknowledgment) return '/dashboard';
   return profile.agreementAcknowledgedAt && profile.agreementVersion === await agreementVersion() ? '/dashboard' : '/agreements';
 }
-export async function mintToken(userId: string, type: 'email_verify' | 'password_reset' | 'admin_invite') {
+export async function mintToken(userId: string, type: 'email_verify' | 'password_reset' | 'admin_invite',
+  options?: { pendingEmail: string; requester?: User }) {
   const raw = randomToken();
   const expiresAt = new Date(Date.now() + (type === 'email_verify' ? 48 : type === 'admin_invite' ? 168 : 1) * 60 * 60 * 1000);
   const row = await db.transaction(async tx => {
-    await tx.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).for('update');
+    const locked = await tx.select().from(usersTable).where(inArray(usersTable.id,
+      [...new Set([userId, ...(options?.requester ? [options.requester.id] : [])])])).orderBy(usersTable.id).for('update');
+    const owner = locked.find(u => u.id === userId);
+    if (!owner) throw new Error('This account is no longer available.');
+    if (options) {
+      const actor = options.requester && locked.find(u => u.id === options.requester!.id);
+      if (!owner.isActive || !owner.emailVerifiedAt || options.pendingEmail === owner.email ||
+        (options.requester && (!actor?.isActive || !actor.emailVerifiedAt || actor.sessionVersion !== options.requester.sessionVersion ||
+          (actor.id !== owner.id && actor.role !== 'admin')))) throw new Error('This email change is no longer available.');
+      const [other] = await tx.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, options.pendingEmail));
+      if (other) throw new Error('That email address is already used by another account.');
+    }
     await tx.update(authTokensTable).set({ usedAt: new Date() })
       .where(and(eq(authTokensTable.userId, userId), eq(authTokensTable.type, type), isNull(authTokensTable.usedAt)));
-    const [created] = await tx.insert(authTokensTable).values({ userId, type, tokenHash: tokenHash(raw), expiresAt }).returning();
+    const [created] = await tx.insert(authTokensTable).values({ userId, type, tokenHash: tokenHash(raw), expiresAt,
+      pendingEmail: options?.pendingEmail ?? null }).returning();
     return created!;
   });
   return { ...row, raw };
+}
+export async function verificationEmailForChange(user: User, email: string, requester?: User, retryLogId?: string) {
+  const token = await mintToken(user.id, 'email_verify', { pendingEmail: email, requester });
+  const content = createEmailTemplate({
+    heading: 'Confirm your new email address', firstName: user.firstName,
+    paragraphs: [
+      'A change to your Community Care Team account email was requested. Confirm this address to finish the change.',
+      'Your current address stays in use until you confirm. This link expires in 48 hours and can be used once.',
+      'Confirming signs out your other sessions. If this change was not intended, ignore this email and contact Alliance staff.',
+    ],
+    cta: { label: 'Confirm new email', url: `${appOrigin}/verify?token=${token.raw}` },
+  });
+  return sendEmail({ type: 'verification', to: email, toUserId: user.id, subject: 'Confirm your new CCT Portal email',
+    relatedId: token.id, retryLogId, ...content });
 }
 export async function verificationEmail(user: User, retryLogId?: string) {
   const token = await mintToken(user.id, 'email_verify');

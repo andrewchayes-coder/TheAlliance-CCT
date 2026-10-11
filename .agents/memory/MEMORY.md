@@ -1,6 +1,7 @@
 - [Drizzle-Zod pitfalls](drizzle-zod-refinements.md) — preserve wrappers/Node inference and keep SQL operators on the same ORM peer instance as their tables.
 - [Development cookie proxy](development-cookie-proxy.md) — direct API cookie attributes can differ from the development edge; compare both before changing session settings.
 - [Auth navigation](auth-navigation.md) — session-invalidating actions need fresh client state or coordinated guards; verify the destination and success notice, not only API success.
+- [Account identity](account-identity-policy.md) — pending email changes preserve access; public QA account edits must not change real identities.
 - [Onboarding scope](onboarding-question-scope.md) — finalized as a fixed profile; extra questions empty and compliance handled outside the app, with legacy data retained.
 - [New-tab links](new-tab-links.md) — use native anchors for documents; this router intercepts clicks even with target=_blank.
 - [Animated screenshots](animated-screenshot-verification.md) — wait for drawer/dialog animations to settle before treating clipped screenshots as layout bugs.

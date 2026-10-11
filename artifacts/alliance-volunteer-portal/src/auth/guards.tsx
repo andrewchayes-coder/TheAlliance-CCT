@@ -15,7 +15,7 @@ function Redirect({ to }: { to: string }) {
 }
 
 /** Admins are sent to /admin from volunteer pages; with area="admin", volunteers are sent to /dashboard. */
-export function RequireVerified({ children, area = 'volunteer', allowIncomplete = false }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin'; allowIncomplete?: boolean }) {
+export function RequireVerified({ children, area = 'volunteer', allowIncomplete = false }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin' | 'account'; allowIncomplete?: boolean }) {
   const { session, sessionLoading, sessionError, refresh, signout } = useAuth();
   const [path, nav] = useLocation();
   const ok = !!session?.authenticated && session.verified;

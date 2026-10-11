@@ -5,6 +5,18 @@ import { isQuickLoginEnabled, quickLoginNotFound } from './quick-login-lock';
 
 export type Guard = 'public' | 'public:quick-login' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: '/account/profile', guard: 'auth' },
+  { method: 'PATCH', path: '/account/profile', guard: 'auth' },
+  { method: 'POST', path: '/account/password', guard: 'auth' },
+  { method: 'POST', path: '/account/email', guard: 'auth' },
+  { method: 'DELETE', path: '/account/email', guard: 'auth' },
+  { method: 'POST', path: '/account/photo', guard: 'auth' },
+  { method: 'DELETE', path: '/account/photo', guard: 'auth' },
+  { method: 'GET', path: /^\/account\/users\/[^/]+\/photo$/, guard: 'auth' },
+  { method: 'GET', path: /^\/admin\/users\/[^/]+\/profile$/, guard: 'admin' },
+  { method: 'PATCH', path: /^\/admin\/users\/[^/]+\/profile$/, guard: 'admin' },
+  { method: 'POST', path: /^\/admin\/users\/[^/]+\/(email|photo|password-reset)$/, guard: 'admin' },
+  { method: 'DELETE', path: /^\/admin\/users\/[^/]+\/(email|photo)$/, guard: 'admin' },
   {method:'GET',path:'/admin/schedule/extras',guard:'admin'},
   {method:'POST',path:'/admin/schedule/standard-grid',guard:'admin'},
   {method:'POST',path:'/admin/schedule/blocks',guard:'admin'},

@@ -8,6 +8,403 @@
 import * as zod from 'zod';
 
 
+export const GetAccountProfileResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const updateAccountProfileBodyFirstNameMax = 100;
+
+export const updateAccountProfileBodyLastNameMax = 100;
+
+export const updateAccountProfileBodyPhoneMax = 50;
+
+
+
+export const UpdateAccountProfileBody = zod.object({
+  "firstName": zod.string().min(1).max(updateAccountProfileBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(updateAccountProfileBodyLastNameMax),
+  "phone": zod.string().max(updateAccountProfileBodyPhoneMax).nullable()
+})
+
+export const UpdateAccountProfileResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const requestAccountEmailChangeBodyEmailMax = 254;
+
+export const requestAccountEmailChangeBodyCurrentPasswordMax = 200;
+
+
+
+export const RequestAccountEmailChangeBody = zod.object({
+  "email": zod.string().email().max(requestAccountEmailChangeBodyEmailMax),
+  "currentPassword": zod.string().min(1).max(requestAccountEmailChangeBodyCurrentPasswordMax).optional()
+})
+
+export const RequestAccountEmailChangeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const CancelAccountEmailChangeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const changeAccountPasswordBodyCurrentPasswordMax = 200;
+
+export const changeAccountPasswordBodyPasswordMin = 8;
+export const changeAccountPasswordBodyPasswordMax = 200;
+
+export const changeAccountPasswordBodyConfirmPasswordMax = 200;
+
+
+
+export const ChangeAccountPasswordBody = zod.object({
+  "currentPassword": zod.string().min(1).max(changeAccountPasswordBodyCurrentPasswordMax),
+  "password": zod.string().min(changeAccountPasswordBodyPasswordMin).max(changeAccountPasswordBodyPasswordMax),
+  "confirmPassword": zod.string().max(changeAccountPasswordBodyConfirmPasswordMax)
+})
+
+export const ChangeAccountPasswordResponse = zod.object({
+  "ok": zod.boolean(),
+  "nextPath": zod.string()
+})
+
+
+export const UploadAccountPhotoBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const UploadAccountPhotoResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const RemoveAccountPhotoResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const GetPrivateAccountPhotoParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const GetPrivateAccountPhotoResponse = zod.unknown()
+
+
+export const GetManagedAccountProfileParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const GetManagedAccountProfileResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const UpdateManagedAccountProfileParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const updateManagedAccountProfileBodyFirstNameMax = 100;
+
+export const updateManagedAccountProfileBodyLastNameMax = 100;
+
+export const updateManagedAccountProfileBodyPhoneMax = 50;
+
+
+
+export const UpdateManagedAccountProfileBody = zod.object({
+  "firstName": zod.string().min(1).max(updateManagedAccountProfileBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(updateManagedAccountProfileBodyLastNameMax),
+  "phone": zod.string().max(updateManagedAccountProfileBodyPhoneMax).nullable()
+})
+
+export const UpdateManagedAccountProfileResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const RequestManagedAccountEmailChangeParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const requestManagedAccountEmailChangeBodyEmailMax = 254;
+
+export const requestManagedAccountEmailChangeBodyCurrentPasswordMax = 200;
+
+
+
+export const RequestManagedAccountEmailChangeBody = zod.object({
+  "email": zod.string().email().max(requestManagedAccountEmailChangeBodyEmailMax),
+  "currentPassword": zod.string().min(1).max(requestManagedAccountEmailChangeBodyCurrentPasswordMax).optional()
+})
+
+export const RequestManagedAccountEmailChangeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const CancelManagedAccountEmailChangeParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const CancelManagedAccountEmailChangeResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const UploadManagedAccountPhotoParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const UploadManagedAccountPhotoBody = zod.object({
+  "file": zod.instanceof(Blob)
+})
+
+export const UploadManagedAccountPhotoResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const RemoveManagedAccountPhotoParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const RemoveManagedAccountPhotoResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}),
+  "photoUrl": zod.string().nullable(),
+  "pendingEmail": zod.string().nullable(),
+  "pendingEmailExpiresAt": zod.coerce.date().nullable(),
+  "message": zod.string().optional(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
+export const SendManagedPasswordResetParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const SendManagedPasswordResetResponse = zod.object({
+  "ok": zod.boolean(),
+  "message": zod.string(),
+  "deliveryFailed": zod.boolean().optional()
+})
+
+
 export const LoadStandardGridResponse = zod.object({
   "created": zod.number().int(),
   "skipped": zod.number().int()

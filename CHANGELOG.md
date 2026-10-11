@@ -2,6 +2,20 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## Unreleased — My Profile and staff account management
+
+### Added
+- My Profile for administrators and volunteers, including verified volunteers still onboarding.
+- Name/phone editing, current-password-protected email changes, password changes and private profile photos.
+- Staff account editing on Team and volunteer detail, with password-reset links rather than staff setting passwords.
+
+### Security
+- New email addresses require verification; the current address remains usable until confirmation.
+- Confirmed email and password changes close existing sessions.
+- Photos are decoded and re-encoded as PNG, resized, stripped of metadata and served only to their owner or staff.
+- Test administrators cannot use these account-editing controls to change real accounts.
+- Two nullable columns added; production schema remains managed by Replit Publish. No startup migration or production data backfill.
+
 ## v1.1.0 — Community Care Team refresh
 ### Added
 - Five built-in test personas, quick-login role switching, persistent TEST indicators, suppressed delivery and QA-only reset.

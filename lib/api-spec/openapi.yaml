@@ -11,6 +11,180 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /account/profile:
+    get:
+      operationId: getAccountProfile
+      responses:
+        "200":
+          description: Own account settings; no private storage keys or credentials.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    patch:
+      operationId: updateAccountProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountDetails" }
+      responses:
+        "200":
+          description: Saved account details.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /account/email:
+    post:
+      operationId: requestAccountEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountEmailChange" }
+      responses:
+        "200":
+          description: Verification requested; primary email unchanged until confirmed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    delete:
+      operationId: cancelAccountEmailChange
+      responses:
+        "200":
+          description: Pending change cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /account/password:
+    post:
+      operationId: changeAccountPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountPasswordChange" }
+      responses:
+        "200":
+          description: Password changed; all sessions invalidated.
+          content:
+            application/json:
+              schema: { type: object, required: [ok, nextPath], properties: { ok: { type: boolean }, nextPath: { type: string } } }
+  /account/photo:
+    post:
+      operationId: uploadAccountPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } }
+      responses:
+        "200":
+          description: Private PNG photo saved; JPEG/PNG/WebP input, maximum 3 MB, metadata stripped.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    delete:
+      operationId: removeAccountPhoto
+      responses:
+        "200":
+          description: Photo removed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /account/users/{userId}/photo:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getPrivateAccountPhoto
+      responses:
+        "200":
+          description: Authenticated PNG; accessible only by owner or administrator.
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+  /admin/users/{userId}/profile:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getManagedAccountProfile
+      responses:
+        "200":
+          description: Administrator-managed account settings.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    patch:
+      operationId: updateManagedAccountProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountDetails" }
+      responses:
+        "200":
+          description: Saved without changing role or activation.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /admin/users/{userId}/email:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: requestManagedAccountEmailChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AccountEmailChange" }
+      responses:
+        "200":
+          description: New email verification requested; self edits still require current password.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    delete:
+      operationId: cancelManagedAccountEmailChange
+      responses:
+        "200":
+          description: Pending email change cancelled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /admin/users/{userId}/photo:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: uploadManagedAccountPhoto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { type: object, required: [file], properties: { file: { type: string, format: binary } } }
+      responses:
+        "200":
+          description: Team member photo uploaded privately.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+    delete:
+      operationId: removeManagedAccountPhoto
+      responses:
+        "200":
+          description: Team member photo removed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AccountProfile" }
+  /admin/users/{userId}/password-reset:
+    parameters:
+      - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: sendManagedPasswordReset
+      responses:
+        "200":
+          description: Reset link sent via central email service; test-account mail suppressed.
+          content:
+            application/json:
+              schema: { type: object, required: [ok, message], properties: { ok: { type: boolean }, message: { type: string }, deliveryFailed: { type: boolean } } }
   /admin/schedule/standard-grid:
     post:
       operationId: loadStandardGrid
@@ -2284,6 +2458,39 @@ components:
       properties:
         enabled: { type: boolean }
         accounts: { type: array, items: { $ref: '#/components/schemas/TestAccountEntry' } }
+    AccountProfile:
+      type: object
+      required: [user, photoUrl, pendingEmail, pendingEmailExpiresAt]
+      properties:
+        user: { $ref: "#/components/schemas/PublicUser" }
+        photoUrl: { type: ["string", "null"] }
+        pendingEmail: { type: ["string", "null"] }
+        pendingEmailExpiresAt: { type: ["string", "null"], format: date-time }
+        message: { type: string }
+        deliveryFailed: { type: boolean }
+    AccountDetails:
+      type: object
+      additionalProperties: false
+      required: [firstName, lastName, phone]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        phone: { type: ["string", "null"], maxLength: 50 }
+    AccountEmailChange:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        currentPassword: { type: string, minLength: 1, maxLength: 200 }
+    AccountPasswordChange:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, password, confirmPassword]
+      properties:
+        currentPassword: { type: string, minLength: 1, maxLength: 200 }
+        password: { type: string, minLength: 8, maxLength: 200 }
+        confirmPassword: { type: string, maxLength: 200 }
     PublicUser:
       type: object
       required: [id, email, firstName, lastName, phone, role, emailVerifiedAt, isActive, lastLoginAt, createdAt, updatedAt]

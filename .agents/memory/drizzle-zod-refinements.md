@@ -21,6 +21,12 @@ SQL operators and their table types must resolve to the same ORM instance across
 
 **How to apply:** scripts working with database-exported tables should obtain operators from the database package too. Do not hide cross-instance SQL errors with casts or assume identical version numbers imply identical peer resolutions.
 
+After package installation, matching ORM symlinks alone may not clear private-member type errors: previously emitted workspace declarations can retain the old peer resolution.
+
+**Why:** an unrelated image dependency installation re-resolved optional peers, and old declarations continued reporting two ORM instances even after the peer graph was aligned.
+
+**How to apply:** compare the consuming and schema packages' ORM resolutions, align their optional peers, then force a workspace declaration rebuild before considering application-wide source changes.
+
 Multipart code generation also needs Node types when it emits `z.instanceof(Blob)` in server-only validators.
 
 **Why:** generated binary upload validators refer to the runtime Blob global, but a server tsconfig without Node types cannot resolve its declaration. Adding browser DOM libraries masks the missing server type context.

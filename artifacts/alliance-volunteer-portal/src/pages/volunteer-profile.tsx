@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getGetMeQueryKey, getGetVolunteerDashboardQueryKey, useChangeVolunteerPassword, useUpdateVolunteerProfile, type Me,
+  getGetMeQueryKey, getGetVolunteerDashboardQueryKey, useUpdateVolunteerProfile, type Me,
 } from '@workspace/api-client-react';
 import { formatPhone, phoneDigits, normalizeVolunteerStatus, profileCompletionSchema, volunteerProfileEditSchema } from '@workspace/shared/profileFields';
 import { ProfileFields, type ProfileKey, type ProfileValues } from '@/components/profile-fields';
 import { buildOnboardingAnswersSchema, onboardingQuestions } from '@workspace/shared/onboardingQuestions';
 import { appConfig } from '@workspace/shared/appConfig';
 import { Button, Card } from '@/components/brand-system';
-import { Field, Notice, PasswordField } from '@/auth/auth-ui';
+import { Notice } from '@/auth/auth-ui';
 import { readError, useAuth } from '@/auth/auth-context';
-import { VolunteerPage, volunteerRoute } from '@/components/volunteer-ui';
+import { VolunteerPage } from '@/components/volunteer-ui';
+import { AccountEditor } from '@/components/account-editor';
+import { RequireVerified } from '@/auth/guards';
+import { isProfileComplete } from '@/lib/profile-complete';
+import { AppLayout } from '@/components/brand-system';
+import { Link } from 'wouter';
 import { QuestionField } from '@/pages/onboarding';
 
 type Errors = Record<string, string>;
@@ -22,58 +26,6 @@ const issues = (list: { path: PropertyKey[]; message: string }[]): Errors => {
 };
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 const date = (iso: string | null | undefined) => iso ? new Intl.DateTimeFormat('en-US', { timeZone: appConfig.timezone, dateStyle: 'long' }).format(new Date(iso)) : null;
-
-function PasswordSection() {
-  const auth = useAuth();
-  const [, nav] = useLocation();
-  const m = useChangeVolunteerPassword({ request: auth.request });
-  const [f, setF] = useState({ currentPassword: '', password: '', confirmPassword: '' });
-  const [err, setErr] = useState<Errors>({});
-  const [busy, setBusy] = useState(false);
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const x: Errors = {};
-    if (!f.currentPassword) x.currentPassword = 'Enter your current password';
-    if (f.password.length < 8) x.password = 'Use at least 8 characters';
-    else if (new TextEncoder().encode(f.password).length > 72) x.password = 'This password is too long. Try a shorter password with at least 8 characters.';
-    if (f.confirmPassword !== f.password) x.confirmPassword = 'Passwords do not match';
-    setErr(x);
-    if (Object.keys(x).length) return;
-    setBusy(true);
-    try {
-      await m.mutateAsync({ data: f });
-      setF({ currentPassword: '', password: '', confirmPassword: '' });
-      m.reset();
-      // Drop the entire authenticated client, not just /me: a stale public-page
-      // guard can otherwise navigate back to the dashboard after session revocation.
-      window.location.assign(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/signin?password-changed=1`);
-    } catch (e2) {
-      const r = readError(e2, "We couldn't change your password.");
-      setErr(r.status === 400 && /current password/i.test(r.message) ? { currentPassword: r.message } : { form: r.message });
-      if (r.status === 401 || r.status === 403) {
-        await auth.refresh().catch(() => undefined);
-        nav(r.nextPath ?? '/signin', { replace: true });
-      }
-      setBusy(false);
-    }
-  }
-  return (
-    <Card>
-      <h2 className="alliance-display">Password</h2>
-      <p className="mt-2 text-sm">Changing your password signs you out everywhere.</p>
-      <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-4" data-testid="form-password">
-        <input type="email" name="username" autoComplete="username" value={auth.session?.email ?? ''} readOnly tabIndex={-1} aria-label="Account email" className="sr-only" />
-        {err.form && <Notice>{err.form}</Notice>}
-        <fieldset disabled={busy} className="contents">
-        <PasswordField label="Current password" autoComplete="current-password" value={f.currentPassword} error={err.currentPassword} onChange={e => setF({ ...f, currentPassword: e.target.value })} data-testid="input-current-password" />
-        <PasswordField label="New password" autoComplete="new-password" hint="Use at least 8 characters." value={f.password} error={err.password} onChange={e => setF({ ...f, password: e.target.value })} data-testid="input-new-password" />
-        <PasswordField label="Confirm new password" autoComplete="new-password" value={f.confirmPassword} error={err.confirmPassword} onChange={e => setF({ ...f, confirmPassword: e.target.value })} data-testid="input-confirm-password" />
-        <Button type="submit" disabled={busy} data-testid="button-change-password">{busy ? 'Changing password' : 'Change password'}</Button>
-        </fieldset>
-      </form>
-    </Card>
-  );
-}
 
 function ProfileForm({ me }: { me: Me }) {
   const auth = useAuth();
@@ -151,9 +103,31 @@ function ProfileForm({ me }: { me: Me }) {
           </fieldset>
         </form>
       </Card>
-      <PasswordSection />
+      <AccountEditor key={me.user.id} userId={me.user.id} showDetails={false} />
     </VolunteerPage>
   );
 }
 
-export const Profile = volunteerRoute(me => <ProfileForm key={me.user.id} me={me} />);
+function AccountOnly({ me, admin }: { me: Me; admin: boolean }) {
+  return (
+    <AppLayout role={admin ? 'admin' : 'volunteer'}>
+      <div className="mx-auto max-w-3xl">
+        <p className="alliance-label">{admin ? 'Administration' : 'Your profile'}</p>
+        <h1 className="alliance-display mt-3">My Profile</h1>
+        <p className="mb-6 mt-2">Update how Alliance staff and families reach you, and keep your sign-in secure.</p>
+        {!admin && (
+          <div className="mb-6"><Notice kind="info">Your volunteer onboarding isn't finished yet. You can manage your account here, then <Link href="/onboarding" className="font-bold underline underline-offset-4" data-testid="link-finish-onboarding">finish onboarding</Link> to complete your volunteer profile.</Notice></div>
+        )}
+        <AccountEditor key={me.user.id} userId={me.user.id} />
+      </div>
+    </AppLayout>
+  );
+}
+
+export const Profile = () => (
+  <RequireVerified area="account" allowIncomplete>
+    {me => me.role === 'admin' || !isProfileComplete(me)
+      ? <AccountOnly me={me} admin={me.role === 'admin'} />
+      : <AppLayout role="volunteer"><ProfileForm key={`${me.user.id}|${me.user.firstName}|${me.user.lastName}|${me.user.phone ?? ''}`} me={me} /></AppLayout>}
+  </RequireVerified>
+);

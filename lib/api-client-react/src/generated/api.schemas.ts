@@ -1450,6 +1450,61 @@ export interface TestAccountsOverview {
   accounts: TestAccountEntry[];
 }
 
+export interface AccountProfile {
+  user: PublicUser;
+  /** @nullable */
+  photoUrl: string | null;
+  /** @nullable */
+  pendingEmail: string | null;
+  /** @nullable */
+  pendingEmailExpiresAt: string | null;
+  message?: string;
+  deliveryFailed?: boolean;
+}
+
+export interface AccountDetails {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  firstName: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  lastName: string;
+  /**
+     * @maxLength 50
+     * @nullable
+     */
+  phone: string | null;
+}
+
+export interface AccountEmailChange {
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  currentPassword?: string;
+}
+
+export interface AccountPasswordChange {
+  /**
+     * @minLength 1
+     * @maxLength 200
+     */
+  currentPassword: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  password: string;
+  /** @maxLength 200 */
+  confirmPassword: string;
+}
+
 export type ProductionReadinessStatus = typeof ProductionReadinessStatus[keyof typeof ProductionReadinessStatus];
 
 
@@ -1503,6 +1558,25 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type ChangeAccountPassword200 = {
+  ok: boolean;
+  nextPath: string;
+};
+
+export type UploadAccountPhotoBody = {
+  file: Blob | File;
+};
+
+export type UploadManagedAccountPhotoBody = {
+  file: Blob | File;
+};
+
+export type SendManagedPasswordReset200 = {
+  ok: boolean;
+  message: string;
+  deliveryFailed?: boolean;
+};
 
 export type LoadStandardGrid200 = {
   created: number;

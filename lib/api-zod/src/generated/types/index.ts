@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accountDetails';
+export * from './accountEmailChange';
+export * from './accountPasswordChange';
+export * from './accountProfile';
 export * from './accountStatusInput';
 export * from './acknowledgeAgreement200';
 export * from './adminAssignedShift';
@@ -33,6 +37,7 @@ export * from './authResult';
 export * from './authSession';
 export * from './authSessionRole';
 export * from './authSuccessResponse';
+export * from './changeAccountPassword200';
 export * from './coordinatorActivity';
 export * from './coordinatorBlock';
 export * from './coordinatorBlockKind';
@@ -156,6 +161,7 @@ export * from './scheduleSlotOverlapsItem';
 export * from './scheduleSlotUpdate';
 export * from './scheduleSlotUpdateDeactivation';
 export * from './scheduleSlotUpdateDeactivationMode';
+export * from './sendManagedPasswordReset200';
 export * from './shiftOccurrence';
 export * from './shiftOccurrenceKind';
 export * from './signinInput';
@@ -170,6 +176,8 @@ export * from './testReminderInput';
 export * from './testReminderResult';
 export * from './testReminderResultStatus';
 export * from './tokenInput';
+export * from './uploadAccountPhotoBody';
+export * from './uploadManagedAccountPhotoBody';
 export * from './volunteerActivity';
 export * from './volunteerActivityDetails';
 export * from './volunteerAvailableSlot';

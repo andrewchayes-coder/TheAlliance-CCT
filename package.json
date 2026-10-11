@@ -15,6 +15,7 @@
   },
   "private": true,
   "dependencies": {
+    "@opentelemetry/api": "1.9.1",
     "@replit/connectors-sdk": "^0.4.3"
   },
   "devDependencies": {

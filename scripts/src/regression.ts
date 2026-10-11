@@ -33,8 +33,11 @@ try {
   }
   const check = await run(['tsx', '-e', "import('@workspace/db').then(async ({pool}) => { const r = await pool.query('SELECT current_schema() AS s'); await pool.end(); if (r.rows[0].s !== process.env.QA_REGRESSION_SCHEMA) throw new Error('Regression database isolation failed.'); })"]);
   if (check) throw new Error('Refusing to run tests without database isolation.');
-  await run(['vitest', 'run']);
-  await run(['tsx', '--test', '--test-concurrency=1', 'src/auth/auth.test.ts', 'src/email.test.ts',
+  const onlyFiles = process.argv.slice(2);
+  if (onlyFiles.some(file => !/^src\/[a-zA-Z0-9_./-]+\.test\.ts$/.test(file) || file.includes('..')))
+    throw new Error('Only API test files under src/ may be selected.');
+  await run(['vitest', 'run', ...onlyFiles]);
+  if (!onlyFiles.length) await run(['tsx', '--test', '--test-concurrency=1', 'src/auth/auth.test.ts', 'src/email.test.ts',
     'src/onboarding.test.ts', 'src/volunteer.test.ts', 'src/admin-roster.test.ts']);
 } finally {
   if (created) await pool.query(`DROP SCHEMA ${quoted} CASCADE`);

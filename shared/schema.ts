@@ -42,6 +42,7 @@ export const usersTable = pgTable('users', {
   isTestAccount: boolean('is_test_account').notNull().default(false),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   googleSubject: text('google_subject'),
+  profilePhotoKey: text('profile_photo_key'),
   sessionVersion: integer('session_version').notNull().default(0),
   ...timestamps(),
 }, table => [
@@ -252,6 +253,7 @@ export const authTokensTable = pgTable('auth_tokens', {
   userId: uuid('user_id').notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
   type: authTokenType('type').notNull(),
   tokenHash: text('token_hash').notNull(),
+  pendingEmail: text('pending_email'),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   usedAt: timestamp('used_at', { withTimezone: true }),
   ...timestamps(),
@@ -395,7 +397,7 @@ export const volunteerProfilePublicColumns = {
 export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true }).transform(profile => ({
   ...profile, status: normalizeVolunteerStatus(profile.status),
 }));
-export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true });
+export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true, profilePhotoKey: true });
 export function toVolunteerProfilePublic(profile: VolunteerProfile) {
   return volunteerProfilePublicSchema.parse(profile);
 }

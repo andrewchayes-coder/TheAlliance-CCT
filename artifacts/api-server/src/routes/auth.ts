@@ -1,6 +1,7 @@
 import { Router, type IRouter } from 'express';
 import { and, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { db, usersTable, volunteerProfilesTable, authTokensTable, sessionsTable } from '@workspace/db';
+import { recordProfileEdit } from '../server/account-profile';
 import {
   GetAuthSessionResponse, SignupBody, SignupResponse, SigninBody, SigninResponse,
   ResendVerificationResponse, VerifyEmailBody, VerifyEmailResponse,
@@ -156,15 +157,25 @@ router.post('/verify', async (req, res): Promise<void> => {
       const token = await claimToken(tx, parsed.data.token, 'email_verify');
       if (!token) throw new InvalidLink();
       const [verified] = await tx.update(usersTable).set({
-        emailVerifiedAt: sql`coalesce(${usersTable.emailVerifiedAt}, now())`,
-        lastLoginAt: new Date(), sessionVersion: sql`${usersTable.sessionVersion} + 1`,
-      }).where(and(eq(usersTable.id, token.userId), eq(usersTable.role, 'volunteer'), eq(usersTable.isActive, true))).returning();
+        ...(token.pendingEmail ? { email: token.pendingEmail } : {}),
+        emailVerifiedAt: token.pendingEmail ? new Date() : sql`coalesce(${usersTable.emailVerifiedAt}, now())`,
+        lastLoginAt: new Date(), updatedAt: new Date(), sessionVersion: sql`${usersTable.sessionVersion} + 1`,
+      }).where(and(eq(usersTable.id, token.userId), token.pendingEmail ? undefined : eq(usersTable.role, 'volunteer'), eq(usersTable.isActive, true))).returning();
       if (!verified) throw new InvalidLink();
+      if (token.pendingEmail) {
+        await recordProfileEdit(tx, verified.id, verified.id, ['email'], 'email_changed');
+        await tx.update(authTokensTable).set({ usedAt: new Date() }).where(and(eq(authTokensTable.userId, verified.id), isNull(authTokensTable.usedAt)));
+        await tx.delete(sessionsTable).where(sql`${sessionsTable.sess}->>'userId' = ${verified.id}`);
+      }
       return verified;
     });
     await establishSession(req, user);
     res.json(VerifyEmailResponse.parse({ ok: true, email: user.email, nextPath: await accountPath(user) }));
   } catch (error) {
+    if ((error as { code?: string; cause?: { code?: string } }).code === '23505' ||
+      (error as { cause?: { code?: string } }).cause?.code === '23505') {
+      res.status(409).json({ error: 'That email address is now used by another account. Please request a different address.' }); return;
+    }
     if (!(error instanceof InvalidLink)) throw error;
     invalid();
   }

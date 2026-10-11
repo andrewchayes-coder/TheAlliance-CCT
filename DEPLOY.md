@@ -1,5 +1,21 @@
 # Community Care Team Volunteer Portal — production deployment
 
+## Account profiles update
+
+Publish applies two additive nullable columns: `users.profile_photo_key` and `auth_tokens.pending_email`.
+The reference SQL is `lib/db/migrations/0004_account_profiles.sql`; do not run it at startup or against production.
+No production data backfill is needed.
+
+Profile photos use the existing private Object Storage bucket, not public asset URLs. PNG/JPEG/WebP input is limited
+to 3 MB and converted to a metadata-free, maximum 512×512 PNG. Staff and owners access photos through authenticated API routes.
+
+Before release, check My Profile as both roles, name/phone persistence, photo upload/removal, verified email change,
+password change/session logout, and Team/volunteer account editing plus reset links. Test-account emails remain suppressed;
+test administrators can only write to test accounts through these new controls. For real-user UAT, leave public quick login off.
+
+Email changes retain the current verified address until the new address is confirmed. Reset links go to the current
+verified address; staff never see or set a team member’s password. Disabled/unverified accounts must be activated/verified first.
+
 ## Fixed profile / three-status release
 
 Before Publish, an authorized operator must add the enum value in the production Database tool as a separate committed statement:
