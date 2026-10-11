@@ -7,6 +7,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
 - Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
 ### Changed
+- Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the old training/applicant identities in place, with updated fake profile defaults and labels.
 - Simplified volunteer workflow to Onboarding, Active and Inactive. Legacy enum values/data remain intact and read as Onboarding.
 - Disabled in-app certification, background-check and agreement tracking by default; extra onboarding questions are empty. Training and paperwork are handled by Alliance staff.
 - Private profile fields are available only to their owner and staff. Volunteer DOB/start-date changes are rejected.

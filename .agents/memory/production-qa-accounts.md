@@ -26,3 +26,14 @@ availability of the normal application when the optional QA key is misconfigured
 
 **How to apply:** Preserve the production enable/unlock gates when investigating
 missing QA controls. Do not bypass them just to make a button appear.
+
+Persona replacements must reuse the existing synthetic identity and history,
+not create a second user. Ordinary preparation preserves saved QA progress;
+an explicit reset restores the persona's starting state.
+
+**Why:** The user requires exactly five test users and no orphaned identities.
+Repeated account switching should not erase the profile or status just tested.
+
+**How to apply:** Perform a one-time identity update for a replaced persona.
+If both identities already exist, stop for review rather than automatically
+merging histories or deleting users. Never convert a non-test account.

@@ -6,7 +6,7 @@ import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 
 const FALLBACK_LABELS: Record<string, string> = {
   admin: 'Admin', 'vol-active': 'Volunteer · Active', 'vol-active-noshift': 'Volunteer · Active, no shift',
-  'vol-training': 'Volunteer · Onboarding (profile complete)', 'vol-applicant': 'Volunteer · Onboarding (new)',
+  'vol-onboarding-ready': 'Volunteer · Onboarding, ready to activate', 'vol-onboarding-new': 'Volunteer · Onboarding, new',
 };
 const personaLabel = (key: string, fallback: string) => FALLBACK_LABELS[key] ?? fallback;
 

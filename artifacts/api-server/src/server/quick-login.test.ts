@@ -16,7 +16,8 @@ import { GetQuickLoginStatusResponse, SigninResponse } from '@workspace/api-zod'
 
 vi.hoisted(() => { process.env.NODE_ENV = 'development'; process.env.APP_ORIGIN ||= 'https://qa.example.invalid'; });
 const tag = `quick-${randomUUID()}`;
-const personas = testAccounts.map(p => ({ ...p, email: `${tag}-${p.key}@example.invalid` }));
+const personas = testAccounts.map(p => ({ ...p, email: `${tag}-${p.key}@example.invalid`,
+  ...('legacyEmail' in p ? {legacyEmail: `${tag}-${p.legacyEmail}`} : {}) }));
 const configured = { NODE_ENV: 'production', QUICK_LOGIN_ENABLED: 'true', QUICK_LOGIN_KEY: 'fixture-key-not-a-real-secret-0123456789',
   SESSION_SECRET: 'fixture-signing-secret-not-a-real-secret' };
 const ip = `198.18.${randomInt(1, 254)}.${randomInt(1, 254)}`;
@@ -105,6 +106,9 @@ it('sets the signed secure 30-day cookie and returns only public persona metadat
   expect(status.status).toBe(200);
   const metadata = GetQuickLoginStatusResponse.parse(await status.json());
   expect(metadata.enabled).toBe(true); expect(metadata.production).toBe(true); expect(metadata.personas).toHaveLength(5);
+  expect(metadata.personas.find(p => p.key === 'vol-onboarding-ready')?.label).toBe('Volunteer · Onboarding, ready to activate');
+  expect(metadata.personas.find(p => p.key === 'vol-onboarding-new')?.label).toBe('Volunteer · Onboarding, new');
+  expect(metadata.personas.some(p => ['vol-training','vol-applicant'].includes(p.key))).toBe(false);
   for (const persona of metadata.personas) expect(Object.keys(persona).sort()).toEqual(['description', 'key', 'label', 'role']);
   expect(JSON.stringify(metadata).includes('@')).toBe(false);
   const locked = await request('/qa/lock', { headers: { cookie } });
@@ -125,7 +129,7 @@ it('requires CSRF, rotates sessions, routes every persona normally, audits witho
     expect((await post({ persona: persona.key }, { 'x-csrf-token': 'wrong' })).status).toBe(403);
     const login = await post({ persona: persona.key });
     expect(login.status).toBe(200);
-    expect(SigninResponse.parse(await login.json()).nextPath).toBe(persona.key === 'admin' ? '/admin' : persona.key === 'vol-applicant' ? '/onboarding' : '/dashboard');
+    expect(SigninResponse.parse(await login.json()).nextPath).toBe(persona.key === 'admin' ? '/admin' : persona.key === 'vol-onboarding-new' ? '/onboarding' : '/dashboard');
     const next = cookiePart(login, 'alliance.sid')!;
     expect(next !== session).toBe(true);
     const check = await request('/api/auth/session', { headers: { cookie: next } });

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
   messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable } from '@workspace/db';
-import { testAccounts } from '@workspace/shared/testAccounts';
+import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
 import { createTestAccountService, isQuickLoginEnabled } from './testAccounts';
 import { previewMessage } from './messaging';
 import { createEmailService } from '../email';
@@ -15,11 +15,24 @@ vi.hoisted(() => {
   process.env.APP_ORIGIN = 'https://qa-fixture.example.invalid';
 });
 const tag = `qa-fixture-${randomUUID()}`;
-const personas = testAccounts.map(p => ({ ...p, email: `${tag}-${p.key}@example.invalid` }));
+const personas = testAccounts.map(p => ({ ...p, email: `${tag}-${p.key}@example.invalid`,
+  ...('legacyEmail' in p ? {legacyEmail: `${tag}-${p.legacyEmail}`} : {}) }));
+const ownedEmails = [...personas.flatMap(p => [p.email, ...(p.legacyEmail ? [p.legacyEmail] : [])]),
+  `${tag}-ordinary@example.invalid`];
 const service = createTestAccountService(personas, { NODE_ENV: 'production' });
 let ids: string[] = [], profiles: string[] = [];
 let ordinary: string, slotId: string;
+const legacyIds = new Map<string,string>();
 beforeAll(async () => {
+  for (const persona of personas) {
+    if (!persona.legacyEmail) continue;
+    const [legacy] = await db.insert(usersTable).values({email:persona.legacyEmail,passwordHash:'unusable-fixture-hash',
+      firstName:'Test',lastName:'Legacy',role:'volunteer',isTestAccount:true,emailVerifiedAt:new Date(),phone:'9165550100'}).returning();
+    legacyIds.set(persona.key,legacy!.id);
+    await db.insert(volunteerProfilesTable).values({userId:legacy!.id,
+      status:persona.key === 'vol-onboarding-ready' ? 'in_training' : 'applicant',
+      certificationStatus:'in_progress',backgroundCheckStatus:'pending',agreementVersion:'legacy-retained'}); 
+  }
   const [user] = await db.insert(usersTable).values({ email: `${tag}-ordinary@example.invalid`, passwordHash: 'unusable-fixture-hash',
     firstName: 'Fixture', lastName: tag, isActive: true, emailVerifiedAt: new Date() }).returning();
   ordinary = user!.id;
@@ -28,8 +41,7 @@ beforeAll(async () => {
   slotId = slot!.id;
 });
 afterAll(async () => {
-  const owned = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.email,
-    [...personas.map(p => p.email), `${tag}-ordinary@example.invalid`]));
+  const owned = await db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.email, ownedEmails));
   ids = owned.map(u => u.id);
   const ps = await db.select({ id: volunteerProfilesTable.id }).from(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, ids));
   profiles = ps.map(p => p.id);
@@ -46,6 +58,24 @@ afterAll(async () => {
 });
 it('ensures twice without duplicates, repairs personas, and preserves ordinary users', async () => {
   const first = await service.ensure();
+  for (const [key,id] of legacyIds) expect(first.find(p => p.key === key)?.userId).toBe(id);
+  const ready = first.find(p => p.key === 'vol-onboarding-ready')!;
+  const fresh = first.find(p => p.key === 'vol-onboarding-new')!;
+  const [readyProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id,ready.profileId!));
+  expect(readyProfile).toMatchObject({...testProfileFields,status:'onboarding',startDate:null,
+    certificationStatus:'in_progress',backgroundCheckStatus:'pending',agreementVersion:'legacy-retained'});
+  expect(readyProfile?.onboardingCompletedAt).not.toBeNull();
+  const [newProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id,fresh.profileId!));
+  expect(newProfile).toMatchObject({status:'onboarding',onboardingCompletedAt:null,startDate:null});
+  for (const field of Object.keys(testProfileFields)) expect(newProfile?.[field as keyof typeof newProfile]).toBeNull();
+  const [newUser] = await db.select().from(usersTable).where(eq(usersTable.id,fresh.userId));
+  expect(newUser?.phone).toBeNull();
+  for (const key of ['vol-active','vol-active-noshift']) {
+    const identity = first.find(p => p.key === key)!;
+    const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id,identity.profileId!));
+    expect(profile).toMatchObject({...testProfileFields,status:'active'});
+    expect(profile?.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  }
   ids = first.map(p => p.userId);
   const active = first.find(p => p.key === 'vol-active')!;
   await db.update(usersTable).set({ role: 'admin', isActive: false, emailVerifiedAt: null }).where(eq(usersTable.id, active.userId));
@@ -54,18 +84,36 @@ it('ensures twice without duplicates, repairs personas, and preserves ordinary u
   expect(second.map(p => p.userId)).toEqual(ids);
   const rows = await db.select().from(usersTable).where(inArray(usersTable.email, personas.map(p => p.email)));
   expect(rows).toHaveLength(5);
-  expect(rows.every(u => u.isTestAccount && u.isActive && u.emailVerifiedAt && /^\$2[aby]\$12\$/.test(u.passwordHash))).toBe(true);
+  expect(rows.every(u => u.isTestAccount && u.emailVerifiedAt && /^\$2[aby]\$12\$/.test(u.passwordHash))).toBe(true);
+  expect(rows.find(u => u.id === active.userId)?.isActive).toBe(false);
   expect(rows.find(u => u.id === active.userId)?.role).toBe('volunteer');
+  const [unchanged] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id,active.profileId!));
+  expect(unchanged?.status).toBe('inactive');
+  expect(await db.select().from(usersTable).where(inArray(usersTable.email, ownedEmails.filter(e => e !== `${tag}-ordinary@example.invalid`)))).toHaveLength(5);
   const [real] = await db.select().from(usersTable).where(eq(usersTable.id, ordinary));
   expect(real?.isTestAccount).toBe(false); expect(real?.passwordHash).toBe('unusable-fixture-hash');
   const standing = await db.select().from(shiftAssignmentsTable).where(inArray(shiftAssignmentsTable.volunteerProfileId, second.flatMap(p => p.profileId ? [p.profileId] : [])));
   expect(standing).toHaveLength(0); // production never automatically takes capacity
 });
 it('refuses to take over a non-test email and rolls back the whole ensure', async () => {
-  const collision = personas.map(p => p.key === 'vol-applicant' ? { ...p, email: `${tag}-ordinary@example.invalid` } : p);
+  const collision = personas.map(p => p.key === 'vol-onboarding-new' ? { ...p, email: `${tag}-ordinary@example.invalid` } : p);
   await expect(createTestAccountService(collision, { NODE_ENV: 'production' }).ensure()).rejects.toThrow('non-test account');
   const [real] = await db.select().from(usersTable).where(eq(usersTable.id, ordinary));
   expect(real?.isTestAccount).toBe(false); expect(real?.firstName).toBe('Fixture');
+});
+it('stops atomically if both old and new test addresses already exist', async () => {
+  const ready = personas.find(p => p.key === 'vol-onboarding-ready')!;
+  const [duplicate] = await db.insert(usersTable).values({email:ready.legacyEmail!,passwordHash:'unusable-fixture-hash',
+    firstName:'Test',lastName:'Collision',role:'volunteer',isTestAccount:true}).returning();
+  try {
+    const before = await db.select().from(usersTable).where(eq(usersTable.id,ids[0]!));
+    await expect(service.ensure()).rejects.toThrow('Both old and new QA addresses exist');
+    const after = await db.select().from(usersTable).where(eq(usersTable.id,ids[0]!));
+    expect(after[0]?.passwordHash).toBe(before[0]?.passwordHash);
+  } finally {
+    await db.delete(usersTable).where(eq(usersTable.id,duplicate!.id));
+  }
+  expect(await db.select().from(usersTable).where(inArray(usersTable.email,personas.map(p => p.email)))).toHaveLength(5);
 });
 it('excludes QA from both blasts, allows a single QA recipient, and isolates roster/export counts', async () => {
   for (const audience of ['active', 'all'] as const) {
@@ -80,7 +128,7 @@ it('excludes QA from both blasts, allows a single QA recipient, and isolates ros
   const qa = all.filter(p => ids.includes(p.user.id));
   expect(filterRoster(qa, {})).toHaveLength(0);
   expect(filterRoster(qa, { showTestAccounts: 'true' })).toHaveLength(4);
-  expect(rosterSummary(qa)).toEqual({ applicant: 0, in_training: 0, active: 0, inactive: 0, needsAttention: 0 });
+  expect(rosterSummary(qa)).toEqual({ onboarding: 0, active: 0, inactive: 0, needsAttention: 0 });
   expect(rosterCsv(qa)).not.toContain(tag);
   expect(scheduleCsv(qa)).not.toContain(tag);
 });
@@ -115,6 +163,14 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   expect(await db.select().from(messageRecipientsTable).where(eq(messageRecipientsTable.recipientUserId, active.userId))).toHaveLength(0);
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id, active.profileId!));
   expect(profile).toMatchObject({ status: 'active', onboardingAnswers: {}, adminNotes: null, availabilityNotes: null });
+  expect(profile).toMatchObject(testProfileFields);
+  const [ready] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ids[3]!));
+  expect(ready).toMatchObject({...testProfileFields,status:'onboarding',
+    certificationStatus:'in_progress',backgroundCheckStatus:'pending',agreementVersion:'legacy-retained'});
+  const [fresh] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ids[4]!));
+  expect(fresh).toMatchObject({status:'onboarding',onboardingCompletedAt:null,startDate:null});
+  for (const field of Object.keys(testProfileFields)) expect(fresh?.[field as keyof typeof fresh]).toBeNull();
+  expect(await db.select().from(usersTable).where(inArray(usersTable.email,ownedEmails.filter(e => e !== `${tag}-ordinary@example.invalid`)))).toHaveLength(5);
   expect(await db.select().from(activityLogTable).where(and(eq(activityLogTable.volunteerProfileId, active.profileId!), eq(activityLogTable.action, 'test_accounts_reset')))).toHaveLength(1);
 });
 it('uses an explicit enable flag only in production', () => {
