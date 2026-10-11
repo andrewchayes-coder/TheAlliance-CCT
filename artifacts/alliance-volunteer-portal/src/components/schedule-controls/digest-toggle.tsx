@@ -34,9 +34,9 @@ export function DigestToggle() {
       {q.isError && <div className="mt-3"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-digest">Try again</Button></div>}
       {q.data && (
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button type="button" role="switch" aria-checked={on} onClick={toggle} disabled={upd.isPending} data-testid="switch-digest"
+          <button type="button" role="switch" aria-label="Daily coverage digest" aria-checked={on} onClick={toggle} disabled={upd.isPending} data-testid="switch-digest"
             className="inline-flex min-h-11 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg px-1 text-sm font-bold focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-60">
-            <span className={`relative h-6 w-11 shrink-0 rounded-full ${on ? 'bg-blue' : 'bg-navy-soft'}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${on ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+            <span aria-hidden="true" className={`relative h-6 w-11 shrink-0 overflow-hidden rounded-full ${on ? 'bg-blue' : 'bg-navy-soft'}`}><span className={`absolute left-0 top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${on ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
             <span className="shrink-0 whitespace-nowrap">{upd.isPending ? 'Saving...' : on ? 'On' : 'Off'}</span>
           </button>
           <p className="text-xs text-navy-soft" data-testid="text-last-digest">{q.data.lastDigestDate ? `Last daily check ${calDate(q.data.lastDigestDate)}` : 'No daily check yet'}</p>
