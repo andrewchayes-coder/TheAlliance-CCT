@@ -36,7 +36,8 @@ export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, per
   });
   api.use('/quick-login', csrfGuard);
   api.get('/quick-login/status', (_req, res) => {
-    res.json({ enabled: true, personas: personas.map(({ key, label, role, description }) => ({ key, label, role, description })) });
+    res.json({ enabled: true, production: env.NODE_ENV === 'production',
+      personas: personas.map(({ key, label, role, description }) => ({ key, label, role, description })) });
   });
   api.post('/quick-login', async (req, res) => {
     if (!await enforceLimit(req, res, 'qa-login-ip', req.ip ?? 'unknown', 3600, 30)) return;

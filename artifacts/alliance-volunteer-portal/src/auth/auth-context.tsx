@@ -2,11 +2,11 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getAuthSession, getGetAuthSessionQueryKey, getGetMeQueryKey, getListTeamUsersQueryKey, useAcceptAdminInvite, useInviteAdmin, useSetUserActiveStatus, useForgotPassword, useGetAuthSession,
-  useResendVerification, useResetPassword, useSignin, useSignout, useSignup, useVerifyEmail,
+  useResendVerification, useResetPassword, useSignin, useSignout, useSignup, useVerifyEmail, useQuickLogin, getGetQuickLoginStatusQueryKey,
   type AuthSession,
 } from '@workspace/api-client-react';
 
-export const FETCH_CREDS = { credentials: 'same-origin' as const };
+export const FETCH_CREDS = { credentials: 'same-origin' as const, cache: 'no-store' as const };
 export const FRESH_MS = 15_000;
 
 export type ApiFailure = { message: string; code?: string; nextPath?: string; retryAfterSeconds?: number; status?: number };
@@ -52,6 +52,7 @@ function useAuthValue() {
 
   const signupM = useSignup({ request });
   const signinM = useSignin({ request });
+  const quickLoginM = useQuickLogin({ request });
   const verifyM = useVerifyEmail({ request });
   const forgotM = useForgotPassword({ request });
   const resetM = useResetPassword({ request });
@@ -67,6 +68,20 @@ function useAuthValue() {
     },
     signin: async (data: Parameters<typeof signinM.mutateAsync>[0]['data']) => {
       const r = await signinM.mutateAsync({ data }); await refresh(); return r;
+    },
+    quickLogin: async (data: Parameters<typeof quickLoginM.mutateAsync>[0]['data']) => {
+      const r = await quickLoginM.mutateAsync({ data });
+      const retained = new Set<unknown>([getGetAuthSessionQueryKey()[0], getGetQuickLoginStatusQueryKey()[0]]);
+      const userScoped = { predicate: (query: { queryKey: readonly unknown[] }) => !retained.has(query.queryKey[0]) };
+      // Cancel requests from the previous identity before deleting their cached data.
+      await qc.cancelQueries();
+      await qc.invalidateQueries({ queryKey: getGetMeQueryKey(), refetchType: 'none' });
+      qc.removeQueries(userScoped);
+      try { await refresh(); } catch {
+        // A successful server switch must not leave the old user's state/CSRF token on screen.
+        window.location.assign(`${import.meta.env.BASE_URL.replace(/\/$/, '')}${r.nextPath || '/dashboard'}`);
+      }
+      return r;
     },
     verify: async (token: string) => {
       const r = await verifyM.mutateAsync({ data: { token } }); await refresh(); return r;

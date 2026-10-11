@@ -9,5 +9,7 @@ import type { QuickLoginStatusPersonasItem } from './quickLoginStatusPersonasIte
 
 export interface QuickLoginStatus {
   enabled: boolean;
+  /** Whether the API runs in production */
+  production?: boolean;
   personas: QuickLoginStatusPersonasItem[];
 }

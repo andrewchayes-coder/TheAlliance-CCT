@@ -2057,6 +2057,7 @@ components:
         verified: { type: boolean }
         agreementRequired: { type: boolean }
         currentAgreementVersion: { type: string }
+        testPersona: { type: string, description: 'Built-in QA persona key for the current test account only' }
         profile:
           anyOf:
             - $ref: "#/components/schemas/PublicVolunteerProfile"
@@ -2072,6 +2073,7 @@ components:
       required: [enabled, personas]
       properties:
         enabled: { type: boolean }
+        production: { type: boolean, description: 'Whether the API runs in production' }
         personas:
           type: array
           items:

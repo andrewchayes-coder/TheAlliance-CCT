@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicLayout, Button } from '@/components/brand-system';
 import { AuthHeading, Field, Notice, PasswordField, PublicAuthGate, SubmitButton } from '@/auth/auth-ui';
+import { QuickLoginCard } from '@/components/quick-login';
 import { readError, useAuth } from '@/auth/auth-context';
 
 function urlError(): string | null {
@@ -45,7 +46,7 @@ function Form() {
   }
 
   return (
-    <PublicLayout>
+    <PublicLayout below={<QuickLoginCard />}>
       <AuthHeading label="Welcome back" title="Sign in to your volunteer account">
         Good to see you again. Pick up where you left off.
       </AuthHeading>

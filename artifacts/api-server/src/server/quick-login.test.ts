@@ -104,7 +104,7 @@ it('sets the signed secure 30-day cookie and returns only public persona metadat
   const status = await request('/api/auth/quick-login/status', { headers: { cookie } });
   expect(status.status).toBe(200);
   const metadata = GetQuickLoginStatusResponse.parse(await status.json());
-  expect(metadata.enabled).toBe(true); expect(metadata.personas).toHaveLength(5);
+  expect(metadata.enabled).toBe(true); expect(metadata.production).toBe(true); expect(metadata.personas).toHaveLength(5);
   for (const persona of metadata.personas) expect(Object.keys(persona).sort()).toEqual(['description', 'key', 'label', 'role']);
   expect(JSON.stringify(metadata).includes('@')).toBe(false);
   const locked = await request('/qa/lock', { headers: { cookie } });
@@ -163,7 +163,9 @@ it('enforces the five-per-hour unlock limit', async () => {
 it('development is enabled without an unlock and POST is limited to 30 per IP/hour', async () => {
   const request = await harness({ NODE_ENV: 'development' });
   expect((await request('/qa')).headers.get('location')).toBe('/signin');
-  expect((await request('/api/auth/quick-login/status')).status).toBe(200);
+  const status = await request('/api/auth/quick-login/status');
+  expect(status.status).toBe(200);
+  expect(GetQuickLoginStatusResponse.parse(await status.json()).production).toBe(false);
   const boot = await request('/api/auth/session'); const { csrfToken } = await identityBody(boot);
   const headers = { cookie: cookiePart(boot, 'alliance.sid')!, origin: appOrigin, 'x-csrf-token': csrfToken, 'content-type': 'application/json' };
   await db.delete(authRateLimitsTable).where(eq(authRateLimitsTable.key, `qa-login-ip:${tokenHash(ip)}`));

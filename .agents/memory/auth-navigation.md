@@ -13,3 +13,16 @@ The fresh-page password-change transition was then browser-verified to reach the
 **How to apply:** do not simplify session-changing navigation to an ordinary SPA route change without checking the exact resulting URL/page as well as the server session. API success and type checks cannot confirm route/guard ordering.
 
 Success feedback must survive a fresh-page transition. Use a non-sensitive, one-use notice that is consumed and removed from the URL, not exclusively in-memory state. Never put passwords, user details, or authentication tokens in that notice.
+
+Account switches need both query-cache isolation and an explicitly uncached
+session/identity refresh. Cancel in-flight session requests as well as
+user-specific requests before refreshing the new identity.
+
+**Why:** A browser check observed the previous identity from an ordinary fetch
+after the new test-account banner appeared; an uncached read returned the new
+identity. The underlying caching/race cause was not established. Query keys are
+shared across identities, so invalidation alone is not sufficient protection.
+
+**How to apply:** Keep authenticated API requests explicitly uncached and clear
+the previous account's cached data before completing a switch. Verify the
+finished identity and CSRF state, not merely the unchanged dashboard URL.

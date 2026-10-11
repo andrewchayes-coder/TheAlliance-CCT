@@ -1784,6 +1784,7 @@ export const UpdateVolunteerProfileResponse = zod.object({
   "verified": zod.boolean(),
   "agreementRequired": zod.boolean().optional(),
   "currentAgreementVersion": zod.string().optional(),
+  "testPersona": zod.string().optional().describe('Built-in QA persona key for the current test account only'),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -1900,6 +1901,7 @@ export const SaveOnboardingResponse = zod.object({
   "verified": zod.boolean(),
   "agreementRequired": zod.boolean().optional(),
   "currentAgreementVersion": zod.string().optional(),
+  "testPersona": zod.string().optional().describe('Built-in QA persona key for the current test account only'),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -1978,6 +1980,7 @@ export const GetVolunteerOnboardingResponse = zod.object({
   "verified": zod.boolean(),
   "agreementRequired": zod.boolean().optional(),
   "currentAgreementVersion": zod.string().optional(),
+  "testPersona": zod.string().optional().describe('Built-in QA persona key for the current test account only'),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
@@ -2089,6 +2092,7 @@ export const SignupResponse = zod.object({
 
 export const GetQuickLoginStatusResponse = zod.object({
   "enabled": zod.boolean(),
+  "production": zod.boolean().optional().describe('Whether the API runs in production'),
   "personas": zod.array(zod.object({
   "key": zod.string(),
   "label": zod.string(),
@@ -2363,6 +2367,7 @@ export const GetMeResponse = zod.object({
   "verified": zod.boolean(),
   "agreementRequired": zod.boolean().optional(),
   "currentAgreementVersion": zod.string().optional(),
+  "testPersona": zod.string().optional().describe('Built-in QA persona key for the current test account only'),
   "profile": zod.union([zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),

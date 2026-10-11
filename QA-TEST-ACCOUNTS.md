@@ -19,7 +19,16 @@ end an already-established sign-in session.
 descriptions. Locked or disabled production requests return 404, including the
 status endpoint. `POST /api/auth/quick-login` accepts only `{ persona }`, uses
 the normal CSRF token/origin check, regenerates the session, updates last login,
-and returns the usual `nextPath`. The browser buttons belong to the next UI prompt.
+and returns the usual `nextPath`. An enabled, unlocked browser shows the
+**QUICK LOGIN — TESTING** card below the normal sign-in card, with one button per
+persona. Locked/disabled browsers show no testing card or hint.
+
+Signed-in test accounts have an amber banner above the app header, including
+during applicant onboarding. Use **Switch account** to choose another persona,
+or **Sign out** to return to sign-in. Switching clears the previous user's
+cached data and refreshes the session and CSRF token before navigation.
+The **PRODUCTION** pill and **Hide test logins on this device** link are shown
+on the sign-in testing card only when the API reports production mode.
 
 Unlock attempts are limited to 5 per IP/hour; login attempts to 30 per IP/hour.
 The runtime logs a loud warning and disables quick login if the production key

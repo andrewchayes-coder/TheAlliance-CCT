@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/auth-context';
 import { useGetMessageContext, getGetMessageContextQueryKey } from '@workspace/api-client-react';
 import { FETCH_CREDS } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
+import { TestAccountBanner } from '@/components/quick-login';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -42,9 +43,10 @@ function BrandMark() {
   );
 }
 
-export function PublicLayout({ children, contained = true }: { children: ReactNode; contained?: boolean }) {
+export function PublicLayout({ children, contained = true, below }: { children: ReactNode; contained?: boolean; below?: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-white text-navy" data-testid="public-layout">
+      <TestAccountBanner />
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-6 md:px-8">
           <BrandMark />
@@ -52,8 +54,9 @@ export function PublicLayout({ children, contained = true }: { children: ReactNo
         </div>
       </header>
       {contained ? (
-        <main className="flex min-h-[calc(100dvh-90px)] items-center justify-center px-4 py-10">
+        <main className="flex min-h-[calc(100dvh-90px)] flex-col items-center justify-center px-4 py-10">
           <Card className="w-full max-w-xl">{children}</Card>
+          {below}
         </main>
       ) : <main>{children}</main>}
     </div>
@@ -135,6 +138,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
   }
   return (
     <div className={`relative bg-gray text-navy ${preview ? 'min-h-[320px] overflow-hidden rounded-2xl' : 'min-h-[100dvh]'}`} data-testid={`app-layout-${role}`}>
+      {live && <TestAccountBanner />}
       <header className="bg-navy">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 md:px-6">
           <BrandMark />

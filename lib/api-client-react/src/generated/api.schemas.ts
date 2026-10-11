@@ -1221,6 +1221,8 @@ export interface Me {
   verified: boolean;
   agreementRequired?: boolean;
   currentAgreementVersion?: string;
+  /** Built-in QA persona key for the current test account only */
+  testPersona?: string;
   profile: PublicVolunteerProfile | null;
 }
 
@@ -1249,6 +1251,8 @@ export type QuickLoginStatusPersonasItem = {
 
 export interface QuickLoginStatus {
   enabled: boolean;
+  /** Whether the API runs in production */
+  production?: boolean;
   personas: QuickLoginStatusPersonasItem[];
 }
 
