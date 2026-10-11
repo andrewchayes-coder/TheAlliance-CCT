@@ -3,9 +3,13 @@ import { appConfig } from '@workspace/shared/appConfig';
 export type Badge = 'neutral' | 'good' | 'attention' | 'blocked';
 export const TZ = appConfig.timezone;
 export const STATUS: Record<string, [string, Badge]> = {
-  applicant: ['Applicant', 'neutral'], in_training: ['In training', 'attention'], active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
+  onboarding: ['Onboarding', 'attention'], applicant: ['Onboarding', 'attention'], in_training: ['Onboarding', 'attention'],
+  active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
 };
-export const STATUS_ORDER = ['applicant', 'in_training', 'active', 'inactive'] as const;
+export const STATUS_ORDER = ['onboarding', 'active', 'inactive'] as const;
+export const flags = {
+  cert: appConfig.trackCertificationInApp, bg: appConfig.trackBackgroundCheckInApp, agree: appConfig.requireAgreementAcknowledgment,
+};
 export const CERT: Record<string, [string, Badge]> = {
   not_started: ['Not started', 'neutral'], in_progress: ['In progress', 'attention'], complete: ['Complete', 'good'],
 };
@@ -16,6 +20,9 @@ export const ATTN: Record<string, string> = {
   any: 'Any attention', no_shift: 'No shift', certification_expiring: 'Certification expiring',
   background_pending: 'Background pending', onboarding_incomplete: 'Onboarding incomplete',
 };
+/** Attention reasons hidden when their tracking flag is off. */
+export const attnVisible = (a: string) =>
+  !(a === 'certification_expiring' && !appConfig.trackCertificationInApp) && !(a === 'background_pending' && !appConfig.trackBackgroundCheckInApp);
 export const DAYS = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export const calDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', dateStyle: 'medium' });

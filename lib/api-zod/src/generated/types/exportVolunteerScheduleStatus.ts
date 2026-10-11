@@ -10,8 +10,7 @@ export type ExportVolunteerScheduleStatus = typeof ExportVolunteerScheduleStatus
 
 
 export const ExportVolunteerScheduleStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;

@@ -7,11 +7,11 @@ export const testAccounts = [
   { key: 'vol-active-noshift', label: 'Test Volunteer Active — No Shift', lastName: 'Active (No Shift)', role: 'volunteer', email: 'qa-vol-active-noshift@example.org',
     description: 'Approved volunteer ready to choose a first weekly shift.',
     status: 'active', onboardingComplete: true, certificationStatus: 'complete', backgroundCheckStatus: 'cleared' },
-  { key: 'vol-training', label: 'Test Volunteer In Training', lastName: 'In Training', role: 'volunteer', email: 'qa-vol-training@example.org',
-    description: 'Onboarding complete; training and background check are in progress.',
-    status: 'in_training', onboardingComplete: true, certificationStatus: 'in_progress', backgroundCheckStatus: 'pending' },
-  { key: 'vol-applicant', label: 'Test Volunteer Applicant', lastName: 'Applicant', role: 'volunteer', email: 'qa-vol-applicant@example.org',
-    description: 'Verified new applicant who still needs to complete onboarding.',
-    status: 'applicant', onboardingComplete: false, certificationStatus: 'not_started', backgroundCheckStatus: 'not_started' },
+  { key: 'vol-training', label: 'Test Volunteer Onboarding — Profile Complete', lastName: 'In Training', role: 'volunteer', email: 'qa-vol-training@example.org',
+    description: 'Profile complete; awaiting Alliance approval.',
+    status: 'onboarding', onboardingComplete: true, certificationStatus: 'in_progress', backgroundCheckStatus: 'pending' },
+  { key: 'vol-applicant', label: 'Test Volunteer Onboarding — Profile Needed', lastName: 'Applicant', role: 'volunteer', email: 'qa-vol-applicant@example.org',
+    description: 'Verified new account ready to complete a profile.',
+    status: 'onboarding', onboardingComplete: false, certificationStatus: 'not_started', backgroundCheckStatus: 'not_started' },
 ] as const;
 export type TestAccountKey = typeof testAccounts[number]['key'];

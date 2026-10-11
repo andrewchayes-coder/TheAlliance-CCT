@@ -81,7 +81,7 @@ router.post('/signup', async (req, res): Promise<void> => {
       const [created] = await tx.insert(usersTable).values({
         firstName, lastName, email: data.email, phone, passwordHash, role: 'volunteer',
       }).returning();
-      await tx.insert(volunteerProfilesTable).values({ userId: created!.id, status: 'applicant' });
+      await tx.insert(volunteerProfilesTable).values({ userId: created!.id, status: 'onboarding' });
       return created!;
     });
   } catch (error) {

@@ -89,7 +89,7 @@ router.get('/google/callback', async (req, res): Promise<void> => {
         lastName: (identity.family_name ?? '').slice(0, 100),
         emailVerifiedAt: new Date(), lastLoginAt: new Date(), role: 'volunteer',
       }).returning();
-      await tx.insert(volunteerProfilesTable).values({ userId: created!.id, status: 'applicant' });
+      await tx.insert(volunteerProfilesTable).values({ userId: created!.id, status: 'onboarding' });
       return created!;
     });
     await establishSession(req, user);

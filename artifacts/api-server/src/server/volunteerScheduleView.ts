@@ -8,9 +8,9 @@ export function bookingBlockers(profile: { status: string; agreementAcknowledged
   const reasons: string[] = [];
   if (profile.status !== 'active') reasons.push(profile.status === 'inactive'
     ? `Your Resource Coordinator status is inactive. Please contact ${staffContactText} if you would like to return.`
-    : "Your application is not approved for shifts yet. We'll email you when your training, background check, and approval are complete.");
-  if (!profile.agreementAcknowledgedAt) reasons.push('Please acknowledge the volunteer agreement in onboarding.');
-  else if (currentVersion && profile.agreementVersion !== currentVersion) reasons.push('Please acknowledge the updated volunteer agreements before using shifts.');
+    : "Your profile is awaiting approval. We'll email you when you're ready to choose a shift.");
+  if (appConfig.requireAgreementAcknowledgment && !profile.agreementAcknowledgedAt) reasons.push('Please acknowledge the volunteer agreement in onboarding.');
+  else if (appConfig.requireAgreementAcknowledgment && currentVersion && profile.agreementVersion !== currentVersion) reasons.push('Please acknowledge the updated volunteer agreements before using shifts.');
   return reasons;
 }
 export function startDates(data: ScheduleData, slot: ScheduleSlot, now: Date) {

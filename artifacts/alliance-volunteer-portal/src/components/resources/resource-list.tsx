@@ -1,3 +1,4 @@
+import { appConfig } from '@workspace/shared/appConfig';
 import { useEffect, useRef, useState } from 'react';
 import { Reorder } from 'framer-motion';
 import { ArrowDown, ArrowUp, GripVertical } from 'lucide-react';
@@ -90,7 +91,7 @@ export function ResourceList({ type, all, onEdit }: { type: T; all: ResourceItem
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{toDelete?.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>This can’t be undone.{toDelete && agr(toDelete) ? ' This is an agreement: deleting it affects volunteer onboarding until a replacement is published.' : ''}</AlertDialogDescription>
+            <AlertDialogDescription>This can’t be undone.{toDelete && agr(toDelete) && appConfig.requireAgreementAcknowledgment ? ' This is an agreement: deleting it affects volunteer onboarding until a replacement is published.' : ''}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Keep it</AlertDialogCancel><AlertDialogAction onClick={e => { e.preventDefault(); void remove(); }}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>

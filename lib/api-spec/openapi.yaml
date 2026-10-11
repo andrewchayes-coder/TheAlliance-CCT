@@ -623,7 +623,7 @@ paths:
       operationId: listVolunteerRoster
       parameters:
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
-        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
@@ -708,7 +708,7 @@ paths:
       operationId: exportVolunteerRoster
       parameters:
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
-        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
@@ -724,7 +724,7 @@ paths:
       operationId: exportVolunteerSchedule
       parameters:
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
-        - { name: status, in: query, schema: { type: string, enum: [applicant, in_training, active, inactive] } }
+        - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
@@ -1301,7 +1301,7 @@ components:
       properties:
         ok: { type: boolean }
         skipped: { type: boolean }
-        status: { type: string, enum: [sent, logged, failed] }
+        status: { type: string, enum: [sent, logged, failed, suppressed] }
         error: { type: [string, 'null'] }
     MessageDraftInput:
       type: object
@@ -1690,10 +1690,9 @@ components:
         attention: { type: array, items: { $ref: "#/components/schemas/AttentionReason" } }
     RosterSummary:
       type: object
-      required: [applicant, in_training, active, inactive, needsAttention]
+      required: [onboarding, active, inactive, needsAttention]
       properties:
-        applicant: { type: integer }
-        in_training: { type: integer }
+        onboarding: { type: integer }
         active: { type: integer }
         inactive: { type: integer }
         needsAttention: { type: integer }
@@ -1720,7 +1719,7 @@ components:
       type: object
       required: [key, label, met]
       properties:
-        key: { type: string, enum: [email_verified, onboarding_complete, agreement_acknowledged, certification_complete, background_cleared] }
+        key: { type: string }
         label: { type: string }
         met: { type: boolean }
     VolunteerActivity:
@@ -1737,20 +1736,22 @@ components:
       type: object
       required: [status, expectedUpdatedAt]
       properties:
-        status: { type: string, enum: [applicant, in_training, active, inactive] }
+        status: { type: string, enum: [onboarding, active, inactive] }
         expectedUpdatedAt: { type: string, format: date-time }
         releaseAssignmentIds: { type: array, items: { type: string, format: uuid } }
     VolunteerTrackingUpdate:
       type: object
-      required: [expectedUpdatedAt, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt]
+      required: [expectedUpdatedAt]
       properties:
         expectedUpdatedAt: { type: string, format: date-time }
+        dateOfBirth: { type: [string, "null"] }
+        startDate: { type: [string, "null"] }
         certificationStatus: { type: string, enum: [not_started, in_progress, complete] }
-        certificationCompletedAt: { type: [string, "null"], format: date }
-        certificationExpiresAt: { type: [string, "null"], format: date }
+        certificationCompletedAt: { type: [string, "null"] }
+        certificationExpiresAt: { type: [string, "null"] }
         backgroundCheckStatus: { type: string, enum: [not_started, pending, cleared, not_cleared] }
-        backgroundCheckSubmittedAt: { type: [string, "null"], format: date }
-        backgroundCheckClearedAt: { type: [string, "null"], format: date }
+        backgroundCheckSubmittedAt: { type: [string, "null"] }
+        backgroundCheckClearedAt: { type: [string, "null"] }
     VolunteerNotesUpdate:
       type: object
       required: [adminNotes, expectedAdminNotes]
@@ -1769,15 +1770,22 @@ components:
             ok: { type: boolean }
             error: { type: string }
             skipped: { type: boolean }
-            status: { type: string, enum: [logged, sent, failed] }
+            status: { type: string, enum: [logged, sent, failed, suppressed] }
         releasedAssignmentCount: { type: integer }
     VolunteerProfileInput:
       type: object
-      required: [firstName, lastName, phone, county, availabilityNotes, answers]
+      required: [firstName, lastName, phone, addressLine1, city, state, zip, emergencyContactName, emergencyContactRelationship, emergencyContactPhone]
       properties:
         firstName: { type: string }
         lastName: { type: string }
         phone: { type: string }
+        addressLine1: { type: string }
+        city: { type: string }
+        state: { type: string }
+        zip: { type: string }
+        emergencyContactName: { type: string }
+        emergencyContactRelationship: { type: string }
+        emergencyContactPhone: { type: string }
         county: { type: string }
         availabilityNotes: { type: [string, "null"] }
         answers: { type: object, additionalProperties: true }
@@ -1931,11 +1939,18 @@ components:
         schedulingOpen: { type: boolean }
     OnboardingInput:
       type: object
-      required: [firstName, lastName, phone, answers, complete]
       properties:
         firstName: { type: string }
         lastName: { type: string }
         phone: { type: string }
+        dateOfBirth: { type: [string, "null"] }
+        addressLine1: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        state: { type: [string, "null"] }
+        zip: { type: [string, "null"] }
+        emergencyContactName: { type: [string, "null"] }
+        emergencyContactRelationship: { type: [string, "null"] }
+        emergencyContactPhone: { type: [string, "null"] }
         answers: { type: object, additionalProperties: true }
         complete: { type: boolean }
         agreementAcknowledged: { type: boolean }
@@ -1974,7 +1989,7 @@ components:
       properties:
         ok: { type: boolean }
         email: { type: string }
-        delivery: { type: string, enum: [sent, logged, failed] }
+        delivery: { type: string, enum: [sent, logged, failed, suppressed] }
         message: { type: string }
     AccountStatusInput:
       type: object
@@ -2121,12 +2136,21 @@ components:
         updatedAt: { type: string, format: date-time }
     PublicVolunteerProfile:
       type: object
-      required: [id, userId, county, status, onboardingAnswers, onboardingCompletedAt, availabilityNotes, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt, agreementAcknowledgedAt, agreementVersion, createdAt, updatedAt]
+      required: [id, userId, dateOfBirth, addressLine1, city, state, zip, emergencyContactName, emergencyContactRelationship, emergencyContactPhone, startDate, county, status, onboardingAnswers, onboardingCompletedAt, availabilityNotes, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt, agreementAcknowledgedAt, agreementVersion, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }
         county: { type: string }
-        status: { type: string, enum: [applicant, in_training, active, inactive] }
+        dateOfBirth: { type: [string, "null"] }
+        addressLine1: { type: [string, "null"] }
+        city: { type: [string, "null"] }
+        state: { type: [string, "null"] }
+        zip: { type: [string, "null"] }
+        emergencyContactName: { type: [string, "null"] }
+        emergencyContactRelationship: { type: [string, "null"] }
+        emergencyContactPhone: { type: [string, "null"] }
+        startDate: { type: [string, "null"] }
+        status: { type: string, enum: [onboarding, active, inactive] }
         onboardingAnswers: { type: object, additionalProperties: true }
         onboardingCompletedAt: { type: [string, "null"], format: date-time }
         availabilityNotes: { type: [string, "null"] }

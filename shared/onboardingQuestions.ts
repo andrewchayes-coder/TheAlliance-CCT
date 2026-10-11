@@ -13,14 +13,7 @@ export type OnboardingQuestion = {
   profileField?: 'county' | 'availabilityNotes';
 };
 
-export const onboardingQuestions: readonly OnboardingQuestion[] = [
-  { id: 'county', label: 'County you live or work in', type: 'select', options: appConfig.counties, required: true, step: 1, profileField: 'county' },
-  { id: 'languages', label: 'Preferred language(s) you can support callers in', type: 'multiselect', options: ['English', 'Spanish', 'Other'], required: true, step: 1 },
-  { id: 'previousExperience', label: 'Have you volunteered in a helping/social-services role before?', type: 'yesno', required: true, step: 1 },
-  { id: 'heardAbout', label: 'How did you hear about this opportunity?', type: 'select', options: ['The Alliance', 'A friend or colleague', 'Community organization', 'Social media', 'Other'], required: false, step: 2 },
-  { id: 'availability', label: 'Best days/times for you', helpText: 'Share what generally works for you. You will choose a shift after approval.', type: 'textarea', required: false, step: 2, profileField: 'availabilityNotes' },
-  { id: 'anythingElse', label: "Anything else you'd like us to know?", type: 'textarea', required: false, step: 2 },
-];
+export const onboardingQuestions: readonly OnboardingQuestion[] = [];
 
 function questionSchema(q: OnboardingQuestion, draft: boolean): z.ZodType {
   let schema: z.ZodType;

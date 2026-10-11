@@ -12,6 +12,7 @@ import { VerifyEmailPage, VerifyTokenPage } from '@/pages/verify';
 import { Dashboard } from '@/pages/volunteer-home';
 import { Shifts, Messages } from '@/pages/volunteer-pages';
 import { Resources, ResourceArticle } from '@/pages/resources';
+import { appConfig } from '@workspace/shared/appConfig';
 import { AgreementRenewal } from '@/pages/agreement-renewal';
 import { AdminResources } from '@/pages/admin-resources';
 import { Profile } from '@/pages/volunteer-profile';
@@ -55,10 +56,10 @@ function Router() {
         <Route path="/messages/:rest*" component={Messages} />
         <Route path="/resources" component={Resources} />
         <Route path="/resources/:id" component={ResourceArticle} />
-        <Route path="/agreements" component={AgreementRenewal} />
+        {appConfig.requireAgreementAcknowledgment && <Route path="/agreements" component={AgreementRenewal} />}
         <Route path="/profile" component={Profile} />
         <Route path="/onboarding" component={Onboarding} />
-        <Route path="/onboarding/agreements/:resourceId" component={OnboardingAgreement} />
+        {appConfig.requireAgreementAcknowledgment && <Route path="/onboarding/agreements/:resourceId" component={OnboardingAgreement} />}
         <Route path="/onboarding/:rest*" component={Onboarding} />
         <Route path="/accept-invite" component={AcceptInvite} />
         <Route path="/admin" component={AdminHome} />

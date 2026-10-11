@@ -1,3 +1,4 @@
+import { appConfig } from '@workspace/shared/appConfig';
 import { useState } from 'react';
 import { useAuth, readError } from '@/auth/auth-context';
 import { useCreateResource, useUpdateResource, type ResourceItem, type ResourceInput, type ResourceContext } from '@workspace/api-client-react';
@@ -52,7 +53,7 @@ export function ResourceEditor({ type, item, ctx, onClose }: { type: T; item: Re
     const meta: ResourceInput = {
       type, title: f.title.trim(), category: f.category.trim(), summary: f.summary.trim(),
       body: type === 'article' ? f.body : '', url: type === 'link' ? f.url.trim() : '',
-      isQuickLink: type === 'link' && f.isQuickLink, isPublished: f.isPublished, bumpAgreementVersion: agree && f.bump,
+      isQuickLink: type === 'link' && f.isQuickLink, isPublished: f.isPublished, bumpAgreementVersion: agree && appConfig.requireAgreementAcknowledgment && f.bump,
     };
     const data = { metadata: JSON.stringify(meta), ...(type === 'document' && file ? { file } : {}) };
     setBusy(true);
@@ -102,7 +103,7 @@ export function ResourceEditor({ type, item, ctx, onClose }: { type: T; item: Re
             </>
           )}
           <label className="flex min-h-11 items-center gap-3"><input type="checkbox" className="size-5" checked={f.isPublished} onChange={e => set('isPublished', e.target.checked)} />Published</label>
-          {agree && (
+          {agree && appConfig.requireAgreementAcknowledgment && (
             <div className="rounded-lg bg-gray p-3">
               <label className="flex min-h-11 items-start gap-3"><input type="checkbox" className="mt-1 size-5" checked={f.bump} onChange={e => set('bump', e.target.checked)} data-testid="check-bump" />
                 <span>Require current members to re-acknowledge (new agreement version{ctx ? `; now ${ctx.agreementVersion}` : ''})</span></label>

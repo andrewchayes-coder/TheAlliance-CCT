@@ -13,4 +13,5 @@ export const VolunteerStatusResultEmailDeliveryStatus = {
   logged: 'logged',
   sent: 'sent',
   failed: 'failed',
+  suppressed: 'suppressed',
 } as const;

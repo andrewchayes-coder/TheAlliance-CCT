@@ -11,8 +11,15 @@ export interface VolunteerProfileInput {
   firstName: string;
   lastName: string;
   phone: string;
-  county: string;
+  addressLine1: string;
+  city: string;
+  state: string;
+  zip: string;
+  emergencyContactName: string;
+  emergencyContactRelationship: string;
+  emergencyContactPhone: string;
+  county?: string;
   /** @nullable */
-  availabilityNotes: string | null;
-  answers: VolunteerProfileInputAnswers;
+  availabilityNotes?: string | null;
+  answers?: VolunteerProfileInputAnswers;
 }

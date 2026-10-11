@@ -1,3 +1,5 @@
+import { isProfileComplete } from '@/lib/profile-complete';
+import { appConfig } from '@workspace/shared/appConfig';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useLocation } from 'wouter';
 import { useGetMe, getGetMeQueryKey, type Me } from '@workspace/api-client-react';
@@ -46,8 +48,8 @@ export function RequireVerified({ children, area = 'volunteer', allowIncomplete 
   if (me.data && me.data.verified) {
     if (area === 'admin' && me.data.role !== 'admin') return <Redirect to="/dashboard" />;
     if (area === 'volunteer' && me.data.role === 'admin') return <Redirect to="/admin" />;
-    if (area === 'volunteer' && !allowIncomplete && !me.data.profile?.onboardingCompletedAt) return <Redirect to="/onboarding" />;
-    if (area === 'volunteer' && me.data.agreementRequired && (path === '/shifts' || path.startsWith('/shifts/'))) return <Redirect to="/agreements" />;
+    if (area === 'volunteer' && !allowIncomplete && !isProfileComplete(me.data)) return <Redirect to="/onboarding" />;
+    if (area === 'volunteer' && appConfig.requireAgreementAcknowledgment && me.data.agreementRequired && (path === '/shifts' || path.startsWith('/shifts/'))) return <Redirect to="/agreements" />;
     return <>{children(me.data)}</>;
   }
   if (me.isError && (status === 401 || status === 403) && retried.current && !me.isFetching && ok) {

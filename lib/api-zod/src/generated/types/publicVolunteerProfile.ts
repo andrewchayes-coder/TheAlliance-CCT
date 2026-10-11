@@ -14,6 +14,24 @@ export interface PublicVolunteerProfile {
   id: string;
   userId: string;
   county: string;
+  /** @nullable */
+  dateOfBirth: string | null;
+  /** @nullable */
+  addressLine1: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  state: string | null;
+  /** @nullable */
+  zip: string | null;
+  /** @nullable */
+  emergencyContactName: string | null;
+  /** @nullable */
+  emergencyContactRelationship: string | null;
+  /** @nullable */
+  emergencyContactPhone: string | null;
+  /** @nullable */
+  startDate: string | null;
   status: PublicVolunteerProfileStatus;
   onboardingAnswers: PublicVolunteerProfileOnboardingAnswers;
   /** @nullable */

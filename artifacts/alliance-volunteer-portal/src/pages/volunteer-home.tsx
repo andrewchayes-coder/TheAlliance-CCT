@@ -6,6 +6,10 @@ import { FETCH_CREDS } from '@/auth/auth-context';
 import { ErrorBlock, LoadingBlock, UpcomingShifts, useNow, volunteerRoute } from '@/components/volunteer-ui';
 import { countdown, safeHttps, shiftWhen, shiftDate, timeRange } from '@/lib/pacific';
 
+import { appConfig } from '@workspace/shared/appConfig';
+import { isProfileComplete } from '@/lib/profile-complete';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
+
 const cert = { not_started: 'Not started', in_progress: 'In progress', complete: 'Complete' } as const;
 const bg = { not_started: 'Not started', pending: 'Pending', cleared: 'Cleared', not_cleared: 'Needs follow-up' } as const;
 
@@ -27,18 +31,21 @@ function Home({ me }: { me: Me }) {
   });
   const p = me.profile;
   const d = q.data;
-  const status = p?.status ?? 'applicant';
+  const status = p ? normalizeVolunteerStatus(p.status) : 'onboarding';
+  const profileDone = isProfileComplete(me);
   const Top = () => {
-    if (status === 'applicant' || status === 'in_training') return (
+    if (status === 'onboarding') return (
       <section className="rounded-2xl bg-white p-5 shadow-sm" data-testid="card-status-pending" aria-labelledby="st-h">
         <h2 id="st-h" className="alliance-section-kicker">Getting you ready</h2>
         <ul className="mt-2 divide-y divide-gray">
-          <Row done={!!p?.onboardingCompletedAt} label="Onboarding" value={p?.onboardingCompletedAt ? 'Checked' : 'Not finished'} />
-          <Row done={p?.certificationStatus === 'complete'} label="Training certification" value={cert[p?.certificationStatus ?? 'not_started']} />
-          <Row done={p?.backgroundCheckStatus === 'cleared'} label="Background check" value={bg[p?.backgroundCheckStatus ?? 'not_started']} />
+          <Row done label="Account created" value="Done" />
+          <Row done={profileDone} label="Profile complete" value={profileDone ? 'Done' : 'Not finished'} />
+          <Row done={false} label="Training & paperwork" value="With Alliance staff" />
+          {appConfig.trackCertificationInApp && <Row done={p?.certificationStatus === 'complete'} label="Training certification" value={cert[p?.certificationStatus ?? 'not_started']} />}
+          {appConfig.trackBackgroundCheckInApp && <Row done={p?.backgroundCheckStatus === 'cleared'} label="Background check" value={bg[p?.backgroundCheckStatus ?? 'not_started']} />}
           <Row done={false} label="Approval" value="Pending" />
         </ul>
-        <p className="mt-3 font-bold">We'll email you when you're ready to pick a shift.</p>
+        <p className="mt-3 font-bold">We'll email you when you're ready to choose a shift.</p>
       </section>
     );
     if (status === 'inactive') return (

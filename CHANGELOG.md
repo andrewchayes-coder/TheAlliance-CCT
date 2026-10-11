@@ -3,6 +3,15 @@
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
 ## Unreleased
+### Added
+- Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
+- Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
+### Changed
+- Simplified volunteer workflow to Onboarding, Active and Inactive. Legacy enum values/data remain intact and read as Onboarding.
+- Disabled in-app certification, background-check and agreement tracking by default; extra onboarding questions are empty. Training and paperwork are handled by Alliance staff.
+- Private profile fields are available only to their owner and staff. Volunteer DOB/start-date changes are rejected.
+### Fixed
+- QA-suppressed email outcomes are accepted by workflow response contracts; ordinary QA preparation preserves saved profile progress and status.
 
 ### Changed
 - Refreshed the Community Care Team identity, Resource Coordinator-facing copy, Cindi contact guidance, Alliance Blue/Open Sans styling, approved static logos and home-screen icons, and branded email presentation. Workflows and data models are unchanged.

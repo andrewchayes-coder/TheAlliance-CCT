@@ -6,12 +6,13 @@ import { logger } from '../lib/logger';
 import { db, volunteerProfilesTable } from '@workspace/db';
 import { eq } from 'drizzle-orm';
 import { agreementVersion } from '../server/agreements';
+import { appConfig } from '@workspace/shared/appConfig';
 const router = Router();
 router.use(async (req, res, next) => {
   const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt,
     version: volunteerProfilesTable.agreementVersion, acknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt })
     .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, req.authUser!.id));
-  if (profile?.completedAt && (!profile.acknowledgedAt || profile.version !== await agreementVersion())) {
+  if (appConfig.requireAgreementAcknowledgment && profile?.completedAt && (!profile.acknowledgedAt || profile.version !== await agreementVersion())) {
     res.status(403).json({ error: 'Please review and acknowledge the updated agreements before using shifts.',
       code: 'AGREEMENT_REQUIRED', nextPath: '/agreements' }); return;
   }

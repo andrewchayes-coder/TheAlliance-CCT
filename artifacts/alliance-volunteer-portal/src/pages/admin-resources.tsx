@@ -1,3 +1,4 @@
+import { appConfig } from '@workspace/shared/appConfig';
 import { useState } from 'react';
 import { useGetAdminResources, getGetAdminResourcesQueryKey, useGetResourceContext, getGetResourceContextQueryKey, type ResourceItem } from '@workspace/api-client-react';
 import { AppLayout, Button } from '@/components/brand-system';
@@ -24,7 +25,7 @@ function Body() {
     <main className="mx-auto max-w-4xl px-4 py-8 md:px-6">
       <p className="alliance-section-kicker">Resources</p>
       <h1 className="font-display text-3xl font-bold">Manage resources</h1>
-      {ctx.data && <p className="mt-1 text-sm">Current agreement version: <b>{ctx.data.agreementVersion}</b></p>}
+      {appConfig.requireAgreementAcknowledgment && ctx.data && <p className="mt-1 text-sm">Current agreement version: <b>{ctx.data.agreementVersion}</b></p>}
       <div role="tablist" aria-label="Resource types" className="mt-5 flex flex-wrap gap-2">
         {TABS.map(t => (
           <button key={t.type} role="tab" type="button" aria-selected={tab === t.type} onClick={() => setTab(t.type)} data-testid={`tab-${t.type}`}

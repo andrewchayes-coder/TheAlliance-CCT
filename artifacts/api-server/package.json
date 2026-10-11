@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:security": "vitest run --config vitest.config.ts src/server/api-security.test.ts",
+    "test:security": "vitest run --config vitest.config.ts src/server/api-security.test.ts src/server/fixed-profile.test.ts",
     "test:schedule": "vitest run --config vitest.config.ts",
     "test:auth": "tsx --test src/auth/auth.test.ts",
     "test:email": "tsx --test src/email.test.ts",

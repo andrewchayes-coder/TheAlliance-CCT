@@ -1,5 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
-import { db, resourcesTable, usersTable, volunteerProfilesTable, userPublicSchema, volunteerProfilePublicColumns } from '@workspace/db';
+import { db, resourcesTable, usersTable, volunteerProfilesTable, userPublicSchema, volunteerProfilePublicColumns, volunteerProfilePublicSchema } from '@workspace/db';
+import { appConfig } from '@workspace/shared/appConfig';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { createEmailTemplate } from './email-template';
 import { sendEmail } from './email';
@@ -38,21 +40,21 @@ export async function onboardingAccount(userId: string) {
   if (!user || user.role !== 'volunteer') return null;
   const [profile] = await db.select(volunteerProfilePublicColumns).from(volunteerProfilesTable)
     .where(eq(volunteerProfilesTable.userId, userId));
-  return { user: userPublicSchema.parse(user), role: user.role, verified: !!user.emailVerifiedAt, profile: profile ?? null };
+  return { user: userPublicSchema.parse(user), role: user.role, verified: !!user.emailVerifiedAt, profile: profile ? volunteerProfilePublicSchema.parse(profile) : null };
 }
 
 export async function sendWelcome(user: User, profileId: string) {
   const content = createEmailTemplate({
-    heading: 'Thank you for joining our volunteer team',
+    heading: 'Welcome to the Community Care Team',
     firstName: user.firstName,
     paragraphs: [
-      'Thank you for helping local families find the support they need. We have received your volunteer questionnaire and agreement acknowledgment.',
-      "Here's what happens next: our team will reach out about training and a background check. Once you're approved, you'll pick your weekly shift.",
-      'We appreciate the time and care you are bringing to this work. You can check your progress in the volunteer portal.',
+      'Thank you for helping local families find the support they need. Your profile is complete.',
+      "Here's what happens next: our team will reach out about training and the required paperwork. Once you're approved, you'll choose your weekly shift.",
+      'We appreciate the time and care you are bringing to this work. You can check your progress in the CCT Portal.',
     ],
     cta: { label: 'Visit your dashboard', url: `${appOrigin}/dashboard` },
   });
-  return sendEmail({ type: 'welcome', to: user.email, toUserId: user.id, subject: 'Welcome to The Alliance volunteer team', relatedId: profileId, ...content });
+  return sendEmail({ type: 'welcome', to: user.email, toUserId: user.id, subject: 'Welcome to the Community Care Team', relatedId: profileId, ...content });
 }
 
 /** Neutralize spreadsheet formulas in every cell, including user-generated names/answers. */
@@ -66,9 +68,11 @@ export async function exportOnboardingCsv() {
   const rows = await db.select({ user: usersTable, profile: volunteerProfilesTable }).from(usersTable)
     .leftJoin(volunteerProfilesTable, eq(usersTable.id, volunteerProfilesTable.userId))
     .where(and(eq(usersTable.role, 'volunteer'), eq(usersTable.isTestAccount, false))).orderBy(usersTable.lastName, usersTable.firstName, usersTable.id);
-  const headers = ['First name', 'Last name', 'Email', 'Phone', 'County', 'Status', 'Onboarding completed at', 'Agreement acknowledged at', 'Agreement version', ...onboardingQuestions.map(q => q.label)];
+  const headers = ['First name', 'Last name', 'Email', 'Phone', 'County', 'Status', 'Onboarding completed at',
+    ...(appConfig.requireAgreementAcknowledgment ? ['Agreement acknowledged at', 'Agreement version'] : []), ...onboardingQuestions.map(q => q.label)];
   const records = rows.map(({ user, profile }) => [user.firstName, user.lastName, user.email, user.phone, profile?.county,
-    profile?.status, profile?.onboardingCompletedAt?.toISOString(), profile?.agreementAcknowledgedAt?.toISOString(),
-    profile?.agreementVersion, ...onboardingQuestions.map(q => formatOnboardingAnswer(profile?.onboardingAnswers[q.id]))]);
+    profile ? normalizeVolunteerStatus(profile.status) : '', profile?.onboardingCompletedAt?.toISOString(),
+    ...(appConfig.requireAgreementAcknowledgment ? [profile?.agreementAcknowledgedAt?.toISOString(), profile?.agreementVersion] : []),
+    ...onboardingQuestions.map(q => formatOnboardingAnswer(profile?.onboardingAnswers[q.id]))]);
   return '\ufeff' + [headers, ...records].map(record => record.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }

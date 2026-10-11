@@ -6,6 +6,8 @@ import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/o
 import { csvCell } from './onboarding';
 import { pacificDay } from './volunteer-shifts';
 import { attentionReasons, type AttentionReason } from './volunteer-attention';
+import { appConfig } from '@workspace/shared/appConfig';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 export { attentionReasons, type AttentionReason } from './volunteer-attention';
 
 type Profile = typeof volunteerProfilesTable.$inferSelect;
@@ -46,7 +48,7 @@ export async function rosterSnapshot(now = new Date()) {
         ...shift, upcomingSkipDates: (skipMap.get(shift.assignmentId) ?? []).filter(date =>
           date >= shift.startDate && (!shift.endDate || date <= shift.endDate)),
       }));
-      return { user, profile, shifts, shiftCount: shifts.length, attention: attentionReasons(profile, shifts.length, today) };
+      return { user, profile: { ...profile, status: normalizeVolunteerStatus(profile.status) }, shifts, shiftCount: shifts.length, attention: attentionReasons(profile, shifts.length, today) };
     });
   }, { isolationLevel: 'repeatable read', accessMode: 'read only' });
 }
@@ -61,10 +63,10 @@ export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
   const phoneSearch = search && /^[+\d()\s.-]+$/.test(search) ? search.replace(/\D/g, '') : '';
   return people.filter(({ user, profile, attention }) => {
     if (user.isTestAccount && filters.showTestAccounts !== 'true') return false;
-    if (filters.status && profile.status !== filters.status) return false;
+    if (filters.status && normalizeVolunteerStatus(profile.status) !== filters.status) return false;
     if (filters.county && profile.county !== filters.county) return false;
-    if (filters.certificationStatus && profile.certificationStatus !== filters.certificationStatus) return false;
-    if (filters.backgroundCheckStatus && profile.backgroundCheckStatus !== filters.backgroundCheckStatus) return false;
+    if (appConfig.trackCertificationInApp && filters.certificationStatus && profile.certificationStatus !== filters.certificationStatus) return false;
+    if (appConfig.trackBackgroundCheckInApp && filters.backgroundCheckStatus && profile.backgroundCheckStatus !== filters.backgroundCheckStatus) return false;
     if (filters.needsAttention && (filters.needsAttention === 'any' ? !attention.length : !attention.includes(filters.needsAttention))) return false;
     if (!search) return true;
     return [`${user.firstName} ${user.lastName}`, `${user.lastName} ${user.firstName}`, user.email, user.phone ?? '']
@@ -74,13 +76,13 @@ export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
 }
 export function rosterEntry(person: RosterPerson) {
   const { adminNotes: _, ...profile } = person.profile;
-  return { user: userPublicSchema.parse(person.user), profile, shiftCount: person.shiftCount, attention: person.attention };
+  return { user: userPublicSchema.parse(person.user), profile: { ...profile,status:normalizeVolunteerStatus(profile.status) }, shiftCount: person.shiftCount, attention: person.attention };
 }
 export function rosterSummary(people: RosterPerson[]) {
-  const counts = { applicant: 0, in_training: 0, active: 0, inactive: 0, needsAttention: 0 };
+  const counts = { onboarding: 0, active: 0, inactive: 0, needsAttention: 0 };
   for (const person of people) {
     if (person.user.isTestAccount) continue;
-    counts[person.profile.status]++;
+    counts[normalizeVolunteerStatus(person.profile.status)]++;
     if (person.attention.length) counts.needsAttention++;
   }
   return counts;
@@ -94,7 +96,11 @@ function csv(headers: string[], rows: unknown[][]) {
 export function rosterCsv(people: RosterPerson[]) {
   // Include all profile fields (including the raw answer JSON for legacy answers),
   // plus individual columns driven by the current question configuration.
-  const fields = Object.keys(getTableColumns(volunteerProfilesTable)) as Array<keyof Profile>;
+  const fields = (Object.keys(getTableColumns(volunteerProfilesTable)) as Array<keyof Profile>).filter(key =>
+    (!key.startsWith('certification') || appConfig.trackCertificationInApp) &&
+    (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) &&
+    (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment) &&
+    (key !== 'onboardingAnswers' || onboardingQuestions.length > 0));
   const headers = ['First name', 'Last name', 'Email', 'Phone', 'Email verified at', 'Last login', 'Account active',
     ...fields.map(key => `Profile: ${key}`), ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
   return csv(headers, people.filter(p => !p.user.isTestAccount).map(person => [person.user.firstName, person.user.lastName, person.user.email, person.user.phone,

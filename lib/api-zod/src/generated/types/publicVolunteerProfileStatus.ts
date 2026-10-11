@@ -10,8 +10,7 @@ export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[k
 
 
 export const PublicVolunteerProfileStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;

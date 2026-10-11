@@ -8,8 +8,10 @@ import { AppLayout, Button, EmptyState, StatusBadge } from '@/components/brand-s
 import { Skeleton } from '@/components/ui/skeleton';
 import { Notice } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
+import { formatPhone, normalizeVolunteerStatus } from '@workspace/shared/profileFields';
+import { appConfig } from '@workspace/shared/appConfig';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
-import { ATTN, BG, CERT, DAYS, STATUS, calDate, clock, stamp, type Badge } from './format';
+import { ATTN, DAYS, STATUS, attnVisible, calDate, clock, flags, stamp, type Badge } from './format';
 import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
 import { MessageHistory } from '@/components/messages/sent-list';
 import { StatusPanel } from './status-panel';
@@ -24,15 +26,21 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
   return <div><dt className="alliance-label">{label}</dt><dd className="break-words">{children}</dd></div>;
 }
 function ActivityLine({ a }: { a: VolunteerActivity }) {
+  if (!appConfig.requireAgreementAcknowledgment && a.action.includes('agreement')) return null;
   const det = a.details ?? {};
   let text: string;
   if (a.action === 'status_changed') {
     const f = String(det.from ?? ''), t = String(det.to ?? '');
     text = `Status changed${f || t ? `: ${STATUS[f]?.[0] ?? (f || 'unknown')} to ${STATUS[t]?.[0] ?? (t || 'unknown')}` : ''}`;
   } else if (a.action === 'tracking_updated') {
-    const ch = det.changes && typeof det.changes === 'object' ? Object.keys(det.changes) : [];
+    const ch = det.changes && typeof det.changes === 'object' ? Object.keys(det.changes).filter(key =>
+      (!key.startsWith('certification') || appConfig.trackCertificationInApp) &&
+      (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) &&
+      (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment)) : [];
+    if (!ch.length) return null;
     text = ch.length ? `Tracking updated (${ch.map(c => String(c).replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')})` : 'Tracking updated';
-  } else text = a.action.replace(/_/g, ' ');
+  } else if (a.action === 'start_date_changed') text = `Start date changed: ${det.from ?? 'not set'} to ${det.to ?? 'not set'}`;
+  else text = a.action.replace(/_/g, ' ');
   return (
     <li className="py-2 text-sm" data-testid={`activity-${a.id}`}>
       <span className="font-bold">{text}</span>
@@ -67,13 +75,13 @@ export function VolunteerDetail() {
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
           <h1 className="alliance-display" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Pill map={STATUS} value={p.status} />
-            <StatusBadge status="neutral">{p.county} County</StatusBadge>
-            {e.attention.map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
+            <Pill map={STATUS} value={normalizeVolunteerStatus(p.status)} />
+            {onboardingQuestions.length > 0 && p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}
+            {e.attention.filter(attnVisible).map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
           </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
             <Item label="Email"><a href={`mailto:${e.user.email}`} className="break-all font-bold text-blue underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
-            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-blue underline underline-offset-4" data-testid="link-phone">{e.user.phone}</a> : 'Not provided'}</Item>
+            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-blue underline underline-offset-4" data-testid="link-phone">{formatPhone(e.user.phone) || e.user.phone}</a> : 'Not provided'}</Item>
             <Item label="Joined">{stamp(e.user.createdAt)}</Item>
             <Item label="Last login">{stamp(e.user.lastLoginAt) ?? 'Never'}</Item>
           </dl>
@@ -88,12 +96,16 @@ export function VolunteerDetail() {
           <section className="alliance-card mt-6" aria-labelledby="v-onb">
             <h2 id="v-onb" className="alliance-display">Onboarding</h2>
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-              <Item label="Agreement acknowledged">{stamp(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>
-              <Item label="Agreement version">{p.agreementVersion ?? 'None'}</Item>
+              {flags.agree && <Item label="Agreement acknowledged">{stamp(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>}
+              {flags.agree && <Item label="Agreement version">{p.agreementVersion ?? 'None'}</Item>}
+              <Item label="Date of birth">{p.dateOfBirth ? calDate(p.dateOfBirth) : 'Not provided'}</Item>
+              <Item label="Start date">{p.startDate ? calDate(p.startDate) : 'Not set'}</Item>
+              <Item label="Home address">{p.addressLine1 ? `${p.addressLine1}, ${p.city ?? ''} ${p.state ?? ''} ${p.zip ?? ''}` : 'Not provided'}</Item>
+              <Item label="Emergency contact">{p.emergencyContactName ? `${p.emergencyContactName} (${p.emergencyContactRelationship ?? 'relationship not given'}) ${formatPhone(p.emergencyContactPhone)}` : 'Not provided'}</Item>
               <Item label="Onboarding completed">{stamp(p.onboardingCompletedAt) ?? 'Not completed'}</Item>
-              <Item label="Availability notes"><span className="whitespace-pre-wrap">{p.availabilityNotes || 'None'}</span></Item>
+              {onboardingQuestions.length > 0 && <Item label="Availability notes"><span className="whitespace-pre-wrap">{p.availabilityNotes || 'None'}</span></Item>}
             </dl>
-            <dl className="mt-3 divide-y divide-gray">
+            {onboardingQuestions.length > 0 && <dl className="mt-3 divide-y divide-gray">
               {onboardingQuestions.map(qn => {
                 const v = p.onboardingAnswers?.[qn.id];
                 const text = v === undefined ? '' : formatOnboardingAnswer(v);
@@ -104,7 +116,7 @@ export function VolunteerDetail() {
                   </div>
                 );
               })}
-            </dl>
+            </dl>}
           </section>
 
           <section className="alliance-card mt-6" aria-labelledby="v-shifts">

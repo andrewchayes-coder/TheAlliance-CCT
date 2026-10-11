@@ -5,10 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { ApprovalRequirementKey } from './approvalRequirementKey';
 
 export interface ApprovalRequirement {
-  key: ApprovalRequirementKey;
+  key: string;
   label: string;
   met: boolean;
 }

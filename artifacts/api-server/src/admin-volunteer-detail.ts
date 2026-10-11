@@ -3,6 +3,8 @@ import { db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlo
 import { GetAdminVolunteerResponse } from '@workspace/api-zod';
 import { rosterEntry, rosterSnapshot } from './admin-roster';
 import { pacificDay } from './volunteer-shifts';
+import { appConfig } from '@workspace/shared/appConfig';
+import { missingProfileFields } from '@workspace/shared/profileFields';
 
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export class WorkflowError extends Error {
@@ -16,10 +18,10 @@ export const ongoingAssignments = (profileId: string, today: string) => and(
 export function approvalRequirements(user: typeof usersTable.$inferSelect, profile: typeof volunteerProfilesTable.$inferSelect) {
   return [
     { key: 'email_verified' as const, label: 'Email verified', met: !!user.emailVerifiedAt },
-    { key: 'onboarding_complete' as const, label: 'Onboarding complete', met: !!profile.onboardingCompletedAt },
-    { key: 'agreement_acknowledged' as const, label: 'Agreement acknowledged', met: !!profile.agreementAcknowledgedAt },
-    { key: 'certification_complete' as const, label: 'Certification complete', met: profile.certificationStatus === 'complete' },
-    { key: 'background_cleared' as const, label: 'Background check cleared', met: profile.backgroundCheckStatus === 'cleared' },
+    ...missingProfileFields(user, profile),
+    ...(appConfig.requireAgreementAcknowledgment ? [{ key: 'agreement_acknowledged', label: 'Agreement acknowledged', met: !!profile.agreementAcknowledgedAt }] : []),
+    ...(appConfig.trackCertificationInApp ? [{ key: 'certification_complete', label: 'Certification complete', met: profile.certificationStatus === 'complete' }] : []),
+    ...(appConfig.trackBackgroundCheckInApp ? [{ key: 'background_cleared', label: 'Background check cleared', met: profile.backgroundCheckStatus === 'cleared' }] : []),
   ];
 }
 /** Match the lock order used by volunteer profile editing: user, then profile. */

@@ -164,6 +164,7 @@ export const TestReminderResultStatus = {
   sent: 'sent',
   logged: 'logged',
   failed: 'failed',
+  suppressed: 'suppressed',
 } as const;
 
 export interface TestReminderResult {
@@ -623,8 +624,7 @@ export type PublicVolunteerProfileStatus = typeof PublicVolunteerProfileStatus[k
 
 
 export const PublicVolunteerProfileStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;
@@ -654,6 +654,24 @@ export interface PublicVolunteerProfile {
   id: string;
   userId: string;
   county: string;
+  /** @nullable */
+  dateOfBirth: string | null;
+  /** @nullable */
+  addressLine1: string | null;
+  /** @nullable */
+  city: string | null;
+  /** @nullable */
+  state: string | null;
+  /** @nullable */
+  zip: string | null;
+  /** @nullable */
+  emergencyContactName: string | null;
+  /** @nullable */
+  emergencyContactRelationship: string | null;
+  /** @nullable */
+  emergencyContactPhone: string | null;
+  /** @nullable */
+  startDate: string | null;
   status: PublicVolunteerProfileStatus;
   onboardingAnswers: PublicVolunteerProfileOnboardingAnswers;
   /** @nullable */
@@ -686,8 +704,7 @@ export interface VolunteerRosterEntry {
 }
 
 export interface RosterSummary {
-  applicant: number;
-  in_training: number;
+  onboarding: number;
   active: number;
   inactive: number;
   needsAttention: number;
@@ -701,19 +718,8 @@ export interface VolunteerRoster {
   summary: RosterSummary;
 }
 
-export type ApprovalRequirementKey = typeof ApprovalRequirementKey[keyof typeof ApprovalRequirementKey];
-
-
-export const ApprovalRequirementKey = {
-  email_verified: 'email_verified',
-  onboarding_complete: 'onboarding_complete',
-  agreement_acknowledged: 'agreement_acknowledged',
-  certification_complete: 'certification_complete',
-  background_cleared: 'background_cleared',
-} as const;
-
 export interface ApprovalRequirement {
-  key: ApprovalRequirementKey;
+  key: string;
   label: string;
   met: boolean;
 }
@@ -743,8 +749,7 @@ export type VolunteerStatusUpdateStatus = typeof VolunteerStatusUpdateStatus[key
 
 
 export const VolunteerStatusUpdateStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;
@@ -776,16 +781,20 @@ export const VolunteerTrackingUpdateBackgroundCheckStatus = {
 
 export interface VolunteerTrackingUpdate {
   expectedUpdatedAt: string;
-  certificationStatus: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
-  certificationCompletedAt: string | null;
+  dateOfBirth?: string | null;
   /** @nullable */
-  certificationExpiresAt: string | null;
-  backgroundCheckStatus: VolunteerTrackingUpdateBackgroundCheckStatus;
+  startDate?: string | null;
+  certificationStatus?: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
-  backgroundCheckSubmittedAt: string | null;
+  certificationCompletedAt?: string | null;
   /** @nullable */
-  backgroundCheckClearedAt: string | null;
+  certificationExpiresAt?: string | null;
+  backgroundCheckStatus?: VolunteerTrackingUpdateBackgroundCheckStatus;
+  /** @nullable */
+  backgroundCheckSubmittedAt?: string | null;
+  /** @nullable */
+  backgroundCheckClearedAt?: string | null;
 }
 
 export interface VolunteerNotesUpdate {
@@ -805,6 +814,7 @@ export const VolunteerStatusResultEmailDeliveryStatus = {
   logged: 'logged',
   sent: 'sent',
   failed: 'failed',
+  suppressed: 'suppressed',
 } as const;
 
 /**
@@ -830,10 +840,17 @@ export interface VolunteerProfileInput {
   firstName: string;
   lastName: string;
   phone: string;
-  county: string;
+  addressLine1: string;
+  city: string;
+  state: string;
+  zip: string;
+  emergencyContactName: string;
+  emergencyContactRelationship: string;
+  emergencyContactPhone: string;
+  county?: string;
   /** @nullable */
-  availabilityNotes: string | null;
-  answers: VolunteerProfileInputAnswers;
+  availabilityNotes?: string | null;
+  answers?: VolunteerProfileInputAnswers;
 }
 
 export interface PasswordChangeInput {
@@ -1028,11 +1045,27 @@ export interface VolunteerDashboard {
 export type OnboardingInputAnswers = { [key: string]: unknown };
 
 export interface OnboardingInput {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  answers: OnboardingInputAnswers;
-  complete: boolean;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
+  addressLine1?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
+  /** @nullable */
+  emergencyContactName?: string | null;
+  /** @nullable */
+  emergencyContactRelationship?: string | null;
+  /** @nullable */
+  emergencyContactPhone?: string | null;
+  answers?: OnboardingInputAnswers;
+  complete?: boolean;
   agreementAcknowledged?: boolean;
   agreementVersion?: string;
 }
@@ -1088,6 +1121,7 @@ export const AdminInviteResultDelivery = {
   sent: 'sent',
   logged: 'logged',
   failed: 'failed',
+  suppressed: 'suppressed',
 } as const;
 
 export interface AdminInviteResult {
@@ -1420,8 +1454,7 @@ export type ListVolunteerRosterStatus = typeof ListVolunteerRosterStatus[keyof t
 
 
 export const ListVolunteerRosterStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;
@@ -1480,8 +1513,7 @@ export type ExportVolunteerRosterStatus = typeof ExportVolunteerRosterStatus[key
 
 
 export const ExportVolunteerRosterStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;
@@ -1532,8 +1564,7 @@ export type ExportVolunteerScheduleStatus = typeof ExportVolunteerScheduleStatus
 
 
 export const ExportVolunteerScheduleStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;

@@ -7,14 +7,14 @@ import {
 import { Button } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { readError, useAuth } from '@/auth/auth-context';
-import { DAYS, STATUS, STATUS_ORDER, calDate, clock } from './format';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
+import { DAYS, STATUS, flags, STATUS_ORDER, calDate, clock } from './format';
 
 type Target = VolunteerStatusUpdate['status'];
 type Snapshot = { target: Target; expectedUpdatedAt: string; shifts: AdminAssignedShift[] };
 
 const COPY: Record<string, string> = {
-  applicant: 'This moves the volunteer back to Applicant. They stay in the roster and keep their shifts.',
-  in_training: 'This marks the volunteer as In training. They stay in the roster and keep their shifts.',
+  onboarding: 'This moves the volunteer back to Onboarding. They stay in the roster and keep their shifts.',
   active: 'This approves the volunteer as Active and sends them an approval email.',
   inactive: 'This marks the volunteer Inactive. Every shift below ends today, and those seats open up for others.',
 };
@@ -70,8 +70,8 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ kind: 'good' | 'warn'; text: string } | null>(null);
-  const cur = detail.entry.profile.status;
-  const missing = detail.approvalRequirements.filter(r => !r.met);
+  const cur = normalizeVolunteerStatus(detail.entry.profile.status);
+  const missing = detail.approvalRequirements.filter(r => !r.met && !(r.key === 'agreement_acknowledged' && !flags.agree) && !(r.key === 'certification_complete' && !flags.cert) && !(r.key === 'background_cleared' && !flags.bg));
 
   const open = (t: Target) => {
     setError(null); setResult(null);
@@ -107,7 +107,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-status">
       <h2 id="v-status" className="alliance-display">Program status</h2>
-      <ol className="mt-3 grid gap-2 sm:grid-cols-4" aria-label="Volunteer status steps">
+      <ol className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="Volunteer status steps">
         {STATUS_ORDER.map((s, i) => {
           const on = s === cur;
           const dis = !on && (!!blockedReason || m.isPending || (s === 'active' && missing.length > 0));

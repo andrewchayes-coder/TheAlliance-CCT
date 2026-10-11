@@ -25,3 +25,9 @@ For an existing published app, select the requested deployment type in Publishin
 **Why:** a publish still created an Autoscale service after the source target had been set to Reserved VM.
 
 **How to apply:** verify Publishing settings and actual build/provider metadata before claiming the deployment type changed.
+
+Keep the existing volunteer status enum/column and extend it additively for simplified statuses; retain deprecated values and normalize legacy reads until a separately approved data backfill.
+
+**Why:** the user explicitly rejected both a new status column and a type conversion, choosing Publish-owned additive changes with no dropped or renamed data.
+
+**How to apply:** generate reference SQL without running it at startup. Treat production schema changes and production data updates separately; give data backfills as short, individual SQL statements for the user to run.

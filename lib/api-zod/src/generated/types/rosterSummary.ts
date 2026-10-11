@@ -7,8 +7,7 @@
  */
 
 export interface RosterSummary {
-  applicant: number;
-  in_training: number;
+  onboarding: number;
   active: number;
   inactive: number;
   needsAttention: number;

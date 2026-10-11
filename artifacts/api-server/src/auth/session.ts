@@ -1,5 +1,6 @@
 import session from 'express-session';
 import { staffContactText } from '@workspace/shared/appConfig';
+import { missingProfileFields } from '@workspace/shared/profileFields';
 import connectPgSimple from 'connect-pg-simple';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { db, pool, usersTable, volunteerProfilesTable, type User } from '@workspace/db';
@@ -121,10 +122,9 @@ export async function requireOnboardedVolunteer(req: Request, res: Response, nex
   let authorized = false;
   await requireVolunteer(req, res, () => { authorized = true; });
   if (!authorized) return;
-  const [profile] = await db.select({ completedAt: volunteerProfilesTable.onboardingCompletedAt,
-    agreementVersion: volunteerProfilesTable.agreementVersion, acknowledgedAt: volunteerProfilesTable.agreementAcknowledgedAt }).from(volunteerProfilesTable)
+  const [profile] = await db.select().from(volunteerProfilesTable)
     .where(eq(volunteerProfilesTable.userId, req.authUser!.id));
-  if (!profile?.completedAt) {
+  if (!profile?.onboardingCompletedAt || missingProfileFields(req.authUser!, profile).length) {
     res.status(403).json({ error: 'Please finish your onboarding first.', code: 'ONBOARDING_REQUIRED', nextPath: '/onboarding' });
     return;
   }

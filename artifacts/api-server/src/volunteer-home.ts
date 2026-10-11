@@ -4,6 +4,7 @@ import {
   messagesTable, messageRecipientsTable, resourcesTable,
 } from '@workspace/db';
 import { safeResourceHref } from './onboarding';
+import { appConfig } from '@workspace/shared/appConfig';
 import { upcomingOccurrences, pacificDay } from './volunteer-shifts';
 
 const messageProjection = {
@@ -54,6 +55,6 @@ export async function volunteerDashboard(userId: string) {
     new Set(skips.map(row => `${row.assignmentId}:${row.date}`)), now);
   return {
     shiftCount: assignments.length, nextShift: upcomingShifts[0] ?? null, upcomingShifts, quickLinks,
-    unreadMessage: unread[0] ?? null, unreadCount: totals[0]?.total ?? 0, schedulingOpen: active && !!profile?.agreementAcknowledgedAt,
+    unreadMessage: unread[0] ?? null, unreadCount: totals[0]?.total ?? 0, schedulingOpen: active && (!appConfig.requireAgreementAcknowledgment || !!profile?.agreementAcknowledgedAt),
   };
 }

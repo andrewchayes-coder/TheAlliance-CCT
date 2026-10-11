@@ -8,7 +8,7 @@ import { z } from 'zod/v4';
 import { appConfig } from './appConfig';
 
 export const userRole = pgEnum('user_role', ['admin', 'volunteer']);
-export const volunteerStatus = pgEnum('volunteer_status', ['applicant', 'in_training', 'active', 'inactive']);
+export const volunteerStatus = pgEnum('volunteer_status', ['applicant', 'in_training', 'active', 'inactive', 'onboarding']);
 export const certificationStatus = pgEnum('certification_status', ['not_started', 'in_progress', 'complete']);
 export const backgroundCheckStatus = pgEnum('background_check_status', ['not_started', 'pending', 'cleared', 'not_cleared']);
 export const endedReason = pgEnum('shift_ended_reason', ['dropped', 'changed', 'admin_removed']);
@@ -52,7 +52,16 @@ export const volunteerProfilesTable = pgTable('volunteer_profiles', {
   id: primaryKey(),
   userId: uuid('user_id').notNull().references(() => usersTable.id, { onDelete: 'restrict' }),
   county: text('county').notNull().default(appConfig.defaultCounty),
-  status: volunteerStatus('status').notNull().default('applicant'),
+  status: volunteerStatus('status').notNull().default('onboarding'),
+  dateOfBirth: date('date_of_birth', { mode: 'string' }),
+  addressLine1: text('address_line1'),
+  city: text('city'),
+  state: text('state').default('CA'),
+  zip: text('zip'),
+  emergencyContactName: text('emergency_contact_name'),
+  emergencyContactRelationship: text('emergency_contact_relationship'),
+  emergencyContactPhone: text('emergency_contact_phone'),
+  startDate: date('start_date', { mode: 'string' }),
   onboardingAnswers: jsonb('onboarding_answers').$type<Record<string, unknown>>().notNull().default({}),
   onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
   availabilityNotes: text('availability_notes'),
@@ -337,9 +346,14 @@ export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
 export type AuthToken = typeof authTokensTable.$inferSelect;
 export type InsertAuthToken = z.infer<typeof insertAuthTokenSchema>;
 
-// Defense in depth for future volunteer endpoints: query only safe columns, then parse.
+// Own-profile/admin use ONLY: these columns include sensitive DOB, address and emergency contact.
+// Never reuse this projection to expose another volunteer's record.
 const profileColumns = getTableColumns(volunteerProfilesTable);
 export const volunteerProfilePublicColumns = {
+  dateOfBirth: profileColumns.dateOfBirth, addressLine1: profileColumns.addressLine1,
+  city: profileColumns.city, state: profileColumns.state, zip: profileColumns.zip,
+  emergencyContactName: profileColumns.emergencyContactName, emergencyContactRelationship: profileColumns.emergencyContactRelationship,
+  emergencyContactPhone: profileColumns.emergencyContactPhone, startDate: profileColumns.startDate,
   id: profileColumns.id, userId: profileColumns.userId, county: profileColumns.county,
   status: profileColumns.status, onboardingAnswers: profileColumns.onboardingAnswers,
   onboardingCompletedAt: profileColumns.onboardingCompletedAt, availabilityNotes: profileColumns.availabilityNotes,
@@ -349,7 +363,9 @@ export const volunteerProfilePublicColumns = {
   agreementAcknowledgedAt: profileColumns.agreementAcknowledgedAt, agreementVersion: profileColumns.agreementVersion,
   createdAt: profileColumns.createdAt, updatedAt: profileColumns.updatedAt,
 };
-export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true });
+export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true }).transform(profile => ({
+  ...profile, status: profile.status === 'applicant' || profile.status === 'in_training' ? 'onboarding' as const : profile.status,
+}));
 export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true });
 export function toVolunteerProfilePublic(profile: VolunteerProfile) {
   return volunteerProfilePublicSchema.parse(profile);

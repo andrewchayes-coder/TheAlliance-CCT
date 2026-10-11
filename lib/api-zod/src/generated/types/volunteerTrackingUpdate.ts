@@ -10,14 +10,18 @@ import type { VolunteerTrackingUpdateCertificationStatus } from './volunteerTrac
 
 export interface VolunteerTrackingUpdate {
   expectedUpdatedAt: Date;
-  certificationStatus: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
-  certificationCompletedAt: Date | null;
+  dateOfBirth?: string | null;
   /** @nullable */
-  certificationExpiresAt: Date | null;
-  backgroundCheckStatus: VolunteerTrackingUpdateBackgroundCheckStatus;
+  startDate?: string | null;
+  certificationStatus?: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
-  backgroundCheckSubmittedAt: Date | null;
+  certificationCompletedAt?: string | null;
   /** @nullable */
-  backgroundCheckClearedAt: Date | null;
+  certificationExpiresAt?: string | null;
+  backgroundCheckStatus?: VolunteerTrackingUpdateBackgroundCheckStatus;
+  /** @nullable */
+  backgroundCheckSubmittedAt?: string | null;
+  /** @nullable */
+  backgroundCheckClearedAt?: string | null;
 }

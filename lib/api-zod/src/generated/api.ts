@@ -279,7 +279,7 @@ export const RetryNotificationEmailParams = zod.object({
 export const RetryNotificationEmailResponse = zod.object({
   "ok": zod.boolean(),
   "skipped": zod.boolean(),
-  "status": zod.enum(['sent', 'logged', 'failed']),
+  "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']),
   "error": zod.string().nullable()
 })
 
@@ -291,7 +291,7 @@ export const SendProviderTestEmailBody = zod.object({
 export const SendProviderTestEmailResponse = zod.object({
   "ok": zod.boolean(),
   "skipped": zod.boolean(),
-  "status": zod.enum(['sent', 'logged', 'failed']),
+  "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']),
   "error": zod.string().nullable()
 })
 
@@ -369,7 +369,7 @@ export const SendAdminTestReminderBody = zod.object({
 export const SendAdminTestReminderResponse = zod.object({
   "ok": zod.boolean(),
   "skipped": zod.boolean(),
-  "status": zod.enum(['sent', 'logged', 'failed']),
+  "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']),
   "error": zod.string().nullable()
 })
 
@@ -1264,7 +1264,7 @@ export const listVolunteerRosterQueryOffsetMin = 0;
 
 export const ListVolunteerRosterQueryParams = zod.object({
   "search": zod.coerce.string().max(listVolunteerRosterQuerySearchMax).optional(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']).optional(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
@@ -1294,7 +1294,16 @@ export const ListVolunteerRosterResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1316,8 +1325,7 @@ export const ListVolunteerRosterResponse = zod.object({
   "limit": zod.number().int(),
   "offset": zod.number().int(),
   "summary": zod.object({
-  "applicant": zod.number().int(),
-  "in_training": zod.number().int(),
+  "onboarding": zod.number().int(),
   "active": zod.number().int(),
   "inactive": zod.number().int(),
   "needsAttention": zod.number().int()
@@ -1349,7 +1357,16 @@ export const GetAdminVolunteerResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1389,7 +1406,7 @@ export const GetAdminVolunteerResponse = zod.object({
   "upcomingSkipDates": zod.array(zod.string())
 })),
   "approvalRequirements": zod.array(zod.object({
-  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "key": zod.string(),
   "label": zod.string(),
   "met": zod.boolean()
 })),
@@ -1409,7 +1426,7 @@ export const ChangeVolunteerStatusParams = zod.object({
 })
 
 export const ChangeVolunteerStatusBody = zod.object({
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "expectedUpdatedAt": zod.coerce.date(),
   "releaseAssignmentIds": zod.array(zod.string().uuid()).optional()
 })
@@ -1435,7 +1452,16 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1475,7 +1501,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "upcomingSkipDates": zod.array(zod.string())
 })),
   "approvalRequirements": zod.array(zod.object({
-  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "key": zod.string(),
   "label": zod.string(),
   "met": zod.boolean()
 })),
@@ -1492,7 +1518,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "ok": zod.boolean(),
   "error": zod.string().optional(),
   "skipped": zod.boolean().optional(),
-  "status": zod.enum(['logged', 'sent', 'failed']).optional()
+  "status": zod.enum(['logged', 'sent', 'failed', 'suppressed']).optional()
 }).nullable(),
   "releasedAssignmentCount": zod.number().int()
 })
@@ -1504,12 +1530,14 @@ export const UpdateVolunteerTrackingParams = zod.object({
 
 export const UpdateVolunteerTrackingBody = zod.object({
   "expectedUpdatedAt": zod.coerce.date(),
-  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']),
-  "certificationCompletedAt": zod.coerce.date().nullable(),
-  "certificationExpiresAt": zod.coerce.date().nullable(),
-  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']),
-  "backgroundCheckSubmittedAt": zod.coerce.date().nullable(),
-  "backgroundCheckClearedAt": zod.coerce.date().nullable()
+  "dateOfBirth": zod.string().nullish(),
+  "startDate": zod.string().nullish(),
+  "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
+  "certificationCompletedAt": zod.string().nullish(),
+  "certificationExpiresAt": zod.string().nullish(),
+  "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
+  "backgroundCheckSubmittedAt": zod.string().nullish(),
+  "backgroundCheckClearedAt": zod.string().nullish()
 })
 
 export const UpdateVolunteerTrackingResponse = zod.object({
@@ -1532,7 +1560,16 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1572,7 +1609,7 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "upcomingSkipDates": zod.array(zod.string())
 })),
   "approvalRequirements": zod.array(zod.object({
-  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "key": zod.string(),
   "label": zod.string(),
   "met": zod.boolean()
 })),
@@ -1620,7 +1657,16 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1660,7 +1706,7 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "upcomingSkipDates": zod.array(zod.string())
 })),
   "approvalRequirements": zod.array(zod.object({
-  "key": zod.enum(['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']),
+  "key": zod.string(),
   "label": zod.string(),
   "met": zod.boolean()
 })),
@@ -1681,7 +1727,7 @@ export const exportVolunteerRosterQuerySearchMax = 200;
 
 export const ExportVolunteerRosterQueryParams = zod.object({
   "search": zod.coerce.string().max(exportVolunteerRosterQuerySearchMax).optional(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']).optional(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
@@ -1697,7 +1743,7 @@ export const exportVolunteerScheduleQuerySearchMax = 200;
 
 export const ExportVolunteerScheduleQueryParams = zod.object({
   "search": zod.coerce.string().max(exportVolunteerScheduleQuerySearchMax).optional(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']).optional(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
@@ -1760,9 +1806,16 @@ export const UpdateVolunteerProfileBody = zod.object({
   "firstName": zod.string(),
   "lastName": zod.string(),
   "phone": zod.string(),
-  "county": zod.string(),
-  "availabilityNotes": zod.string().nullable(),
-  "answers": zod.record(zod.string(), zod.unknown())
+  "addressLine1": zod.string(),
+  "city": zod.string(),
+  "state": zod.string(),
+  "zip": zod.string(),
+  "emergencyContactName": zod.string(),
+  "emergencyContactRelationship": zod.string(),
+  "emergencyContactPhone": zod.string(),
+  "county": zod.string().optional(),
+  "availabilityNotes": zod.string().nullish(),
+  "answers": zod.record(zod.string(), zod.unknown()).optional()
 })
 
 export const UpdateVolunteerProfileResponse = zod.object({
@@ -1789,7 +1842,16 @@ export const UpdateVolunteerProfileResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1873,11 +1935,19 @@ export const GetVolunteerResourcesResponse = zod.array(GetVolunteerResourcesResp
  * @summary Save the signed-in volunteer's draft or complete onboarding
  */
 export const SaveOnboardingBody = zod.object({
-  "firstName": zod.string(),
-  "lastName": zod.string(),
-  "phone": zod.string(),
-  "answers": zod.record(zod.string(), zod.unknown()),
-  "complete": zod.boolean(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "dateOfBirth": zod.string().nullish(),
+  "addressLine1": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
+  "emergencyContactName": zod.string().nullish(),
+  "emergencyContactRelationship": zod.string().nullish(),
+  "emergencyContactPhone": zod.string().nullish(),
+  "answers": zod.record(zod.string(), zod.unknown()).optional(),
+  "complete": zod.boolean().optional(),
   "agreementAcknowledged": zod.boolean().optional(),
   "agreementVersion": zod.string().optional()
 })
@@ -1906,7 +1976,16 @@ export const SaveOnboardingResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -1985,7 +2064,16 @@ export const GetVolunteerOnboardingResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),
@@ -2316,7 +2404,7 @@ export const InviteAdminBody = zod.object({
 export const InviteAdminResponse = zod.object({
   "ok": zod.boolean(),
   "email": zod.string(),
-  "delivery": zod.enum(['sent', 'logged', 'failed']),
+  "delivery": zod.enum(['sent', 'logged', 'failed', 'suppressed']),
   "message": zod.string()
 })
 
@@ -2372,7 +2460,16 @@ export const GetMeResponse = zod.object({
   "id": zod.string().uuid(),
   "userId": zod.string().uuid(),
   "county": zod.string(),
-  "status": zod.enum(['applicant', 'in_training', 'active', 'inactive']),
+  "dateOfBirth": zod.string().nullable(),
+  "addressLine1": zod.string().nullable(),
+  "city": zod.string().nullable(),
+  "state": zod.string().nullable(),
+  "zip": zod.string().nullable(),
+  "emergencyContactName": zod.string().nullable(),
+  "emergencyContactRelationship": zod.string().nullable(),
+  "emergencyContactPhone": zod.string().nullable(),
+  "startDate": zod.string().nullable(),
+  "status": zod.enum(['onboarding', 'active', 'inactive']),
   "onboardingAnswers": zod.record(zod.string(), zod.unknown()),
   "onboardingCompletedAt": zod.coerce.date().nullable(),
   "availabilityNotes": zod.string().nullable(),

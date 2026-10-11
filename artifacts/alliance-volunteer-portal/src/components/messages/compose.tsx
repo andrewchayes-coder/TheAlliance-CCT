@@ -14,7 +14,7 @@ import { PreviewPanel } from './preview-panel';
 type Audience = MessageDraftInput['audience'];
 const AUD: [Audience, string, string][] = [
   ['active', 'All active volunteers', 'Everyone with Active status right now.'],
-  ['all', 'Everyone, any status', 'Applicants, trainees, active and inactive.'],
+  ['all', 'Everyone, any status', 'Onboarding, active and inactive volunteers.'],
   ['selected', 'Chosen volunteers', 'Pick one or more people.'],
   ['single', 'One volunteer', 'Exactly one person.'],
 ];

@@ -13,19 +13,18 @@ import { endSession } from '../auth/session';
 import { onboardingAccount } from '../onboarding';
 import { volunteerDashboard, ownMessages } from '../volunteer-home';
 import { visibleResources } from '../server/resources';
+import { volunteerProfileEditSchema } from '@workspace/shared/profileFields';
 
 const router = Router();
 router.get('/dashboard', async (req, res) => {
   res.set('Cache-Control', 'no-store').json(GetVolunteerDashboardResponse.parse(await volunteerDashboard(req.authUser!.id)));
 });
 router.patch('/profile', async (req, res): Promise<void> => {
-  const parsed = UpdateVolunteerProfileBody.safeParse(req.body);
+  const parsed = volunteerProfileEditSchema.extend({
+    county: z.enum(appConfig.counties).optional(), availabilityNotes: z.string().trim().max(5000).nullable().optional(),
+    answers: z.record(z.string(), z.unknown()).optional(),
+  }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Please check your profile information.' }); return; }
-  const contact = onboardingContactSchema.safeParse(parsed.data);
-  if (!contact.success || !appConfig.counties.includes(parsed.data.county as typeof appConfig.counties[number]) ||
-    (parsed.data.availabilityNotes?.length ?? 0) > 5000) {
-    res.status(400).json({ error: !contact.success ? contact.error.issues[0]?.message : 'Choose an available county and keep availability notes under 5,000 characters.' }); return;
-  }
   const inputAnswers: Record<string, unknown> = { ...parsed.data.answers };
   for (const question of onboardingQuestions) {
     if (question.profileField === 'county') inputAnswers[question.id] = parsed.data.county;
@@ -39,10 +38,14 @@ router.patch('/profile', async (req, res): Promise<void> => {
     if (!user?.isActive || !user.emailVerifiedAt || user.role !== 'volunteer' || user.sessionVersion !== actor.sessionVersion) return false;
     const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, actor.id)).for('update');
     if (!profile?.onboardingCompletedAt) return false;
-    await tx.update(usersTable).set(contact.data).where(eq(usersTable.id, actor.id));
+    const { firstName, lastName, phone, answers: _, ...profileFields } = parsed.data;
+    await tx.update(usersTable).set({
+      ...(firstName !== undefined ? { firstName } : {}), ...(lastName !== undefined ? { lastName } : {}),
+      ...(phone !== undefined ? { phone } : {}), updatedAt:new Date(),
+    }).where(eq(usersTable.id, actor.id));
     await tx.update(volunteerProfilesTable).set({
-      county: parsed.data.county, availabilityNotes: parsed.data.availabilityNotes?.trim() || null,
-      onboardingAnswers: answers.data,
+      ...profileFields, updatedAt:new Date(),
+      ...(onboardingQuestions.length ? { onboardingAnswers: { ...profile.onboardingAnswers, ...answers.data } } : {}),
     }).where(eq(volunteerProfilesTable.id, profile.id));
     return true;
   });

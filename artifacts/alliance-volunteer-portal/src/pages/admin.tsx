@@ -1,5 +1,7 @@
 import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useState, type FormEvent } from 'react';
+import { appConfig } from '@workspace/shared/appConfig';
+import { formatPhone, normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { Link, useLocation, useParams } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ChevronLeft, Search } from 'lucide-react';
@@ -312,16 +314,19 @@ function VolunteerOnboardingBody() {
               <h2 id="ob-contact" className="alliance-display">{d.user.firstName} {d.user.lastName}</h2>
               <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                 <div><dt className="alliance-label">Email</dt><dd className="break-all">{d.user.email}</dd></div>
-                <div><dt className="alliance-label">Phone</dt><dd>{d.user.phone || 'Not provided'}</dd></div>
+                <div><dt className="alliance-label">Phone</dt><dd>{formatPhone(d.user.phone) || 'Not provided'}</dd></div>
                 <div><dt className="alliance-label">Status</dt><dd data-testid="text-onboarding-status">{p ? (p.onboardingCompletedAt ? 'Onboarding complete' : 'In progress (draft)') : 'Not started'}</dd></div>
-                <div><dt className="alliance-label">Volunteer status</dt><dd className="capitalize">{p?.status.replace(/_/g, ' ') ?? 'None'}</dd></div>
+                <div><dt className="alliance-label">Volunteer status</dt><dd className="capitalize">{p ? normalizeVolunteerStatus(p.status) : 'None'}</dd></div>
                 <div><dt className="alliance-label">Completed</dt><dd>{fmtTime(p?.onboardingCompletedAt)}</dd></div>
-                <div><dt className="alliance-label">Agreement acknowledged</dt><dd>{fmtTime(p?.agreementAcknowledgedAt)}</dd></div>
-                <div><dt className="alliance-label">Agreement version</dt><dd className="break-all">{p?.agreementVersion ?? 'None'}</dd></div>
+                {appConfig.requireAgreementAcknowledgment && <div><dt className="alliance-label">Agreement acknowledged</dt><dd>{fmtTime(p?.agreementAcknowledgedAt)}</dd></div>}
+                {appConfig.requireAgreementAcknowledgment && <div><dt className="alliance-label">Agreement version</dt><dd className="break-all">{p?.agreementVersion ?? 'None'}</dd></div>}
+                <div><dt className="alliance-label">Date of birth</dt><dd>{p?.dateOfBirth ?? 'Not provided'}</dd></div>
+                <div><dt className="alliance-label">Home address</dt><dd>{p?.addressLine1 ? `${p.addressLine1}, ${p.city ?? ''} ${p.state ?? ''} ${p.zip ?? ''}` : 'Not provided'}</dd></div>
+                <div><dt className="alliance-label">Emergency contact</dt><dd>{p?.emergencyContactName ? `${p.emergencyContactName} (${p.emergencyContactRelationship ?? ''}) ${formatPhone(p.emergencyContactPhone)}` : 'Not provided'}</dd></div>
                 <div><dt className="alliance-label">Last updated</dt><dd>{fmtTime(p?.updatedAt)}</dd></div>
               </dl>
             </section>
-            <section className="alliance-card mt-6" aria-labelledby="ob-answers">
+            {onboardingQuestions.length > 0 && <section className="alliance-card mt-6" aria-labelledby="ob-answers">
               <h2 id="ob-answers" className="alliance-display">Answers</h2>
               <dl className="mt-3 divide-y divide-gray">
                 {onboardingQuestions.map(qn => {
@@ -335,7 +340,7 @@ function VolunteerOnboardingBody() {
                   );
                 })}
               </dl>
-            </section>
+            </section>}
           </>
         )}
     </AppLayout>

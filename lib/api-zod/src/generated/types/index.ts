@@ -26,7 +26,6 @@ export * from './agreementAcknowledgmentInput';
 export * from './agreementResource';
 export * from './agreementResourceType';
 export * from './approvalRequirement';
-export * from './approvalRequirementKey';
 export * from './attentionReason';
 export * from './authResult';
 export * from './authSession';

@@ -8,11 +8,27 @@
 import type { OnboardingInputAnswers } from './onboardingInputAnswers';
 
 export interface OnboardingInput {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  answers: OnboardingInputAnswers;
-  complete: boolean;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  /** @nullable */
+  dateOfBirth?: string | null;
+  /** @nullable */
+  addressLine1?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
+  /** @nullable */
+  emergencyContactName?: string | null;
+  /** @nullable */
+  emergencyContactRelationship?: string | null;
+  /** @nullable */
+  emergencyContactPhone?: string | null;
+  answers?: OnboardingInputAnswers;
+  complete?: boolean;
   agreementAcknowledged?: boolean;
   agreementVersion?: string;
 }

@@ -10,8 +10,7 @@ export type ListVolunteerRosterStatus = typeof ListVolunteerRosterStatus[keyof t
 
 
 export const ListVolunteerRosterStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;

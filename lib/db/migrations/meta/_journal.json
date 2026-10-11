@@ -15,6 +15,13 @@
       "when": 1791675575683,
       "tag": "0001_ambitious_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791680968505,
+      "tag": "0002_cct_fixed_profile",
+      "breakpoints": true
     }
   ]
 }

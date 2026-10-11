@@ -14,16 +14,23 @@ import { RequireAdmin } from '@/auth/guards';
 import { Notice } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
+import { onboardingQuestions } from '@workspace/shared/onboardingQuestions';
 import { VolunteerDetail } from '@/components/volunteer-detail/detail';
 import { onMessageSelected as defaultOnMessageSelected } from '@/lib/messaging';
 
 const PAGE = 25;
 const POLL_MS = 60_000;
 const TZ = appConfig.timezone;
+const CERT_ON = appConfig.trackCertificationInApp;
+const BG_ON = appConfig.trackBackgroundCheckInApp;
+const COUNTY_ON = onboardingQuestions.length > 0;
+const STATUS_FILTER = ['onboarding', 'active', 'inactive'] as const;
 type Badge = 'neutral' | 'good' | 'attention' | 'blocked';
 
 const STATUS: Record<string, [string, Badge]> = {
-  applicant: ['Applicant', 'neutral'], in_training: ['In training', 'attention'], active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
+  onboarding: ['Onboarding', 'attention'], applicant: ['Onboarding', 'attention'], in_training: ['Onboarding', 'attention'],
+  active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
 };
 const CERT: Record<string, [string, Badge]> = {
   not_started: ['Not started', 'neutral'], in_progress: ['In progress', 'attention'], complete: ['Complete', 'good'],
@@ -32,8 +39,8 @@ const BG: Record<string, [string, Badge]> = {
   not_started: ['Not started', 'neutral'], pending: ['Pending', 'attention'], cleared: ['Cleared', 'good'], not_cleared: ['Not cleared', 'blocked'],
 };
 const ATTN: Record<string, string> = {
-  any: 'Any attention', no_shift: 'No shift', certification_expiring: 'Certification expiring',
-  background_pending: 'Background pending', onboarding_incomplete: 'Onboarding incomplete',
+  any: 'Any attention', no_shift: 'No shift', ...(CERT_ON ? { certification_expiring: 'Certification expiring' } : {}),
+  ...(BG_ON ? { background_pending: 'Background pending' } : {}), onboarding_incomplete: 'Onboarding incomplete',
 };
 
 const pacific = (iso: string | null | undefined, withTime = true) => iso
@@ -48,7 +55,7 @@ function Pill({ map, value }: { map: Record<string, [string, Badge]>; value: str
   return <StatusBadge status={kind}>{label}</StatusBadge>;
 }
 function ShiftCell({ e }: { e: VolunteerRosterEntry }) {
-  if (e.profile.status === 'active' && e.shiftCount === 0) return <StatusBadge status="attention">No shift</StatusBadge>;
+  if (normalizeVolunteerStatus(e.profile.status) === 'active' && e.shiftCount === 0) return <StatusBadge status="attention">No shift</StatusBadge>;
   return <span>{e.shiftCount}</span>;
 }
 
@@ -108,8 +115,7 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
   const reset = () => { setText(''); setSearch(''); setStatus(''); setCounty(''); setCert(''); setBg(''); setAttn(''); };
 
   const chips = useMemo(() => sum ? [
-    { key: 'applicant', label: 'Applicants', n: sum.applicant, on: status === 'applicant', set: () => setStatus(status === 'applicant' ? '' : 'applicant') },
-    { key: 'in_training', label: 'In training', n: sum.in_training, on: status === 'in_training', set: () => setStatus(status === 'in_training' ? '' : 'in_training') },
+    { key: 'onboarding', label: 'Onboarding', n: sum.onboarding, on: status === 'onboarding', set: () => setStatus(status === 'onboarding' ? '' : 'onboarding') },
     { key: 'active', label: 'Active', n: sum.active, on: status === 'active', set: () => setStatus(status === 'active' ? '' : 'active') },
     { key: 'inactive', label: 'Inactive', n: sum.inactive, on: status === 'inactive', set: () => setStatus(status === 'inactive' ? '' : 'inactive') },
     { key: 'attention', label: 'Needs attention', n: sum.needsAttention, on: attn === 'any', set: () => setAttn(attn === 'any' ? '' : 'any') },
@@ -148,23 +154,23 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
           <label className="text-sm font-bold">Status
             <select className={`${selectCls} mt-1 font-normal`} value={status} onChange={e => setStatus(e.target.value)} data-testid="filter-status">
               <option value="">All statuses</option>
-              {Object.entries(STATUS).map(([v, [l]]) => <option key={v} value={v}>{l}</option>)}
+              {STATUS_FILTER.map(v => <option key={v} value={v}>{STATUS[v][0]}</option>)}
             </select></label>
-          <label className="text-sm font-bold">County
+          {COUNTY_ON && <label className="text-sm font-bold">County
             <select className={`${selectCls} mt-1 font-normal`} value={county} onChange={e => setCounty(e.target.value)} data-testid="filter-county">
               <option value="">All counties</option>
               {appConfig.counties.map(c => <option key={c} value={c}>{c}</option>)}
-            </select></label>
-          <label className="text-sm font-bold">Certification
+            </select></label>}
+          {CERT_ON && <label className="text-sm font-bold">Certification
             <select className={`${selectCls} mt-1 font-normal`} value={cert} onChange={e => setCert(e.target.value)} data-testid="filter-cert">
               <option value="">Any certification</option>
               {Object.entries(CERT).map(([v, [l]]) => <option key={v} value={v}>{l}</option>)}
-            </select></label>
-          <label className="text-sm font-bold">Background check
+            </select></label>}
+          {BG_ON && <label className="text-sm font-bold">Background check
             <select className={`${selectCls} mt-1 font-normal`} value={bg} onChange={e => setBg(e.target.value)} data-testid="filter-bg">
               <option value="">Any background check</option>
               {Object.entries(BG).map(([v, [l]]) => <option key={v} value={v}>{l}</option>)}
-            </select></label>
+            </select></label>}
           <label className="text-sm font-bold">Needs attention
             <select className={`${selectCls} mt-1 font-normal`} value={attn} onChange={e => setAttn(e.target.value)} data-testid="filter-attention">
               <option value="">Everyone</option>
@@ -205,8 +211,8 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                   <thead>
                     <tr className="border-b border-gray text-xs">
                       <th scope="col" className="w-10 py-2"><input type="checkbox" className="h-5 w-5" aria-label="Select all volunteers on this page" checked={allOnPage} onChange={togglePage} data-testid="checkbox-page" /></th>
-                      <th scope="col" className="py-2 pr-3">Name</th><th scope="col" className="pr-3">County</th><th scope="col" className="pr-3">Status</th>
-                      <th scope="col" className="pr-3">Certification</th><th scope="col" className="pr-3">Background</th><th scope="col" className="pr-3">Shifts held</th>
+                      <th scope="col" className="py-2 pr-3">Name</th>{COUNTY_ON && <th scope="col" className="pr-3">County</th>}<th scope="col" className="pr-3">Status</th>
+                      {CERT_ON && <th scope="col" className="pr-3">Certification</th>}{BG_ON && <th scope="col" className="pr-3">Background</th>}<th scope="col" className="pr-3">Shifts held</th>
                       <th scope="col" className="pr-3">Email verified</th><th scope="col">Last login</th>
                     </tr>
                   </thead>
@@ -219,10 +225,10 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                           <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue" data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                           <span className="block break-all text-xs text-navy-soft">{e.user.email}</span>
                         </td>
-                        <td className="pr-3">{e.profile.county}</td>
-                        <td className="pr-3"><Pill map={STATUS} value={e.profile.status} /></td>
-                        <td className="pr-3"><Pill map={CERT} value={e.profile.certificationStatus} /></td>
-                        <td className="pr-3"><Pill map={BG} value={e.profile.backgroundCheckStatus} /></td>
+                        {COUNTY_ON && <td className="pr-3">{e.profile.county}</td>}
+                        <td className="pr-3"><Pill map={STATUS} value={normalizeVolunteerStatus(e.profile.status)} /></td>
+                        {CERT_ON && <td className="pr-3"><Pill map={CERT} value={e.profile.certificationStatus} /></td>}
+                        {BG_ON && <td className="pr-3"><Pill map={BG} value={e.profile.backgroundCheckStatus} /></td>}
                         <td className="pr-3"><ShiftCell e={e} /></td>
                         <td className="pr-3">{e.user.emailVerifiedAt ? 'Yes' : 'No'}</td>
                         <td>{pacific(e.user.lastLoginAt) ?? 'Never'}</td>
@@ -241,10 +247,10 @@ function RosterBody({ onMessageSelected = defaultOnMessageSelected }: { onMessag
                       <Link href={`/admin/volunteers/${e.user.id}`} className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4">{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>
                       <span className="block break-words text-sm text-navy-soft">{e.user.email}</span>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Pill map={STATUS} value={e.profile.status} /><Pill map={CERT} value={e.profile.certificationStatus} /><Pill map={BG} value={e.profile.backgroundCheckStatus} />
+                        <Pill map={STATUS} value={normalizeVolunteerStatus(e.profile.status)} />{CERT_ON && <Pill map={CERT} value={e.profile.certificationStatus} />}{BG_ON && <Pill map={BG} value={e.profile.backgroundCheckStatus} />}
                       </div>
                       <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                        <div><dt className="alliance-label">County</dt><dd>{e.profile.county}</dd></div>
+                        {COUNTY_ON && <div><dt className="alliance-label">County</dt><dd>{e.profile.county}</dd></div>}
                         <div><dt className="alliance-label">Shifts held</dt><dd><ShiftCell e={e} /></dd></div>
                         <div><dt className="alliance-label">Email verified</dt><dd>{e.user.emailVerifiedAt ? 'Yes' : 'No'}</dd></div>
                         <div><dt className="alliance-label">Last login</dt><dd>{pacific(e.user.lastLoginAt) ?? 'Never'}</dd></div>

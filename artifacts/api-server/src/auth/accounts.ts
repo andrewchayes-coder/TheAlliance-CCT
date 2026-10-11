@@ -3,6 +3,8 @@ import { db, usersTable, authTokensTable, volunteerProfilesTable, type User } fr
 import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin, randomToken } from './session';
 import { agreementVersion } from '../server/agreements';
+import { appConfig } from '@workspace/shared/appConfig';
+import { missingProfileFields } from '@workspace/shared/profileFields';
 import { tokenHash } from './security';
 
 /** User-before-token lock order also matches account deactivation and invitation renewal. */
@@ -26,11 +28,10 @@ export async function claimToken(
 export async function accountPath(user: User): Promise<string> {
   if (!user.emailVerifiedAt) return '/verify-email';
   if (user.role === 'admin') return '/admin';
-  const [profile] = await db.select({ completed: volunteerProfilesTable.onboardingCompletedAt,
-    acknowledged: volunteerProfilesTable.agreementAcknowledgedAt, agreementVersion: volunteerProfilesTable.agreementVersion })
-    .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id)).limit(1);
-  if (!profile?.completed) return '/onboarding';
-  return profile.acknowledged && profile.agreementVersion === await agreementVersion() ? '/dashboard' : '/agreements';
+  const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, user.id)).limit(1);
+  if (!profile?.onboardingCompletedAt || missingProfileFields(user, profile).length) return '/onboarding';
+  if (!appConfig.requireAgreementAcknowledgment) return '/dashboard';
+  return profile.agreementAcknowledgedAt && profile.agreementVersion === await agreementVersion() ? '/dashboard' : '/agreements';
 }
 export async function mintToken(userId: string, type: 'email_verify' | 'password_reset' | 'admin_invite') {
   const raw = randomToken();

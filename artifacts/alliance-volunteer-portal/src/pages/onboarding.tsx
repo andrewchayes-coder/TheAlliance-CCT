@@ -1,13 +1,16 @@
 import { ContactLink } from '@/components/shift-cards';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
+import { isProfileComplete } from '@/lib/profile-complete';
+import { appConfig } from '@workspace/shared/appConfig';
+import { formatPhone, phoneDigits, profileCompletionSchema, profileDraftSchema, requiredProfileFields } from '@workspace/shared/profileFields';
+import { ProfileFields, type ProfileErrors, type ProfileKey, type ProfileValues } from '@/components/profile-fields';
 import { ArrowLeft, ExternalLink, FileText } from 'lucide-react';
 import {
-  getGetOnboardingAgreementQueryKey, getGetOnboardingAgreementsQueryKey, useGetOnboardingAgreement,
-  useGetOnboardingAgreements, useSaveOnboarding, type Me,
+  getGetOnboardingAgreementQueryKey, getGetOnboardingAgreementsQueryKey, useGetOnboardingAgreement, useGetOnboardingAgreements, useSaveOnboarding, type Me,
 } from '@workspace/api-client-react';
 import {
-  buildOnboardingAnswersSchema, onboardingContactSchema, onboardingQuestions, type OnboardingQuestion,
+  buildOnboardingAnswersSchema, onboardingQuestions, type OnboardingQuestion,
 } from '@workspace/shared/onboardingQuestions';
 import { PublicLayout, Button, EmptyState } from '@/components/brand-system';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,16 +18,9 @@ import { RequireVerified } from '@/auth/guards';
 import { Field, Notice } from '@/auth/auth-ui';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 
-type Contact = { firstName: string; lastName: string; phone: string };
 type Answers = Record<string, unknown>;
 type Errors = Record<string, string>;
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
-
-function issuesToErrors(issues: { path: PropertyKey[]; message: string }[]): Errors {
-  const out: Errors = {};
-  for (const i of issues) { const k = String(i.path[0] ?? ''); if (k && !out[k]) out[k] = i.message; }
-  return out;
-}
 
 const choiceClass = 'flex min-h-11 cursor-pointer items-center gap-3 rounded-lg bg-gray px-3.5 py-2.5 text-[15px] has-[:checked]:bg-[#d6e9f3] has-[:checked]:ring-2 has-[:checked]:ring-blue has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue';
 
@@ -98,22 +94,19 @@ function AgreementsBlock({ checked, onCheck, error, onReady }: { checked: boolea
         <div className="mt-3"><Notice>Something went wrong on our end. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button type="button" variant="secondary" onClick={() => { void q.refetch(); }}>Try again</Button></div>
       ) : d && (
         <>
-          {!d.ready && <div className="mt-3"><Notice kind="info">The User Agreement and Safety Guidelines aren't both available yet, so onboarding can't be finished today. You can save your progress and return later. Please check back soon, or contact <ContactLink />.</Notice></div>}
-          {d.resources.length > 0 && (
-            <ul className="mt-3 divide-y divide-gray">
-              {d.resources.map(r => (
-                <li key={r.id}>
-                   <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/onboarding/agreements/${encodeURIComponent(r.id)}`} target="_blank" rel="noopener noreferrer" data-testid={`link-agreement-${r.id}`}
-                    className="flex min-h-11 items-center gap-3 py-2 font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue">
-                    <FileText size={18} aria-hidden="true" />{r.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" className="ml-auto" />
-                   </a>
-                </li>
-              ))}
-            </ul>
-          )}
+          {!d.ready && <div className="mt-3"><Notice kind="info">The agreements aren't both available yet, so onboarding can't be finished today. Your progress is saved. Please check back soon.</Notice></div>}
+          <ul className="mt-3 divide-y divide-gray">
+            {d.resources.map(r => (
+              <li key={r.id}>
+                <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/onboarding/agreements/${encodeURIComponent(r.id)}`} target="_blank" rel="noopener noreferrer" data-testid={`link-agreement-${r.id}`}
+                  className="flex min-h-11 items-center gap-3 py-2 font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue">
+                  <FileText size={18} aria-hidden="true" />{r.title}<span className="sr-only"> (opens in a new tab)</span><ExternalLink size={14} aria-hidden="true" className="ml-auto" />
+                </a>
+              </li>
+            ))}
+          </ul>
           <label className={`${choiceClass} mt-4 ${d.ready ? '' : 'opacity-60'}`}>
-            <input type="checkbox" className="size-5 shrink-0 accent-[#0175aa]" checked={checked} disabled={!d.ready} data-testid="checkbox-agreement"
-              onChange={e => onCheck(e.target.checked)} />
+            <input type="checkbox" className="size-5 shrink-0 accent-[#0175aa]" checked={checked} disabled={!d.ready} data-testid="checkbox-agreement" onChange={e => onCheck(e.target.checked)} />
             <span>I have read and agree to the Volunteer User Agreement and Safety Guidelines.</span>
           </label>
           {error && <p role="alert" className="mt-1.5 text-sm text-[var(--alliance-red-ink)]">{error}</p>}
@@ -123,6 +116,20 @@ function AgreementsBlock({ checked, onCheck, error, onReady }: { checked: boolea
   );
 }
 
+const KEYS = Object.keys(requiredProfileFields) as ProfileKey[];
+const NULLABLE = new Set<ProfileKey>(['dateOfBirth', 'addressLine1', 'city', 'state', 'zip', 'emergencyContactName', 'emergencyContactRelationship', 'emergencyContactPhone']);
+const PHONES = new Set<ProfileKey>(['phone', 'emergencyContactPhone']);
+
+function initial(me: Me): ProfileValues {
+  const p = me.profile;
+  return {
+    firstName: me.user.firstName ?? '', lastName: me.user.lastName ?? '', phone: formatPhone(me.user.phone),
+    dateOfBirth: p?.dateOfBirth ?? '', addressLine1: p?.addressLine1 ?? '', city: p?.city ?? '', state: p?.state || 'CA', zip: p?.zip ?? '',
+    emergencyContactName: p?.emergencyContactName ?? '', emergencyContactRelationship: p?.emergencyContactRelationship ?? '',
+    emergencyContactPhone: formatPhone(p?.emergencyContactPhone),
+  };
+}
+
 function OnboardingForm({ me }: { me: Me }) {
   const auth = useAuth();
   const [, nav] = useLocation();
@@ -130,175 +137,133 @@ function OnboardingForm({ me }: { me: Me }) {
   const mutateRef = useRef(save.mutateAsync);
   mutateRef.current = save.mutateAsync;
 
-  const [contact, setContact] = useState<Contact>(() => ({ firstName: me.user.firstName ?? '', lastName: me.user.lastName ?? '', phone: me.user.phone ?? '' }));
+  const [values, setValues] = useState<ProfileValues>(() => initial(me));
   const [answers, setAnswers] = useState<Answers>(() => ({ ...(me.profile?.onboardingAnswers ?? {}) }));
-  const [step, setStep] = useState<1 | 2>(() =>
-    onboardingContactSchema.safeParse(me.user).success &&
-    buildOnboardingAnswersSchema({ step: 1 }).safeParse(me.profile?.onboardingAnswers ?? {}).success ? 2 : 1);
-  const [agreed, setAgreed] = useState(false);
-  const [agr, setAgr] = useState({ ready: false, version: '' });
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<ProfileErrors & Errors>({});
   const [formErr, setFormErr] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [finishing, setFinishing] = useState(false);
-  const [leaving, setLeaving] = useState(false);
+  const [outBusy, setOutBusy] = useState(false);
 
-  const latest = useRef({ contact, answers });
-  latest.current = { contact, answers };
+  const latest = useRef({ values, answers });
+  latest.current = { values, answers };
   const queue = useRef<Promise<unknown>>(Promise.resolve());
-  const lastKey = useRef(JSON.stringify({ contact, answers }));
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSent = useRef<Record<string, string>>({});
+  const pending = useRef(0);
   const finalizing = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
-  const done = !!me.profile?.onboardingCompletedAt;
+  const done = isProfileComplete(me);
+  const dobLocked = !!me.profile?.onboardingCompletedAt && !!me.profile?.dateOfBirth;
+  const [agreed, setAgreed] = useState(false);
+  const [agr, setAgr] = useState({ ready: false, version: '' });
   useEffect(() => { if (done && !finalizing.current) nav('/dashboard', { replace: true }); }, [done, nav]);
 
-  const draftPayload = useCallback(() => {
-    const { contact: c, answers: a } = latest.current;
-    const cp = onboardingContactSchema.safeParse(c);
-    const ap = buildOnboardingAnswersSchema({ draft: true }).safeParse(a);
-    return { cp, ap };
+  /** Serialized single-field draft save. Failures keep typed data in memory and surface a status. */
+  const enqueue = useCallback((key: string, payload: Record<string, unknown>, sig: string) => {
+    if (lastSent.current[key] === sig) return queue.current;
+    pending.current += 1;
+    if (mounted.current) setSaveState('saving');
+    const p = queue.current.catch(() => undefined).then(async () => {
+      try {
+        await mutateRef.current({ data: { ...payload, complete: false } });
+        lastSent.current[key] = sig;
+        pending.current -= 1;
+        if (mounted.current && pending.current === 0) setSaveState('saved');
+      } catch {
+        pending.current -= 1;
+        if (mounted.current) setSaveState('error');
+      }
+    });
+    queue.current = p;
+    return p;
   }, []);
 
-  const saveDraft = useCallback(async (explicit: boolean): Promise<boolean> => {
-    if (finalizing.current) return true;
-    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
-    const { cp, ap } = draftPayload();
-    if (!cp.success || !ap.success) {
-      if (explicit) {
-        setErrors({ ...(cp.success ? {} : issuesToErrors(cp.error.issues)), ...(ap.success ? {} : issuesToErrors(ap.error.issues)) });
-        setSaveState('error');
-      }
-      return false; // typed-so-far data not yet valid; kept in memory only
-    }
-    const key = JSON.stringify(latest.current);
-    lastKey.current = key;
-    setSaveState('saving');
-    const p = queue.current.catch(() => undefined).then(() => mutateRef.current({ data: { ...cp.data, answers: ap.data, complete: false } }));
-    queue.current = p;
-    try {
-      await p;
-      if (!finalizing.current) setSaveState(key === JSON.stringify(latest.current) ? 'saved' : 'saving');
-      return true;
-    } catch (e) {
-      lastKey.current = '';
-      setSaveState('error');
-      if (explicit) setFormErr(readError(e).message);
-      return false;
-    }
-  }, [draftPayload]);
-
-  useEffect(() => {
+  const blurField = useCallback((k: ProfileKey) => {
     if (finalizing.current) return;
-    const key = JSON.stringify({ contact, answers });
-    if (key === lastKey.current) return;
-    timer.current = setTimeout(() => { void saveDraft(false); }, 1500);
-    return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [contact, answers, saveDraft]);
+    let v = latest.current.values[k];
+    if (PHONES.has(k) && v && phoneDigits(v).length <= 10) { v = formatPhone(v); setValues(x => ({ ...x, [k]: v })); }
+    const trimmed = v.trim();
+    if (trimmed) {
+      const full = profileCompletionSchema.shape[k].safeParse(trimmed);
+      setErrors(e => ({ ...e, [k]: full.success ? '' : full.error.issues[0]?.message ?? 'Check this field.' }));
+    } else setErrors(e => ({ ...e, [k]: '' }));
+    const value = NULLABLE.has(k) ? (trimmed || null) : trimmed;
+    const r = profileDraftSchema.safeParse({ [k]: value });
+    if (!r.success) return; // invalid so far; stays local, error shown above
+    void enqueue(k, r.data as Record<string, unknown>, String(value));
+  }, [enqueue]);
 
+  const blurAnswers = useCallback(() => {
+    if (finalizing.current || onboardingQuestions.length === 0) return;
+    const a = buildOnboardingAnswersSchema({ draft: true }).safeParse(latest.current.answers);
+    if (!a.success) return;
+    void enqueue('answers', { answers: a.data }, JSON.stringify(a.data));
+  }, [enqueue]);
+
+  const setV = (k: ProfileKey, v: string) => { setValues(x => ({ ...x, [k]: v })); setErrors(e => ({ ...e, [k]: '' })); setFormErr(null); };
   const setAnswer = (id: string, v: unknown) => { setAnswers(a => ({ ...a, [id]: v })); setErrors(e => ({ ...e, [id]: '' })); setFormErr(null); };
-  const setC = (k: keyof Contact, v: string) => { setContact(c => ({ ...c, [k]: v })); setErrors(e => ({ ...e, [k]: '' })); setFormErr(null); };
-
-  function validate(forStep: 1 | 2 | 'all'): boolean {
-    const errs: Errors = {};
-    if (forStep !== 2) {
-      const c = onboardingContactSchema.safeParse(contact);
-      if (!c.success) Object.assign(errs, issuesToErrors(c.error.issues));
-    }
-    const a = buildOnboardingAnswersSchema(forStep === 'all' ? {} : { step: forStep }).safeParse(answers);
-    if (!a.success) Object.assign(errs, issuesToErrors(a.error.issues));
-    if (forStep !== 1) {
-      if (!agr.ready) errs.agreement = 'Agreements are not available yet.';
-      else if (!agreed) errs.agreement = 'Please confirm you agree to continue.';
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function next() {
-    setFormErr(null);
-    if (!validate(1)) { setFormErr('Please fix the highlighted answers to continue.'); return; }
-    if (!await saveDraft(true)) return;
-    setStep(2);
-    window.scrollTo({ top: 0 });
-  }
 
   async function finish() {
     setFormErr(null);
     if (finishing) return;
-    if (!validate('all')) {
-      setFormErr('A few answers still need attention.');
-      if (!onboardingContactSchema.safeParse(contact).success || !buildOnboardingAnswersSchema({ step: 1 }).safeParse(answers).success) setStep(1);
+    const parsed = profileCompletionSchema.safeParse(latest.current.values);
+    const ap = onboardingQuestions.length ? buildOnboardingAnswersSchema().safeParse(latest.current.answers) : null;
+    if (!parsed.success || (ap && !ap.success)) {
+      const errs: Errors = {};
+      if (!parsed.success) for (const i of parsed.error.issues) { const k = String(i.path[0] ?? ''); if (k && !errs[k]) errs[k] = i.message; }
+      if (ap && !ap.success) for (const i of ap.error.issues) { const k = String(i.path[0] ?? ''); if (k && !errs[k]) errs[k] = i.message; }
+      setErrors(errs);
+      setFormErr('A few details still need attention.');
       return;
+    }
+    if (appConfig.requireAgreementAcknowledgment) {
+      if (!agr.ready) { setErrors(e => ({ ...e, agreement: 'Agreements are not available yet.' })); return; }
+      if (!agreed) { setErrors(e => ({ ...e, agreement: 'Please confirm you agree to continue.' })); return; }
     }
     setFinishing(true);
     finalizing.current = true;
-    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     try {
-      await queue.current.catch(() => undefined); // let any pending draft land first
-      const c = onboardingContactSchema.parse(latest.current.contact);
-      const a = buildOnboardingAnswersSchema().parse(latest.current.answers);
-      await mutateRef.current({ data: { ...c, answers: a, complete: true, agreementAcknowledged: true, agreementVersion: agr.version } });
-      setLeaving(true);
+      await queue.current.catch(() => undefined); // flush pending blur saves first
+      await mutateRef.current({ data: { ...parsed.data, ...(ap?.success ? { answers: ap.data } : {}), complete: true, ...(appConfig.requireAgreementAcknowledgment ? { agreementAcknowledged: true, agreementVersion: agr.version } : {}) } });
       await auth.refresh();
       nav('/dashboard', { replace: true });
     } catch (e) {
       finalizing.current = false;
-      setLeaving(false);
-      setFormErr(readError(e, "We couldn't finish your onboarding. Your answers are safe; please try again.").message);
+      setFormErr(readError(e, "We couldn't finish your onboarding. Your details are safe; please try again.").message);
       setFinishing(false);
     }
   }
 
-  const [outBusy, setOutBusy] = useState(false);
   async function out() {
     setOutBusy(true);
-    await saveDraft(false);
+    await queue.current.catch(() => undefined);
     try { await auth.signout(); nav('/'); } catch (e) { setFormErr(readError(e).message); setOutBusy(false); }
   }
 
-  const qs = (s: 1 | 2) => onboardingQuestions.filter(q => q.step === s);
-  const statusText = saveState === 'saving' ? 'Saving your progress…' : saveState === 'saved' ? 'Progress saved' : saveState === 'error' ? "Couldn't save yet. We'll retry as you type." : 'Your progress saves as you go.';
+  const statusText = saveState === 'saving' ? 'Saving your progress…' : saveState === 'saved' ? 'Progress saved' : saveState === 'error' ? "Couldn't save yet. We'll try again when you move to the next field." : 'Your progress saves as you go.';
+  void KEYS;
 
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
-        <p className="alliance-label">Step {step} of 2</p>
+        <p className="alliance-label">Onboarding</p>
         <h1 className="alliance-display mt-3 text-navy">Welcome, {me.user.firstName}</h1>
-        <p className="mt-3">
-          {step === 1 ? "Thank you for stepping up. Tell us a little about you so we can match you with the right support." : 'Almost there. A few optional notes, then review our agreements.'}
-        </p>
-        <div className="mt-5 flex gap-2" aria-hidden="true">
-          {[1, 2].map(n => <span key={n} className={`h-1.5 flex-1 rounded-full transition-colors ${n <= step ? 'bg-blue' : 'bg-gray'}`} />)}
-        </div>
+        <p className="mt-3">Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to.</p>
         <div className="mt-5">{formErr && <Notice>{formErr}</Notice>}</div>
-        <form noValidate onSubmit={e => { e.preventDefault(); void (step === 1 ? next() : finish()); }} className="mt-4 grid gap-6" data-testid="form-onboarding">
+        <form noValidate onSubmit={e => { e.preventDefault(); void finish(); }} className="mt-4 grid gap-8" data-testid="form-onboarding">
           <fieldset disabled={finishing || outBusy} className="contents">
-          {step === 1 && (
-            <>
-               <fieldset className="grid gap-4 sm:grid-cols-2" disabled={finishing}>
-                <legend className="alliance-section-kicker mb-3">Contact details</legend>
-                <Field label="First name" required autoComplete="given-name" maxLength={100} value={contact.firstName} error={errors.firstName} onChange={e => setC('firstName', e.target.value)} data-testid="input-first-name" />
-                <Field label="Last name" required autoComplete="family-name" maxLength={100} value={contact.lastName} error={errors.lastName} onChange={e => setC('lastName', e.target.value)} data-testid="input-last-name" />
-                <Field className="sm:col-span-2" label="Mobile phone" type="tel" required autoComplete="tel" maxLength={40} value={contact.phone} error={errors.phone}
-                  hint="We use this only to coordinate your shifts." onChange={e => setC('phone', e.target.value)} data-testid="input-phone" />
-              </fieldset>
-              {qs(1).map(q => <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={v => setAnswer(q.id, v)} />)}
-            </>
-          )}
-          {step === 2 && (
-            <>
-              {qs(2).map(q => <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={v => setAnswer(q.id, v)} />)}
-              <AgreementsBlock checked={agreed} onCheck={v => { setAgreed(v); setErrors(e => ({ ...e, agreement: '' })); }} error={errors.agreement} onReady={setAgr} />
-            </>
-          )}
-          <div className="flex flex-col-reverse gap-3 border-t border-gray pt-5 sm:flex-row sm:items-center">
-            {step === 2 && <Button type="button" variant="secondary" onClick={() => { setStep(1); window.scrollTo({ top: 0 }); }} data-testid="button-back"><ArrowLeft size={16} aria-hidden="true" />Back</Button>}
-            <Button type="button" variant="secondary" onClick={() => { void saveDraft(true); }} disabled={finishing || saveState === 'saving'} data-testid="button-save-progress">Save progress</Button>
-            <Button type="submit" className="sm:ml-auto" disabled={finishing || (step === 2 && !agr.ready)} data-testid={step === 1 ? 'button-next' : 'button-finish'}>
-              {step === 1 ? 'Continue' : leaving ? 'Opening your dashboard' : finishing ? 'Finishing' : 'Finish onboarding'}
-            </Button>
-          </div>
+            <ProfileFields values={values} errors={errors} email={me.user.email} onChange={setV} onBlur={blurField} dobReadOnly={dobLocked} />
+            {appConfig.requireAgreementAcknowledgment && <AgreementsBlock checked={agreed} onCheck={v => { setAgreed(v); setErrors(e => ({ ...e, agreement: '' })); }} error={errors.agreement} onReady={setAgr} />}
+            {onboardingQuestions.length > 0 && (
+              <div className="grid gap-6" onBlur={blurAnswers}>
+                {onboardingQuestions.map(q => <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={v => setAnswer(q.id, v)} />)}
+              </div>
+            )}
+            <div className="flex flex-col gap-3 border-t border-gray pt-5 sm:flex-row sm:items-center">
+              <Button type="submit" className="sm:ml-auto" disabled={finishing} data-testid="button-finish">{finishing ? 'Finishing' : 'Finish onboarding'}</Button>
+            </div>
           </fieldset>
           <p role="status" className="text-sm text-navy-soft" data-testid="text-save-status">{statusText}</p>
         </form>

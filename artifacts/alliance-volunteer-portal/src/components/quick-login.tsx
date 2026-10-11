@@ -6,7 +6,7 @@ import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 
 const FALLBACK_LABELS: Record<string, string> = {
   admin: 'Admin', 'vol-active': 'Volunteer · Active', 'vol-active-noshift': 'Volunteer · Active, no shift',
-  'vol-training': 'Volunteer · In training', 'vol-applicant': 'Volunteer · Applicant',
+  'vol-training': 'Volunteer · Onboarding (profile complete)', 'vol-applicant': 'Volunteer · Onboarding (new)',
 };
 const personaLabel = (key: string, fallback: string) => FALLBACK_LABELS[key] ?? fallback;
 
@@ -74,7 +74,7 @@ export function TestAccountBanner() {
   if (!ok || !user?.isTestAccount) return null;
   const personas = status?.personas ?? [];
   const current = personas.find(p => p.key === persona);
-  const fallback = user.role === 'admin' ? 'Admin' : `Volunteer · ${me.data?.profile?.status === 'applicant' ? 'Applicant' : me.data?.profile?.status === 'in_training' ? 'In training' : 'Active'}`;
+  const fallback = user.role === 'admin' ? 'Admin' : `Volunteer · ${me.data?.profile?.status === 'inactive' ? 'Inactive' : me.data?.profile?.status === 'active' ? 'Active' : 'Onboarding'}`;
   const label = persona ? personaLabel(persona, current?.label ?? fallback) : fallback;
   const others = personas.filter(p => p.key !== persona);
   async function signout() {

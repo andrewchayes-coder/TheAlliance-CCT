@@ -10,8 +10,7 @@ export type VolunteerStatusUpdateStatus = typeof VolunteerStatusUpdateStatus[key
 
 
 export const VolunteerStatusUpdateStatus = {
-  applicant: 'applicant',
-  in_training: 'in_training',
+  onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
 } as const;

@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db, volunteerProfilesTable, shiftAssignmentsTable, activityLogTable, notificationLogTable } from '@workspace/db';
 import {
   GetAdminVolunteerParams, ChangeVolunteerStatusBody, UpdateVolunteerTrackingBody, UpdateVolunteerNotesBody,
@@ -13,6 +13,7 @@ import { appOrigin } from '../auth/session';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
 import { lockSchedule } from '../server/scheduleMutations';
+import { normalizeVolunteerStatus, profileCompletionSchema, calendarDateSchema } from '@workspace/shared/profileFields';
 
 const router = Router();
 function errorResponse(error: unknown, res: Response) {
@@ -36,7 +37,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
       await lockSchedule(tx);
       const { user, profile } = await lockedVolunteer(tx, id);
       checkRevision(profile, input.expectedUpdatedAt);
-      if (profile.status === input.status) return { user, profile, activityId: null, released: [] as Awaited<ReturnType<typeof releasePreview>> };
+      if (normalizeVolunteerStatus(profile.status) === input.status) return { user, profile, activityId: null, released: [] as Awaited<ReturnType<typeof releasePreview>> };
       if (input.status === 'active') {
         const missing = approvalRequirements(user, profile).filter(check => !check.met);
         if (missing.length) throw new WorkflowError(422, 'Approval is not ready. Complete each missing requirement first.', missing);
@@ -50,9 +51,17 @@ router.post('/volunteers/:userId/status', async (req, res) => {
         if (released.length) await tx.update(shiftAssignmentsTable).set({ endDate: today, endedReason: 'admin_removed', updatedAt: new Date() })
           .where(inArray(shiftAssignmentsTable.id, actual));
       }
-      await tx.update(volunteerProfilesTable).set({ status: input.status, updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
+      const [previousActivation] = input.status === 'active' && !profile.startDate
+        ? await tx.select({id:activityLogTable.id}).from(activityLogTable).where(and(
+          eq(activityLogTable.volunteerProfileId,profile.id),eq(activityLogTable.action,'status_changed'),
+          sql`${activityLogTable.details}->>'to' = 'active'`,
+        )).limit(1) : [];
+      const newStartDate = input.status === 'active' && !profile.startDate && !previousActivation ? today : undefined;
+      await tx.update(volunteerProfilesTable).set({ status: input.status, ...(newStartDate ? { startDate:newStartDate } : {}), updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
+      if (newStartDate) await tx.insert(activityLogTable).values({ volunteerProfileId:profile.id,actorUserId:req.authUser!.id,
+        action:'start_date_changed',details:{from:null,to:newStartDate,reason:'first_activation'} });
       const [event] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'status_changed',
-        details: { from: profile.status, to: input.status, releasedAssignmentIds: released.map(row => row.assignmentId),
+        details: { from: normalizeVolunteerStatus(profile.status), to: input.status, releasedAssignmentIds: released.map(row => row.assignmentId),
           releasedShifts: released.map(row => ({ dayOfWeek: row.dayOfWeek, startTime: row.startTime, endTime: row.endTime })),
           previousAssignments: released.map(row => ({ id: row.assignmentId, shiftSlotId: row.shiftSlotId,
             volunteerProfileId: profile.id, startDate: row.startDate, endDate: row.endDate, endedReason: null })) } }).returning();
@@ -93,15 +102,22 @@ function calendar(value: string | null) {
 // Orval coerces OpenAPI `format: date` to Date; these database columns are
 // calendar strings, so preserve and validate the original day at this boundary.
 const trackingInput = UpdateVolunteerTrackingBody.extend({
-  certificationCompletedAt: z.string().nullable(), certificationExpiresAt: z.string().nullable(),
-  backgroundCheckSubmittedAt: z.string().nullable(), backgroundCheckClearedAt: z.string().nullable(),
+  certificationCompletedAt: z.string().nullable().optional(), certificationExpiresAt: z.string().nullable().optional(),
+  backgroundCheckSubmittedAt: z.string().nullable().optional(), backgroundCheckClearedAt: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional(),
+  startDate: z.string().nullable().optional(),
 }).strict();
 router.patch('/volunteers/:userId/tracking', async (req, res) => {
   try {
     const id = userId(req), parsed = trackingInput.safeParse(req.body);
     if (!parsed.success) throw new WorkflowError(400, 'Enter valid training and background-check fields.');
     const { expectedUpdatedAt, ...fields } = parsed.data;
-    [fields.certificationCompletedAt, fields.certificationExpiresAt, fields.backgroundCheckSubmittedAt, fields.backgroundCheckClearedAt].forEach(calendar);
+    if (fields.dateOfBirth != null && !profileCompletionSchema.shape.dateOfBirth.safeParse(fields.dateOfBirth).success)
+      throw new WorkflowError(400, 'Date of birth must be a valid date in the past.');
+    if (fields.startDate != null && !calendarDateSchema.safeParse(fields.startDate).success)
+      throw new WorkflowError(400, 'Enter a valid start date.');
+    [fields.certificationCompletedAt, fields.certificationExpiresAt, fields.backgroundCheckSubmittedAt, fields.backgroundCheckClearedAt]
+      .filter((value): value is string | null => value !== undefined).forEach(calendar);
     if (fields.certificationCompletedAt && fields.certificationExpiresAt && fields.certificationExpiresAt < fields.certificationCompletedAt)
       throw new WorkflowError(400, 'Certification expiry cannot be before completion.');
     if (fields.backgroundCheckSubmittedAt && fields.backgroundCheckClearedAt && fields.backgroundCheckClearedAt < fields.backgroundCheckSubmittedAt)
@@ -113,6 +129,9 @@ router.patch('/volunteers/:userId/tracking', async (req, res) => {
         .map(([key, value]) => [key, { from: profile[key as keyof typeof profile], to: value }]));
       if (!Object.keys(changes).length) return;
       await tx.update(volunteerProfilesTable).set({ ...fields, updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
+      if ('startDate' in changes) await tx.insert(activityLogTable).values({
+        volunteerProfileId:profile.id,actorUserId:req.authUser!.id,action:'start_date_changed',details:changes.startDate!,
+      });
       await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'tracking_updated', details: { changes } });
     });
     res.set('Cache-Control', 'no-store').json(await loadAdminVolunteerDetail(id));

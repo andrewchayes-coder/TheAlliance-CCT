@@ -1,5 +1,19 @@
 # Community Care Team Volunteer Portal — production deployment
 
+## Fixed profile / three-status release
+
+Publish manages this additive schema update: append `onboarding` to the existing `volunteer_status` enum, change the existing status default, and add the nine nullable profile columns (state defaults to CA). Review that diff before publishing. The reference migration is `lib/db/migrations/0002_cct_fixed_profile.sql`; do not run it at boot or restore a migration hook.
+
+Publish does not perform application data backfills. After the new enum value is available, the optional legacy-status backfill is one short statement:
+
+```sql
+UPDATE public.volunteer_profiles SET status = 'onboarding' WHERE status IN ('applicant', 'in_training');
+```
+
+This has been applied in development only. No production data was changed for this release. Reads are compatible without running it; the deprecated enum values and legacy columns remain intact. Do not invent DOB/address/emergency-contact values for real volunteers: they complete the new profile themselves. Existing completed profiles missing required fields return to onboarding.
+
+New activation requires verified email and all required fixed-profile fields, not the disabled certification/background/agreement checks. First activation supplies today's Pacific start date if absent; staff can edit it. Onboarding questions are empty and the three tracking flags are false in `shared/appConfig.ts`. Training and paperwork take place with Alliance staff outside the portal.
+
 Approved logos/icons ship with the web build at `/brand/`. That public path is served by the API artifact's static-file handler with `Cache-Control: public, max-age=31536000, immutable`, before sessions; it never reads Object Storage at runtime. Email headers use `${APP_BASE_URL}/brand/logo-horizontal.png`. Replace assets with versioned filenames/URLs if the artwork changes later, rather than expecting a year-cached URL to refresh immediately.
 
 ## Safety rules

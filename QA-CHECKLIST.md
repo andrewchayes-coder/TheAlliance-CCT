@@ -68,19 +68,19 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 
 | ID | Steps | Expected result |
 |---|---|---|
-| ONB-01 | Complete both questionnaire steps, required/optional fields and available choice types. | Config labels/options used; required validation correct; final answers persist. |
-| ONB-02 | Save progress; reload; sign out/in; navigate back. | Draft resumes without losing answers. |
-| ONB-03 | Read User Agreement/Safety Guidelines; submit with/without acknowledgment. | Completion requires current, available agreements; stores date/version. |
-| ONB-04 | Remove availability of an agreement in test data. | Draft remains savable; completion clearly blocked, not silently accepted. |
+| ONB-01 | Complete the single profile form: names, mobile, past DOB, address, US state/ZIP, emergency name/relationship/phone. | Every field required; CA default; phones formatted and stored as digits; no minimum age. |
+| ONB-02 | Edit fields and blur; wait for Saved; reload; sign out/in. | Draft resumes without losing fields. Finish waits for saves, stamps completion, and reaches dashboard. |
+| ONB-03 | Leave DOB/address/emergency fields empty, enter today's/future/invalid DOB, invalid ZIP or phone; try finishing. | Exact field errors; server blocks incomplete or invalid completion. Email is read-only. |
+| ONB-04 | With default flags, inspect onboarding/detail/roster/profile/CSV and activate a complete verified profile. Then test flags true in isolated QA. | No extra questions or compliance UI/checks by default; old data retained. True flags restore applicable controls and checks. |
 | PROF-01 | `/profile`: edit name, phone, county, availability and onboarding answers. | Own records update; unknown/privileged fields cannot be changed. |
-| PROF-02 | Inspect email/status/training/background/agreement fields. | Read-only, correct Pacific date display; no staff notes. |
+| PROF-02 | Inspect email/DOB/status/start date; edit contact/address/emergency fields; try API writes to DOB/start date. | Read-only fields reject volunteer writes. Own private fields only; no staff notes. Admin DOB/start edits audit correctly. |
 | PROF-03 | Change password with wrong/current password; check validation and other sessions. | Wrong password blocked; success invalidates old sessions and returns to sign-in with confirmation. |
 
 ## Volunteer dashboard and shifts
 
 | ID | Steps | Expected result |
 |---|---|---|
-| HOME-01 | `/dashboard` as applicant, in training, active with no shifts, active with shifts, inactive. | Correct warm status card/checklist/action; applicant isn't offered signup prematurely. |
+| HOME-01 | `/dashboard` as onboarding, active with no shifts, active with shifts, inactive; inspect legacy statuses. | Three canonical statuses; legacy applicant/in_training read as onboarding. Checklist shows profile and external training/paperwork, not disabled compliance. |
 | HOME-02 | Inspect greeting, next shift, next four occurrences, countdown and unread preview. | Own data only; Pacific dates; skips/closed dates excluded. |
 | HOME-03 | Active/inactive volunteers inspect quick links and open links. | Only eligible dashboard quick links; actual new tab; HTTPS destinations. |
 | SHIFT-01 | `/shifts`: book available standing slot with default and chosen start within four weeks. | Own shift/count-only grid; correct repeat/start date and confirmation email. |

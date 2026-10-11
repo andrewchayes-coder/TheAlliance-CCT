@@ -6,6 +6,7 @@ import {
 } from '@workspace/db';
 import { testAccounts } from '@workspace/shared/testAccounts';
 import { appConfig } from '@workspace/shared/appConfig';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { pacificDay, addCalendarDays } from './scheduleService';
 import { WorkflowError } from '../admin-volunteer-detail';
 import { hashPassword } from '../auth/security';
@@ -31,9 +32,12 @@ export function createTestAccountService(personas: readonly Persona[] = testAcco
         throw new WorkflowError(409, `The QA address ${persona.email} belongs to a non-test account. No accounts were changed.`);
       // The cleartext is ephemeral and never returned, logged, or persisted.
       const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
-      const patch = { firstName: 'Test', lastName: persona.lastName, role: persona.role, isActive: true,
+      const patch = { firstName: reset || !existing ? 'Test' : existing.firstName,
+        lastName: reset || !existing ? persona.lastName : existing.lastName, role: persona.role,
+        isActive: reset || !existing ? true : existing.isActive,
         isTestAccount: true, emailVerifiedAt: existing?.emailVerifiedAt ?? now, passwordHash, googleSubject: null,
-        ...(reset ? { phone: null, sessionVersion: sql`${usersTable.sessionVersion} + 1` } : {}), updatedAt: now };
+        phone: reset || !existing?.phone ? '9165550100' : existing.phone,
+        ...(reset ? { sessionVersion: sql`${usersTable.sessionVersion} + 1` } : {}), updatedAt: now };
       const [user] = existing
         ? await tx.update(usersTable).set(patch).where(and(eq(usersTable.id, existing.id), eq(usersTable.isTestAccount, true))).returning()
         : await tx.insert(usersTable).values({ email: persona.email, ...patch, sessionVersion: 0 }).returning();
@@ -41,15 +45,39 @@ export function createTestAccountService(personas: readonly Persona[] = testAcco
       let profileId: string | null = null;
       if (persona.role === 'volunteer') {
         const completed = persona.onboardingComplete;
+        const [storedProfile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,user.id));
+        const completeDefaults = {
+          dateOfBirth:'1990-01-01',addressLine1:'123 QA Test Lane',city:'Sacramento',state:'CA',zip:'95814',
+          emergencyContactName:'Test Contact',emergencyContactRelationship:'Friend',emergencyContactPhone:'9165550101',
+        };
+        const repairs = completed ? Object.fromEntries(Object.entries(completeDefaults).filter(([key]) =>
+          !storedProfile?.[key as keyof typeof storedProfile])) : {};
         const values = { county: 'Placer', status: persona.status, onboardingCompletedAt: completed ? now : null,
+          ...repairs,
+          ...(reset || !existing ? {
+            dateOfBirth: completed ? '1990-01-01' : null, addressLine1: completed ? '123 QA Test Lane' : null,
+            city: completed ? 'Sacramento' : null, state:'CA',zip:completed ? '95814' : null,
+            emergencyContactName:completed ? 'Test Contact' : null,emergencyContactRelationship:completed ? 'Friend' : null,
+            emergencyContactPhone:completed ? '9165550101' : null,startDate:persona.status === 'active' ? today : null,
+          } : {}),
           agreementAcknowledgedAt: completed ? now : null, agreementVersion: completed ? version : null,
           certificationStatus: persona.certificationStatus, certificationCompletedAt: persona.certificationStatus === 'complete' ? today : null,
           backgroundCheckStatus: persona.backgroundCheckStatus, backgroundCheckSubmittedAt: persona.backgroundCheckStatus === 'not_started' ? null : today,
           backgroundCheckClearedAt: persona.backgroundCheckStatus === 'cleared' ? today : null,
           ...(reset || !existing ? { onboardingAnswers: {}, availabilityNotes: null, adminNotes: null, certificationExpiresAt: null } : {}),
           updatedAt: now };
-        const [profile] = await tx.insert(volunteerProfilesTable).values({ userId: user.id, ...values })
-          .onConflictDoUpdate({ target: volunteerProfilesTable.userId, set: values }).returning();
+        // Ordinary preparation must not undo saved onboarding, status or start date.
+        // Only the explicit reset action restores the persona's starting state.
+        const legacyStatus = storedProfile && normalizeVolunteerStatus(storedProfile.status) !== storedProfile.status
+          ? {status:normalizeVolunteerStatus(storedProfile.status)} : {};
+        const repairValues = {...repairs,...legacyStatus};
+        const [profile] = storedProfile && !reset
+          ? Object.keys(repairValues).length
+            ? await tx.update(volunteerProfilesTable).set({...repairValues,updatedAt:now})
+              .where(eq(volunteerProfilesTable.id,storedProfile.id)).returning()
+            : [storedProfile]
+          : await tx.insert(volunteerProfilesTable).values({ userId: user.id, ...values })
+            .onConflictDoUpdate({ target: volunteerProfilesTable.userId, set: values }).returning();
         profileId = profile!.id;
       }
       result.push({ key: persona.key, label: persona.label, userId: user.id, profileId, created: !existing });
