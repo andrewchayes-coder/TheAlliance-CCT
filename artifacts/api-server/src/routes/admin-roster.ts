@@ -3,7 +3,7 @@ import {
   ListVolunteerRosterQueryParams, ListVolunteerRosterResponse, GetAdminVolunteerParams,
   ExportVolunteerRosterQueryParams, ExportVolunteerScheduleQueryParams,
 } from '@workspace/api-zod';
-import { rosterSnapshot, filterRoster, rosterEntry, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
+import { rosterSnapshot, filterRoster, sortRoster, rosterEntry, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
 import { pacificDay } from '../volunteer-shifts';
 import { loadAdminVolunteerDetail, WorkflowError } from '../admin-volunteer-detail';
 
@@ -13,10 +13,13 @@ router.get('/volunteers', async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: 'Choose valid roster filters and pagination.' }); return; }
   const { limit = 25, offset = 0, ...filters } = parsed.data;
   const people = await rosterSnapshot();
-  const matched = filterRoster(people, filters);
+  const matched = sortRoster(filterRoster(people, filters),filters);
+  const selectable = people.filter(person=>!person.user.isTestAccount || filters.showTestAccounts === 'true');
   res.set('Cache-Control', 'no-store').json(ListVolunteerRosterResponse.parse({
     volunteers: matched.slice(offset, offset + limit).map(rosterEntry),
     total: matched.length, limit, offset, summary: rosterSummary(people),
+    cities:[...new Set(selectable.map(person=>person.profile.city).filter((value):value is string=>!!value))].sort(),
+    counties:[...new Set(selectable.map(person=>person.profile.county).filter((value):value is string=>!!value))].sort(),
   }));
 });
 for (const kind of ['roster', 'schedule'] as const) {
@@ -25,7 +28,8 @@ for (const kind of ['roster', 'schedule'] as const) {
     const parsed = schema.safeParse(req.query);
     if (!parsed.success) { res.status(400).json({ error: 'Choose valid export filters.' }); return; }
     const now = new Date();
-    const matched = filterRoster(await rosterSnapshot(now), parsed.data);
+    const filtered = filterRoster(await rosterSnapshot(now), parsed.data);
+    const matched = kind === 'roster' ? sortRoster(filtered,parsed.data) : filtered;
     res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store',
       'Content-Disposition': `attachment; filename="alliance-${kind}-${pacificDay(now)}.csv"`,
       'X-Content-Type-Options': 'nosniff' });

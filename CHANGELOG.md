@@ -4,9 +4,11 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 
 ## Unreleased
 ### Added
+- Staff roster with configurable per-admin columns, global sorting, contact links and new profile filters; private profile and inline start-date editors.
 - Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
 - Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
 ### Changed
+- Roster attention counts now flag active volunteers without shifts, incomplete onboarding older than seven days, and onboarding older than thirty days. Private-field edits record field names only; county editing is staff-only.
 - Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the old training/applicant identities in place, with updated fake profile defaults and labels.
 - Simplified volunteer workflow to Onboarding, Active and Inactive. Legacy enum values/data remain intact and read as Onboarding.
 - Disabled in-app certification, background-check and agreement tracking by default; extra onboarding questions are empty. Training and paperwork are handled by Alliance staff.

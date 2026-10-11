@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useUpdateVolunteerTracking,
+  getGetAdminOverviewQueryKey, getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useUpdateVolunteerTracking,
   type AdminVolunteerDetail, type VolunteerTrackingUpdate,
 } from '@workspace/api-client-react';
-import { calendarDateSchema } from '@workspace/shared/profileFields';
 import { Button, StatusBadge } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { readError, useAuth } from '@/auth/auth-context';
 import { BG, CERT, calDate, dateInput, daysUntil, flags } from './format';
 
-type Draft = { dob: string; start: string; cs: string; cc: string; ce: string; bs: string; bsub: string; bc: string };
+type Draft = { cs: string; cc: string; ce: string; bs: string; bsub: string; bc: string };
 const fromServer = (d: AdminVolunteerDetail): Draft => {
   const p = d.entry.profile;
-  return { dob: dateInput(p.dateOfBirth), start: dateInput(p.startDate),
+  return {
     cs: p.certificationStatus, cc: dateInput(p.certificationCompletedAt), ce: dateInput(p.certificationExpiresAt),
     bs: p.backgroundCheckStatus, bsub: dateInput(p.backgroundCheckSubmittedAt), bc: dateInput(p.backgroundCheckClearedAt) };
 };
@@ -37,12 +36,8 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
   const exp = flags.cert && cur.ce ? daysUntil(cur.ce) : null;
 
   const save = () => {
-    const bad = (['dob', 'start'] as const).find(k => cur[k] && !calendarDateSchema.safeParse(cur[k]).success);
-    if (bad) { setErr({ conflict: false, msg: 'Enter a valid date.' }); return; }
     const p = detail.entry.profile;
     const data: VolunteerTrackingUpdate = { expectedUpdatedAt: base.current || p.updatedAt };
-    if (cur.dob !== dateInput(p.dateOfBirth)) data.dateOfBirth = cur.dob || null;
-    if (cur.start !== dateInput(p.startDate)) data.startDate = cur.start || null;
     if (flags.cert) {
       data.certificationStatus = cur.cs as VolunteerTrackingUpdate['certificationStatus'];
       data.certificationCompletedAt = cur.cc || null; data.certificationExpiresAt = cur.ce || null;
@@ -57,6 +52,7 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
         qc.setQueryData(getGetAdminVolunteerQueryKey(userId), r);
         void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) });
         void qc.invalidateQueries({ queryKey: getListVolunteerRosterQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() });
         setDraft(null); setSaved(true);
       },
       onError: e => {
@@ -69,19 +65,13 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
   };
   const discard = () => { setDraft(null); setErr(null); void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) }); };
 
+  if (!flags.cert && !flags.bg) return null;
   const sel = 'alliance-input mt-1 font-normal';
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-tracking">
-      <h2 id="v-tracking" className="alliance-display">Dates{flags.cert || flags.bg ? ' and clearance' : ''}</h2>
+      <h2 id="v-tracking" className="alliance-display">Dates</h2>
       <p className="mt-1 text-sm text-navy-soft">Only Alliance staff can see these.{flags.bg ? " Track status only. Don't upload or paste background check reports here." : ''}</p>
       <div className="mt-4 grid gap-6 md:grid-cols-2">
-        <fieldset className="space-y-3">
-          <legend className="font-bold">Profile dates</legend>
-          <label className="block text-sm font-bold">Date of birth
-            <input type="date" className={sel} value={cur.dob} onChange={e => set('dob', e.target.value)} data-testid="input-dob" /></label>
-          <label className="block text-sm font-bold">Start date
-            <input type="date" className={sel} value={cur.start} onChange={e => set('start', e.target.value)} data-testid="input-start-date" /></label>
-        </fieldset>
         {flags.cert && (
           <fieldset className="space-y-3">
             <legend className="font-bold">Certification</legend>

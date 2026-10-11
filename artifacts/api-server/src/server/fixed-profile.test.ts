@@ -142,4 +142,36 @@ describe('fixed profile validation and compatibility',()=>{
     expect(csv).not.toContain('Profile: agreement');expect(csv).not.toContain('Profile: onboardingAnswers');
     expect(csv).toContain('Profile: dateOfBirth');
   });
+  it('lets staff edit private fields, filters the complete roster, and audits names without values',async()=>{
+    const path=`/admin/volunteers/${volunteerId}`;
+    let detail=(await admin.request(path)).data;
+    const sensitive={dateOfBirth:'1992-02-03',addressLine1:'904 Private Test St',city:'Auburn',state:'CA',zip:'95603',
+      emergencyContactName:'Private Emergency Contact',emergencyContactRelationship:'Sibling',
+      emergencyContactPhone:'(555) 555-0100',county:'Placer',startDate:'2026-02-02'};
+    const changed=await admin.request(`${path}/tracking`,'PATCH',{expectedUpdatedAt:detail.entry.profile.updatedAt,...sensitive});
+    expect(changed.status).toBe(200);detail=changed.data;
+    expect(detail.entry.profile).toMatchObject({...sensitive,emergencyContactPhone:'5555550100'});
+    expect((await admin.request(`${path}/tracking`,'PATCH',{
+      expectedUpdatedAt:detail.entry.profile.updatedAt,zip:'bad-zip'})).status).toBe(400);
+    expect((await own.request('/volunteer/profile','PATCH',{county:'Nevada'})).status).toBe(400);
+    expect((await own.request(`${path}/tracking`,'PATCH',{expectedUpdatedAt:detail.entry.profile.updatedAt,city:'Roseville'})).status).toBe(403);
+    const audit=await db.select().from(activityLogTable).where(eq(activityLogTable.volunteerProfileId,detail.entry.profile.id));
+    const edits=audit.filter(event=>['tracking_updated','start_date_changed'].includes(event.action));
+    expect(edits.length).toBeGreaterThan(0);
+    for(const event of edits) {
+      expect(Array.isArray(event.details?.fields)).toBe(true);
+      for(const value of ['904 Private Test St','1992-02-03','Private Emergency Contact','5555550100','2026-02-02'])
+        expect(JSON.stringify(event.details)).not.toContain(value);
+    }
+    const filtered=await admin.request('/admin/volunteers?city=Auburn&county=Placer&shiftPresence=no_shift&profileIncomplete=false&sortBy=email&sortDirection=desc&limit=1');
+    expect(filtered.status).toBe(200);
+    expect(filtered.data.volunteers.some((row:{user:{id:string}})=>row.user.id===volunteerId)).toBe(true);
+    expect(filtered.data.cities).toContain('Auburn');expect(filtered.data.counties).toContain('Placer');
+    const before=await admin.request(`${path}/tracking`,'PATCH',{expectedUpdatedAt:detail.entry.profile.updatedAt,addressLine1:null});
+    expect(before.status).toBe(200);
+    const incomplete=await admin.request(`/admin/volunteers?search=${encodeURIComponent(detail.entry.user.email)}&profileIncomplete=true`);
+    expect(incomplete.data.volunteers.map((row:{user:{id:string}})=>row.user.id)).toContain(volunteerId);
+    const csv=rosterCsv(await rosterSnapshot());
+    for(const column of ['Profile: startDate','Profile: dateOfBirth','Profile: addressLine1','Profile: city','Profile: state','Profile: zip','Profile: emergencyContactName','Profile: emergencyContactRelationship','Profile: emergencyContactPhone','Profile: county','Shifts held']) expect(csv).toContain(column);
+  });
 });

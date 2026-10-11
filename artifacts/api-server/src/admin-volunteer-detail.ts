@@ -62,6 +62,12 @@ export async function loadAdminVolunteerDetail(userId: string) {
         skip.skipDate >= shift.startDate && (!shift.endDate || skip.skipDate <= shift.endDate)).map(skip => skip.skipDate),
     })),
     approvalRequirements: approvalRequirements(person.user, person.profile),
-    activity: activity.map(({ firstName, lastName, ...event }) => ({ ...event, actorName: `${firstName} ${lastName}` })),
+    activity: activity.map(({ firstName, lastName, ...event }) => ({
+      ...event, actorName: `${firstName} ${lastName}`,
+      // Historical audit values remain in the database, but are not exposed in the activity UI.
+      details:event.action === 'tracking_updated' ? {fields:Array.isArray(event.details?.fields) ? event.details.fields
+        : Object.keys((event.details?.changes ?? {}) as Record<string,unknown>)}
+        : event.action === 'start_date_changed' ? {fields:['startDate']} : event.details,
+    })),
   });
 }

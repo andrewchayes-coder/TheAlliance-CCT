@@ -18,7 +18,6 @@ export interface VolunteerProfileInput {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
-  county?: string;
   /** @nullable */
   availabilityNotes?: string | null;
   answers?: VolunteerProfileInputAnswers;

@@ -21,13 +21,12 @@ router.get('/dashboard', async (req, res) => {
 });
 router.patch('/profile', async (req, res): Promise<void> => {
   const parsed = volunteerProfileEditSchema.extend({
-    county: z.enum(appConfig.counties).optional(), availabilityNotes: z.string().trim().max(5000).nullable().optional(),
+    availabilityNotes: z.string().trim().max(5000).nullable().optional(),
     answers: z.record(z.string(), z.unknown()).optional(),
   }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Please check your profile information.' }); return; }
   const inputAnswers: Record<string, unknown> = { ...parsed.data.answers };
   for (const question of onboardingQuestions) {
-    if (question.profileField === 'county') inputAnswers[question.id] = parsed.data.county;
     if (question.profileField === 'availabilityNotes') inputAnswers[question.id] = parsed.data.availabilityNotes ?? '';
   }
   const answers = buildOnboardingAnswersSchema().safeParse(inputAnswers);

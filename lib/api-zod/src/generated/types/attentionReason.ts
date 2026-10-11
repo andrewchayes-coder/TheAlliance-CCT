@@ -14,4 +14,5 @@ export const AttentionReason = {
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+  onboarding_overdue: 'onboarding_overdue',
 } as const;

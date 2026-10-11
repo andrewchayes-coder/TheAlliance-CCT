@@ -8,6 +8,10 @@
 import type { ExportVolunteerRosterBackgroundCheckStatus } from './exportVolunteerRosterBackgroundCheckStatus';
 import type { ExportVolunteerRosterCertificationStatus } from './exportVolunteerRosterCertificationStatus';
 import type { ExportVolunteerRosterNeedsAttention } from './exportVolunteerRosterNeedsAttention';
+import type { ExportVolunteerRosterProfileIncomplete } from './exportVolunteerRosterProfileIncomplete';
+import type { ExportVolunteerRosterShiftPresence } from './exportVolunteerRosterShiftPresence';
+import type { ExportVolunteerRosterSortBy } from './exportVolunteerRosterSortBy';
+import type { ExportVolunteerRosterSortDirection } from './exportVolunteerRosterSortDirection';
 import type { ExportVolunteerRosterStatus } from './exportVolunteerRosterStatus';
 
 export type ExportVolunteerRosterParams = {
@@ -17,6 +21,11 @@ export type ExportVolunteerRosterParams = {
 search?: string;
 status?: ExportVolunteerRosterStatus;
 county?: string;
+city?: string;
+shiftPresence?: ExportVolunteerRosterShiftPresence;
+profileIncomplete?: ExportVolunteerRosterProfileIncomplete;
+sortBy?: ExportVolunteerRosterSortBy;
+sortDirection?: ExportVolunteerRosterSortDirection;
 certificationStatus?: ExportVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ExportVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ExportVolunteerRosterNeedsAttention;

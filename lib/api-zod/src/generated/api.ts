@@ -1266,9 +1266,14 @@ export const ListVolunteerRosterQueryParams = zod.object({
   "search": zod.coerce.string().max(listVolunteerRosterQuerySearchMax).optional(),
   "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
+  "city": zod.coerce.string().optional(),
+  "shiftPresence": zod.enum(['has_shift', 'no_shift']).optional(),
+  "profileIncomplete": zod.enum(['true', 'false']).optional(),
+  "sortBy": zod.enum(['name', 'status', 'phone', 'email', 'city', 'startDate', 'shiftCount', 'lastLoginAt', 'dateOfBirth', 'address', 'zip', 'emergencyContact', 'county']).optional(),
+  "sortDirection": zod.enum(['asc', 'desc']).optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
-  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']).optional(),
+  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional(),
   "showTestAccounts": zod.enum(['true', 'false']).optional(),
   "limit": zod.coerce.number().int().min(1).max(listVolunteerRosterQueryLimitMax).default(listVolunteerRosterQueryLimitDefault),
   "offset": zod.coerce.number().int().min(listVolunteerRosterQueryOffsetMin).default(listVolunteerRosterQueryOffsetDefault)
@@ -1319,7 +1324,7 @@ export const ListVolunteerRosterResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 })),
   "total": zod.number().int(),
   "limit": zod.number().int(),
@@ -1329,7 +1334,9 @@ export const ListVolunteerRosterResponse = zod.object({
   "active": zod.number().int(),
   "inactive": zod.number().int(),
   "needsAttention": zod.number().int()
-})
+}),
+  "cities": zod.array(zod.string()),
+  "counties": zod.array(zod.string())
 })
 
 
@@ -1382,7 +1389,7 @@ export const GetAdminVolunteerResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -1477,7 +1484,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -1528,10 +1535,36 @@ export const UpdateVolunteerTrackingParams = zod.object({
   "userId": zod.coerce.string().uuid()
 })
 
+export const updateVolunteerTrackingBodyAddressLine1Max = 300;
+
+export const updateVolunteerTrackingBodyCityMax = 100;
+
+export const updateVolunteerTrackingBodyStateMax = 2;
+
+export const updateVolunteerTrackingBodyZipMax = 10;
+
+export const updateVolunteerTrackingBodyEmergencyContactNameMax = 200;
+
+export const updateVolunteerTrackingBodyEmergencyContactRelationshipMax = 100;
+
+export const updateVolunteerTrackingBodyEmergencyContactPhoneMax = 30;
+
+export const updateVolunteerTrackingBodyCountyMax = 100;
+
+
+
 export const UpdateVolunteerTrackingBody = zod.object({
   "expectedUpdatedAt": zod.coerce.date(),
   "dateOfBirth": zod.string().nullish(),
   "startDate": zod.string().nullish(),
+  "addressLine1": zod.string().max(updateVolunteerTrackingBodyAddressLine1Max).nullish(),
+  "city": zod.string().max(updateVolunteerTrackingBodyCityMax).nullish(),
+  "state": zod.string().max(updateVolunteerTrackingBodyStateMax).nullish(),
+  "zip": zod.string().max(updateVolunteerTrackingBodyZipMax).nullish(),
+  "emergencyContactName": zod.string().max(updateVolunteerTrackingBodyEmergencyContactNameMax).nullish(),
+  "emergencyContactRelationship": zod.string().max(updateVolunteerTrackingBodyEmergencyContactRelationshipMax).nullish(),
+  "emergencyContactPhone": zod.string().max(updateVolunteerTrackingBodyEmergencyContactPhoneMax).nullish(),
+  "county": zod.string().max(updateVolunteerTrackingBodyCountyMax).nullish(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "certificationCompletedAt": zod.string().nullish(),
   "certificationExpiresAt": zod.string().nullish(),
@@ -1585,7 +1618,7 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -1682,7 +1715,7 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']))
+  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -1729,9 +1762,14 @@ export const ExportVolunteerRosterQueryParams = zod.object({
   "search": zod.coerce.string().max(exportVolunteerRosterQuerySearchMax).optional(),
   "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
+  "city": zod.coerce.string().optional(),
+  "shiftPresence": zod.enum(['has_shift', 'no_shift']).optional(),
+  "profileIncomplete": zod.enum(['true', 'false']).optional(),
+  "sortBy": zod.enum(['name', 'status', 'phone', 'email', 'city', 'startDate', 'shiftCount', 'lastLoginAt', 'dateOfBirth', 'address', 'zip', 'emergencyContact', 'county']).optional(),
+  "sortDirection": zod.enum(['asc', 'desc']).optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
-  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']).optional()
+  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional()
 })
 
 export const ExportVolunteerRosterResponse = zod.unknown()
@@ -1813,7 +1851,6 @@ export const UpdateVolunteerProfileBody = zod.object({
   "emergencyContactName": zod.string(),
   "emergencyContactRelationship": zod.string(),
   "emergencyContactPhone": zod.string(),
-  "county": zod.string().optional(),
   "availabilityNotes": zod.string().nullish(),
   "answers": zod.record(zod.string(), zod.unknown()).optional()
 })

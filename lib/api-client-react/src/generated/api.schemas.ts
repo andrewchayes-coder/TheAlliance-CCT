@@ -579,6 +579,7 @@ export const AttentionReason = {
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+  onboarding_overdue: 'onboarding_overdue',
 } as const;
 
 export interface AdminAssignedShift {
@@ -716,6 +717,8 @@ export interface VolunteerRoster {
   limit: number;
   offset: number;
   summary: RosterSummary;
+  cities: string[];
+  counties: string[];
 }
 
 export interface ApprovalRequirement {
@@ -785,6 +788,46 @@ export interface VolunteerTrackingUpdate {
   dateOfBirth?: string | null;
   /** @nullable */
   startDate?: string | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  addressLine1?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  city?: string | null;
+  /**
+     * @maxLength 2
+     * @nullable
+     */
+  state?: string | null;
+  /**
+     * @maxLength 10
+     * @nullable
+     */
+  zip?: string | null;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  emergencyContactName?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  emergencyContactRelationship?: string | null;
+  /**
+     * @maxLength 30
+     * @nullable
+     */
+  emergencyContactPhone?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  county?: string | null;
   certificationStatus?: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
   certificationCompletedAt?: string | null;
@@ -847,7 +890,6 @@ export interface VolunteerProfileInput {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
-  county?: string;
   /** @nullable */
   availabilityNotes?: string | null;
   answers?: VolunteerProfileInputAnswers;
@@ -1435,6 +1477,11 @@ export type ListVolunteerRosterParams = {
 search?: string;
 status?: ListVolunteerRosterStatus;
 county?: string;
+city?: string;
+shiftPresence?: ListVolunteerRosterShiftPresence;
+profileIncomplete?: ListVolunteerRosterProfileIncomplete;
+sortBy?: ListVolunteerRosterSortBy;
+sortDirection?: ListVolunteerRosterSortDirection;
 certificationStatus?: ListVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ListVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ListVolunteerRosterNeedsAttention;
@@ -1457,6 +1504,49 @@ export const ListVolunteerRosterStatus = {
   onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
+} as const;
+
+export type ListVolunteerRosterShiftPresence = typeof ListVolunteerRosterShiftPresence[keyof typeof ListVolunteerRosterShiftPresence];
+
+
+export const ListVolunteerRosterShiftPresence = {
+  has_shift: 'has_shift',
+  no_shift: 'no_shift',
+} as const;
+
+export type ListVolunteerRosterProfileIncomplete = typeof ListVolunteerRosterProfileIncomplete[keyof typeof ListVolunteerRosterProfileIncomplete];
+
+
+export const ListVolunteerRosterProfileIncomplete = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type ListVolunteerRosterSortBy = typeof ListVolunteerRosterSortBy[keyof typeof ListVolunteerRosterSortBy];
+
+
+export const ListVolunteerRosterSortBy = {
+  name: 'name',
+  status: 'status',
+  phone: 'phone',
+  email: 'email',
+  city: 'city',
+  startDate: 'startDate',
+  shiftCount: 'shiftCount',
+  lastLoginAt: 'lastLoginAt',
+  dateOfBirth: 'dateOfBirth',
+  address: 'address',
+  zip: 'zip',
+  emergencyContact: 'emergencyContact',
+  county: 'county',
+} as const;
+
+export type ListVolunteerRosterSortDirection = typeof ListVolunteerRosterSortDirection[keyof typeof ListVolunteerRosterSortDirection];
+
+
+export const ListVolunteerRosterSortDirection = {
+  asc: 'asc',
+  desc: 'desc',
 } as const;
 
 export type ListVolunteerRosterCertificationStatus = typeof ListVolunteerRosterCertificationStatus[keyof typeof ListVolunteerRosterCertificationStatus];
@@ -1487,6 +1577,7 @@ export const ListVolunteerRosterNeedsAttention = {
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+  onboarding_overdue: 'onboarding_overdue',
 } as const;
 
 export type ListVolunteerRosterShowTestAccounts = typeof ListVolunteerRosterShowTestAccounts[keyof typeof ListVolunteerRosterShowTestAccounts];
@@ -1504,6 +1595,11 @@ export type ExportVolunteerRosterParams = {
 search?: string;
 status?: ExportVolunteerRosterStatus;
 county?: string;
+city?: string;
+shiftPresence?: ExportVolunteerRosterShiftPresence;
+profileIncomplete?: ExportVolunteerRosterProfileIncomplete;
+sortBy?: ExportVolunteerRosterSortBy;
+sortDirection?: ExportVolunteerRosterSortDirection;
 certificationStatus?: ExportVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ExportVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ExportVolunteerRosterNeedsAttention;
@@ -1516,6 +1612,49 @@ export const ExportVolunteerRosterStatus = {
   onboarding: 'onboarding',
   active: 'active',
   inactive: 'inactive',
+} as const;
+
+export type ExportVolunteerRosterShiftPresence = typeof ExportVolunteerRosterShiftPresence[keyof typeof ExportVolunteerRosterShiftPresence];
+
+
+export const ExportVolunteerRosterShiftPresence = {
+  has_shift: 'has_shift',
+  no_shift: 'no_shift',
+} as const;
+
+export type ExportVolunteerRosterProfileIncomplete = typeof ExportVolunteerRosterProfileIncomplete[keyof typeof ExportVolunteerRosterProfileIncomplete];
+
+
+export const ExportVolunteerRosterProfileIncomplete = {
+  true: 'true',
+  false: 'false',
+} as const;
+
+export type ExportVolunteerRosterSortBy = typeof ExportVolunteerRosterSortBy[keyof typeof ExportVolunteerRosterSortBy];
+
+
+export const ExportVolunteerRosterSortBy = {
+  name: 'name',
+  status: 'status',
+  phone: 'phone',
+  email: 'email',
+  city: 'city',
+  startDate: 'startDate',
+  shiftCount: 'shiftCount',
+  lastLoginAt: 'lastLoginAt',
+  dateOfBirth: 'dateOfBirth',
+  address: 'address',
+  zip: 'zip',
+  emergencyContact: 'emergencyContact',
+  county: 'county',
+} as const;
+
+export type ExportVolunteerRosterSortDirection = typeof ExportVolunteerRosterSortDirection[keyof typeof ExportVolunteerRosterSortDirection];
+
+
+export const ExportVolunteerRosterSortDirection = {
+  asc: 'asc',
+  desc: 'desc',
 } as const;
 
 export type ExportVolunteerRosterCertificationStatus = typeof ExportVolunteerRosterCertificationStatus[keyof typeof ExportVolunteerRosterCertificationStatus];
@@ -1546,6 +1685,7 @@ export const ExportVolunteerRosterNeedsAttention = {
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+  onboarding_overdue: 'onboarding_overdue',
 } as const;
 
 export type ExportVolunteerScheduleParams = {

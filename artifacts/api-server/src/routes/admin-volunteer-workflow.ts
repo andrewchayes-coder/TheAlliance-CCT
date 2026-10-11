@@ -59,7 +59,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
       const newStartDate = input.status === 'active' && !profile.startDate && !previousActivation ? today : undefined;
       await tx.update(volunteerProfilesTable).set({ status: input.status, ...(newStartDate ? { startDate:newStartDate } : {}), updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
       if (newStartDate) await tx.insert(activityLogTable).values({ volunteerProfileId:profile.id,actorUserId:req.authUser!.id,
-        action:'start_date_changed',details:{from:null,to:newStartDate,reason:'first_activation'} });
+        action:'start_date_changed',details:{fields:['startDate'],reason:'first_activation'} });
       const [event] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'status_changed',
         details: { from: normalizeVolunteerStatus(profile.status), to: input.status, releasedAssignmentIds: released.map(row => row.assignmentId),
           releasedShifts: released.map(row => ({ dayOfWeek: row.dayOfWeek, startTime: row.startTime, endTime: row.endTime })),
@@ -110,8 +110,19 @@ const trackingInput = UpdateVolunteerTrackingBody.extend({
 router.patch('/volunteers/:userId/tracking', async (req, res) => {
   try {
     const id = userId(req), parsed = trackingInput.safeParse(req.body);
-    if (!parsed.success) throw new WorkflowError(400, 'Enter valid training and background-check fields.');
+    if (!parsed.success) throw new WorkflowError(400, 'Enter valid profile details before saving.');
     const { expectedUpdatedAt, ...fields } = parsed.data;
+    for (const key of ['addressLine1','city','state','zip','emergencyContactName','emergencyContactRelationship','emergencyContactPhone'] as const) {
+      if (fields[key] === undefined || fields[key] === null) continue;
+      const checked = profileCompletionSchema.shape[key].safeParse(fields[key]);
+      if (!checked.success) throw new WorkflowError(400, `Enter a valid ${key.replace(/([A-Z])/g,' $1').toLowerCase()}.`);
+      fields[key] = checked.data;
+    }
+    if (fields.county !== undefined) {
+      const county = z.string().trim().min(1).max(100).safeParse(fields.county ?? 'Placer');
+      if (!county.success) throw new WorkflowError(400, 'Enter a county before saving.');
+      fields.county = county.data;
+    }
     if (fields.dateOfBirth != null && !profileCompletionSchema.shape.dateOfBirth.safeParse(fields.dateOfBirth).success)
       throw new WorkflowError(400, 'Date of birth must be a valid date in the past.');
     if (fields.startDate != null && !calendarDateSchema.safeParse(fields.startDate).success)
@@ -125,14 +136,13 @@ router.patch('/volunteers/:userId/tracking', async (req, res) => {
     await db.transaction(async tx => {
       const { profile } = await lockedVolunteer(tx, id);
       checkRevision(profile, expectedUpdatedAt);
-      const changes = Object.fromEntries(Object.entries(fields).filter(([key, value]) => value !== profile[key as keyof typeof profile])
-        .map(([key, value]) => [key, { from: profile[key as keyof typeof profile], to: value }]));
-      if (!Object.keys(changes).length) return;
-      await tx.update(volunteerProfilesTable).set({ ...fields, updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
-      if ('startDate' in changes) await tx.insert(activityLogTable).values({
-        volunteerProfileId:profile.id,actorUserId:req.authUser!.id,action:'start_date_changed',details:changes.startDate!,
+      const changes = Object.keys(fields).filter(key => fields[key as keyof typeof fields] !== profile[key as keyof typeof profile]);
+      if (!changes.length) return;
+      await tx.update(volunteerProfilesTable).set({ ...fields, county:fields.county ?? undefined, updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
+      if (changes.includes('startDate')) await tx.insert(activityLogTable).values({
+        volunteerProfileId:profile.id,actorUserId:req.authUser!.id,action:'start_date_changed',details:{fields:['startDate']},
       });
-      await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'tracking_updated', details: { changes } });
+      await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'tracking_updated', details: { fields:changes } });
     });
     res.set('Cache-Control', 'no-store').json(await loadAdminVolunteerDetail(id));
   } catch (error) { errorResponse(error, res); }

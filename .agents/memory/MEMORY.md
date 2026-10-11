@@ -16,3 +16,4 @@
 - [Notification test isolation](security-test-isolation.md) — reminder/broadcast QA needs an isolated API and data scope; owned-user cleanup alone cannot undo sends to shared users.
 - [Production migrations](production-migrations.md) — use runtime production context; reconcile push-created schemas before baselining; never copy development fixtures.
 - [Production QA accounts](production-qa-accounts.md) — built-in synthetic personas are explicitly approved in production; never convert real users or copy other development fixtures.
+- [Staff profile privacy](staff-profile-privacy.md) — roster details at a glance; county is staff-managed and private-field edit audits record names, never values.

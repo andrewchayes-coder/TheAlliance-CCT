@@ -28,7 +28,8 @@ describe('Coordinator projection', () => {
     expect(d.onShiftNow[0]!.volunteers[0]!.phone).toBe('+15555550101');
     expect(d.onShiftNow[0]!.endsAt).toBe('2026-03-09T18:00:00.000Z');
     expect(coordinatorProjection(base(), people, new Date('2026-03-09T18:00:00Z')).overview().onShiftNow).toHaveLength(1);
-    expect(d.needsAttention).toBe(1);
+    // Incomplete profiles no longer flag active volunteers who hold a shift.
+    expect(d.needsAttention).toBe(0);
   });
   it('distinguishes empty operating hours from outside hours and closed days', () => {
     const data = base(); data.assignments = [];

@@ -64,7 +64,7 @@ export function coordinatorProjection(data: CoordinatorData,
       onShiftNow: on.map(o => block(o)), upNext: service.getUpNext(now).map(o => block(o)),
       openSpots: coverage.reduce((n, c) => n + Math.max(0, c.capacity - c.assignedCount), 0),
       underCoveredShifts: coverage.filter(c => c.underCapacity).length,
-      needsAttention: people.filter(p => !p.isTestAccount && attentionReasons(p.profile, held.get(p.profileId) ?? 0, today).length > 0).length };
+      needsAttention: people.filter(p => !p.isTestAccount && attentionReasons(p.profile, held.get(p.profileId) ?? 0, today,p).length > 0).length };
   }
   return { week, overview };
 }

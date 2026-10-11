@@ -625,9 +625,14 @@ paths:
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
         - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
+        - { name: city, in: query, schema: { type: string } }
+        - { name: shiftPresence, in: query, schema: { type: string, enum: [has_shift, no_shift] } }
+        - { name: profileIncomplete, in: query, schema: { type: string, enum: ['true', 'false'] } }
+        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county] } }
+        - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
-        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
         - { name: showTestAccounts, in: query, schema: { type: string, enum: ['true', 'false'] } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
         - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
@@ -710,9 +715,14 @@ paths:
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
         - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
+        - { name: city, in: query, schema: { type: string } }
+        - { name: shiftPresence, in: query, schema: { type: string, enum: [has_shift, no_shift] } }
+        - { name: profileIncomplete, in: query, schema: { type: string, enum: ['true', 'false'] } }
+        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county] } }
+        - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
-        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
       responses:
         "200":
           description: All matching volunteers, not only the visible page
@@ -1667,7 +1677,7 @@ components:
           properties: { sent: { type: integer }, logged: { type: integer }, failed: { type: integer } }
     AttentionReason:
       type: string
-      enum: [no_shift, certification_expiring, background_pending, onboarding_incomplete]
+      enum: [no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue]
     AdminAssignedShift:
       type: object
       required: [assignmentId, dayOfWeek, startTime, endTime, label, startDate, endDate, upcomingSkipDates]
@@ -1698,13 +1708,15 @@ components:
         needsAttention: { type: integer }
     VolunteerRoster:
       type: object
-      required: [volunteers, total, limit, offset, summary]
+      required: [volunteers, total, limit, offset, summary, cities, counties]
       properties:
         volunteers: { type: array, items: { $ref: "#/components/schemas/VolunteerRosterEntry" } }
         total: { type: integer }
         limit: { type: integer }
         offset: { type: integer }
         summary: { $ref: "#/components/schemas/RosterSummary" }
+        cities: { type: array, items: { type: string } }
+        counties: { type: array, items: { type: string } }
     AdminVolunteerDetail:
       type: object
       required: [entry, adminNotes, shifts, assignmentsToRelease, approvalRequirements, activity]
@@ -1746,6 +1758,14 @@ components:
         expectedUpdatedAt: { type: string, format: date-time }
         dateOfBirth: { type: [string, "null"] }
         startDate: { type: [string, "null"] }
+        addressLine1: { type: [string, "null"], maxLength: 300 }
+        city: { type: [string, "null"], maxLength: 100 }
+        state: { type: [string, "null"], maxLength: 2 }
+        zip: { type: [string, "null"], maxLength: 10 }
+        emergencyContactName: { type: [string, "null"], maxLength: 200 }
+        emergencyContactRelationship: { type: [string, "null"], maxLength: 100 }
+        emergencyContactPhone: { type: [string, "null"], maxLength: 30 }
+        county: { type: [string, "null"], maxLength: 100 }
         certificationStatus: { type: string, enum: [not_started, in_progress, complete] }
         certificationCompletedAt: { type: [string, "null"] }
         certificationExpiresAt: { type: [string, "null"] }
@@ -1786,7 +1806,6 @@ components:
         emergencyContactName: { type: string }
         emergencyContactRelationship: { type: string }
         emergencyContactPhone: { type: string }
-        county: { type: string }
         availabilityNotes: { type: [string, "null"] }
         answers: { type: object, additionalProperties: true }
     PasswordChangeInput:

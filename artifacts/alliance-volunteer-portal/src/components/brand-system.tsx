@@ -142,7 +142,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
     <div className={`relative bg-gray text-navy ${preview ? 'min-h-[320px] overflow-hidden rounded-2xl' : 'min-h-[100dvh]'}`} data-testid={`app-layout-${role}`}>
       {live && <TestAccountBanner />}
       <header className="border-b-[3px] border-navy bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-6">
+        <div className={`mx-auto flex ${role === 'admin' ? 'max-w-7xl' : 'max-w-6xl'} items-center justify-between gap-3 px-4 py-3 md:px-6`}>
           <BrandMark />
           <nav className={`hidden shrink-0 items-center gap-1 whitespace-nowrap text-sm text-navy ${role === 'admin' ? 'xl:flex' : 'lg:flex'}`} aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : live ? 'Admin navigation' : `${role} navigation preview`}>
             {role === 'admin' && live

@@ -16,6 +16,7 @@ import { AdminScheduleControls } from '@/components/schedule-controls/admin-sche
 import { MessageHistory } from '@/components/messages/sent-list';
 import { StatusPanel } from './status-panel';
 import { TrackingPanel } from './tracking-panel';
+import { ProfileCard, StartDateEditor } from './profile-editor';
 import { NotesPanel } from './notes-panel';
 
 function Pill({ map, value }: { map: Record<string, [string, Badge]>; value: string }) {
@@ -25,6 +26,7 @@ function Pill({ map, value }: { map: Record<string, [string, Badge]>; value: str
 function Item({ label, children }: { label: string; children: ReactNode }) {
   return <div><dt className="alliance-label">{label}</dt><dd className="break-words">{children}</dd></div>;
 }
+const FIELD_LABEL: Record<string, string> = { dateOfBirth: 'date of birth', startDate: 'start date', addressLine1: 'address', city: 'city', state: 'state', zip: 'ZIP', emergencyContactName: 'emergency contact name', emergencyContactRelationship: 'emergency contact relationship', emergencyContactPhone: 'emergency contact phone', county: 'county' };
 function ActivityLine({ a }: { a: VolunteerActivity }) {
   if (!appConfig.requireAgreementAcknowledgment && a.action.includes('agreement')) return null;
   const det = a.details ?? {};
@@ -33,13 +35,12 @@ function ActivityLine({ a }: { a: VolunteerActivity }) {
     const f = String(det.from ?? ''), t = String(det.to ?? '');
     text = `Status changed${f || t ? `: ${STATUS[f]?.[0] ?? (f || 'unknown')} to ${STATUS[t]?.[0] ?? (t || 'unknown')}` : ''}`;
   } else if (a.action === 'tracking_updated') {
-    const ch = det.changes && typeof det.changes === 'object' ? Object.keys(det.changes).filter(key =>
-      (!key.startsWith('certification') || appConfig.trackCertificationInApp) &&
-      (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) &&
-      (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment)) : [];
+    const raw = Array.isArray(det.fields) ? det.fields.map(String) : det.changes && typeof det.changes === 'object' ? Object.keys(det.changes) : [];
+    const ch = raw.filter(key => (!key.startsWith('certification') || appConfig.trackCertificationInApp) &&
+      (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) && (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment));
     if (!ch.length) return null;
-    text = ch.length ? `Tracking updated (${ch.map(c => String(c).replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')})` : 'Tracking updated';
-  } else if (a.action === 'start_date_changed') text = `Start date changed: ${det.from ?? 'not set'} to ${det.to ?? 'not set'}`;
+    text = `Profile updated (${ch.map(c => (FIELD_LABEL[c] ?? c.replace(/([A-Z])/g, ' $1').toLowerCase())).join(', ')})`;
+  } else if (a.action === 'start_date_changed') text = 'Start date changed';
   else text = a.action.replace(/_/g, ' ');
   return (
     <li className="py-2 text-sm" data-testid={`activity-${a.id}`}>
@@ -79,9 +80,10 @@ export function VolunteerDetail() {
             {onboardingQuestions.length > 0 && p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}
             {e.attention.filter(attnVisible).map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
           </div>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
             <Item label="Email"><a href={`mailto:${e.user.email}`} className="break-all font-bold text-blue underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
             <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-blue underline underline-offset-4" data-testid="link-phone">{formatPhone(e.user.phone) || e.user.phone}</a> : 'Not provided'}</Item>
+            <StartDateEditor userId={userId} detail={d} />
             <Item label="Joined">{stamp(e.user.createdAt)}</Item>
             <Item label="Last login">{stamp(e.user.lastLoginAt) ?? 'Never'}</Item>
           </dl>
@@ -91,6 +93,7 @@ export function VolunteerDetail() {
           </div>
 
           <StatusPanel userId={userId} detail={d} blockedReason={statusBlock} />
+          <ProfileCard userId={userId} detail={d} blockedReason={trackBlock} />
           <TrackingPanel userId={userId} detail={d} blockedReason={trackBlock} onDirty={setTrackDirty} />
 
           <section className="alliance-card mt-6" aria-labelledby="v-onb">
@@ -98,10 +101,6 @@ export function VolunteerDetail() {
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               {flags.agree && <Item label="Agreement acknowledged">{stamp(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>}
               {flags.agree && <Item label="Agreement version">{p.agreementVersion ?? 'None'}</Item>}
-              <Item label="Date of birth">{p.dateOfBirth ? calDate(p.dateOfBirth) : 'Not provided'}</Item>
-              <Item label="Start date">{p.startDate ? calDate(p.startDate) : 'Not set'}</Item>
-              <Item label="Home address">{p.addressLine1 ? `${p.addressLine1}, ${p.city ?? ''} ${p.state ?? ''} ${p.zip ?? ''}` : 'Not provided'}</Item>
-              <Item label="Emergency contact">{p.emergencyContactName ? `${p.emergencyContactName} (${p.emergencyContactRelationship ?? 'relationship not given'}) ${formatPhone(p.emergencyContactPhone)}` : 'Not provided'}</Item>
               <Item label="Onboarding completed">{stamp(p.onboardingCompletedAt) ?? 'Not completed'}</Item>
               {onboardingQuestions.length > 0 && <Item label="Availability notes"><span className="whitespace-pre-wrap">{p.availabilityNotes || 'None'}</span></Item>}
             </dl>

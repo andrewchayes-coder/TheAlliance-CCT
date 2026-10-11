@@ -14,6 +14,46 @@ export interface VolunteerTrackingUpdate {
   dateOfBirth?: string | null;
   /** @nullable */
   startDate?: string | null;
+  /**
+     * @maxLength 300
+     * @nullable
+     */
+  addressLine1?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  city?: string | null;
+  /**
+     * @maxLength 2
+     * @nullable
+     */
+  state?: string | null;
+  /**
+     * @maxLength 10
+     * @nullable
+     */
+  zip?: string | null;
+  /**
+     * @maxLength 200
+     * @nullable
+     */
+  emergencyContactName?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  emergencyContactRelationship?: string | null;
+  /**
+     * @maxLength 30
+     * @nullable
+     */
+  emergencyContactPhone?: string | null;
+  /**
+     * @maxLength 100
+     * @nullable
+     */
+  county?: string | null;
   certificationStatus?: VolunteerTrackingUpdateCertificationStatus;
   /** @nullable */
   certificationCompletedAt?: string | null;

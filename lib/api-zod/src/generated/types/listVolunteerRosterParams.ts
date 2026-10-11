@@ -8,7 +8,11 @@
 import type { ListVolunteerRosterBackgroundCheckStatus } from './listVolunteerRosterBackgroundCheckStatus';
 import type { ListVolunteerRosterCertificationStatus } from './listVolunteerRosterCertificationStatus';
 import type { ListVolunteerRosterNeedsAttention } from './listVolunteerRosterNeedsAttention';
+import type { ListVolunteerRosterProfileIncomplete } from './listVolunteerRosterProfileIncomplete';
+import type { ListVolunteerRosterShiftPresence } from './listVolunteerRosterShiftPresence';
 import type { ListVolunteerRosterShowTestAccounts } from './listVolunteerRosterShowTestAccounts';
+import type { ListVolunteerRosterSortBy } from './listVolunteerRosterSortBy';
+import type { ListVolunteerRosterSortDirection } from './listVolunteerRosterSortDirection';
 import type { ListVolunteerRosterStatus } from './listVolunteerRosterStatus';
 
 export type ListVolunteerRosterParams = {
@@ -18,6 +22,11 @@ export type ListVolunteerRosterParams = {
 search?: string;
 status?: ListVolunteerRosterStatus;
 county?: string;
+city?: string;
+shiftPresence?: ListVolunteerRosterShiftPresence;
+profileIncomplete?: ListVolunteerRosterProfileIncomplete;
+sortBy?: ListVolunteerRosterSortBy;
+sortDirection?: ListVolunteerRosterSortDirection;
 certificationStatus?: ListVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ListVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ListVolunteerRosterNeedsAttention;

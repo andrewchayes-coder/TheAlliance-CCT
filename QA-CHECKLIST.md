@@ -95,17 +95,20 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 
 | ID | Steps | Expected result |
 |---|---|---|
-| ROSTER-01 | `/admin/volunteers`: inspect desktop table/mobile cards; search name/email/phone. | All requested columns/badges; correct search results; active zero-shift flag amber. |
-| ROSTER-02 | Apply each status/county/certification/background/attention filter; combine/clear. | Summary counts and matching roster; attention handles expiry ≤30d, pending >14d, incomplete onboarding, no shift. |
+| ROSTER-01 | `/admin/volunteers`: inspect desktop table and 375px/768px cards; search name/email/phone; try call/email links. | Name, status, mobile, email, city, start date, shifts and last login visible by default; active zero-shift flag amber; no page overflow. |
+| ROSTER-02 | Apply status, city, county, has/no shift, profile incomplete and attention filters; combine/clear. | Correct matching roster; attention means active zero shifts, incomplete onboarding older than 7 days, or onboarding older than 30 days. |
 | ROSTER-03 | Click volunteer; select multiple rows; launch Message selected. | Correct detail/selected recipient IDs; no unintended audience expansion. |
-| CSV-01 | Export roster with custom answers and multiple standing shifts; include formula-like test answer. | Date-named admin-only CSV; every profile field, config question columns, formatted shifts; spreadsheet formulas escaped. |
+| ROSTER-04 | Columns picker: add DOB, address, ZIP, emergency contact and county; reload; switch admin; restore defaults. Block browser storage and retry. | Preferences survive per admin; blocked storage is harmless; desktop header/name stay sticky. |
+| ROSTER-05 | Sort each displayed column ascending/descending; navigate pages with filters applied. | Whole matching roster sorted before pagination; empty values last; stable ties. |
+| CSV-01 | Export filtered/sorted roster with new private fields and multiple standing shifts; include formula-like fake text. | Date-named admin-only CSV; new profile fields included; hidden compliance excluded; formatted shifts and formula escaping preserved. |
 | CSV-02 | Export schedule with active/ended assignments and skips. | One row per active assignment; correct day/time/start/end/upcoming skips; ended records excluded. |
-| DETAIL-01 | Inspect contact links, joined/login dates, answers, agreement, shifts and sent-message read states. | Correct selected volunteer; phone/email links usable on phone. |
+| DETAIL-01 | Inspect contact links, joined/login/start dates, private Profile card, shifts and message read states. | Correct volunteer; mobile call/email links; Profile labelled staff-only; disabled compliance cards hidden. |
 | DETAIL-02 | Move statuses in both directions; cancel/confirm. | Change only on confirmation; actor/time/details in Activity. |
-| DETAIL-03 | Remove each activation prerequisite, especially background clearance; try activating. | Exactly missing prerequisites shown; button/server block; no override of clearance. |
-| DETAIL-04 | Fill certification/background dates/status; test invalid/expiry-before-completion dates. | Valid values persist; invalid values rejected; expiry warning accurate; no background reports uploaded. |
+| DETAIL-03 | Remove verification or a required profile field; try activating. In isolated QA with tracking flags on, repeat with missing clearance. | Exactly missing prerequisites shown; button/server block; enabled clearance rule cannot be overridden. |
+| DETAIL-04 | Edit DOB, address, emergency contact and county; edit start date inline; save/reload. Try invalid dates/state/ZIP/phone; simulate another staff edit before saving. | Values persist and roster updates; invalid values rejected; stale revision preserves draft until reviewed. County defaults Placer and is not volunteer-editable. |
 | DETAIL-05 | Inactivate volunteer with multiple shifts. | Confirmation lists releases; all assignments ended `admin_removed` today; reductions trigger eligible alerts. |
 | DETAIL-06 | Autosave staff notes, reload, inspect volunteer APIs. | Persist for staff only; never returned to volunteers. |
+| DETAIL-07 | Edit each private field; inspect Activity and activity_log in isolated QA. | New activity records contain field names only, never private values; historical values are not rendered. |
 
 ## Schedule configuration, coordination and overrides
 

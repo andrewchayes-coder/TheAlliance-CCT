@@ -14,4 +14,6 @@ export interface VolunteerRoster {
   limit: number;
   offset: number;
   summary: RosterSummary;
+  cities: string[];
+  counties: string[];
 }

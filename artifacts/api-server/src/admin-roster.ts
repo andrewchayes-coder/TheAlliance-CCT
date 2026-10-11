@@ -1,13 +1,13 @@
-import { and, eq, gte, inArray, isNull, ne, or, getTableColumns } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, ne, or, getTableColumns, desc, sql } from 'drizzle-orm';
 import {
-  db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable, userPublicSchema,
+  db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable, userPublicSchema, activityLogTable,
 } from '@workspace/db';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { csvCell } from './onboarding';
 import { pacificDay } from './volunteer-shifts';
 import { attentionReasons, type AttentionReason } from './volunteer-attention';
 import { appConfig } from '@workspace/shared/appConfig';
-import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
+import { normalizeVolunteerStatus, missingProfileFields } from '@workspace/shared/profileFields';
 export { attentionReasons, type AttentionReason } from './volunteer-attention';
 
 type Profile = typeof volunteerProfilesTable.$inferSelect;
@@ -20,6 +20,13 @@ export async function rosterSnapshot(now = new Date()) {
       .innerJoin(usersTable, eq(usersTable.id, volunteerProfilesTable.userId))
       .where(eq(usersTable.role, 'volunteer')).orderBy(usersTable.lastName, usersTable.firstName, usersTable.id);
     if (!people.length) return [];
+    const onboardingEvents = await tx.selectDistinctOn([activityLogTable.volunteerProfileId], {
+      profileId:activityLogTable.volunteerProfileId,createdAt:activityLogTable.createdAt,
+    }).from(activityLogTable).where(and(
+      inArray(activityLogTable.volunteerProfileId,people.map(row=>row.profile.id)),
+      eq(activityLogTable.action,'status_changed'),sql`${activityLogTable.details}->>'to' = 'onboarding'`,
+    )).orderBy(activityLogTable.volunteerProfileId,desc(activityLogTable.createdAt));
+    const onboardingSince = new Map(onboardingEvents.map(event=>[event.profileId,event.createdAt]));
     const assignments = await tx.select({
       profileId: shiftAssignmentsTable.volunteerProfileId, assignmentId: shiftAssignmentsTable.id,
       dayOfWeek: shiftSlotsTable.dayOfWeek, startTime: shiftSlotsTable.startTime, endTime: shiftSlotsTable.endTime,
@@ -48,7 +55,8 @@ export async function rosterSnapshot(now = new Date()) {
         ...shift, upcomingSkipDates: (skipMap.get(shift.assignmentId) ?? []).filter(date =>
           date >= shift.startDate && (!shift.endDate || date <= shift.endDate)),
       }));
-      return { user, profile: { ...profile, status: normalizeVolunteerStatus(profile.status) }, shifts, shiftCount: shifts.length, attention: attentionReasons(profile, shifts.length, today) };
+      return { user, profile: { ...profile, status: normalizeVolunteerStatus(profile.status) }, shifts, shiftCount: shifts.length,
+        attention: attentionReasons({...profile,onboardingSince:onboardingSince.get(profile.id)}, shifts.length, today,user) };
     });
   }, { isolationLevel: 'repeatable read', accessMode: 'read only' });
 }
@@ -57,14 +65,22 @@ export type RosterFilters = {
   search?: string; status?: string; county?: string; certificationStatus?: string; backgroundCheckStatus?: string;
   needsAttention?: 'any' | AttentionReason;
   showTestAccounts?: 'true' | 'false';
+  city?: string; shiftPresence?: 'has_shift' | 'no_shift'; profileIncomplete?: 'true' | 'false';
+  sortBy?: 'name' | 'status' | 'phone' | 'email' | 'city' | 'startDate' | 'shiftCount' | 'lastLoginAt' | 'dateOfBirth' | 'address' | 'zip' | 'emergencyContact' | 'county';
+  sortDirection?: 'asc' | 'desc';
 };
 export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
   const search = filters.search?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
   const phoneSearch = search && /^[+\d()\s.-]+$/.test(search) ? search.replace(/\D/g, '') : '';
-  return people.filter(({ user, profile, attention }) => {
+  return people.filter(({ user, profile, attention, shiftCount }) => {
     if (user.isTestAccount && filters.showTestAccounts !== 'true') return false;
     if (filters.status && normalizeVolunteerStatus(profile.status) !== filters.status) return false;
     if (filters.county && profile.county !== filters.county) return false;
+    if (filters.city && profile.city !== filters.city) return false;
+    if (filters.shiftPresence === 'has_shift' && shiftCount === 0) return false;
+    if (filters.shiftPresence === 'no_shift' && shiftCount !== 0) return false;
+    const incomplete = !profile.onboardingCompletedAt || missingProfileFields(user,profile).length > 0;
+    if (filters.profileIncomplete && incomplete !== (filters.profileIncomplete === 'true')) return false;
     if (appConfig.trackCertificationInApp && filters.certificationStatus && profile.certificationStatus !== filters.certificationStatus) return false;
     if (appConfig.trackBackgroundCheckInApp && filters.backgroundCheckStatus && profile.backgroundCheckStatus !== filters.backgroundCheckStatus) return false;
     if (filters.needsAttention && (filters.needsAttention === 'any' ? !attention.length : !attention.includes(filters.needsAttention))) return false;
@@ -72,6 +88,32 @@ export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
     return [`${user.firstName} ${user.lastName}`, `${user.lastName} ${user.firstName}`, user.email, user.phone ?? '']
       .some(text => text.toLowerCase().replace(/\s+/g, ' ').includes(search)) ||
       !!(phoneSearch && user.phone?.replace(/\D/g, '').includes(phoneSearch));
+  });
+}
+/** Sort the full filtered snapshot before pagination, with deterministic ties and empty values last. */
+export function sortRoster(people: RosterPerson[], filters: RosterFilters) {
+  const key = filters.sortBy ?? 'name', direction = filters.sortDirection === 'desc' ? -1 : 1;
+  const collator = new Intl.Collator('en-US',{numeric:true,sensitivity:'base'});
+  const value = (person:RosterPerson):string|number|null => {
+    const {user,profile,shiftCount}=person;
+    switch(key) {
+      case 'name':return `${user.lastName} ${user.firstName}`;
+      case 'phone':return user.phone;
+      case 'email':return user.email;
+      case 'status':return normalizeVolunteerStatus(profile.status);
+      case 'shiftCount':return shiftCount;
+      case 'lastLoginAt':return user.lastLoginAt?.getTime() ?? null;
+      case 'address':return [profile.addressLine1,profile.city,profile.state,profile.zip].filter(Boolean).join(', ') || null;
+      case 'emergencyContact':return [profile.emergencyContactName,profile.emergencyContactRelationship,profile.emergencyContactPhone].filter(Boolean).join(' ') || null;
+      default:return profile[key] ?? null;
+    }
+  };
+  return [...people].sort((a,b)=>{
+    const av=value(a),bv=value(b);
+    if(av === null || av === '') return bv === null || bv === '' ? a.user.id.localeCompare(b.user.id) : 1;
+    if(bv === null || bv === '') return -1;
+    const compared = typeof av === 'number' && typeof bv === 'number' ? av-bv : collator.compare(String(av),String(bv));
+    return compared*direction || a.user.id.localeCompare(b.user.id);
   });
 }
 export function rosterEntry(person: RosterPerson) {
