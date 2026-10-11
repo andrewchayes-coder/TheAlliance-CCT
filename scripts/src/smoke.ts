@@ -59,7 +59,7 @@ async function main() {
       cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'development', QA_SMOKE_SCHEMA: schema,
         PGOPTIONS: `-c search_path=${schema},public`, APP_ORIGIN: base, PORT: String(port),
         POSTMARK_SERVER_TOKEN: '', EMAIL_FROM: '', EMAIL_REPLY_TO: '', RUN_JOBS: 'false',
-        QUICK_LOGIN_ENABLED: 'false', QUICK_LOGIN_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'],
+        QUICK_LOGIN_ENABLED: 'false' }, stdio: ['ignore', 'pipe', 'pipe'],
     });
     child.stdout?.on('data', data => { output += String(data); });
     child.stderr?.on('data', data => { output += String(data); });

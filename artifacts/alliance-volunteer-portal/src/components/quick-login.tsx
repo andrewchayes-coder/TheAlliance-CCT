@@ -56,7 +56,6 @@ export function QuickLoginCard() {
           </button>
         ))}
       </div>
-      {prod && <p className="mt-4 text-sm"><a href="/qa/lock" className="inline-flex min-h-11 items-center font-bold text-blue underline underline-offset-4" data-testid="link-qa-lock">Hide test logins on this device</a></p>}
     </section>
   );
 }

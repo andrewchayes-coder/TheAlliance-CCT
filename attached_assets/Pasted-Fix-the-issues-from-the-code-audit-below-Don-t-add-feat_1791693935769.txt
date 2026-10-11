@@ -1,0 +1,33 @@
+Fix the issues from the code audit below. Don't add features, and don't change the database schema (none of these need it; if one seems to, stop and tell me).
+
+SECURITY / PRIVACY
+1. Delete the attached_assets/ folder (Replit's copies of pasted prompts and screenshots; one screenshot shows a secret). Add attached_assets/ to .gitignore and .replitignore. Never commit screenshots or secret values.
+2. GET /api/volunteer/schedule: stop returning an admin's email as contactEmail. Return appConfig.volunteerContactEmail, or remove the field. Add this endpoint to the privacy tests so no staff email can appear in any volunteer-reachable response.
+3. Quick login: QL-5 already removed the unlock key and made QUICK_LOGIN_ENABLED case-insensitive. Just confirm nothing still mentions QUICK_LOGIN_KEY, /qa?key=, /qa/lock, or qa_unlock.
+4. /api/jobs/run: accept only the X-Jobs-Secret header (drop the alternate JOBS_SECRET header name).
+
+BUGS
+5. /api/me: map status through normalizeVolunteerStatus (legacy applicant/in_training read as onboarding) so legacy rows don't return 500. Add a test.
+6. Activation: an admin must not be able to activate a volunteer who'd then be blocked by requireOnboardedVolunteer. Either require onboardingCompletedAt (and list it under what's missing) or set onboardingCompletedAt when an admin completes every required profile field. Add a test.
+7. server/customShiftService.ts, one-time-shift cancel inside 24 hours: use volunteerContactText (the Community Care Team at cct@defendingthecause.org) instead of "Please contact The Alliance."
+8. Signup: store the mobile number as 10 digits (phoneDigits), the same as onboarding and profile edits.
+9. Log-mode email: print From and Reply-To (from emailIdentity()) along with the rest of the logged email.
+
+COPY / BRAND
+10. server/messaging.ts: "Resource Coordination team" → "Community Care Team". components/notifications/usage-cards.tsx: replace #1a8a8a with Alliance Blue. Jobs page: readable labels instead of raw config key names. Roster CSV: readable column headers (Status, Start date, Date of birth, Address, City, State, ZIP, Emergency contact name, Emergency contact relationship, Emergency contact phone, County, …) instead of "Profile: dateOfBirth" style keys.
+11. Volunteer detail: admin notes label "Visible to Alliance staff only."; show county in the header.
+
+SEED & TESTS
+12. Seed and verify-seed: use only onboarding / active / inactive; give seeded volunteers the same obviously fake profile data as the QL-4 personas so seeded active volunteers reach the dashboard; fix the "20 slots" message (40).
+13. Rewrite admin-roster.test.ts, onboarding.test.ts and volunteer.test.ts for the three-status, fixed-profile model (no applicant, questionnaire, or agreement flows).
+14. Add a root "test" script so `pnpm test` / `npm test` runs every suite (vitest, the tsx --test suites, and the client coordinator test).
+15. Confirm Prompt 26 finished these, and finish any that aren't: Playwright smoke test on the v2 flow; resetTestAccounts cancels test accounts' custom_shift_assignments; /api/auth/quick-login* tagged public:quick-login in the route-guard enumeration (the /qa routes no longer exist after QL-5).
+
+LEFTOVERS
+16. Remove the artifacts/mockup-sandbox artifact if nothing uses it (otherwise exclude it from the leftover search and say why). For legacyEmail in shared/testAccounts.ts: keep it only until ensureTestAccounts has migrated the production personas, with a comment saying when to delete it.
+
+DOCS
+17. DEPLOY.md: add the pre-Publish step `ALTER TYPE volunteer_status ADD VALUE IF NOT EXISTS 'onboarding';` (Publish can't use a new enum value in the same transaction) and fix the text that says Publish adds it; setup step 5 = "Load Community Care Team standard grid"; remove the agreement and questionnaire steps; add the CHECK-constraint runbook as single, one-line SQL statements; say production test email and test reminder use `npm run production-check -- email`.
+18. replit.md: rewrite for v2 (three statuses, flags off, Autoscale + cron-job.org with RUN_JOBS=false, Replit Publish owns the schema). CHANGELOG.md: turn "Unreleased" into v1.1.0 and remove the "Reserved VM with RUN_JOBS=true" advice. QA-TEST-ACCOUNTS.md: current persona names, no "applicant", reset cancels one-time claims. Add a README in lib/db/migrations saying it's reference-only and never run.
+
+When done, list every numbered item as done or skipped (with the reason), and paste the npm test summary (pass/fail counts per suite).

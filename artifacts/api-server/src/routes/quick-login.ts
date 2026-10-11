@@ -7,32 +7,14 @@ import { establishSession, endSession, csrfGuard } from '../auth/session';
 import { accountPath } from '../auth/accounts';
 import { enforceLimit } from '../auth/security';
 import { logger } from '../lib/logger';
-import { QA_COOKIE, QA_LIFETIME, qaCookieOptions, isQuickLoginEnabled, hasQuickLoginAccess,
-  matchesQuickLoginKey, createQaUnlockCookie, quickLoginNotFound } from '../auth/quick-login-lock';
+import { isQuickLoginEnabled, quickLoginNotFound } from '../auth/quick-login-lock';
 
 type Persona = { key: string; email: string; label: string; role: 'admin' | 'volunteer'; description: string };
 export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, personas: readonly Persona[] = testAccounts) {
-  const unlock = Router(), api = Router();
-  const configGuard = Object.assign((_req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
-    res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
-    if (!isQuickLoginEnabled(env)) { quickLoginNotFound(res); return; }
-    next();
-  }, { guardTag: 'public:quick-login' });
-  unlock.use('/qa', configGuard);
-  unlock.get('/qa/lock', (_req, res) => {
-    res.clearCookie(QA_COOKIE, qaCookieOptions);
-    res.redirect('/signin');
-  });
-  unlock.get('/qa', async (req, res) => {
-    if (env.NODE_ENV !== 'production') { res.redirect('/signin'); return; }
-    if (!await enforceLimit(req, res, 'qa-unlock-ip', req.ip ?? 'unknown', 3600, 5)) return;
-    if (!matchesQuickLoginKey(req.query.key, env)) { quickLoginNotFound(res); return; }
-    res.cookie(QA_COOKIE, createQaUnlockCookie(env), { ...qaCookieOptions, maxAge: QA_LIFETIME });
-    res.redirect('/signin');
-  });
+  const api = Router();
   api.use('/quick-login', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    if (!hasQuickLoginAccess(req, env)) { quickLoginNotFound(res); return; }
+    if (!isQuickLoginEnabled(env)) { quickLoginNotFound(res); return; }
     next();
   });
   api.use('/quick-login', csrfGuard);
@@ -62,7 +44,7 @@ export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, per
     await establishSession(req, found.user);
     try {
     const details = { persona: persona.key, ip: req.ip ?? null, userAgent:
-      (req.get('user-agent') ?? '').split(env.QUICK_LOGIN_KEY || '\u0000').join('[redacted]').slice(0, 1024) };
+      (req.get('user-agent') ?? '').slice(0, 1024) };
     if (found.profile) await db.insert(activityLogTable).values({ volunteerProfileId: found.profile.id,
       actorUserId: found.user.id, action: 'quick_login', details });
     // Also covers the admin, which intentionally has no volunteer profile.
@@ -74,18 +56,7 @@ export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, per
       throw error;
     }
   });
-  return { unlock, api };
-}
-/** Include the non-API unlock entrypoints in automated guard coverage. */
-export function registeredQaRoutes() {
-  const tag = (handle: unknown) => typeof handle === 'function' && 'guardTag' in handle &&
-    typeof handle.guardTag === 'string' ? handle.guardTag : undefined;
-  const guard = qaUnlockRouter.stack.map(layer => tag(layer.handle)).find(Boolean);
-  return qaUnlockRouter.stack.flatMap(layer => {
-    const route = layer.route as unknown as { path: string; methods: Record<string, boolean> } | undefined;
-    return route ? Object.keys(route.methods).map(method => ({ method: method.toUpperCase(), path: route.path, guard })) : [];
-  });
+  return { api };
 }
 const routes = createQuickLoginRoutes();
-export const qaUnlockRouter = routes.unlock;
 export default routes.api;

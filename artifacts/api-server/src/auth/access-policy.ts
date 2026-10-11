@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 import { requireAuth, requireAdmin, requireVolunteer, requireOnboardedVolunteer } from './session';
 import { requireJobsSecret } from '../server/jobs-auth';
-import { hasQuickLoginAccess, quickLoginNotFound } from './quick-login-lock';
+import { isQuickLoginEnabled, quickLoginNotFound } from './quick-login-lock';
 
 export type Guard = 'public' | 'public:quick-login' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
@@ -111,7 +111,7 @@ export const apiAccessPolicy: RequestHandler = (req, res, next) => {
     return;
   }
   if (guard === 'public:quick-login') {
-    if (!hasQuickLoginAccess(req)) { quickLoginNotFound(res); return; }
+    if (!isQuickLoginEnabled()) { quickLoginNotFound(res); return; }
     next(); return;
   }
   const guards: Record<Exclude<Guard, 'public' | 'public:quick-login'>, RequestHandler> = {
