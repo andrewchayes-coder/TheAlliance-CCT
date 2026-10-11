@@ -13,6 +13,7 @@ export const EmailLogType = {
   verification: 'verification',
   password_reset: 'password_reset',
   welcome: 'welcome',
+  shift: 'shift',
   reminder: 'reminder',
   message: 'message',
   admin_alert: 'admin_alert',

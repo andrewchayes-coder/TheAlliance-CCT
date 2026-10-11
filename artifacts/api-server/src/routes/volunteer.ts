@@ -24,7 +24,7 @@ router.patch('/profile', async (req, res): Promise<void> => {
     availabilityNotes: z.string().trim().max(5000).nullable().optional(),
     answers: z.record(z.string(), z.unknown()).optional(),
   }).strict().safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: 'Please check your profile information.' }); return; }
+  if (!parsed.success) { res.status(400).json({ error: 'Please check your profile information.', fieldErrors: parsed.error.flatten().fieldErrors, issues: parsed.error.issues }); return; }
   const inputAnswers: Record<string, unknown> = { ...parsed.data.answers };
   for (const question of onboardingQuestions) {
     if (question.profileField === 'availabilityNotes') inputAnswers[question.id] = parsed.data.availabilityNotes ?? '';

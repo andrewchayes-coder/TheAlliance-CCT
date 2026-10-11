@@ -4,6 +4,7 @@ export const TYPES: { type: EmailLogType; label: string; color: string }[] = [
   { type: 'verification', label: 'Verification', color: '#06365d' },
   { type: 'password_reset', label: 'Password reset', color: '#1a466b' },
   { type: 'welcome', label: 'Welcome', color: '#2c567b' },
+  { type: 'shift', label: 'Shift', color: '#15749c' },
   { type: 'reminder', label: 'Reminder', color: '#3e668b' },
   { type: 'message', label: 'Message', color: '#50769b' },
   { type: 'admin_alert', label: 'Admin alert', color: '#385e7d' },

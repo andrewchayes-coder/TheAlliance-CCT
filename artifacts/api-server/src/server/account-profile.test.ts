@@ -5,6 +5,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable, authTokensTable } from '@workspace/db';
 import sharp from 'sharp';
 import { preparePhoto, MAX_PROFILE_PHOTO } from './profile-photos';
+import { testProfileFields } from '@workspace/shared/testAccounts';
 
 process.env.NODE_ENV = 'development';
 process.env.SESSION_SECRET ||= randomBytes(32).toString('hex');
@@ -43,6 +44,31 @@ async function client(email?: string): Promise<Client> {
 }
 let own: Client, admin: Client, other: Client;
 const email = (kind: string) => `${kind}-${tag}@example.invalid`;
+it('NEW-07 rejects invalid onboarding, volunteer profile and admin card saves with field errors', async () => {
+  const [fixture] = await db.insert(usersTable).values({ email: email('validation'), firstName: 'Validation', lastName: 'QA',
+    phone: '9165550100', passwordHash: await hashPassword(password), role: 'volunteer', emailVerifiedAt: new Date() }).returning();
+  ids.push(fixture!.id);
+  await db.insert(volunteerProfilesTable).values({ userId: fixture!.id, status: 'onboarding' });
+  const volunteer = await client(email('validation'));
+  for (const [field, value] of [['zip','1234'], ['phone','12345'], ['phone','abc5555550100'],
+    ['dateOfBirth','2999-01-01'], ['emergencyContactPhone','abc']] as const) {
+    const result = await volunteer.request('/onboarding', 'PATCH', { [field]: value });
+    expect(result.status).toBe(400);
+    expect(result.data.fieldErrors).toHaveProperty(field);
+  }
+  const saved = await volunteer.request('/onboarding', 'PATCH', { zip: '95603-1234', phone: '(916) 555-0100', city: null });
+  expect(saved.status).toBe(200);
+  expect((await db.select().from(usersTable).where(eq(usersTable.id, fixture!.id)))[0]!.phone).toBe('9165550100');
+  await db.update(volunteerProfilesTable).set({ ...testProfileFields, onboardingCompletedAt: new Date() }).where(eq(volunteerProfilesTable.userId, fixture!.id));
+  const expectedUpdatedAt = (await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, fixture!.id)))[0]!.updatedAt.toISOString();
+  for (const [field, value] of [['zip','1234'], ['emergencyContactPhone','12345']] as const) {
+    const ownResult = await volunteer.request('/volunteer/profile','PATCH',{[field]:value});
+    expect(ownResult.status).toBe(400); expect(ownResult.data.fieldErrors).toHaveProperty(field);
+    const staffResult = await admin.request(`/admin/volunteers/${fixture!.id}/tracking`,'PATCH',{[field]:value, expectedUpdatedAt});
+    expect(staffResult.status).toBe(400); expect(staffResult.data.fieldErrors).toHaveProperty(field);
+  }
+  expect((await admin.request(`/admin/volunteers/${fixture!.id}/tracking`,'PATCH',{zip:'95603-1234',emergencyContactPhone:'(916) 555-0101',expectedUpdatedAt})).status).toBe(200);
+});
 beforeAll(async () => {
   server = app.listen(0);
   await new Promise<void>(resolve => server.once('listening', resolve));

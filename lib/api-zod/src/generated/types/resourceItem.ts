@@ -8,6 +8,7 @@
 import type { ResourceItemType } from './resourceItemType';
 
 export interface ResourceItem {
+  fileMissing?: boolean;
   id: string;
   type: ResourceItemType;
   title: string;

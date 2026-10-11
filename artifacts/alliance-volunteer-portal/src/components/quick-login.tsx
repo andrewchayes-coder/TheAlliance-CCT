@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useLocation } from 'wouter';
 import { useGetQuickLoginStatus, getGetQuickLoginStatusQueryKey, useGetMe, getGetMeQueryKey } from '@workspace/api-client-react';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 
@@ -18,7 +17,6 @@ function useStatus(enabled = true) {
 
 function useSwitcher() {
   const auth = useAuth();
-  const [, nav] = useLocation();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   async function go(key: string) {
@@ -26,7 +24,7 @@ function useSwitcher() {
     setPending(key); setError(null);
     try {
       const r = await auth.quickLogin({ persona: key });
-      nav(r.nextPath || '/dashboard', { replace: true });
+      window.location.assign(`${import.meta.env.BASE_URL.replace(/\/$/, '')}${r.nextPath || '/dashboard'}`);
     } catch (e) { setError(readError(e).message); }
     finally { setPending(null); }
   }

@@ -9,6 +9,7 @@ import { testProfileFields } from '@workspace/shared/testAccounts';
 import lighthouse from 'lighthouse';
 import puppeteer from 'puppeteer-core';
 import { mkdir, writeFile } from 'node:fs/promises';
+import AxeBuilder from '@axe-core/playwright';
 
 /**
  * Real browser + real API/DB; API is intercepted ONLY to the isolated child server.
@@ -29,6 +30,7 @@ async function main() {
   const qschema = `"${schema}"`;
   const { pool } = await import('@workspace/db');
   let child: ChildProcess | undefined, browser: Browser | undefined;
+  let closingBrowser = false;
   let created = false, output = '';
   try {
     await pool.query(`CREATE SCHEMA ${qschema}`); created = true;
@@ -59,7 +61,7 @@ async function main() {
       cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'development', QA_SMOKE_SCHEMA: schema,
         PGOPTIONS: `-c search_path=${schema},public`, APP_ORIGIN: base, PORT: String(port),
         POSTMARK_SERVER_TOKEN: '', EMAIL_FROM: '', EMAIL_REPLY_TO: '', RUN_JOBS: 'false',
-        QUICK_LOGIN_ENABLED: 'false' }, stdio: ['ignore', 'pipe', 'pipe'],
+        QUICK_LOGIN_ENABLED: 'true' }, stdio: ['ignore', 'pipe', 'pipe'],
     });
     child.stdout?.on('data', data => { output += String(data); });
     child.stderr?.on('data', data => { output += String(data); });
@@ -104,8 +106,13 @@ async function main() {
       const context = await browser!.newContext({ viewport: { width: 375, height: 812 }, timezoneId: 'America/Los_Angeles' });
       await context.route('**/api/**', async route => {
         const request = route.request(), url = new URL(request.url());
-        await route.fulfill({ response: await route.fetch({ url: `${api}${url.pathname}${url.search}`,
-          headers: { ...request.headers(), origin: base, 'x-forwarded-proto': 'https' }, maxRedirects: 0, timeout: 120000 }) });
+        try {
+          await route.fulfill({ response: await route.fetch({ url: `${api}${url.pathname}${url.search}`,
+            headers: { ...request.headers(), origin: base, 'x-forwarded-proto': 'https' }, maxRedirects: 0, timeout: 120000 }) });
+        } catch (error) {
+          // Requests still in flight during cleanup must not mask the original assertion.
+          if (!closingBrowser) throw error;
+        }
       });
       const p = await context.newPage(); p.setDefaultTimeout(30000); return p;
     }
@@ -118,6 +125,7 @@ async function main() {
       }, { path, method, body });
       expect(result.ok, `${method} ${path}: ${result.status}`).toBe(true); return result.data;
     }
+    if (!process.argv.includes('--quick-login-regression')) {
     const volunteer = await page();
     await volunteer.goto(`${base}/signup`);
     for (const [name, value] of [['First name', 'Smoke'], ['Last name', 'Neighbor'], ['Email', email], ['Mobile phone', '9165550101'],
@@ -139,6 +147,7 @@ async function main() {
     await volunteer.getByTestId('select-state').selectOption('CA');
     await volunteer.getByTestId('button-finish').click();
     await expect(volunteer).toHaveURL(/dashboard/);
+    expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 onboarding dashboard contrast').toEqual([]);
     await accessibility(volunteer, 'dashboard');
     const me = await call(volunteer, '/me');
     const admin = await page(); await admin.goto(`${base}/signin`);
@@ -147,6 +156,9 @@ async function main() {
     await accessibility(admin, 'admin-home');
     const detail = await call(admin, `/admin/volunteers/${me.user.id}`);
     await call(admin, `/admin/volunteers/${me.user.id}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+    await volunteer.goto(`${base}/dashboard`);
+    await expect(volunteer.getByTestId('card-choose-shift')).toBeVisible();
+    expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 active/no-shift dashboard contrast').toEqual([]);
     const settings = await call(admin, '/admin/schedule/slots', 'POST', { dayOfWeek: 2, startTime: '10:00', endTime: '12:00', capacity: 1, label: 'Isolated smoke shift', isActive: true });
     const slot = settings.slots.find((s: { label: string }) => s.label === 'Isolated smoke shift');
     await volunteer.goto(`${base}/shifts`);
@@ -156,6 +168,10 @@ async function main() {
     const schedule = await call(volunteer, '/volunteer/schedule');
     expect(schedule.assignments).toHaveLength(1);
     const assignment = schedule.assignments[0];
+    await volunteer.goto(`${base}/dashboard`);
+    await expect(volunteer.getByTestId('card-next-shift')).toBeVisible();
+    expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 active/shift dashboard contrast').toEqual([]);
+    await volunteer.goto(`${base}/shifts`);
     const start = new Date(assignment.nextDates[0].startsAt);
     const date = assignment.nextDates[0].date;
     await call(admin, '/admin/schedule/blocks', 'POST', { fromDate: date, toDate: date,
@@ -191,8 +207,30 @@ async function main() {
     expect((await readRequest).ok()).toBe(true);
     const receipts = await pool.query(`SELECT read_at FROM ${qschema}.message_recipients WHERE recipient_user_id=$1`, [me.user.id]);
     expect(receipts.rows.some(r => r.read_at)).toBe(true);
-    console.log('PASS: signup → verification → complete profile → approval → Tuesday 10–12 → block/email/no reminder → one-time claim → logged reminder → message → read receipt.');
+    }
+    const switcher = await page();
+    await switcher.goto(`${base}/signin`);
+    await switcher.getByTestId('button-quick-vol-active').click();
+    await expect(switcher).toHaveURL(/\/dashboard$/);
+    for (const [persona, landing] of [['admin','admin'],['vol-active','dashboard'],['admin','admin']] as const) {
+      await switcher.getByTestId('button-switch-account').click();
+      await switcher.getByTestId(`button-switch-${persona}`).click();
+      await expect(switcher).toHaveURL(new RegExp(`/${landing}$`));
+      await expect(switcher.getByTestId('button-switch-account')).toBeVisible();
+      await expect(switcher.getByText('Taking you to the right place')).toHaveCount(0);
+    }
+    await switcher.getByTestId('button-switch-account').click();
+    await switcher.getByTestId('button-switch-vol-onboarding-new').click();
+    await expect(switcher).toHaveURL(/\/onboarding$/);
+    for (const path of ['/shifts','/dashboard','/messages','/resources','/profile']) {
+      await switcher.goto(`${base}${path}`);
+      await expect(switcher).toHaveURL(/\/onboarding$/);
+    }
+    console.log(process.argv.includes('--quick-login-regression')
+      ? 'PASS: ONBN-02 incomplete-page guards and ADM-35 cross-role switching.'
+      : 'PASS: full smoke, ONBN-02, ADM-35 cross-role switching, ACT-15 axe contrast in three dashboard states.');
   } finally {
+    closingBrowser = true;
     await browser?.close();
     if (child && child.exitCode === null) {
       child.kill('SIGTERM'); await Promise.race([new Promise(r => child!.once('exit', r)), delay(5000)]);

@@ -10,7 +10,7 @@ import {
 import { EmptyState } from '@/components/brand-system';
 import { FETCH_CREDS, readError, useAuth } from '@/auth/auth-context';
 import { Notice } from '@/auth/auth-ui';
-import { ErrorBlock, LoadingBlock, VolunteerPage, volunteerRouteIncomplete } from '@/components/volunteer-ui';
+import { ErrorBlock, LoadingBlock, VolunteerPage, volunteerRoute } from '@/components/volunteer-ui';
 import { ShiftGrid } from '@/components/shift-grid';
 import { ShiftCards, ContactLink } from '@/components/shift-cards';
 import { ShiftDialogs, type Actions, type Dlg } from '@/components/shift-dialogs';
@@ -150,4 +150,4 @@ function ShiftsBody() {
     </VolunteerPage>
   );
 }
-export const ShiftsPage = volunteerRouteIncomplete(() => <ShiftsBody />);
+export const ShiftsPage = volunteerRoute(() => <ShiftsBody />);

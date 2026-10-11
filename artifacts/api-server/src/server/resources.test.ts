@@ -145,6 +145,19 @@ describe('private resource hub', () => {
     expect(order).toEqual(ids);
     await expect(reorderResources('document', [docId, docId])).rejects.toThrow('list changed');
   });
+  it('ACT-08 returns a warm 404 and staff warning for a missing legacy document', async () => {
+    const [missing] = await db.insert(resourcesTable).values({ type: 'document', title: `Missing QA ${tag}`, category: 'QA',
+      fileKey: `seed-resources/missing-${tag}.pdf`, fileName: 'missing.pdf', fileMimeType: 'application/pdf',
+      createdByUserId: admin, isPublished: true }).returning();
+    try {
+      const response = await request(`/resources/${missing!.id}/file`, cookieV);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toMatchObject({ error: "This document isn't available right now." });
+      const listing = await request('/admin/resources');
+      expect(listing.status).toBe(200);
+      expect((await listing.json()).find((row: {id:string}) => row.id === missing!.id).fileMissing).toBe(true);
+    } finally { await db.delete(resourcesTable).where(eq(resourcesTable.id, missing!.id)); }
+  });
   it('limits operational quick links to active volunteers and rejects unsafe links', async () => {
     const link = await saveResource(admin, resourceInput.parse(data('link', { isQuickLink: true, isPublished: true })));
     expect((await (await request('/resources', cookieV)).json()).some((r:{id:string}) => r.id === link.resource.id)).toBe(true);

@@ -74,6 +74,7 @@ export function ResourceList({ type, all, onEdit }: { type: T; all: ResourceItem
                   <StatusBadge status={r.isPublished ? 'good' : 'neutral'}>{r.isPublished ? 'Published' : 'Draft'}</StatusBadge></div>
                 <p className="break-words font-bold">{r.title}</p>
                 {r.fileName && <p className="break-all text-sm">{r.fileName}</p>}
+                {r.type === 'document' && r.fileMissing && <p className="mt-1 text-sm font-bold text-amber-ink" role="status">File missing — replace it</p>}
               </div>
               <div className="flex flex-col">
                 <Button variant="secondary" size="icon" aria-label={`Move ${r.title} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp size={16} /></Button>

@@ -862,6 +862,7 @@ export const CancelOwnCustomShiftResponse = zod.object({
 
 
 export const GetPublishedResourceListResponseItem = zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -881,6 +882,7 @@ export const GetPublishedResourceListResponse = zod.array(GetPublishedResourceLi
 
 
 export const GetAdminResourcesResponseItem = zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -906,6 +908,7 @@ export const CreateResourceBody = zod.object({
 
 export const CreateResourceResponse = zod.object({
   "resource": zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -943,6 +946,7 @@ export const UpdateResourceBody = zod.object({
 
 export const UpdateResourceResponse = zod.object({
   "resource": zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -982,6 +986,7 @@ export const PublishResourceBody = zod.object({
 
 export const PublishResourceResponse = zod.object({
   "resource": zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -1017,6 +1022,7 @@ export const GetResourceParams = zod.object({
 })
 
 export const GetResourceResponse = zod.object({
+  "fileMissing": zod.boolean().optional(),
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
   "title": zod.string(),
@@ -1056,7 +1062,7 @@ export const GetNotificationSummaryResponse = zod.object({
   "month": zod.string(),
   "total": zod.number().int(),
   "byType": zod.array(zod.object({
-  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'shift', 'reminder', 'message', 'admin_alert', 'invite']),
   "count": zod.number().int()
 })),
   "monthlyLimit": zod.number().int(),
@@ -1065,7 +1071,7 @@ export const GetNotificationSummaryResponse = zod.object({
   "month": zod.string(),
   "total": zod.number().int(),
   "byType": zod.array(zod.object({
-  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'shift', 'reminder', 'message', 'admin_alert', 'invite']),
   "count": zod.number().int()
 }))
 })),
@@ -1085,7 +1091,7 @@ export const getNotificationLogQueryPageDefault = 1;
 
 
 export const GetNotificationLogQueryParams = zod.object({
-  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']).optional(),
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'shift', 'reminder', 'message', 'admin_alert', 'invite']).optional(),
   "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']).optional(),
   "from": zod.date().optional(),
   "to": zod.date().optional(),
@@ -1097,7 +1103,7 @@ export const GetNotificationLogResponse = zod.object({
   "rows": zod.array(zod.object({
   "id": zod.string().uuid(),
   "time": zod.coerce.date(),
-  "type": zod.enum(['verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite']),
+  "type": zod.enum(['verification', 'password_reset', 'welcome', 'shift', 'reminder', 'message', 'admin_alert', 'invite']),
   "recipient": zod.string(),
   "subject": zod.string(),
   "status": zod.enum(['sent', 'logged', 'failed', 'suppressed']),

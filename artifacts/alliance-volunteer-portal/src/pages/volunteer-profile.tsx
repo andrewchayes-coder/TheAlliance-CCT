@@ -125,7 +125,7 @@ function AccountOnly({ me, admin }: { me: Me; admin: boolean }) {
 }
 
 export const Profile = () => (
-  <RequireVerified area="account" allowIncomplete>
+  <RequireVerified area="account">
     {me => me.role === 'admin' || !isProfileComplete(me)
       ? <AccountOnly me={me} admin={me.role === 'admin'} />
       : <AppLayout role="volunteer"><ProfileForm key={`${me.user.id}|${me.user.firstName}|${me.user.lastName}|${me.user.phone ?? ''}`} me={me} /></AppLayout>}

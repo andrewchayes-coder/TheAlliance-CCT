@@ -1484,7 +1484,7 @@ components:
         customShifts: { type: array, items: { $ref: '#/components/schemas/AdminCustomShift' } }
     EmailLogType:
       type: string
-      enum: [verification, password_reset, welcome, reminder, message, admin_alert, invite]
+      enum: [verification, password_reset, welcome, shift, reminder, message, admin_alert, invite]
     EmailLogStatus:
       type: string
       enum: [sent, logged, failed, suppressed]
@@ -2181,6 +2181,7 @@ components:
       type: object
       required: [id, type, title, category, summary, body, href, url, fileName, fileMimeType, isQuickLink, isPublished, sortOrder, updatedAt]
       properties:
+        fileMissing: { type: boolean }
         id: { type: string, format: uuid }
         type: { type: string, enum: [document, article, link] }
         title: { type: string }

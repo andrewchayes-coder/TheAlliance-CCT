@@ -32,7 +32,8 @@ export const calendarDateSchema = z.string().refine(value => /^\d{4}-\d{2}-\d{2}
 const dob = calendarDateSchema.refine(value => value < pacificToday(), 'Date of birth must be in the past.')
   .refine(value => appConfig.minimumAge === null || value <= `${Number(pacificToday().slice(0,4))-appConfig.minimumAge}${pacificToday().slice(4)}`, 'The minimum age requirement has not been met.');
 const text = (label: string, length = 200) => z.string().trim().min(1, `Enter ${label.toLowerCase()}.`).max(length);
-const phone = z.string().transform(phoneDigits).refine(value => /^\d{10}$/.test(value), 'Enter a 10-digit phone number.');
+const phone = z.string().trim().regex(/^[\d\s()+.-]+$/, 'Enter a 10-digit phone number.')
+  .transform(phoneDigits).refine(value => /^\d{10}$/.test(value), 'Enter a 10-digit phone number.');
 export const profileCompletionSchema = z.object({
   firstName: text('First name',100), lastName: text('Last name',100), phone,
   dateOfBirth: dob, addressLine1: text('Home address',300), city: text('City',100), state: z.enum(states),
@@ -40,15 +41,19 @@ export const profileCompletionSchema = z.object({
   emergencyContactName: text('Emergency contact name'), emergencyContactRelationship: text('Emergency contact relationship',100),
   emergencyContactPhone: phone,
 });
+const draftField = <T extends z.ZodType<string>>(schema: T) => z.preprocess(
+  value => typeof value === 'string' && !value.trim() ? null : value, schema.nullable());
 export const profileDraftSchema = z.object({
-  firstName: z.string().trim().max(100), lastName: z.string().trim().max(100),
-  phone: z.string().transform(phoneDigits).refine(value => /^\d{0,10}$/.test(value), 'Enter a phone number.'),
-  dateOfBirth: dob.nullable(), addressLine1: z.string().trim().max(300).nullable(), city: z.string().trim().max(100).nullable(),
-  state: z.enum(states).nullable(), zip: z.string().trim().regex(/^[\d-]{0,10}$/).nullable(),
-  emergencyContactName: z.string().trim().max(200).nullable(), emergencyContactRelationship: z.string().trim().max(100).nullable(),
-  emergencyContactPhone: z.string().transform(phoneDigits).refine(value => /^\d{0,10}$/.test(value)).nullable(),
+  firstName: draftField(profileCompletionSchema.shape.firstName).transform(value => value ?? ''),
+  lastName: draftField(profileCompletionSchema.shape.lastName).transform(value => value ?? ''),
+  phone: draftField(phone), dateOfBirth: draftField(dob),
+  addressLine1: draftField(profileCompletionSchema.shape.addressLine1), city: draftField(profileCompletionSchema.shape.city),
+  state: draftField(profileCompletionSchema.shape.state), zip: draftField(profileCompletionSchema.shape.zip),
+  emergencyContactName: draftField(profileCompletionSchema.shape.emergencyContactName),
+  emergencyContactRelationship: draftField(profileCompletionSchema.shape.emergencyContactRelationship),
+  emergencyContactPhone: draftField(phone),
 }).partial();
-export const volunteerProfileEditSchema = profileCompletionSchema.omit({ dateOfBirth: true }).partial();
+export const volunteerProfileEditSchema = profileDraftSchema.omit({ dateOfBirth: true });
 export function missingProfileFields(user: {firstName: string;lastName: string;phone: string|null}, profile: Record<string, unknown>) {
   const values = { ...profile, firstName:user.firstName,lastName:user.lastName,phone:user.phone };
   return Object.entries(requiredProfileFields).filter(([key]) => !profileCompletionSchema.shape[key as keyof typeof requiredProfileFields].safeParse(values[key as keyof typeof values]).success)

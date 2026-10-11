@@ -288,6 +288,12 @@
   color: var(--alliance-navy);
 }
 
+/* Display typography must inherit the white foreground on dark cards. */
+.bg-navy .alliance-display,
+.bg-navy .alliance-label {
+  color: #fff;
+}
+
 .alliance-label {
   color: var(--alliance-blue);
   font-size: 18px;

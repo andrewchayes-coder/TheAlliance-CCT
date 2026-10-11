@@ -29,7 +29,7 @@ export function overlapMessage(date:string,start:string,end:string) {
 }
 export async function sendScheduleNotice(user:{id:string;email:string},subject:string,paragraphs:string[],relatedId:string) {
   const copy=createEmailTemplate({heading:subject,paragraphs,cta:{label:'View my shifts',url:`${appOrigin}/shifts`}});
-  return sendEmail({type:'welcome',to:user.email,toUserId:user.id,subject,...copy,relatedId});
+  return sendEmail({type:'shift',to:user.email,toUserId:user.id,subject,...copy,relatedId});
 }
 type CustomAction={kind:'assign';customShiftId:string;userId?:string;override?:boolean;reason?:string}
   |{kind:'remove';customShiftId:string;assignmentId?:string};

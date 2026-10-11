@@ -2,6 +2,21 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.1.1 — 2026-10-11
+
+### Fixed
+- Incomplete volunteer profiles redirect to onboarding from Shifts and all other volunteer pages, including My Profile. Complete, not-yet-active volunteers retain the explanation of booking eligibility.
+- Quick-login role changes perform a fresh, base-path-aware navigation; a same-path guard redirect no longer shows an endless spinner.
+- Display headings and labels remain white on navy dashboard and shift-confirmation cards.
+- Onboarding drafts, volunteer profile updates, and staff Profile-card saves validate nonempty phone numbers, ZIP codes, dates of birth, and field lengths. Empty draft values remain allowed, and invalid saves return field errors.
+- Shift confirmations and changes use the new **Shift** notification type, separate from welcome/approval emails, throughout notification filters and reports.
+- Missing or unreadable documents return a friendly 404; staff resource lists show **File missing — replace it**. Production does not attempt to upgrade local development seed documents.
+
+### Verification and deployment
+- Added shared validation/API regression tests, missing-document coverage, repeat cross-role Playwright checks, and axe contrast checks for three dashboard states.
+- Before Publish, run: `ALTER TYPE public.notification_type ADD VALUE IF NOT EXISTS 'shift';`
+- The migration file is reference-only. Replit Publish remains the schema deployment mechanism; no startup migration hook was added and no production SQL was run.
+
 ## Unreleased — My Profile and staff account management
 
 - Added the production seed-data purge SQL runbook with QA-preservation checks; restricted legacy seed-resource upgrade utilities to explicitly permitted development.

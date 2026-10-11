@@ -9,8 +9,9 @@ import { FETCH_CREDS, FRESH_MS, useAuth } from './auth-context';
 
 /** Renders children only after session says verified AND /api/me succeeded. */
 function Redirect({ to }: { to: string }) {
-  const [, nav] = useLocation();
-  useEffect(() => { nav(to, { replace: true }); }, [to, nav]);
+  const [path, nav] = useLocation();
+  useEffect(() => { if (path !== to) nav(to, { replace: true }); }, [to, path, nav]);
+  if (path === to) return <SessionFailed />;
   return <AuthLoading label="Taking you to the right place" />;
 }
 
@@ -48,7 +49,7 @@ export function RequireVerified({ children, area = 'volunteer', allowIncomplete 
   if (me.data && me.data.verified) {
     if (area === 'admin' && me.data.role !== 'admin') return <Redirect to="/dashboard" />;
     if (area === 'volunteer' && me.data.role === 'admin') return <Redirect to="/admin" />;
-    if (area === 'volunteer' && !allowIncomplete && !isProfileComplete(me.data)) return <Redirect to="/onboarding" />;
+    if (area !== 'admin' && me.data.role === 'volunteer' && !allowIncomplete && !isProfileComplete(me.data)) return <Redirect to="/onboarding" />;
     if (area === 'volunteer' && appConfig.requireAgreementAcknowledgment && me.data.agreementRequired && (path === '/shifts' || path.startsWith('/shifts/'))) return <Redirect to="/agreements" />;
     return <>{children(me.data)}</>;
   }

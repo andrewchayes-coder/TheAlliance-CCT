@@ -69,12 +69,12 @@ pnpm run typecheck
 | SYS-07 | NEW; CHANGED | Config flags | Inspect shared/appConfig.ts and shared/onboardingQuestions.ts. | Three tracking flags false; minimumAge null; question array empty; CCT identity, mission and Resource Coordinator role match v2. Public contact is the Community Care Team mailbox, not a personal staff contact. |
 | SYS-08 | NEW; CHANGED | Flags are reversible | Developer-only compatibility check in isolated dev: enable the retained background-tracking flag, compare detail/CSV/roster, then restore false. | KNOWN GAP: detail/CSV handling can return but the v2 roster has no tracking badge/filter controls. Do not mark the master’s full reversibility expectation passed. Normal v2 hides disabled tracking. |
 | NEW-06 | CHANGED | Onboarding screen | Look over /onboarding. | One screen. Intro: "Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to." Email read-only; name and phone prefilled and editable. DOB, address, city, state (default CA), ZIP, emergency contact name / relationship (with suggestions) / phone. "Only Alliance staff can see this." under DOB and emergency contact. No questionnaire, no agreement checkbox, no county. |
-| NEW-07 | CHANGED | Onboarding validation | Try a future DOB, a 4-digit ZIP, a short phone, and a blank required field. Then submit the same bad values straight to the API from devtools. | Each is blocked in the form and the API returns 400. ZIP+4 is accepted. Phones display as (XXX) XXX-XXXX. |
+| NEW-07 | CHANGED | Onboarding validation | Blur-save empty/null draft fields; then try a future DOB, invalid calendar date, 4-digit ZIP, short/nonnumeric phone, and overlong fields in the form and PATCH /api/onboarding. Repeat invalid nonempty values on volunteer Profile and the admin Profile card. Finish onboarding with required fields blank. | Empty/null drafts are allowed, but completion requires all fields. Invalid nonempty saves return 400 with fieldErrors and do not save the bad values. ZIP+4 is accepted; formatted US phones are stored as 10 digits. |
 | NEW-08 | CHANGED | Save on blur | Fill about half the fields, then refresh. | Everything you entered is still there. |
 | NEW-09 | CHANGED | Profile required before dashboard | Before finishing, go to /dashboard. | Redirected back to /onboarding. |
 | NEW-10 | CHANGED | Finish onboarding | Complete every field and submit. | Lands on /dashboard. Welcome email logged with "Here's what happens next: our team will reach out about training and the required paperwork. Once you're approved, you'll choose your weekly shift." Status is onboarding. Phones stored as digits only. |
 | NEW-11 | CHANGED | Onboarding dashboard card | Look at the dashboard top card. | Checklist: Account created ✓ · Profile complete ✓ · Training & paperwork (with Alliance staff) · Approval, with "We'll email you when you're ready to choose a shift." No quick-links row. No certification, background, or agreement text. |
-| ONBN-02 | CHANGED | Locked until profile done | With fields empty, visit /dashboard, /shifts and /messages. | Each redirects to /onboarding. |
+| ONBN-02 | CHANGED | Locked until profile done | With required fields empty, visit /dashboard, /shifts, /my-shifts, /messages, /resources, and /profile. Then use a completed onboarding persona to visit /shifts. | Incomplete volunteers redirect to /onboarding; only onboarding and the agreement page permit incomplete profiles. Complete, not-active volunteers see why they cannot book yet. |
 | ONBN-03 | CHANGED | Complete profile | Complete the profile. | Lands on /dashboard with the onboarding checklist. The welcome email shows in Admin → Notifications as `suppressed` (and prints in the dev console). |
 | ONBR-02 | CHANGED | Can't sign up yet | Open /shifts. Then POST to the shift sign-up API from devtools. | /shifts explains why sign-up isn't open yet, with no sign-up buttons. No quick-links row on the dashboard. The API returns 403. |
 | ONBR-03 | CHANGED | Profile page | Open /profile. | Editable: name, mobile, address, emergency contact. Read-only: email, DOB, status (Onboarding), start date (blank). No county, certification, background, or agreement fields. |
@@ -181,7 +181,7 @@ pnpm run typecheck
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| ACT-08 | CHANGED | Resource hub | Open /resources. Use search and category chips. Open an article. Download a document. | Quick-link buttons at the top. Search and chips filter. Article page has clean typography. Documents download. Items unpublished in ADM-30 aren't shown. |
+| ACT-08 | CHANGED | Resource hub | Open /resources. Search, filter, open an article, and download a valid document. Try a missing/unreadable document or legacy seed placeholder in production; inspect it as staff and replace its file. | Published valid documents download through authenticated routes. Missing/unreadable files return 404 with “This document isn't available right now.” Staff see “File missing — replace it”; replacement keeps the resource record and removes the warning. No production local seed upgrade is attempted. Unpublished items stay hidden. |
 | ACT-09 | CHANGED | Downloads need sign-in | Copy a document download URL, sign out (or use a private window) and open it. | Refused (401 or sent to sign-in). Not a public URL. |
 | ADM-30 | CHANGED | Resource admin | Upload a PDF and a DOCX; try a &gt;15 MB file and a .exe. Replace a file. Write an article with live preview. Add a quick link with http:// then https://. Drag to reorder and reload. Unpublish one item. | PDF/DOCX upload; oversized and wrong-type files rejected. Replace keeps the same record. http link rejected, https accepted. Order persists. Unpublished item hidden from volunteers (ACT-08). Category autocomplete works. |
 | ADM-31 | CHANGED | Agreement re-ack stays off | If an agreement-version bump option shows, bump it. Sign in as Volunteer · Active. | No re-acknowledgment prompt for volunteers while requireAgreementAcknowledgment is false. |
@@ -278,6 +278,14 @@ These earlier checklist checks go beyond an exact persona-plan case. They remain
 | UI-02 | No exact match | Navigate all forms/tabs/dialogs/schedule using keyboard; Escape, focus return, submit errors. | Visible focus; correct labels, focus trap/return; meaningful announced errors/toasts; no keyboard trap. |
 | UI-03 | No exact match | Check contrast, zoom 200%, ≥44px targets, long names/text and empty/loading/error states. | WCAG AA-oriented styling remains usable; warm, specific copy without stigmatizing family language. |
 
+## Fix 2 — production regression workflows
+
+| Test ID | Tag | Workflow | Steps | Expected result |
+| --- | --- | --- | --- | --- |
+| ADM-35 | CHANGED | Cross-role quick login | Sign in as Volunteer · Active. Use the banner to switch to Admin, back to Volunteer · Active, and to Admin again. Repeat with the app mounted beneath a base path. | Each switch lands at the returned dashboard/admin URL with the correct persona banner. No stuck spinner or stale volunteer/admin data. |
+| ACT-15 | CHANGED | Dashboard contrast | View completed onboarding/not-active, active/no-shift, and active/with-shift dashboards. Run the automated axe color-contrast checks. Also inspect shift confirmation on its navy card. | Display headings, next-shift date and labels are white on navy; all three dashboard contrast checks pass. |
+| ADM-36 | CHANGED | Shift notification classification | Book/change a standing shift, take a week off, claim/cancel a one-time shift, and apply an admin removal/block/cancellation. Inspect the log, filter by Shift, and review monthly totals and the six-month chart. | Those emails are labeled Shift, not Welcome. Genuine welcome and approval emails remain Welcome; reminders and admin coverage alerts retain their own types. Historical rows are not rewritten. |
+
 ## Master/app disagreements
 
 The master has not been edited. Current workflow expectations above are adjusted only where the app/policy differ; gaps are called out explicitly.
@@ -301,6 +309,9 @@ The master has not been edited. Current workflow expectations above are adjusted
 ## Coverage table — test ID → QA-CHECKLIST.md section
 
 | Test ID | Checklist section |
+| ADM-35 | Fix 2 — production regression workflows |
+| ACT-15 | Fix 2 — production regression workflows |
+| ADM-36 | Fix 2 — production regression workflows |
 |---|---|
 | SYS-01 | Test preparation and automation |
 | SYS-02 | Test preparation and automation |

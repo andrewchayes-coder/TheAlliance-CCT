@@ -157,7 +157,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
       `Hi ${result.user.firstName},`, result.message,
       'Thank you for sharing your time and care with local families. Your shift repeats each week, and you can manage it or request a week off in the portal.',
     ], cta: { label: 'View my shifts', url: `${appOrigin}/shifts` } });
-    const sent = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,
+    const sent = await sendEmail({ type: 'shift', to: result.user.email, toUserId: result.user.id,
       subject: result.message, ...mail, relatedId: result.activityId });
     if (!sent.ok) emailWarning = 'Your shift is saved, but the confirmation email could not be sent. Your schedule here is up to date.';
   }

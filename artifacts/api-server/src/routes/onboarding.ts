@@ -24,7 +24,7 @@ router.patch('/onboarding', async (req, res): Promise<void> => {
     complete: z.boolean().optional(), answers: z.record(z.string(), z.unknown()).optional(),
     agreementAcknowledged: z.boolean().optional(), agreementVersion: z.string().nullable().optional(),
   }).strict().safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: 'Please check the onboarding form.' }); return; }
+  if (!parsed.success) { res.status(400).json({ error: 'Please check the onboarding form.', fieldErrors: parsed.error.flatten().fieldErrors, issues: parsed.error.issues }); return; }
   const agreement = appConfig.requireAgreementAcknowledgment && parsed.data.complete ? await publishedAgreements() : null;
   if (agreement && (!parsed.data.agreementAcknowledged || !agreement.ready || parsed.data.agreementVersion !== agreement.version)) {
     res.status(400).json({ error: !agreement.ready
@@ -74,7 +74,8 @@ router.patch('/onboarding', async (req, res): Promise<void> => {
   });
   if ('code' in result) {
     if (result.code === 'VALIDATION') {
-      res.status(400).json({ error: 'Please complete the required profile fields.', issues: result.issues }); return;
+      res.status(400).json({ error: 'Please complete the required profile fields.', issues: result.issues,
+        fieldErrors: Object.fromEntries(result.issues.map(issue => [issue.path.join('.'), [issue.message]])) }); return;
     }
     res.status(result.code === 'UNAUTHORIZED' ? 403 : result.code === 'MISSING_PROFILE' ? 404 : 409)
       .json({ error: result.code === 'ALREADY_COMPLETED' ? 'Your onboarding is already complete.' :

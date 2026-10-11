@@ -9,7 +9,8 @@ export class AccountError extends Error { constructor(message: string, public st
 export const detailsSchema = z.object({
   firstName: z.string().trim().min(1).max(100),
   lastName: z.string().trim().min(1).max(100),
-  phone: z.string().max(50).nullable().transform(v => v?.trim() ? phoneDigits(v) : null)
+  phone: z.string().max(50).nullable().refine(v => v === null || !v.trim() || /^[\d\s()+.-]+$/.test(v), 'Use a ten-digit US phone number.')
+    .transform(v => v?.trim() ? phoneDigits(v) : null)
     .refine(v => v === null || /^\d{10}$/.test(v), 'Use a ten-digit US phone number.'),
 }).strict();
 export const emailChangeSchema = z.object({

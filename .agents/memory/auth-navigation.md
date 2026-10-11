@@ -12,6 +12,10 @@ The fresh-page password-change transition was then browser-verified to reach the
 
 **How to apply:** do not simplify session-changing navigation to an ordinary SPA route change without checking the exact resulting URL/page as well as the server session. API success and type checks cannot confirm route/guard ordering.
 
+For cross-role quick login, do not refresh/publish the new identity to the old SPA guards before the full-page transition. Return the successful response promptly, invalidate without refetching, and let the fresh page load its own identity.
+
+**Why:** refreshing before navigation still produced a volunteer-to-admin hang even after the caller was changed to full navigation; the old route's guards could run during that refresh.
+
 Success feedback must survive a fresh-page transition. Use a non-sensitive, one-use notice that is consumed and removed from the URL, not exclusively in-memory state. Never put passwords, user details, or authentication tokens in that notice.
 
 Account switches need both query-cache isolation and an explicitly uncached

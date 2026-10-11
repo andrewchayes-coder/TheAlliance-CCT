@@ -14,7 +14,7 @@ import { appOrigin } from '../auth/session';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
 import { lockSchedule } from '../server/scheduleMutations';
-import { normalizeVolunteerStatus, profileCompletionSchema, calendarDateSchema } from '@workspace/shared/profileFields';
+import { normalizeVolunteerStatus, profileCompletionSchema, profileDraftSchema, calendarDateSchema } from '@workspace/shared/profileFields';
 
 const router = Router();
 function errorResponse(error: unknown, res: Response) {
@@ -112,8 +112,17 @@ const trackingInput = UpdateVolunteerTrackingBody.extend({
 router.patch('/volunteers/:userId/tracking', async (req, res) => {
   try {
     const id = userId(req), parsed = trackingInput.safeParse(req.body);
-    if (!parsed.success) throw new WorkflowError(400, 'Enter valid profile details before saving.');
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Enter valid profile details before saving.', fieldErrors: parsed.error.flatten().fieldErrors, issues: parsed.error.issues }); return;
+    }
     const { expectedUpdatedAt, ...fields } = parsed.data;
+    const profileInput = profileDraftSchema.omit({ firstName: true, lastName: true, phone: true });
+    const checkedProfile = profileInput.safeParse(Object.fromEntries(Object.keys(profileInput.shape)
+      .filter(key => Object.hasOwn(fields, key)).map(key => [key, fields[key as keyof typeof fields]])));
+    if (!checkedProfile.success) {
+      res.status(400).json({ error: 'Please check the profile fields.', fieldErrors: checkedProfile.error.flatten().fieldErrors, issues: checkedProfile.error.issues }); return;
+    }
+    Object.assign(fields, checkedProfile.data);
     for (const key of ['addressLine1','city','state','zip','emergencyContactName','emergencyContactRelationship','emergencyContactPhone'] as const) {
       if (fields[key] === undefined || fields[key] === null) continue;
       const checked = profileCompletionSchema.shape[key].safeParse(fields[key]);

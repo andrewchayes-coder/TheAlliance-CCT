@@ -73,21 +73,26 @@ router.post('/agreements/acknowledge', wrap(async (req, res) => {
 }));
 router.get('/resources/:id/file', wrap(async (req, res) => {
   let row = await resourceForActor(uuid.parse(req.params.id), req.authUser!.id, req.authUser!.role === 'admin');
-  if (!row || row.type !== 'document' || !row.fileKey) { res.status(404).json({ error: 'This document is not available.' }); return; }
+  if (!row || row.type !== 'document' || !row.fileKey) { res.status(404).json({ error: "This document isn't available right now." }); return; }
   // Local development placeholders must never be upgraded or uploaded in production.
   if (/^seed-resources\/[a-zA-Z0-9._-]+\.pdf$/.test(row.fileKey)) {
     if (process.env.NODE_ENV !== 'development') {
-      throw new ResourceError('This development placeholder is not available. Please ask Alliance staff for the published document.', 404);
+      throw new ResourceError("This document isn't available right now.", 404);
     }
     const legacyKey = row.fileKey;
     const name = legacyKey.split('/').pop()!;
-    const file = await uploadResourceFile(name, await readFile(resolve(process.cwd(), 'seed-resources', name)));
+    const bytes = await readFile(resolve(process.cwd(), 'seed-resources', name)).catch(() => {
+      throw new ResourceError("This document isn't available right now.", 404);
+    });
+    const file = await uploadResourceFile(name, bytes);
     const [updated] = await db.update(resourcesTable).set({ ...file }).where(and(eq(resourcesTable.id, row.id), eq(resourcesTable.fileKey, legacyKey))).returning();
     if (updated) row = updated;
     else { await deleteResourceFile(file.fileKey); row = (await resourceForActor(row.id, req.authUser!.id, req.authUser!.role === 'admin'))!; }
     if (!row) { res.status(404).json({ error: 'This document is no longer available.' }); return; }
   }
-  const stream = resourceFileStream(row.fileKey!);
+  let stream: ReturnType<typeof resourceFileStream>;
+  try { stream = resourceFileStream(row.fileKey!); }
+  catch { throw new ResourceError("This document isn't available right now.", 404); }
   const filename = row.fileName || 'document.pdf';
   const ascii = filename.replace(/[^\x20-\x7e]|["\\]/g, '_');
   const disposition = row.fileMimeType === 'application/pdf' && req.query.download !== '1' ? 'inline' : 'attachment';
@@ -96,7 +101,7 @@ router.get('/resources/:id/file', wrap(async (req, res) => {
     'Content-Disposition': `${disposition}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename).replace(/'/g, '%27')}` });
   stream.once('error', () => {
     if (res.headersSent) res.destroy();
-    else { res.removeHeader('Content-Disposition'); res.status(503).type('json').json({ error: 'The document could not be downloaded. Please try again.' }); }
+    else { res.removeHeader('Content-Disposition'); res.status(404).type('json').json({ error: "This document isn't available right now." }); }
   });
   stream.pipe(res);
 }));

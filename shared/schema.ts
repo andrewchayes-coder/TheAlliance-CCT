@@ -17,7 +17,7 @@ export const endedReason = pgEnum('shift_ended_reason', ['dropped', 'changed', '
 export const messageAudience = pgEnum('message_audience', ['all', 'single', 'active', 'selected']);
 export const resourceType = pgEnum('resource_type', ['document', 'article', 'link']);
 export const notificationType = pgEnum('notification_type', [
-  'verification', 'password_reset', 'welcome', 'reminder', 'message', 'admin_alert', 'invite',
+  'verification', 'password_reset', 'welcome', 'shift', 'reminder', 'message', 'admin_alert', 'invite',
 ]);
 export const notificationStatus = pgEnum('notification_status', ['logged', 'sent', 'failed', 'suppressed']);
 export const authTokenType = pgEnum('auth_token_type', ['email_verify', 'password_reset', 'admin_invite']);

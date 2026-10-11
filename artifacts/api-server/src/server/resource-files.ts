@@ -2,6 +2,8 @@ import { Client } from '@replit/object-storage';
 import { volunteerContactText } from '@workspace/shared/appConfig';
 import { randomUUID } from 'node:crypto';
 import { ResourceError } from './resource-error';
+import { access } from 'node:fs/promises';
+import { resolve } from 'node:path';
 export const MAX_RESOURCE_FILE = 15 * 1024 * 1024;
 export const privateResourceKey = (key: string | null): key is string => /^private\/resources\/[\w.-]+$/.test(key ?? '');
 const client = () => {
@@ -58,6 +60,17 @@ export async function deleteResourceFile(key: string | null) {
   if (!result.ok) throw new ResourceError('The unused file could not be removed from storage.', 503);
 }
 export const resourceFileStream = (key: string) => {
-  if (!privateResourceKey(key)) throw new ResourceError('This resource has no private uploaded file.', 404);
+  if (!privateResourceKey(key)) throw new ResourceError("This document isn't available right now.", 404);
   return client().downloadAsStream(key);
 };
+
+/** Staff-only availability probe; no public storage URLs or file contents are exposed. */
+export async function resourceFileAvailable(key: string | null): Promise<boolean> {
+  try {
+    if (/^seed-resources\/[a-zA-Z0-9._-]+\.pdf$/.test(key ?? ''))
+      return process.env.NODE_ENV === 'development' && await access(resolve(process.cwd(), key!)).then(() => true, () => false);
+    if (!privateResourceKey(key)) return false;
+    const result = await client().exists(key);
+    return result.ok && result.value;
+  } catch { return false; }
+}

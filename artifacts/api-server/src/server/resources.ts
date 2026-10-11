@@ -2,7 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db, resourcesTable, volunteerProfilesTable } from '@workspace/db';
 import { agreementTitles, agreementVersion, bumpAgreementVersion } from './agreements';
-import { deleteResourceFile, privateResourceKey } from './resource-files';
+import { deleteResourceFile, privateResourceKey, resourceFileAvailable } from './resource-files';
 import { logger } from '../lib/logger';
 import { ResourceError } from './resource-error';
 export const resourceInput = z.object({
@@ -49,7 +49,9 @@ export async function visibleResources(userId: string, admin: boolean) {
     .from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId));
   const rows = await db.select().from(resourcesTable).where(admin ? undefined : eq(resourcesTable.isPublished, true))
     .orderBy(resourcesTable.sortOrder, resourcesTable.id);
-  return rows.filter(r => admin || !(r.type === 'link' && r.isQuickLink && profile?.status !== 'active')).map(resourceDto);
+  return Promise.all(rows.filter(r => admin || !(r.type === 'link' && r.isQuickLink && profile?.status !== 'active')).map(async row => ({
+    ...resourceDto(row), ...(admin && row.type === 'document' ? { fileMissing: !await resourceFileAvailable(row.fileKey) } : {}),
+  })));
 }
 export async function resourceForActor(id: string, userId: string, admin: boolean) {
   const [row] = await db.select().from(resourcesTable).where(eq(resourcesTable.id, id));

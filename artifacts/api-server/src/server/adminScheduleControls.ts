@@ -166,7 +166,7 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
       firstName: result.user.firstName, paragraphs: [result.message,
         `Thank you for the care you share with local families. Please contact ${volunteerContactText} if you have questions about this change.`],
       cta: { label: 'View my shifts', url: `${appOrigin}/shifts` } });
-    const sent = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,
+    const sent = await sendEmail({ type: 'shift', to: result.user.email, toUserId: result.user.id,
       subject: input.kind === 'assign' ? 'Your weekly shift is confirmed' : 'Your weekly shift has been released',
       ...copy, relatedId: result.activityId });
     if (!sent.ok) emailWarning = 'The schedule is saved, but the volunteer email could not be sent.';
