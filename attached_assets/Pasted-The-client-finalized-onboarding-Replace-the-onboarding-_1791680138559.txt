@@ -1,0 +1,46 @@
+The client finalized onboarding. Replace the onboarding questionnaire and the training/compliance workflow with a fixed profile and three statuses.
+
+Schema changes reach production through Replit Publish (it syncs the dev schema to the production DB), so: only additive changes (new nullable columns or columns with defaults), no column drops or renames, and no Postgres enum types. If status is currently a pg enum, stop and tell me before changing it. Production has no real volunteers yet, but there may be test accounts.
+
+SCHEMA — volunteer_profiles
+- Add: dateOfBirth (date), addressLine1 (text), city (text), state (text, default 'CA'), zip (text), emergencyContactName (text), emergencyContactRelationship (text), emergencyContactPhone (text), startDate (date, admin-only).
+- status becomes 'onboarding' | 'active' | 'inactive' (default 'onboarding'), validated in the app (text column). In dev, update existing 'applicant' and 'in_training' rows to 'onboarding'. Until production data is updated, the app must treat a stored 'applicant' or 'in_training' as 'onboarding' when reading.
+- KEEP the existing certification, background check, agreement, and onboardingAnswers columns (no data loss). They're hidden by the flags below.
+
+CONFIG — shared/appConfig.ts
+- trackCertificationInApp: false
+- trackBackgroundCheckInApp: false
+- requireAgreementAcknowledgment: false
+- shared/onboardingQuestions.ts stays, but exports an empty array. When it's empty, the extra-questions section is hidden everywhere.
+When a flag is false, hide every related UI element, badge, filter, CSV column, dashboard checklist line, and activation requirement. Setting a flag back to true restores them.
+
+ONBOARDING (/onboarding, one screen, mobile-first)
+Required fields, with Zod validation on both client and server:
+- First name, last name, email (read-only here), mobile phone. Prefill from sign-up; name and phone are editable.
+- Date of birth: mobile-friendly date input; must be a past date. No minimum-age rule (put minimumAge: null in appConfig so one can be added later).
+- Home address, City, State (select, default CA), ZIP (5 digits or ZIP+4).
+- Emergency contact name, relationship (free text with suggestions: Spouse/Partner, Parent, Sibling, Child, Friend, Other), and phone.
+- Phone fields display as (XXX) XXX-XXXX and store digits only.
+Intro copy: "Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to."
+Helper text under emergency contact and DOB: "Only Alliance staff can see this."
+Remove the 2-step questionnaire and the agreement checkbox. Agreements, confidentiality and safety acknowledgments, background-check authorization, and other paperwork are handled outside the app.
+Save each field on blur so a refresh doesn't lose progress. On completion, set onboardingCompletedAt and route to /dashboard.
+Welcome email next steps: "Here's what happens next: our team will reach out about training and the required paperwork. Once you're approved, you'll choose your weekly shift."
+
+STATUS WORKFLOW (admin volunteer detail)
+- Stepper: Onboarding → Active → Inactive. Any direction, with a confirm dialog.
+- Moving to Active requires only: email verified + every required profile field complete. Show exactly what's missing and disable the button until it's done.
+- On the first move to Active, set startDate to today if it's empty. Admins can edit startDate any time.
+- Keep the existing behavior: inactivating releases shifts and runs the uncovered-shift check; activating sends the "You're approved! Choose your weekly shift" email.
+- Record every status and startDate change in activity_log.
+
+VOLUNTEER DASHBOARD
+The onboarding-status card checklist becomes: Account created ✓ · Profile complete · Training & paperwork (with Alliance staff) · Approval. Copy: "We'll email you when you're ready to choose a shift."
+
+VOLUNTEER PROFILE (/profile)
+Editable: name, mobile phone, address, emergency contact. Read-only: email, date of birth (admins can change it), status, start date.
+
+PRIVACY
+DOB, home address, and emergency contact are returned only to that volunteer and to admins. Never include them in any other volunteer-reachable response (schedule, messages, etc.). Extend the existing guard/privacy tests to cover these fields.
+
+When done, list any production data change Replit Publish won't make, written as single short SQL statements (no functions, DO blocks, or multi-statement bodies) so I can paste each into the production Database tool as-is.
