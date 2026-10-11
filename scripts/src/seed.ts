@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import { inArray } from 'drizzle-orm';
 import { buildSeedFixtures } from './seed-fixtures';
 import { hashSeedPassword, writeSeedDocuments } from './seed-support';
 
@@ -12,7 +11,7 @@ async function main() {
     shiftSkipsTable, closedDatesTable, messagesTable, messageRecipientsTable, resourcesTable,
     insertUserSchema, insertVolunteerProfileSchema, insertShiftSlotSchema, insertShiftAssignmentSchema,
     insertShiftSkipSchema, insertClosedDateSchema, insertMessageSchema, insertMessageRecipientSchema,
-    insertResourceSchema } = await import('@workspace/db');
+    insertResourceSchema, inArray } = await import('@workspace/db');
   try {
     const fixtures = buildSeedFixtures({
       admin: hashSeedPassword('ChangeMe123!'),

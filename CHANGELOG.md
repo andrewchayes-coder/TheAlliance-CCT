@@ -2,8 +2,9 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
-## Unreleased
+## v1.1.0 — Community Care Team refresh
 ### Added
+- Production-locked QA access for five test personas, device unlock/lock, quick-login role switching, persistent TEST indicators, suppressed delivery and QA-only reset.
 - Community Care Team standard grid loader (40 overlapping weekday slots), date-specific shift blocks, and one-time shifts with volunteer signup and audited staff capacity overrides.
 - One-time shifts in live dispatch, coverage alerts, reminders, schedule CSV and volunteer upcoming shifts; date blocks suppress operational occurrences without cancelling standing assignments.
 - Staff roster with configurable per-admin columns, global sorting, contact links and new profile filters; private profile and inline start-date editors.
@@ -13,14 +14,17 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Volunteer-facing contact guidance now uses the Community Care Team mailbox exclusively. Email sender identity is parsed and validated; Reply-To is centrally configured, never inherited from a message author.
 - Master schedule uses a 30-minute grid with explicit odd/even-hour lanes, gray blocked occurrences and dashed-blue one-time shifts. Inactivation/deactivation also releases future one-time reservations.
 - Roster attention counts now flag active volunteers without shifts, incomplete onboarding older than seven days, and onboarding older than thirty days. Private-field edits record field names only; county editing is staff-only.
-- Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the old training/applicant identities in place, with updated fake profile defaults and labels.
+- Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the former identities in place, with updated fake profile defaults and labels.
 - Simplified volunteer workflow to Onboarding, Active and Inactive. Legacy enum values/data remain intact and read as Onboarding.
 - Disabled in-app certification, background-check and agreement tracking by default; extra onboarding questions are empty. Training and paperwork are handled by Alliance staff.
 - Private profile fields are available only to their owner and staff. Volunteer DOB/start-date changes are rejected.
 ### Fixed
+- Test-account reset now cancels one-time reservations without touching real volunteers' assignments.
+- The `/api/me` renewal indicator respects the disabled agreement-tracking flag.
+- Updated guard/privacy regression tests and isolated end-to-end smoke coverage for the fixed profile, blocks, one-time shifts, reminders and messaging.
 - QA-suppressed email outcomes are accepted by workflow response contracts; ordinary QA preparation preserves saved profile progress and status.
 
-### Changed
+### Deployment and branding
 - Refreshed the Community Care Team identity, Resource Coordinator-facing copy, team contact guidance, Alliance Blue/Open Sans styling, approved static logos and home-screen icons, and branded email presentation. Workflows and data models are unchanged.
 - Production schema changes are managed by Replit Publish only. Removed boot-time Drizzle migrations, migration-history guard and runner commands; configuration validation remains enabled.
 - Deployment instructions no longer require migration-history baselining and describe the two existing CHECK-constraint differences that Publish previously omitted.

@@ -13,11 +13,12 @@ import { QA_COOKIE, QA_LIFETIME, qaCookieOptions, isQuickLoginEnabled, hasQuickL
 type Persona = { key: string; email: string; label: string; role: 'admin' | 'volunteer'; description: string };
 export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, personas: readonly Persona[] = testAccounts) {
   const unlock = Router(), api = Router();
-  unlock.use('/qa', (_req, res, next) => {
+  const configGuard = Object.assign((_req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
     res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
     if (!isQuickLoginEnabled(env)) { quickLoginNotFound(res); return; }
     next();
-  });
+  }, { guardTag: 'public:quick-login' });
+  unlock.use('/qa', configGuard);
   unlock.get('/qa/lock', (_req, res) => {
     res.clearCookie(QA_COOKIE, qaCookieOptions);
     res.redirect('/signin');
@@ -74,6 +75,16 @@ export function createQuickLoginRoutes(env: NodeJS.ProcessEnv = process.env, per
     }
   });
   return { unlock, api };
+}
+/** Include the non-API unlock entrypoints in automated guard coverage. */
+export function registeredQaRoutes() {
+  const tag = (handle: unknown) => typeof handle === 'function' && 'guardTag' in handle &&
+    typeof handle.guardTag === 'string' ? handle.guardTag : undefined;
+  const guard = qaUnlockRouter.stack.map(layer => tag(layer.handle)).find(Boolean);
+  return qaUnlockRouter.stack.flatMap(layer => {
+    const route = layer.route as unknown as { path: string; methods: Record<string, boolean> } | undefined;
+    return route ? Object.keys(route.methods).map(method => ({ method: method.toUpperCase(), path: route.path, guard })) : [];
+  });
 }
 const routes = createQuickLoginRoutes();
 export const qaUnlockRouter = routes.unlock;

@@ -7,7 +7,7 @@ Publish manages this additive schema update: append `onboarding` to the existing
 Publish does not perform application data backfills. After the new enum value is available, the optional legacy-status backfill is one short statement:
 
 ```sql
-UPDATE public.volunteer_profiles SET status = 'onboarding' WHERE status IN ('applicant', 'in_training');
+UPDATE public.volunteer_profiles SET status = 'onboarding' WHERE status::text NOT IN ('onboarding', 'active', 'inactive');
 ```
 
 This has been applied in development only. No production data was changed for this release. Reads are compatible without running it; the deprecated enum values and legacy columns remain intact. Do not invent DOB/address/emergency-contact values for real volunteers: they complete the new profile themselves. Existing completed profiles missing required fields return to onboarding.
@@ -48,6 +48,25 @@ Use a separate Postmark server for this app and its `outbound` transactional str
 The sender display name/address and effective Reply-To appear on `/admin/notifications`; volunteers do not receive staff mailbox addresses through message context or automatic headers. Development without a token retains log-only delivery. Production retains required-secret checks and does not log private recovery emails when delivery configuration is missing. Update secure development/production configuration and publish the updated release before live use.
 
 Previously saved failed emails with a retired branded footer are not replayed: create a fresh message/reminder using the current team contact. Authentication-email retries still regenerate links and current templates. Existing notification history is retained unchanged.
+
+### Production-locked quick login
+
+Production QA access uses these secret names only: `QUICK_LOGIN_ENABLED`, `QUICK_LOGIN_KEY`, and the existing `SESSION_SECRET`.
+Keep `QUICK_LOGIN_KEY` at least 32 characters and distribute it privately. Documentation uses only the placeholder `<QUICK_LOGIN_KEY>`.
+
+1. Enable `QUICK_LOGIN_ENABLED=true` and configure `QUICK_LOGIN_KEY` through secure production configuration; publish. Built-in synthetic personas are explicitly approved in both environments; never convert an ordinary volunteer or import development fixtures.
+2. On the device authorized for QA, open `/qa?key=<QUICK_LOGIN_KEY>` using the actual private key. It redirects to `/signin`, removes the key from the URL and sets a signed, secure device cookie. Do not share screenshots of the original link.
+3. Sign in with one of the five labeled TEST buttons. QA emails are suppressed and excluded from usage, blasts, digest recipients, ordinary roster/counts and both exports.
+4. Use the staff test-account reset action to restore the personas. It resets QA-only profile/scheduling/inbox data and cancels QA one-time reservations; it never removes real volunteers' assignments. Production does not automatically occupy standing capacity.
+5. Use “Hide test logins on this device” or `/qa/lock` to remove device access. Signing out alone does not revoke the device unlock.
+6. To disable production QA globally, set `QUICK_LOGIN_ENABLED=false` and republish. This overrides existing device cookies. Rotate `QUICK_LOGIN_KEY` privately when access must be revoked.
+
+### v1.1.0 schedule setup
+
+In `/admin/schedule/settings`, use **Load standard grid** to create 40 overlapping weekday slots: two-hour windows starting hourly from 9 AM through 4 PM, capacity two, ending by 6 PM. Repeat loading is safe and preserves existing edits/assignments.
+Use **Blocked shifts** for selected slots or all slots on specific dates/ranges, with a reason and optional volunteer notice. A block suppresses occurrences, reminders and coverage checks but retains standing assignments; unblock when availability returns.
+Use **One-time shifts** from the master schedule controls for dated extra coverage. Choose whether volunteers can claim seats; staff overrides require explicit consent and a reason. These reservations do not consume the standing-shift cap and appear in dispatch, reminders and schedule CSV.
+Check test-account indicators on custom reservations. Cancelling a one-time shift releases its seats; closing a whole date suppresses all standing and one-time occurrences.
 
 `APP_ORIGIN` is a legacy alias. If retained, it must match `APP_BASE_URL`; change both together for a custom domain. Development can continue to use `APP_ORIGIN` or the managed dev domain.
 

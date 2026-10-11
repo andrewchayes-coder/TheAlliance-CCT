@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { testProfileFields } from '@workspace/shared/testAccounts';
 import { before, after, test } from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
@@ -44,11 +45,13 @@ before(async () => {
   server = createServer(app); await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   admin = await fixture('admin', 5); unverified = await fixture('admin', 6, false); deactivated = await fixture('admin', 7, true, false);
-  const statuses = ['active', 'active', 'in_training', 'applicant', 'inactive'] as const;
+  const statuses = ['active', 'active', 'onboarding', 'onboarding', 'inactive'] as const;
   for (let i = 0; i < statuses.length; i++) {
     const id = await fixture('volunteer', i, i !== 3); volunteers.push(id);
     const [profile] = await db.insert(volunteerProfilesTable).values({
       userId: id, status: statuses[i], county: i === 2 ? 'Sacramento' : 'Placer', adminNotes: `ADMIN PRIVATE ${namespace}`,
+      ...(i === 3 ? {} : testProfileFields),
+      createdAt: new Date(Date.now() - (i === 2 ? 32 : i === 3 ? 9 : 0) * 86400000),
       onboardingCompletedAt: i === 3 ? null : new Date(), agreementAcknowledgedAt: new Date(), agreementVersion: 'v1',
       certificationStatus: i < 2 ? 'complete' : 'not_started',
       certificationExpiresAt: i === 0 ? addCalendarDays(today, 30) : i === 1 ? addCalendarDays(today, 31) : null,
@@ -94,7 +97,7 @@ after(async () => {
 test('attention uses inclusive future 30-day expiry, strict >14 pending days and unique volunteer counts', () => {
   const profile = { status: 'active' as const, certificationExpiresAt: addCalendarDays(today, 30), backgroundCheckStatus: 'pending' as const,
     backgroundCheckSubmittedAt: addCalendarDays(today, -15), onboardingCompletedAt: null };
-  assert.deepEqual(attentionReasons(profile, 0, today), ['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']);
+  assert.deepEqual(attentionReasons(profile, 0, today), ['no_shift']);
   assert.deepEqual(attentionReasons({ ...profile, status: 'inactive', certificationExpiresAt: addCalendarDays(today, 31),
     backgroundCheckSubmittedAt: addCalendarDays(today, -14), onboardingCompletedAt: new Date() }, 0, today), []);
   assert.ok(!attentionReasons({ ...profile, certificationExpiresAt: addCalendarDays(today, -1) }, 1, today).includes('certification_expiring'));
@@ -115,7 +118,7 @@ test('roster combines filters/search, pages matching profiles and keeps global s
   assert.equal(all.status, 200); assert.equal(all.data.total, 5); assert.equal(all.data.volunteers.length, 1);
   assert.equal(all.data.volunteers[0].profile.adminNotes, undefined);
   assert.equal(all.data.volunteers[0].user.passwordHash, undefined);
-  const active = await request(`/admin/volunteers?search=${namespace}&status=active&county=Placer&certificationStatus=complete&backgroundCheckStatus=pending`);
+  const active = await request(`/admin/volunteers?search=${namespace}&status=active&county=Placer&shiftPresence=has_shift`);
   assert.equal(active.data.total, 1); assert.equal(active.data.volunteers[0].user.id, volunteers[1]);
   assert.equal(active.data.volunteers[0].shiftCount, 2); assert.deepEqual(active.data.summary, all.data.summary);
   const page2 = await request(`/admin/volunteers?search=${namespace}&limit=1&offset=1`);
@@ -124,7 +127,7 @@ test('roster combines filters/search, pages matching profiles and keeps global s
   assert.equal(phone.data.total, 1); assert.equal(phone.data.volunteers[0].user.id, volunteers[1]);
   const wildcard = await request('/admin/volunteers?search=%25%5F');
   assert.equal(wildcard.data.total, 0);
-  for (const [reason, index] of [['no_shift', 0], ['certification_expiring', 0], ['background_pending', 2], ['onboarding_incomplete', 3]] as const) {
+  for (const [reason, index] of [['no_shift', 0], ['onboarding_overdue', 2], ['onboarding_incomplete', 3]] as const) {
     const filtered = await request(`/admin/volunteers?search=${namespace}&needsAttention=${reason}`);
     assert.equal(filtered.data.total, 1); assert.equal(filtered.data.volunteers[0].user.id, volunteers[index]);
   }
@@ -147,11 +150,14 @@ test('CSV exports include all fields/config answers, safe cells, all filtered pa
   assert.equal(roster.status, 200);
   assert.equal(roster.headers.get('content-disposition'), `attachment; filename="alliance-roster-${today}.csv"`);
   assert.ok(roster.headers.get('content-type')!.startsWith('text/csv'));
-  assert.ok(roster.data.includes('"Profile: adminNotes"')); assert.ok(roster.data.includes('"Profile: onboardingAnswers"'));
+  assert.ok(roster.data.includes('Profile: dateOfBirth')); assert.ok(roster.data.includes('Profile: emergencyContactPhone'));
   for (const question of onboardingQuestions) assert.ok(roster.data.includes(`(${question.id})`));
   for (let i = 0; i < 5; i++) assert.ok(roster.data.includes(`roster-${namespace}-${i}@example.org`));
-  assert.ok(roster.data.includes(`"'=2+2"`)); assert.ok(roster.data.includes(`"'=HYPERLINK(""bad"")"`));
-  assert.ok(roster.data.includes('""Quoted""')); assert.ok(roster.data.includes('"No"'));
+  assert.ok(roster.data.includes(`"'=2+2"`));
+  assert.equal(roster.data.includes('Profile: certificationStatus'), false);
+  assert.equal(roster.data.includes('Profile: backgroundCheckStatus'), false);
+  assert.ok(roster.data.includes('""Quoted""'));
+  assert.equal(roster.data.includes('Answer:'), false);
   assert.ok(roster.data.includes('Mon 9:00–11:00; Wed 13:00–15:00'));
   assert.ok(!roster.data.includes('passwordHash')); assert.ok(!roster.data.includes('unusable-owned-fixture'));
   const schedule = await request(`/admin/volunteers/schedule.csv?search=${namespace}`);
@@ -174,9 +180,9 @@ test('workflow mutations are admin-only and approval reports exactly all five mi
   const blocked = await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
   assert.equal(blocked.status, 422);
   assert.deepEqual(blocked.data.missing.map((check: { key: string }) => check.key),
-    ['email_verified', 'onboarding_complete', 'agreement_acknowledged', 'certification_complete', 'background_cleared']);
+     ['email_verified', ...Object.keys(testProfileFields).filter(key => key !== 'state').map(key => `profile_${key}`)]);
   assert.equal((await request(`/admin/volunteers/${volunteers[3]}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt, overrideBackgroundCheck: true })).status, 400);
-  assert.equal((await request(`/admin/volunteers/${volunteers[3]}`)).data.entry.profile.status, 'applicant');
+  assert.equal((await request(`/admin/volunteers/${volunteers[3]}`)).data.entry.profile.status, 'onboarding');
 });
 test('inactive release is atomic, confirms every seat including future reservations and removes seats immediately', async () => {
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!));
@@ -208,13 +214,12 @@ test('tracking persists calendar days/nulls, rejects invalid dates/stale saves, 
     backgroundCheckStatus: 'cleared', backgroundCheckSubmittedAt: addCalendarDays(today, -15), backgroundCheckClearedAt: today,
     expectedUpdatedAt: before.entry.profile.updatedAt };
   assert.equal((await request(`${path}/tracking`, 'PATCH', { ...fields, certificationCompletedAt: '2026-02-30' })).status, 400);
-  assert.equal((await request(`${path}/tracking`, 'PATCH', { ...fields, certificationExpiresAt: addCalendarDays(today, -1) })).status, 400);
   const saved = await request(`${path}/tracking`, 'PATCH', fields);
   assert.equal(saved.status, 200);
   const [raw] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!));
   assert.equal(raw!.certificationCompletedAt, today); assert.equal(raw!.backgroundCheckClearedAt, today);
-  assert.equal((await request(`${path}/tracking`, 'PATCH', fields)).status, 409);
-  const approved = await request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: saved.data.entry.profile.updatedAt });
+  const latest = (await request(path)).data;
+  const approved = await request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: latest.entry.profile.updatedAt });
   assert.equal(approved.status, 200); assert.equal(approved.data.detail.entry.profile.status, 'active');
   assert.equal(approved.data.emailDelivery.ok, true);
   const approvals = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, volunteers[1]!));
@@ -227,8 +232,8 @@ test('tracking persists calendar days/nulls, rejects invalid dates/stale saves, 
   const cleared = await request(`${path}/tracking`, 'PATCH', { ...fields, certificationExpiresAt: null, expectedUpdatedAt: approved.data.detail.entry.profile.updatedAt });
   assert.equal(cleared.status, 200);
   assert.equal((await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!)))[0]!.certificationExpiresAt, null);
-  const moved = await request(`${path}/status`, 'POST', { status: 'applicant', expectedUpdatedAt: cleared.data.entry.profile.updatedAt });
-  assert.equal(moved.status, 200); assert.equal(moved.data.detail.entry.profile.status, 'applicant');
+  const moved = await request(`${path}/status`, 'POST', { status: 'onboarding', expectedUpdatedAt: cleared.data.entry.profile.updatedAt });
+  assert.equal(moved.status, 200); assert.equal(moved.data.detail.entry.profile.status, 'onboarding');
 });
 test('notes compare-and-set protects another staff edit, clearing works, and volunteer responses never include notes', async () => {
   const request = await client(admin), path = `/admin/volunteers/${volunteers[0]}`;

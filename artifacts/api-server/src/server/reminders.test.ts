@@ -57,7 +57,7 @@ describe('Pacific shift reminder selection and copy', () => {
   });
   it('excludes inactive profiles/accounts and unverified users', () => {
     const at = slotInstant('2026-10-12', '09:00');
-    for (const change of [{ status: 'inactive' }, { status: 'in_training' }, { isActive: false }, { verified: false }])
+    for (const change of [{ status: 'inactive' }, { status: 'onboarding' }, { isActive: false }, { verified: false }])
       expect(selectReminders({ ...data(), people: [{ ...person, ...change }] }, at, config)).toHaveLength(0);
   });
   it('keeps overlapping occurrences and different assignment keys separate', () => {

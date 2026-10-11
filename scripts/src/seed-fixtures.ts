@@ -1,4 +1,5 @@
 import { appConfig } from '@workspace/shared/appConfig';
+import { testProfileFields } from '@workspace/shared/testAccounts';
 import type {
   usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
   closedDatesTable, messagesTable, messageRecipientsTable, resourcesTable,
@@ -26,35 +27,33 @@ export function buildSeedFixtures(hashes: { admin: string; volunteers: string[] 
   const profiles: (typeof volunteerProfilesTable.$inferInsert)[] = names.map(([firstName, lastName], index) => {
     const key = `${firstName}.${lastName}`.toLowerCase().replace(/[^a-z.]/g, '');
     const userId = seedId(`user:${key}`);
-    const status = index < 4 ? 'applicant' : index < 7 ? 'in_training' : index < 17 ? 'active' : 'inactive';
+    const status = index < 7 ? 'onboarding' : index < 17 ? 'active' : 'inactive';
     const isComplete = status === 'active' || status === 'inactive' || index === 6;
     users.push({
       id: userId, email: `${key}@example.org`, passwordHash: hashes.volunteers[index]!,
       firstName, lastName, phone: `+1530555${String(101 + index).padStart(4, '0')}`,
       role: 'volunteer', isActive: status !== 'inactive',
       emailVerifiedAt: index < 2 ? null : earlierInstant,
-      lastLoginAt: status === 'applicant' ? null : earlierInstant,
+      lastLoginAt: index < 4 ? null : earlierInstant,
     });
     return {
       id: seedId(`profile:${key}`), userId,
       county: index === 3 ? appConfig.counties[1] : index === 14 ? appConfig.counties[2] : appConfig.defaultCounty,
       status,
-      onboardingAnswers: status === 'applicant' ? {} : {
-        motivation: 'I would like to help neighbors connect with community resources.',
-        experience: index % 2 === 0 ? 'Community volunteering' : 'Customer service',
-        languages: index % 3 === 0 ? ['English', 'Spanish'] : ['English'],
-      },
-      onboardingCompletedAt: status === 'applicant' ? null : earlierInstant,
+      ...(isComplete ? testProfileFields : {}),
+      startDate: status === 'active' ? lastMonth : null,
+      onboardingAnswers: {},
+      onboardingCompletedAt: isComplete ? earlierInstant : null,
       availabilityNotes: index % 2 === 0 ? 'Mornings are usually best.' : 'Flexible on weekday afternoons.',
-      certificationStatus: isComplete ? 'complete' : status === 'in_training' ? 'in_progress' : 'not_started',
+      certificationStatus: isComplete ? 'complete' : index >= 4 ? 'in_progress' : 'not_started',
       certificationCompletedAt: isComplete ? lastMonth : null,
       certificationExpiresAt: isComplete ? addDays(today, status === 'inactive' ? -7 : 335) : null,
       backgroundCheckStatus: status === 'active' || status === 'inactive' || index === 6
         ? 'cleared' : index === 3 ? 'not_cleared' : index === 0 ? 'not_started' : 'pending',
       backgroundCheckSubmittedAt: index === 0 ? null : lastMonth,
       backgroundCheckClearedAt: status === 'active' || status === 'inactive' || index === 6 ? addDays(lastMonth, 7) : null,
-      agreementAcknowledgedAt: status === 'applicant' ? null : earlierInstant,
-      agreementVersion: status === 'applicant' ? null : 'development-example',
+      agreementAcknowledgedAt: null,
+      agreementVersion: null,
       adminNotes: 'Dummy development record. This staff-only note must not appear in volunteer responses.',
     };
   });

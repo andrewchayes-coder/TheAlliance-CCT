@@ -6,9 +6,11 @@ import {
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod/v4';
 import { appConfig } from './appConfig';
+import { retiredVolunteerStatuses } from './legacy-compatibility';
+import { normalizeVolunteerStatus } from './profileFields';
 
 export const userRole = pgEnum('user_role', ['admin', 'volunteer']);
-export const volunteerStatus = pgEnum('volunteer_status', ['applicant', 'in_training', 'active', 'inactive', 'onboarding']);
+export const volunteerStatus = pgEnum('volunteer_status', [...retiredVolunteerStatuses, 'active', 'inactive', 'onboarding']);
 export const certificationStatus = pgEnum('certification_status', ['not_started', 'in_progress', 'complete']);
 export const backgroundCheckStatus = pgEnum('background_check_status', ['not_started', 'pending', 'cleared', 'not_cleared']);
 export const endedReason = pgEnum('shift_ended_reason', ['dropped', 'changed', 'admin_removed']);
@@ -391,7 +393,7 @@ export const volunteerProfilePublicColumns = {
   createdAt: profileColumns.createdAt, updatedAt: profileColumns.updatedAt,
 };
 export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true }).transform(profile => ({
-  ...profile, status: profile.status === 'applicant' || profile.status === 'in_training' ? 'onboarding' as const : profile.status,
+  ...profile, status: normalizeVolunteerStatus(profile.status),
 }));
 export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true });
 export function toVolunteerProfilePublic(profile: VolunteerProfile) {

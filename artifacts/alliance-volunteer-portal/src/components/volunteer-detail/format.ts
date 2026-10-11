@@ -3,7 +3,7 @@ import { appConfig } from '@workspace/shared/appConfig';
 export type Badge = 'neutral' | 'good' | 'attention' | 'blocked';
 export const TZ = appConfig.timezone;
 export const STATUS: Record<string, [string, Badge]> = {
-  onboarding: ['Onboarding', 'attention'], applicant: ['Onboarding', 'attention'], in_training: ['Onboarding', 'attention'],
+  onboarding: ['Onboarding', 'attention'],
   active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
 };
 export const STATUS_ORDER = ['onboarding', 'active', 'inactive'] as const;

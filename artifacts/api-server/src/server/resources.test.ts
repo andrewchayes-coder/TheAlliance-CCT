@@ -42,12 +42,14 @@ beforeAll(async () => {
   originalOrders.push(...await db.select({ id: resourcesTable.id, sortOrder: resourcesTable.sortOrder }).from(resourcesTable));
   pdf = await readFile('seed-resources/volunteer-handbook.pdf');
   for (const [i, role] of ['admin', 'volunteer', 'volunteer'].entries()) {
-    const [u] = await db.insert(usersTable).values({ firstName: 'Resource test', lastName: 'Temporary', phone: '',
+    const [u] = await db.insert(usersTable).values({ firstName: 'Resource test', lastName: 'Temporary', phone: '5555550100',
       email: `resource-${tag}-${i}@example.invalid`, passwordHash: 'not-a-login-password', role: role as 'admin' | 'volunteer',
       emailVerifiedAt: i === 2 ? null : new Date() }).returning();
     users.push(u!.id);
     if (role === 'volunteer') await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: 'active',
-      onboardingCompletedAt: new Date(), agreementAcknowledgedAt: new Date(), agreementVersion: originalVersion, adminNotes: 'private staff-only fixture' });
+      onboardingCompletedAt: new Date(), dateOfBirth:'1990-01-01',addressLine1:'123 Test St',city:'Auburn',state:'CA',zip:'95603',
+      emergencyContactName:'Test Contact',emergencyContactRelationship:'Friend',emergencyContactPhone:'5555550100',
+      agreementAcknowledgedAt: new Date(), agreementVersion: originalVersion, adminNotes: 'private staff-only fixture' });
   }
   [admin, volunteer, unverified] = users as [string,string,string];
   [cookieA, cookieV, cookieU] = await Promise.all(users.map(makeCookie));
@@ -146,7 +148,7 @@ describe('private resource hub', () => {
   it('limits operational quick links to active volunteers and rejects unsafe links', async () => {
     const link = await saveResource(admin, resourceInput.parse(data('link', { isQuickLink: true, isPublished: true })));
     expect((await (await request('/resources', cookieV)).json()).some((r:{id:string}) => r.id === link.resource.id)).toBe(true);
-    await db.update(volunteerProfilesTable).set({ status: 'in_training' }).where(eq(volunteerProfilesTable.userId, volunteer));
+    await db.update(volunteerProfilesTable).set({ status: 'onboarding' }).where(eq(volunteerProfilesTable.userId, volunteer));
     expect((await (await request('/resources', cookieV)).json()).some((r:{id:string}) => r.id === link.resource.id)).toBe(false);
     expect((await request(`/resources/${link.resource.id}`, cookieV)).status).toBe(404);
     await db.update(volunteerProfilesTable).set({ status: 'active' }).where(eq(volunteerProfilesTable.userId, volunteer));
@@ -159,10 +161,10 @@ describe('private resource hub', () => {
       body: 'Updated temporary test agreement.', isPublished: true, bumpAgreementVersion: true })), agreement!.id);
     testVersion = changed.agreementVersion; expect(testVersion).not.toBe(originalVersion);
     expect(changed.bumped).toBe(true);
-    const session = await (await request('/auth/session', cookieV)).json(); expect(session.nextPath).toBe('/agreements');
-    const me = await (await request('/me', cookieV)).json(); expect(me.agreementRequired).toBe(true);
+    const session = await (await request('/auth/session', cookieV)).json(); expect(session.nextPath).toBe('/dashboard');
+    const me = await (await request('/me', cookieV)).json(); expect(me.agreementRequired).toBe(false);
     expect(me.profile).not.toHaveProperty('adminNotes');
-    expect((await request('/volunteer/schedule', cookieV)).status).toBe(403);
+    expect((await request('/volunteer/schedule', cookieV)).status).toBe(200);
     expect((await request('/agreements/acknowledge', cookieV, 'POST', { version: originalVersion, acknowledged: true })).status).toBe(409);
     await acknowledgeAgreement(volunteer, testVersion);
     expect((await request('/volunteer/schedule', cookieV)).status).toBe(200);

@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { eq, inArray } from 'drizzle-orm';
 import {
   insertUserSchema, insertVolunteerProfileSchema, insertShiftSlotSchema, insertShiftAssignmentSchema, insertResourceSchema,
   insertNotificationLogSchema, toVolunteerProfilePublic, volunteerProfilePublicColumns,
@@ -12,7 +11,7 @@ import { addDays, verifySeedPassword, weekday } from './seed-support';
 
 async function main() {
   if (process.env.NODE_ENV === 'production') throw new Error('Verification probes are development-only.');
-  const { db, pool, usersTable, volunteerProfilesTable } = await import('@workspace/db');
+  const { db, pool, usersTable, volunteerProfilesTable, eq, inArray } = await import('@workspace/db');
   const fixtures = buildSeedFixtures({ admin: 'unused', volunteers: Array<string>(18).fill('unused') });
   const expected = [
     ['users', fixtures.users], ['volunteer_profiles', fixtures.profiles], ['shift_slots', fixtures.slots],
@@ -47,11 +46,10 @@ async function main() {
     const profiles = await db.select().from(volunteerProfilesTable)
       .where(inArray(volunteerProfilesTable.id, fixtures.profiles.map(profile => profile.id!)));
     assert.deepEqual({
-      applicant: profiles.filter(profile => profile.status === 'applicant').length,
-      in_training: profiles.filter(profile => profile.status === 'in_training').length,
+      onboarding: profiles.filter(profile => profile.status === 'onboarding').length,
       active: profiles.filter(profile => profile.status === 'active').length,
       inactive: profiles.filter(profile => profile.status === 'inactive').length,
-    }, { applicant: 4, in_training: 3, active: 10, inactive: 1 });
+    }, { onboarding: 7, active: 10, inactive: 1 });
     assert.equal(Object.hasOwn(toVolunteerProfilePublic(profiles[0]!), 'adminNotes'), false);
     assert.equal(Object.hasOwn(volunteerProfilePublicColumns, 'adminNotes'), false);
     const emails = await pool.query<{ email: string }>('SELECT email FROM users WHERE id = ANY($1::uuid[])', [fixtures.users.map(user => user.id)]);

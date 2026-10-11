@@ -1,5 +1,13 @@
 # Community Care Team Volunteer Portal — UAT checklist
 
+## v1.1.0 workflow tags
+
+**NEW:** CCT-S01–CCT-S06 and QL-01–QL-10 below.
+**CHANGED:** CCT brand/email checks, AUTH-01, ONB-01–ONB-04, PROF-01–PROF-03,
+HOME-01–HOME-03, ROSTER-01–ROSTER-05, CSV-01–CSV-02, DETAIL-01–DETAIL-07,
+COORD-01–COORD-03, WEEK-01–WEEK-02, REM-01–REM-05, RES-06, SEC-01, TIME-01–TIME-02 and UI-03.
+Carry the applicable **NEW/CHANGED** tag into the UAT tracker alongside each ID.
+
 ## CCT overlapping grid, blocks, and one-time shifts
 | ID | Steps | Expected |
 |---|---|---|
@@ -23,17 +31,13 @@
 
 Use one tracker row per ID below. Record tester, date, browser/device, result, and evidence.
 Unless a test explicitly says production, use the development preview and synthetic accounts.
-Use America/Los_Angeles for every expected date/time. Questionnaire wording is provisional, not approved final copy.
+Use America/Los_Angeles for every expected date/time. The fixed profile is final; there are no additional questionnaire questions. Training and paperwork are handled outside this app.
 
 ## Test preparation and automation
 
 - Never run seed or smoke against a published app or a production database.
 - Seed now requires both `NODE_ENV=development` and `SEED_DATABASE_ENVIRONMENT=development`.
-- Automated route/security checks: `pnpm --filter @workspace/api-server run test:security`.
-- Schedule, reminder, resource, notification and other Vitest checks: `pnpm --filter @workspace/api-server run test:schedule`.
-- Auth: `pnpm --filter @workspace/api-server run test:auth`.
-- Email: `pnpm --filter @workspace/api-server run test:email`.
-- Volunteer privacy/profile: `pnpm --filter @workspace/api-server run test:volunteer`.
+- Use the isolated all-suite `regression` command below for route/security, schedule, reminders, resources, notifications, auth, email and profile checks. Direct `test:*` commands connect to the environment's configured database and must not be used against shared data for notification QA.
 - Smoke prerequisites: running development web preview, installed Playwright Chromium, development DB access.
   Install Chromium if needed: `pnpm --filter @workspace/scripts exec playwright install chromium`.
   The script prefers system Chromium on Replit; optionally supply `CHROMIUM_EXECUTABLE_PATH`.
@@ -49,7 +53,7 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 
 | ID | Steps | Expected result |
 |---|---|---|
-| AUTH-01 | Open `/signup`; submit valid names, email, phone and matching password ≥8 characters. | Applicant created; verification email logged in dev; `/verify-email` shows their email. |
+| AUTH-01 | Open `/signup`; submit valid names, email, phone and matching password ≥8 characters. | Onboarding profile created; verification email logged in dev; `/verify-email` shows their email. |
 | AUTH-02 | Try invalid email/phone, short password, mismatched passwords and duplicate email. | Friendly validation; no privileged account or duplicate profile. |
 | AUTH-03 | Before verifying, open `/dashboard`, `/profile`, `/shifts`, `/messages`, `/resources` and protected APIs. | Verification gate; APIs reject access. No protected data appears. |
 | AUTH-04 | Resend verification twice within a minute; exceed five/hour using a test account. | Clear cooldown; server rate limit cannot be bypassed by refreshing. |
@@ -92,7 +96,7 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 
 | ID | Steps | Expected result |
 |---|---|---|
-| HOME-01 | `/dashboard` as onboarding, active with no shifts, active with shifts, inactive; inspect legacy statuses. | Three canonical statuses; legacy applicant/in_training read as onboarding. Checklist shows profile and external training/paperwork, not disabled compliance. |
+| HOME-01 | `/dashboard` as onboarding, active with no shifts, active with shifts, inactive; inspect legacy statuses. | Three canonical statuses; retained deprecated values read as onboarding. Checklist shows profile and external training/paperwork, not disabled compliance. |
 | HOME-02 | Inspect greeting, next shift, next four occurrences, countdown and unread preview. | Own data only; Pacific dates; skips/closed dates excluded. |
 | HOME-03 | Active/inactive volunteers inspect quick links and open links. | Only eligible dashboard quick links; actual new tab; HTTPS destinations. |
 | SHIFT-01 | `/shifts`: book available standing slot with default and chosen start within four weeks. | Own shift/count-only grid; correct repeat/start date and confirmation email. |
@@ -170,7 +174,7 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 | RES-03 | Try >15MB, fake extension/signature, malformed/traversal/macro DOCX and unsafe filename. | Rejected/safely named; no publicly executable content or invalid resource record. |
 | RES-04 | `/resources`: quick links/search/category/card/article; open document in new tab. | Published only; correct file icons; clean markdown; native new-tab links. |
 | RES-05 | Create HTTP/javascript/credential-bearing link URL. | Rejected; HTTPS-only links accepted. |
-| RES-06 | Update agreement, choose version bump; sign in as previously acknowledged volunteer. | Must re-acknowledge current agreement before shift actions; date/version update; no draft policy silently published. |
+| RES-06 | Update an Agreements document and bump its version; sign in with tracking flags off. | No renewal gate or compliance card; `/api/me.agreementRequired` is false. In isolated QA with acknowledgment explicitly enabled, repeat and require current-version acknowledgment before shifts. |
 | RES-07 | Anonymous/unverified users request private document; volunteer requests draft/deleted document. | Denied/not found; no storage key/content leak. |
 
 ## Cross-cutting security, Pacific dates and accessibility
@@ -188,3 +192,37 @@ Use America/Los_Angeles for every expected date/time. Questionnaire wording is p
 | UI-02 | Navigate all forms/tabs/dialogs/schedule using keyboard; Escape, focus return, submit errors. | Visible focus; correct labels, focus trap/return; meaningful announced errors/toasts; no keyboard trap. |
 | UI-03 | Check contrast, zoom 200%, ≥44px targets, long names/text and empty/loading/error states. | WCAG AA-oriented styling remains usable; warm, specific copy without stigmatizing family language. |
 | UI-04 | Inspect manifest/icons; add to home screen; sign out and relaunch. | Branded app/icon/theme; no cached private data or bypassed sign-in. |
+
+## Quick login — NEW production-locked QA workflows
+
+Never put an unlock key in a tracker, screenshot, report or source file. Use synthetic accounts only.
+
+| ID | Steps | Expected result |
+|---|---|---|
+| QL-01 | In a fresh production browser, visit `/signin`, `/api/auth/quick-login/status`, then POST a persona without unlocking. | No testing card or hints; locked endpoint returns not found; normal sign-in remains available. |
+| QL-02 | Try an incorrect unlock link, then an operator-provided correct `/qa?key=<QUICK_LOGIN_KEY>` link. Inspect redirected URL, headers and cookie. | Incorrect key cannot unlock; correct key redirects without retaining the key; no-store/referrer protection and secure signed QA cookie. |
+| QL-03 | Inspect unlocked sign-in at 375px/768px. | Five personas, amber TEST ACCOUNTS and soft-red PRODUCTION labels, one/two-column layout, no horizontal overflow. |
+| QL-04 | Sign in as each persona; repeat ensure twice in isolated QA. | Exactly five users; Admin → `/admin`; two active and ready-to-activate profiles → `/dashboard`; new profile → `/onboarding`; fake required fields except the new profile. |
+| QL-05 | Switch personas from the test banner; sign out. | Query/session refreshed; correct role guard and label; amber banner pushes content down without covering either navigation bar. |
+| QL-06 | Choose “Hide test logins on this device” or visit `/qa/lock`; return to sign-in; try switching from a locked device. | QA cookie removed; testing card gone and quick login unavailable; unlock required again. |
+| QL-07 | Create an owned one-time reservation; inspect staff master schedule, its panel and the roster with test accounts included. | TEST badge remains visible for QA identities and one-time reservations; volunteers see counts/own reservation only. |
+| QL-08 | Preview/send a blast; export roster and schedule, including one-time rows; inspect roster summaries and digest recipients. | QA accounts excluded from recipients, both CSVs, ordinary roster/counts and daily digest recipients. |
+| QL-09 | Trigger an owned QA reminder/message; inspect notification log and monthly statistics. Reset QA accounts after editing profiles, skips, inbox and custom reservations. | Suppressed email, no provider delivery, no monthly usage; reset cancels only QA custom assignments via `cancelledAt`, resets QA records, preserves real assignments and legacy stored columns, and still leaves five identities. |
+| QL-10 | Set production `QUICK_LOGIN_ENABLED=false`, republish, then reuse a previously unlocked browser. | QA routes and quick-login APIs hidden despite old cookie; ordinary authentication continues working. |
+
+## Automated release checks
+
+### v1.1.0 verified results
+
+- **PASS:** 224 automated tests (165 Vitest; 59 Node), all workspace type checks, API build and web production build.
+- **PASS:** the complete isolated Playwright smoke flow listed below.
+- **Lighthouse accessibility:** Onboarding **100**, Dashboard **100**, Admin home **100**.
+- **PASS:** active code/docs/seed definitions contain no retired brand/status terminology, with only the explicit storage-compatibility and historical-migration exceptions below.
+- No production data was changed and no live email was sent by these checks. Manual UAT rows above still require staff sign-off; automated accessibility scores are not a substitute for every manual keyboard/mobile check.
+
+- All suites: `NODE_ENV=development QA_DATABASE_ENVIRONMENT=development pnpm --filter @workspace/scripts run regression`.
+  Creates an empty owned temporary schema; real delivery and schedulers are disabled; cleanup drops only that schema.
+- Updated Playwright flow: signup → verify → complete profile → staff activation without disabled checks → Tuesday 10–12 standing shift → block next Tuesday (logged notice/no reminder) → create/claim open one-time shift → logged reminder → staff message/read receipt.
+- The smoke command also runs authenticated **Lighthouse accessibility** on onboarding, dashboard and admin home, requiring at least **95** for each. JSON reports live under ignored `generated-artifacts/regression/`.
+- Privacy tests include DOB/address/emergency-contact sentinels. The actual guard inventory includes `/qa`, `/qa/lock`, `/api/auth/quick-login*`, date blocks and custom-shift routes; production-lock tests remain enabled.
+- Retired terminology is isolated to `shared/legacy-compatibility.ts` and immutable historical migrations. These exceptions preserve old records/enum ordinals and migrate earlier QA users in place; never delete them to satisfy a text search.

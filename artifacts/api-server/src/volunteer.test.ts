@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { testProfileFields } from '@workspace/shared/testAccounts';
 import { before, after, test } from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
@@ -17,15 +18,15 @@ const namespace = randomBytes(5).toString('hex');
 const password = 'Volunteer-Test123!';
 const users: string[] = [], resourceIds: string[] = [], sessionIds: string[] = [], messageIds: string[] = [], slotIds: string[] = [];
 const ip = `2001:db8:${namespace.slice(0, 4)}::77`;
-let server: Server, base: string, active: string, applicant: string, other: string, pending: string, administrator: string;
+let server: Server, base: string, active: string, onboarding: string, other: string, pending: string, administrator: string;
 const answers = { county: 'Placer', languages: ['English'], previousExperience: false, heardAbout: '', availability: '', anythingElse: '' };
-async function fixture(status: 'active' | 'applicant', completed = true, verified = true, role: 'volunteer' | 'admin' = 'volunteer') {
+async function fixture(status: 'active' | 'onboarding', completed = true, verified = true, role: 'volunteer' | 'admin' = 'volunteer') {
   const [user] = await db.insert(usersTable).values({ firstName: 'VolunteerQA', lastName: namespace, phone: '9165550101',
     email: `volunteer-test-${namespace}-${users.length}@example.org`, passwordHash: await hashPassword(password), role,
     emailVerifiedAt: verified ? new Date() : null }).returning();
   users.push(user!.id);
   if (role === 'volunteer') await db.insert(volunteerProfilesTable).values({ userId: user!.id, status, onboardingAnswers: answers,
-    onboardingCompletedAt: completed ? new Date() : null, agreementAcknowledgedAt: completed ? new Date() : null,
+     ...(completed ? testProfileFields : {}), onboardingCompletedAt: completed ? new Date() : null, agreementAcknowledgedAt: completed ? new Date() : null,
     agreementVersion: completed ? 'v1' : null, adminNotes: 'PRIVATE_ONLY_ADMIN' });
   return user!.id;
 }
@@ -52,11 +53,15 @@ async function client(userId?: string) {
 before(async () => {
   server = createServer(app); await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-  active = await fixture('active'); applicant = await fixture('applicant'); other = await fixture('active');
-  pending = await fixture('applicant', false); administrator = await fixture('applicant', true, true, 'admin');
+  active = await fixture('active'); onboarding = await fixture('onboarding'); other = await fixture('active');
+  pending = await fixture('onboarding', false); administrator = await fixture('onboarding', true, true, 'admin');
 });
 test('all volunteer-reachable personal-data feeds exclude peer identity and staff notes', async () => {
   const [original] = await db.select().from(usersTable).where(eq(usersTable.id, other));
+  const [peerProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,other));
+  await db.update(volunteerProfilesTable).set({dateOfBirth:'1988-07-06',addressLine1:`PEER-ADDRESS-${namespace}`,
+    emergencyContactName:`PEER-CONTACT-${namespace}`,emergencyContactPhone:'5555550199'})
+    .where(eq(volunteerProfilesTable.userId,other));
   await db.update(usersTable).set({ firstName: `PrivatePeer${namespace}`, lastName: 'NeverExpose',
     email: `private-peer-${namespace}@example.invalid`, phone: '+19165550199' }).where(eq(usersTable.id, other));
   try {
@@ -67,11 +72,15 @@ test('all volunteer-reachable personal-data feeds exclude peer identity and staf
     assert.equal(response.status, 200, path);
     const json = JSON.stringify(response.data);
     for (const forbidden of [`PrivatePeer${namespace}`, 'NeverExpose', `private-peer-${namespace}@example.invalid`,
-      '+19165550199', 'PRIVATE_ONLY_ADMIN', '"adminNotes"', '"passwordHash"']) {
+      '+19165550199', 'PRIVATE_ONLY_ADMIN', '"adminNotes"', '"passwordHash"',
+      '1988-07-06',`PEER-ADDRESS-${namespace}`,`PEER-CONTACT-${namespace}`,'5555550199']) {
       assert.equal(json.includes(forbidden), false, `${path} exposed ${forbidden}`);
     }
   }
   } finally {
+    await db.update(volunteerProfilesTable).set({dateOfBirth:peerProfile!.dateOfBirth,addressLine1:peerProfile!.addressLine1,
+      emergencyContactName:peerProfile!.emergencyContactName,emergencyContactPhone:peerProfile!.emergencyContactPhone})
+      .where(eq(volunteerProfilesTable.userId,other));
     await db.update(usersTable).set({ firstName: original!.firstName, lastName: original!.lastName,
       email: original!.email, phone: original!.phone }).where(eq(usersTable.id, other));
   }
@@ -133,7 +142,7 @@ test('quick links are published and active-only; no staff/creator fields leak', 
   assert.ok(!response.data.quickLinks.some((row: any) => row.id === resourceIds[1]));
   assert.equal('createdByUserId' in response.data.quickLinks[0], false);
   assert.equal(JSON.stringify(response.data).includes('adminNotes'), false);
-  const application = await client(applicant);
+  const application = await client(onboarding);
   assert.deepEqual((await application('/volunteer/dashboard')).data.quickLinks, []);
   assert.ok((await application('/volunteer/resources')).data.every((row: any) => !row.isQuickLink));
 });
@@ -178,18 +187,17 @@ test('own assignment projection returns four dates without other volunteers or o
   assert.equal(JSON.stringify(response.data).includes(other), false);
   assert.equal(response.data.schedulingOpen, true);
 });
-test('profile saves explicit blank availability and config answers, never ownership/role/status/email/agreement', async () => {
+test('profile saves allowed fields and rejects ownership, role, status and email changes', async () => {
   const request = await client(active);
-  const body = { firstName: 'Updated', lastName: namespace, phone: '+19165550102', county: 'Sacramento',
-    availabilityNotes: null, answers: { ...answers, languages: ['Spanish'], availability: 'not canonical', county: 'Placer', adminNotes: 'bad' },
-    userId: other, role: 'admin', email: 'bad@example.org', status: 'active', agreementVersion: 'bad' };
+  const body = { firstName: 'Updated', lastName: namespace, phone: '+19165550102',
+    availabilityNotes: null, answers: {} };
+  assert.equal((await request('/volunteer/profile','PATCH',{...body,userId:other,role:'admin',email:'bad@example.org',
+    status:'active',agreementVersion:'bad'})).status,400);
   const response = await request('/volunteer/profile', 'PATCH', body);
   assert.equal(response.status, 200);
   assert.equal(response.data.user.id, active); assert.equal(response.data.user.role, 'volunteer');
   assert.equal(response.data.user.firstName, 'Updated');
-  assert.equal(response.data.profile.county, 'Sacramento'); assert.equal(response.data.profile.availabilityNotes, null);
-  assert.equal(response.data.profile.onboardingAnswers.county, 'Sacramento');
-  assert.equal(response.data.profile.onboardingAnswers.availability, '');
+  assert.equal(response.data.profile.county, 'Placer'); assert.equal(response.data.profile.availabilityNotes, null);
   assert.equal(response.data.profile.onboardingAnswers.adminNotes, undefined);
   assert.equal(response.data.profile.agreementVersion, 'v1');
   assert.equal(response.data.profile.adminNotes, undefined);

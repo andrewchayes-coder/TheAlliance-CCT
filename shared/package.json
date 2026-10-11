@@ -11,6 +11,7 @@
     "./markdown": "./markdown.ts",
     "./onboardingQuestions": "./onboardingQuestions.ts",
     "./testAccounts": "./testAccounts.ts"
+    ,"./legacy-compatibility": "./legacy-compatibility.ts"
     ,"./standardGrid": "./standardGrid.ts"
   },
   "dependencies": {

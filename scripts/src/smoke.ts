@@ -5,7 +5,10 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, expect, type Browser, type Page } from '@playwright/test';
 import bcrypt from 'bcrypt';
-import { onboardingQuestions } from '@workspace/shared/onboardingQuestions';
+import { testProfileFields } from '@workspace/shared/testAccounts';
+import lighthouse from 'lighthouse';
+import puppeteer from 'puppeteer-core';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 /**
  * Real browser + real API/DB; API is intercepted ONLY to the isolated child server.
@@ -48,9 +51,6 @@ async function main() {
     const email = `${schema}@example.invalid`, adminEmail = `${schema}-admin@example.invalid`;
     const administrator = await pool.query<{ id: string }>(`INSERT INTO ${qschema}.users(email,password_hash,first_name,last_name,role,email_verified_at)
       VALUES($1,$2,'Smoke','Coordinator','admin',now()) RETURNING id`, [adminEmail, await bcrypt.hash(password, 12)]);
-    for (const title of ['User Agreement', 'Safety Guidelines'])
-      await pool.query(`INSERT INTO ${qschema}.resources(type,title,category,body,is_published,created_by_user_id)
-        VALUES('article',$1,'Agreements','Temporary isolated QA agreement, not Alliance policy.',true,$2)`, [title, administrator.rows[0]!.id]);
     const probe = createServer();
     await new Promise<void>(r => probe.listen(0, '127.0.0.1', r));
     const port = (probe.address() as { port: number }).port;
@@ -58,7 +58,8 @@ async function main() {
     child = spawn(process.execPath, ['--import', 'tsx', resolve('src/smoke-api.ts')], {
       cwd: process.cwd(), env: { ...process.env, NODE_ENV: 'development', QA_SMOKE_SCHEMA: schema,
         PGOPTIONS: `-c search_path=${schema},public`, APP_ORIGIN: base, PORT: String(port),
-        POSTMARK_SERVER_TOKEN: '', EMAIL_FROM: '', RUN_JOBS: 'false' }, stdio: ['ignore', 'pipe', 'pipe'],
+        POSTMARK_SERVER_TOKEN: '', EMAIL_FROM: '', EMAIL_REPLY_TO: '', RUN_JOBS: 'false',
+        QUICK_LOGIN_ENABLED: 'false', QUICK_LOGIN_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'],
     });
     child.stdout?.on('data', data => { output += String(data); });
     child.stderr?.on('data', data => { output += String(data); });
@@ -75,7 +76,30 @@ async function main() {
       // Replit's system Chromium has its Nix dependencies; downloaded Linux shells may not.
       try { executablePath = execFileSync('which', ['chromium'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch {}
     }
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], ...(executablePath ? { executablePath } : {}) });
+    const debugProbe = createServer();
+    await new Promise<void>(r => debugProbe.listen(0, '127.0.0.1', r));
+    const debugPort = (debugProbe.address() as { port: number }).port;
+    await new Promise<void>(r => debugProbe.close(() => r()));
+    browser = await chromium.launch({ headless: true, args: ['--no-sandbox', `--remote-debugging-port=${debugPort}`], ...(executablePath ? { executablePath } : {}) });
+    async function accessibility(p: Page, name: string) {
+      const endpoint = await (await fetch(`http://127.0.0.1:${debugPort}/json/version`)).json() as { webSocketDebuggerUrl: string };
+      const driver = await puppeteer.connect({ browserWSEndpoint: endpoint.webSocketDebuggerUrl });
+      try {
+        const target = (await driver.pages()).find(candidate => candidate.url() === p.url());
+        if (!target) throw new Error('Authenticated Lighthouse target is missing.');
+        const expectedPath = new URL(p.url()).pathname;
+        const result = await lighthouse(p.url(), { onlyCategories: ['accessibility'], disableStorageReset: true,
+          logLevel: 'error', output: 'json' }, undefined, target);
+        if (!result) throw new Error('Lighthouse did not return an audit.');
+        expect(new URL(result.lhr.finalDisplayedUrl).pathname).toBe(expectedPath);
+        await mkdir(resolve('../generated-artifacts/regression'), { recursive: true });
+        await writeFile(resolve(`../generated-artifacts/regression/lighthouse-${name}.json`), JSON.stringify(result.lhr, null, 2));
+        const score = Math.round((result.lhr.categories.accessibility!.score ?? 0) * 100);
+        console.log(`Lighthouse accessibility ${name}: ${score}`);
+        const failed = Object.values(result.lhr.audits).filter(a => a.score === 0).map(a => a.id);
+        expect(score, `${name}: ${failed.join(', ')}`).toBeGreaterThanOrEqual(95);
+      } finally { await driver.disconnect(); }
+    }
     async function page() {
       const context = await browser!.newContext({ viewport: { width: 375, height: 812 }, timezoneId: 'America/Los_Angeles' });
       await context.route('**/api/**', async route => {
@@ -83,7 +107,7 @@ async function main() {
         await route.fulfill({ response: await route.fetch({ url: `${api}${url.pathname}${url.search}`,
           headers: { ...request.headers(), origin: base, 'x-forwarded-proto': 'https' }, maxRedirects: 0, timeout: 120000 }) });
       });
-      const p = await context.newPage(); p.setDefaultTimeout(120000); return p;
+      const p = await context.newPage(); p.setDefaultTimeout(30000); return p;
     }
     async function call(p: Page, path: string, method = 'GET', body?: unknown) {
       const result = await p.evaluate(async ({ path, method, body }) => {
@@ -106,43 +130,52 @@ async function main() {
     if (!token) throw new Error('Signup did not log its verification link.');
     await volunteer.goto(`${base}/verify?token=${token}`);
     await expect(volunteer).toHaveURL(/onboarding/);
-    for (const step of [1, 2]) {
-      for (const question of onboardingQuestions.filter(q => q.step === step)) {
-        const label = new RegExp(question.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        if (question.type === 'select') await volunteer.getByRole('combobox', { name: label }).selectOption(question.options![0]!);
-        else if (question.type === 'text' || question.type === 'textarea') await volunteer.getByLabel(label).fill('Isolated smoke-test response.');
-        else if (question.type === 'date') await volunteer.getByLabel(label).fill('2026-10-08');
-        else {
-          const group = volunteer.getByRole('group', { name: label });
-          await group.getByRole(question.type === 'multiselect' ? 'checkbox' : 'radio', {
-            name: question.type === 'yesno' ? 'No' : question.options![0]!, exact: true }).check();
-        }
-      }
-      if (step === 2) await volunteer.getByTestId('checkbox-agreement').check();
-      await volunteer.getByTestId(step === 1 ? 'button-next' : 'button-finish').click();
-    }
+    await accessibility(volunteer, 'onboarding');
+    for (const [id, value] of [['input-dob', testProfileFields.dateOfBirth], ['input-address', testProfileFields.addressLine1],
+      ['input-city', testProfileFields.city], ['input-zip', testProfileFields.zip],
+      ['input-ec-name', testProfileFields.emergencyContactName], ['input-ec-relationship', testProfileFields.emergencyContactRelationship],
+      ['input-ec-phone', testProfileFields.emergencyContactPhone]])
+      await volunteer.getByTestId(id!).fill(value!);
+    await volunteer.getByTestId('select-state').selectOption('CA');
+    await volunteer.getByTestId('button-finish').click();
     await expect(volunteer).toHaveURL(/dashboard/);
+    await accessibility(volunteer, 'dashboard');
     const me = await call(volunteer, '/me');
     const admin = await page(); await admin.goto(`${base}/signin`);
     await admin.getByLabel(/^email/i).fill(adminEmail); await admin.getByLabel(/^password$/i).fill(password);
     await admin.getByRole('button', { name: /^sign in$/i }).click(); await expect(admin).toHaveURL(/\/admin$/);
+    await accessibility(admin, 'admin-home');
     const detail = await call(admin, `/admin/volunteers/${me.user.id}`);
-    const tracking = await call(admin, `/admin/volunteers/${me.user.id}/tracking`, 'PATCH', {
-      expectedUpdatedAt: detail.entry.profile.updatedAt, certificationStatus: 'complete',
-      certificationCompletedAt: '2026-10-08', certificationExpiresAt: null,
-      backgroundCheckStatus: 'cleared', backgroundCheckSubmittedAt: '2026-10-08', backgroundCheckClearedAt: '2026-10-08',
-    });
-    await call(admin, `/admin/volunteers/${me.user.id}/status`, 'POST', { status: 'active', expectedUpdatedAt: tracking.entry.profile.updatedAt });
-    const settings = await call(admin, '/admin/schedule/slots', 'POST', { dayOfWeek: 1, startTime: '09:00', endTime: '11:00', capacity: 1, label: 'Isolated smoke shift', isActive: true });
+    await call(admin, `/admin/volunteers/${me.user.id}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+    const settings = await call(admin, '/admin/schedule/slots', 'POST', { dayOfWeek: 2, startTime: '10:00', endTime: '12:00', capacity: 1, label: 'Isolated smoke shift', isActive: true });
     const slot = settings.slots.find((s: { label: string }) => s.label === 'Isolated smoke shift');
     await volunteer.goto(`${base}/shifts`);
+    await volunteer.getByTestId('button-shift-day-2').click();
     await volunteer.getByTestId(`slot-${slot.id}`).click(); await volunteer.getByTestId('button-confirm-shift').click();
     await expect(volunteer.getByText(/on the schedule|your shift/i).first()).toBeVisible();
     const schedule = await call(volunteer, '/volunteer/schedule');
     expect(schedule.assignments).toHaveLength(1);
     const assignment = schedule.assignments[0];
     const start = new Date(assignment.nextDates[0].startsAt);
+    const date = assignment.nextDates[0].date;
+    await call(admin, '/admin/schedule/blocks', 'POST', { fromDate: date, toDate: date,
+      slotIds: [slot.id], reason: 'Isolated staff meeting', emailVolunteers: true });
+    const blockEmail = await pool.query(`SELECT status FROM ${qschema}.notification_log WHERE recipient_user_id=$1 AND related_id LIKE 'block:%'`, [me.user.id]);
+    expect(blockEmail.rows.some(r => r.status === 'logged')).toBe(true);
     await call(admin, `/admin/notifications/jobs/run?at=${encodeURIComponent(new Date(start.getTime() - 24 * 3600000).toISOString())}`, 'POST', {});
+    const blockedReminder = await pool.query(`SELECT id FROM ${qschema}.notification_log WHERE recipient_user_id=$1 AND type='reminder'`, [me.user.id]);
+    expect(blockedReminder.rows).toHaveLength(0);
+    const extras = await call(admin, '/admin/schedule/custom-shifts', 'POST', {
+      date, startTime: '13:00', endTime: '15:00', capacity: 1, label: 'Isolated one-time shift', openToVolunteers: true });
+    const custom = extras.customShifts.find((s: { label: string }) => s.label === 'Isolated one-time shift');
+    await volunteer.reload();
+    await volunteer.getByTestId(`button-claim-custom-${custom.id}`).click();
+    const oneTime = await call(volunteer, '/volunteer/schedule');
+    const held = oneTime.customShifts.filter((s: {ownAssignmentId: string | null}) => s.ownAssignmentId);
+    expect(held).toHaveLength(1);
+    // Both fixed Tuesday slots are on the same Pacific day, three hours apart.
+    const customStart = new Date(start.getTime() + 3 * 3600000);
+    await call(admin, `/admin/notifications/jobs/run?at=${encodeURIComponent(new Date(customStart.getTime() - 24 * 3600000).toISOString())}`, 'POST', {});
     const reminder = await pool.query(`SELECT status FROM ${qschema}.notification_log WHERE recipient_user_id=$1 AND type='reminder'`, [me.user.id]);
     expect(reminder.rows.some(r => r.status === 'logged')).toBe(true);
     await admin.goto(`${base}/admin/messages?selected=${me.user.id}`);
@@ -158,7 +191,7 @@ async function main() {
     expect((await readRequest).ok()).toBe(true);
     const receipts = await pool.query(`SELECT read_at FROM ${qschema}.message_recipients WHERE recipient_user_id=$1`, [me.user.id]);
     expect(receipts.rows.some(r => r.read_at)).toBe(true);
-    console.log('PASS: signup → email verification → onboarding → approval → shift → logged reminder → message → read receipt.');
+    console.log('PASS: signup → verification → complete profile → approval → Tuesday 10–12 → block/email/no reminder → one-time claim → logged reminder → message → read receipt.');
   } finally {
     await browser?.close();
     if (child && child.exitCode === null) {

@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'development';
 process.env.APP_ORIGIN ||= 'https://qa.example.invalid';
 process.env.SESSION_SECRET ||= randomBytes(32).toString('hex');
 const { registeredApiRoutes } = await import('../routes/index');
+const { registeredQaRoutes } = await import('../routes/quick-login');
 const { declaredGuard, apiAccessPolicy } = await import('../auth/access-policy');
 const { csrfGuard, appOrigin } = await import('../auth/session');
 const { validateWriteBoundary, errorEnvelope } = await import('../middlewares/request-hardening');
@@ -20,6 +21,16 @@ function reply() {
   return value as unknown as Response & { body: any };
 }
 describe('actual API registrations and security boundaries', () => {
+  it('includes quick-login APIs and both QA entrypoints in the audited route list', () => {
+    const routes = [...registeredApiRoutes().map(route => ({ ...route, path: `/api${route.path}`,
+      guard: declaredGuard(route.method, concrete(route.path)) })), ...registeredQaRoutes()];
+    for (const path of ['/qa', '/qa/lock', '/api/auth/quick-login/status', '/api/auth/quick-login']) {
+      const matches = routes.filter(route => route.path === path);
+      expect(matches.length, path).toBeGreaterThan(0);
+      for (const route of matches) expect(route.guard, path).toBe('public:quick-login');
+    }
+    for (const route of routes) expect(route.guard, `${route.method} ${route.path}`).toBeDefined();
+  });
   it('every registered method/path declares the minimum guard; HEAD inherits GET', () => {
     const routes = registeredApiRoutes();
     expect(routes.length).toBeGreaterThan(60);

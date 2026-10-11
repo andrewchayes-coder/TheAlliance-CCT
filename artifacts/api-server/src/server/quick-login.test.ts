@@ -108,7 +108,7 @@ it('sets the signed secure 30-day cookie and returns only public persona metadat
   expect(metadata.enabled).toBe(true); expect(metadata.production).toBe(true); expect(metadata.personas).toHaveLength(5);
   expect(metadata.personas.find(p => p.key === 'vol-onboarding-ready')?.label).toBe('Volunteer · Onboarding, ready to activate');
   expect(metadata.personas.find(p => p.key === 'vol-onboarding-new')?.label).toBe('Volunteer · Onboarding, new');
-  expect(metadata.personas.some(p => ['vol-training','vol-applicant'].includes(p.key))).toBe(false);
+  expect(metadata.personas.map(p => p.key)).toEqual(['admin','vol-active','vol-active-noshift','vol-onboarding-ready','vol-onboarding-new']);
   for (const persona of metadata.personas) expect(Object.keys(persona).sort()).toEqual(['description', 'key', 'label', 'role']);
   expect(JSON.stringify(metadata).includes('@')).toBe(false);
   const locked = await request('/qa/lock', { headers: { cookie } });

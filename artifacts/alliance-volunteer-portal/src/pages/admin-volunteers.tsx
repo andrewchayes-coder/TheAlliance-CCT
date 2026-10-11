@@ -27,7 +27,7 @@ type SortKey = NonNullable<ListVolunteerRosterParams['sortBy']>;
 type Dir = NonNullable<ListVolunteerRosterParams['sortDirection']>;
 
 const STATUS: Record<string, [string, Badge]> = {
-  onboarding: ['Onboarding', 'attention'], applicant: ['Onboarding', 'attention'], in_training: ['Onboarding', 'attention'],
+  onboarding: ['Onboarding', 'attention'],
   active: ['Active', 'good'], inactive: ['Inactive', 'blocked'],
 };
 const STATUS_FILTER = ['onboarding', 'active', 'inactive'] as const;

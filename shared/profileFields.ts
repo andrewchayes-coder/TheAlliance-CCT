@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { appConfig } from './appConfig';
+import { retiredVolunteerStatuses } from './legacy-compatibility';
 
 export const states = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'] as const;
 export const requiredProfileFields = {
@@ -9,7 +10,7 @@ export const requiredProfileFields = {
   emergencyContactPhone: 'Emergency contact phone',
 } as const;
 export function normalizeVolunteerStatus(status: string): 'onboarding' | 'active' | 'inactive' {
-  if (status === 'applicant' || status === 'in_training' || status === 'onboarding') return 'onboarding';
+  if (retiredVolunteerStatuses.some(value => value === status) || status === 'onboarding') return 'onboarding';
   if (status === 'active' || status === 'inactive') return status;
   throw new Error('Unknown volunteer status');
 }

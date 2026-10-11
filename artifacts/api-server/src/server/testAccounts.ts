@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { and, eq, inArray, isNull, or, gte, sql } from 'drizzle-orm';
 import {
   db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable,
-  messageRecipientsTable, activityLogTable, authTokensTable,
+  messageRecipientsTable, activityLogTable, authTokensTable, customShiftAssignmentsTable,
 } from '@workspace/db';
 import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
@@ -86,6 +86,9 @@ export function createTestAccountService(personas: readonly Persona[] = testAcco
         .where(inArray(volunteerProfilesTable.userId, ids));
       const allProfiles = [...new Set([...profiles, ...ownedProfiles.map(p => p.id)])];
       if (allProfiles.length) {
+        await tx.update(customShiftAssignmentsTable).set({ cancelledAt: now })
+          .where(and(inArray(customShiftAssignmentsTable.volunteerProfileId, allProfiles),
+            isNull(customShiftAssignmentsTable.cancelledAt)));
         const assignments = await tx.select({ id: shiftAssignmentsTable.id }).from(shiftAssignmentsTable)
           .where(inArray(shiftAssignmentsTable.volunteerProfileId, allProfiles));
         if (assignments.length) await tx.delete(shiftSkipsTable).where(inArray(shiftSkipsTable.shiftAssignmentId, assignments.map(a => a.id)));

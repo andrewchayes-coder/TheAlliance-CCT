@@ -1,4 +1,5 @@
 import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
+import { retiredVolunteerStatuses } from '@workspace/shared/legacy-compatibility';
 import { randomUUID, randomBytes } from 'node:crypto';
 import type { Server } from 'node:http';
 import { eq, inArray } from 'drizzle-orm';
@@ -88,8 +89,7 @@ describe('fixed profile validation and compatibility',()=>{
     expect(profileCompletionSchema.parse({...complete,phone:'(916) 555-0100'}).phone).toBe('9165550100');
     expect(formatPhone('9165550100')).toBe('(916) 555-0100');
     expect(profileDraftSchema.parse({city:'Sacramento'})).toEqual({city:'Sacramento'});
-    expect(normalizeVolunteerStatus('applicant')).toBe('onboarding');
-    expect(normalizeVolunteerStatus('in_training')).toBe('onboarding');
+    for (const value of retiredVolunteerStatuses) expect(normalizeVolunteerStatus(value)).toBe('onboarding');
   });
   it('persists individual fields, requires every field for completion, and retains legacy answers without agreement',async()=>{
     expect((await own.request('/onboarding','PATCH',{city:'Roseville'})).status).toBe(200);
@@ -106,7 +106,7 @@ describe('fixed profile validation and compatibility',()=>{
   it('activates with complete profile only, sets start date, audits edits, and rejects legacy status writes',async()=>{
     let detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
     expect(detail.approvalRequirements.every((entry:{met:boolean})=>entry.met)).toBe(true);
-    expect((await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:'applicant',expectedUpdatedAt:detail.entry.profile.updatedAt})).status).toBe(400);
+    expect((await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:retiredVolunteerStatuses[0],expectedUpdatedAt:detail.entry.profile.updatedAt})).status).toBe(400);
     const result=await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
     expect(result.status).toBe(200);detail=result.data.detail;
     expect(detail.entry.profile.startDate).toBe(pacificToday());

@@ -15,6 +15,12 @@ The schema package needs Node typings when using Drizzle-Zod, even though its sc
 
 **How to apply:** include @types/node for the schema package and Node in its compiler types. If exported insert types unexpectedly contain Buffer for text columns, fix the missing type context instead of hiding it with individual casts.
 
+SQL operators and their table types must resolve to the same ORM instance across workspace packages.
+
+**Why:** adding Lighthouse introduced an optional OpenTelemetry peer into the scripts dependency graph. pnpm created a second Drizzle instance of the same version, causing SQL private-member type conflicts against the database package's tables.
+
+**How to apply:** scripts working with database-exported tables should obtain operators from the database package too. Do not hide cross-instance SQL errors with casts or assume identical version numbers imply identical peer resolutions.
+
 Multipart code generation also needs Node types when it emits `z.instanceof(Blob)` in server-only validators.
 
 **Why:** generated binary upload validators refer to the runtime Blob global, but a server tsconfig without Node types cannot resolve its declaration. Adding browser DOM libraries masks the missing server type context.

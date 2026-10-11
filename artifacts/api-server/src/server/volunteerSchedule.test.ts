@@ -36,7 +36,7 @@ async function person(role: 'admin' | 'volunteer', verified = true, active = tru
     passwordHash: 'not-a-login-password' }).returning();
   ids.push(u!.id);
   if (role === 'volunteer') {
-    const [p] = await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: approved ? 'active' : 'applicant',
+    const [p] = await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: approved ? 'active' : 'onboarding',
       agreementAcknowledgedAt: agreement ? new Date() : null, agreementVersion: agreement ? await agreementVersion() : null,
       onboardingCompletedAt: new Date(),
       dateOfBirth:'1990-01-01',addressLine1:'123 Test St',city:'Auburn',state:'CA',zip:'95603',

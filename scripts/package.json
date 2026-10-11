@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "regression": "tsx src/regression.ts",
     "smoke": "tsx ./src/smoke.ts",
     "seed": "tsx ./src/seed.ts",
     "verify-seed": "tsx ./src/verify-seed.ts",
@@ -16,7 +17,8 @@
     "@types/node": "catalog:",
     "@workspace/db": "workspace:*",
     "@workspace/shared": "workspace:*",
-    "drizzle-orm": "catalog:",
+    "lighthouse": "^13.5.0",
+    "puppeteer-core": "^25.13.0",
     "tsx": "catalog:"
   },
   "dependencies": {

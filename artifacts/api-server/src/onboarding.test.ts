@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { testProfileFields } from '@workspace/shared/testAccounts';
 import { before, after, test } from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
@@ -23,7 +24,7 @@ let volunteer: string;
 let other: string;
 let admin: string;
 const contact = { firstName: 'Onboarding', lastName: `Check-${namespace}`, phone: '916-555-0101' };
-const answers = { county: appConfig.counties[1], languages: ['English', 'Other'], previousExperience: false, heardAbout: 'Other', availability: '=Monday mornings', anythingElse: 'Thank you, "team"\nSecond line' };
+const answers = {};
 async function fixture(role: 'admin' | 'volunteer', verified = true) {
   const [user] = await db.insert(usersTable).values({ ...contact, email: `onboarding-${namespace}-${users.length}@example.org`, passwordHash: 'unused-placeholder-for-isolated-session-tests', role,
     emailVerifiedAt: verified ? new Date() : null }).returning();
@@ -69,11 +70,11 @@ after(async () => {
   await new Promise<void>((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
   await pool.end();
 });
-test('config validation accepts no/false and rejects unknown options and invalid dates', () => {
+test('empty question config preserves legacy answers; configured dates still validate', () => {
   assert.equal(buildOnboardingAnswersSchema().safeParse(answers).success, true);
-  assert.equal(buildOnboardingAnswersSchema().safeParse({ ...answers, languages: [] }).success, false);
-  assert.equal(buildOnboardingAnswersSchema().safeParse({ ...answers, county: 'Unknown' }).success, false);
-  assert.equal(buildOnboardingAnswersSchema().safeParse({ ...answers, previousExperience: undefined }).success, false);
+  assert.equal(buildOnboardingAnswersSchema().safeParse({ ...answers, languages: [] }).success, true);
+  assert.equal(buildOnboardingAnswersSchema().safeParse({ ...answers, county: 'Unknown' }).success, true);
+  assert.equal(onboardingQuestions.length, 0);
   assert.equal(buildOnboardingAnswersSchema({ draft: true }).safeParse({}).success, true);
   const dynamic = { id: 'testDate', label: 'Test', type: 'date', step: 2, required: true } as const;
   const list = onboardingQuestions as typeof dynamic[]; list.push(dynamic);
@@ -93,15 +94,15 @@ test('anonymous, unverified, wrong-role and other-volunteer admin access are den
   assert.equal((await owned(`/admin/volunteers/${other}/onboarding`)).status, 403);
   assert.equal((await owned('/admin/volunteers/onboarding.csv')).status, 403);
 });
-test('draft persists contact/answers and profile mapping, strips admin notes, ignores supplied ownership', async () => {
+test('draft saves own profile, strips staff notes and rejects supplied ownership', async () => {
   const owned = await client(volunteer);
-  const response = await owned('/onboarding', 'PATCH', { ...contact, firstName: 'Updated', answers, complete: false, userId: other, agreementAcknowledged: true });
+  assert.equal((await owned('/onboarding','PATCH',{...contact,complete:false,userId:other})).status,400);
+  const response = await owned('/onboarding', 'PATCH', { ...contact, firstName: 'Updated', answers, complete: false });
   assert.equal(response.status, 200);
   assert.equal(response.data.profile.userId, volunteer);
   assert.equal(response.data.user.firstName, 'Updated');
-  assert.equal(response.data.profile.county, answers.county);
-  assert.equal(response.data.profile.availabilityNotes, answers.availability);
-  assert.equal(response.data.profile.onboardingAnswers.previousExperience, false);
+  assert.equal(response.data.profile.county, appConfig.defaultCounty);
+  assert.deepEqual(response.data.profile.onboardingAnswers, {});
   assert.equal(response.data.profile.onboardingCompletedAt, null);
   assert.equal(response.data.profile.agreementAcknowledgedAt, null);
   assert.equal('adminNotes' in response.data.profile, false);
@@ -118,15 +119,15 @@ test('published Agreements only; completion validates agreement version and ackn
   const agreement = await owned('/onboarding/agreements');
   assert.equal(agreement.data.ready, true);
   assert.equal((await owned(`/onboarding/agreements/${resources[0]}`)).status, 200);
-  const body = { ...contact, answers, complete: true, agreementVersion: appConfig.agreementVersion, agreementAcknowledged: true };
-  assert.equal((await owned('/onboarding', 'PATCH', { ...body, agreementAcknowledged: false })).status, 400);
-  assert.equal((await owned('/onboarding', 'PATCH', { ...body, agreementVersion: 'obsolete' })).status, 400);
-  assert.equal((await owned('/onboarding', 'PATCH', { ...body, answers: { ...answers, languages: [] } })).status, 400);
+  const body = { ...contact, ...testProfileFields, answers, complete: true };
+  assert.equal((await owned('/onboarding', 'PATCH', { ...body, addressLine1: '' })).status, 400);
+  assert.equal((await owned('/onboarding', 'PATCH', { ...body, dateOfBirth: '2026-02-30' })).status, 400);
+  assert.equal((await owned('/onboarding', 'PATCH', { ...body, phone: '' })).status, 400);
   const response = await owned('/onboarding', 'PATCH', body);
   assert.equal(response.status, 200);
   assert.ok(response.data.profile.onboardingCompletedAt);
-  assert.ok(response.data.profile.agreementAcknowledgedAt);
-  assert.equal(response.data.profile.agreementVersion, appConfig.agreementVersion);
+  assert.equal(response.data.profile.agreementAcknowledgedAt, null);
+  assert.equal(response.data.profile.agreementVersion, null);
   assert.equal((await owned('/onboarding', 'PATCH', body)).status, 200);
   assert.equal((await owned('/onboarding', 'PATCH', { ...body, complete: false })).status, 409);
   const logs = await db.select().from(notificationLogTable).where(eq(notificationLogTable.recipientUserId, volunteer));
@@ -142,8 +143,7 @@ test('admin review and CSV use configured questions and spreadsheet-safe cells',
   const csv = await administrator('/admin/volunteers/onboarding.csv');
   assert.equal(csv.status, 200);
   for (const question of onboardingQuestions) assert.ok(csv.data.includes(csvCell(question.label)));
-  assert.ok(csv.data.includes(csvCell(answers.anythingElse)));
-  assert.ok(csv.data.includes(csvCell(answers.availability)));
+  assert.ok(csv.data.includes(contact.firstName));
   assert.equal(csvCell('=SUM(A1)'), '"\'=SUM(A1)"');
   assert.equal(csvCell('\t@formula'), '"\'\t@formula"');
   assert.equal(csv.data.includes('PRIVATE ADMIN NOTE'), false);

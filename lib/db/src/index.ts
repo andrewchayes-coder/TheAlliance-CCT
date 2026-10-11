@@ -42,3 +42,5 @@ export const db = new Proxy(applicationDb, {
 });
 
 export * from "@workspace/shared/schema";
+// Consumers of these tables must use the same ORM instance, including optional peers.
+export { eq, inArray } from "drizzle-orm";

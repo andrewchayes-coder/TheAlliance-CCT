@@ -2,12 +2,14 @@ import { beforeAll, afterAll, it, expect, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
-  messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable } from '@workspace/db';
+  messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable,
+  customShiftsTable, customShiftAssignmentsTable } from '@workspace/db';
 import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
+import { retiredVolunteerStatuses } from '@workspace/shared/legacy-compatibility';
 import { createTestAccountService, isQuickLoginEnabled } from './testAccounts';
 import { previewMessage } from './messaging';
 import { createEmailService } from '../email';
-import { filterRoster, rosterSnapshot, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
+import { filterRoster, rosterSnapshot, rosterSummary, rosterCsv, scheduleCsv, customCsvRows } from '../admin-roster';
 import { monthlyCount, monthRange } from './monthly-email-limit';
 
 vi.hoisted(() => {
@@ -30,7 +32,7 @@ beforeAll(async () => {
       firstName:'Test',lastName:'Legacy',role:'volunteer',isTestAccount:true,emailVerifiedAt:new Date(),phone:'9165550100'}).returning();
     legacyIds.set(persona.key,legacy!.id);
     await db.insert(volunteerProfilesTable).values({userId:legacy!.id,
-      status:persona.key === 'vol-onboarding-ready' ? 'in_training' : 'applicant',
+      status:retiredVolunteerStatuses[persona.key === 'vol-onboarding-ready' ? 1 : 0],
       certificationStatus:'in_progress',backgroundCheckStatus:'pending',agreementVersion:'legacy-retained'}); 
   }
   const [user] = await db.insert(usersTable).values({ email: `${tag}-ordinary@example.invalid`, passwordHash: 'unusable-fixture-hash',
@@ -151,6 +153,14 @@ it('suppresses QA mail with a configured provider, prints it in dev, deduplicate
 });
 it('resets only QA shifts, skips, inbox membership and profile changes, and logs the reset', async () => {
   const active = (await service.ensure()).find(p => p.key === 'vol-active')!;
+  const [custom] = await db.insert(customShiftsTable).values({date:'2030-01-15',startTime:'10:00',endTime:'12:00',
+    capacity:2,openToVolunteers:true,createdByUserId:ids[0]!}).returning();
+  const [ordinaryProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ordinary));
+  const seats = await db.insert(customShiftAssignmentsTable).values([active.profileId!,ordinaryProfile!.id].map(volunteerProfileId =>
+    ({customShiftId:custom!.id,volunteerProfileId,createdByUserId:ids[0]!}))).returning();
+  const csvRows = await customCsvRows(await rosterSnapshot(),new Date('2029-01-01T00:00:00Z'));
+  expect(csvRows.filter(row=>row[3]===seats[0]!.id)).toHaveLength(0);
+  expect(csvRows.filter(row=>row[3]===seats[1]!.id)).toHaveLength(1);
   const [assignment] = await db.insert(shiftAssignmentsTable).values({ volunteerProfileId: active.profileId!, shiftSlotId: slotId,
     startDate: '2030-01-07', createdByUserId: ids[0]! }).returning();
   await db.insert(shiftSkipsTable).values({ shiftAssignmentId: assignment!.id, skipDate: '2030-01-14' });
@@ -159,6 +169,11 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   await db.update(volunteerProfilesTable).set({ onboardingAnswers: { fixture: 'edited' }, adminNotes: 'Fixture note', availabilityNotes: 'Edited' })
     .where(eq(volunteerProfilesTable.id, active.profileId!));
   await service.reset(ids[0]!);
+  const savedSeats = await db.select().from(customShiftAssignmentsTable).where(eq(customShiftAssignmentsTable.customShiftId,custom!.id));
+  expect(savedSeats.find(a=>a.id===seats[0]!.id)?.cancelledAt).toBeInstanceOf(Date);
+  expect(savedSeats.find(a=>a.id===seats[1]!.id)?.cancelledAt).toBeNull();
+  await db.delete(customShiftAssignmentsTable).where(eq(customShiftAssignmentsTable.customShiftId,custom!.id));
+  await db.delete(customShiftsTable).where(eq(customShiftsTable.id,custom!.id));
   expect(await db.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.volunteerProfileId, active.profileId!))).toHaveLength(0);
   expect(await db.select().from(messageRecipientsTable).where(eq(messageRecipientsTable.recipientUserId, active.userId))).toHaveLength(0);
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id, active.profileId!));

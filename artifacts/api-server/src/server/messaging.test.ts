@@ -34,7 +34,7 @@ beforeAll(async () => {
     const [user] = await db.insert(usersTable).values({ role: i ? 'volunteer' : 'admin', email: `${tag}-${i}@example.invalid`,
       firstName: `${tag} ${i}`, lastName: 'Care', phone: '5555550100', passwordHash: 'unusable', emailVerifiedAt: i === 4 ? null : new Date() }).returning();
     users.push(user!.id);
-    if (i) await db.insert(volunteerProfilesTable).values({ userId: user!.id, status: i === 3 ? 'inactive' : i === 4 ? 'applicant' : 'active',
+    if (i) await db.insert(volunteerProfilesTable).values({ userId: user!.id, status: i === 3 ? 'inactive' : i === 4 ? 'onboarding' : 'active',
       dateOfBirth: '1990-01-01', addressLine1: '123 Test St', city: 'Auburn', state: 'CA', zip: '95603',
       emergencyContactName: 'Test Contact', emergencyContactRelationship: 'Friend', emergencyContactPhone: '5555550100',
       onboardingCompletedAt: new Date(), agreementAcknowledgedAt: new Date(), adminNotes: 'staff-private-do-not-expose' });
