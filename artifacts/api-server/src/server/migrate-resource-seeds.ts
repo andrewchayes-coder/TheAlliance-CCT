@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm';
 import { db, pool, resourcesTable } from '@workspace/db';
 import { uploadResourceFile } from './resource-files';
 try {
+  if (process.env.NODE_ENV !== 'development' || process.env.SEED_DATABASE_ENVIRONMENT !== 'development')
+    throw new Error('Seed-resource migration refused: explicitly acknowledged development only. Never run in production.');
   const rows = await db.select().from(resourcesTable);
   let count = 0;
   for (const row of rows) {

@@ -20,3 +20,4 @@
 - [Staff profile privacy](staff-profile-privacy.md) — roster details at a glance; county is staff-managed and private-field edit audits record names, never values.
 - [CCT scheduling policy](cct-scheduling-policy.md) — intentional hourly overlap, date-specific blocks, and one-time shifts separate from standing commitments.
 - [Source audit scope](source-audit-scope.md) — distinguish application text from managed binary runtime history; do not delete platform state to satisfy a grep.
+- [Production SQL tool](production-sql-tool.md) — operator SQL is split at semicolons; provide independent, repeatable statements without transaction or DO wrappers.

@@ -4,6 +4,8 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 
 ## Unreleased — My Profile and staff account management
 
+- Added the production seed-data purge SQL runbook with QA-preservation checks; restricted legacy seed-resource upgrade utilities to explicitly permitted development.
+
 ### Added
 - My Profile for administrators and volunteers, including verified volunteers still onboarding.
 - Name/phone editing, current-password-protected email changes, password changes and private profile photos.

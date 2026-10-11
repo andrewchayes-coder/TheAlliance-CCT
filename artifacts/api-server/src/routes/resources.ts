@@ -74,8 +74,11 @@ router.post('/agreements/acknowledge', wrap(async (req, res) => {
 router.get('/resources/:id/file', wrap(async (req, res) => {
   let row = await resourceForActor(uuid.parse(req.params.id), req.authUser!.id, req.authUser!.role === 'admin');
   if (!row || row.type !== 'document' || !row.fileKey) { res.status(404).json({ error: 'This document is not available.' }); return; }
-  // Upgrade old seed rows on first access, including production data that retains its original seed key.
+  // Local development placeholders must never be upgraded or uploaded in production.
   if (/^seed-resources\/[a-zA-Z0-9._-]+\.pdf$/.test(row.fileKey)) {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new ResourceError('This development placeholder is not available. Please ask Alliance staff for the published document.', 404);
+    }
     const legacyKey = row.fileKey;
     const name = legacyKey.split('/').pop()!;
     const file = await uploadResourceFile(name, await readFile(resolve(process.cwd(), 'seed-resources', name)));

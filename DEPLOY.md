@@ -1,5 +1,11 @@
 # Community Care Team Volunteer Portal — production deployment
 
+## If dummy data ever appears in production
+
+Pause cron-job.org and follow [the seed-data cleanup runbook](docs/ops/2026-10-11-purge-seed-data.md).
+Run its pre-checks first, preserve the five QA identities and the shift grid, and execute its independent SQL statements
+yourself in the Production Database tool. Do not run a seed script or copy development data to production to fix it.
+
 ## Account profiles update
 
 Publish applies two additive nullable columns: `users.profile_photo_key` and `auth_tokens.pending_email`.

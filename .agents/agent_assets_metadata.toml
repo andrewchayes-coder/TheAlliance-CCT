@@ -42,3 +42,17 @@ mtime_ms = 1791552442820
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/82509cce-c471-4943-b97a-cfda134560e8/00c89a75-92ca-424e-bdfc-2f5208835369"
 storage_version_token = "1791553015332565"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "a62g6p2CUyUE3J1rtJGQJ"
+uri = "file://docs/ops/2026-10-11-purge-seed-data.md"
+type = "text"
+title = "Production seed-data cleanup SQL runbook"
+description = "Pre-checks, 16 numbered standalone DELETE statements (holiday removal optional), post-checks, safety instructions, and development validation results. Production has not been queried or changed."
+logical_id = "92cf60df-2598-4012-80f4-8082d2432ecf"
+content_hash = "sha256:af357a812b4f93e86b5efff1c1d37ff184f22efcdce949adc9cd991ad7110b38"
+size = 19182
+mtime_ms = 1791739138428
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/92cf60df-2598-4012-80f4-8082d2432ecf/d9995be0-1122-4124-85b6-029d580a30fd"
+storage_version_token = "1791739143350206"
+content_type = "text/markdown"
