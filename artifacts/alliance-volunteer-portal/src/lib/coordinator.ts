@@ -1,5 +1,6 @@
 import { clock, TZ } from '@/components/volunteer-detail/format';
 import type { CoordinatorBlock } from '@workspace/api-client-react';
+import { testScheduleLabel } from '@workspace/shared/testAccounts';
 
 export const POLL = {
   staleTime: 0, refetchInterval: 60_000, refetchOnWindowFocus: true as const, retry: false as const,
@@ -16,8 +17,9 @@ export const validDate = (s: string | null) => !!s && /^\d{4}-\d{2}-\d{2}$/.test
 export const dayLabel = (d: string, o: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' }) =>
   noon(d).toLocaleDateString('en-US', { timeZone: 'UTC', ...o });
 export const range = (b: CoordinatorBlock) => `${clock(b.startTime)} to ${clock(b.endTime)}`;
-export const shortName = (v: { firstName: string; lastName: string }) => `${v.firstName} ${v.lastName.trim().charAt(0)}.`.trim();
-export const fullName = (v: { firstName: string; lastName: string }) => `${v.firstName} ${v.lastName}`.trim();
+type Person = { firstName: string; lastName: string; email?: string; isTestAccount?: boolean };
+export const shortName = (v: Person) => testScheduleLabel(v) ?? `${v.firstName} ${v.lastName.trim().charAt(0)}.`.trim();
+export const fullName = (v: Person) => testScheduleLabel(v) ?? `${v.firstName} ${v.lastName}`.trim();
 export const activeVols = (b: CoordinatorBlock) => b.volunteers.filter(v => !v.skipped);
 
 export const ACTIONS: Record<string, string> = {

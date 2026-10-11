@@ -5,6 +5,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 ## v1.1.1 — 2026-10-11
 
 ### Fixed
+- Fix 3 polish: hide disabled Google sign-in; serve the manifest with its proper MIME type; correct future-shift copy and weekend week defaults; distinguish QA personas across schedule/Team views and recipient search; format displayed phones, associate staff Profile labels, and simplify capacity guidance.
 - Incomplete volunteer profiles redirect to onboarding from Shifts and all other volunteer pages, including My Profile. Complete, not-yet-active volunteers retain the explanation of booking eligibility.
 - Quick-login role changes perform a fresh, base-path-aware navigation; a same-path guard redirect no longer shows an endless spinner.
 - Display headings and labels remain white on navy dashboard and shift-confirmation cards.

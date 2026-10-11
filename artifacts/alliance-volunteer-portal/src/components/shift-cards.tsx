@@ -1,6 +1,8 @@
 import { VOLUNTEER_CONTACT_EMAIL, VOLUNTEER_CONTACT_NAME } from '@/lib/contact';
 import type { VolunteerShiftDate, VolunteerStandingShift } from '@workspace/api-client-react';
 import { dateLabel, slotTitle, ymd } from '@/lib/shift-utils';
+import { pacificToday } from '@workspace/shared/profileFields';
+import { shiftStartVerb } from '@workspace/shared/calendar-display';
 
 export function ContactLink({ children }: { email?: string | null; children?: string }) {
   return <a href={`mailto:${VOLUNTEER_CONTACT_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${VOLUNTEER_CONTACT_NAME} (${VOLUNTEER_CONTACT_EMAIL})`}</a>;
@@ -25,7 +27,7 @@ export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, 
             <p className="alliance-section-kicker">Every {slotTitle(a).split(',')[0]}</p>
             <h3 className="alliance-display mt-1">{slotTitle(a).split(', ')[1]}</h3>
             {a.label && <p className="text-sm text-navy-soft">{a.label}</p>}
-            <p className="mt-1 text-xs text-navy-soft">Started {dateLabel(a.startDate)}</p>
+            <p className="mt-1 text-xs text-navy-soft">{shiftStartVerb(ymd(a.startDate), pacificToday())} {dateLabel(a.startDate)}</p>
             <ul className="mt-3 divide-y divide-gray">
               {rows.map(d => (
                 <li key={d.date} className="flex min-h-11 items-center gap-3 py-2" data-testid={`date-${a.id}-${d.date}`}>

@@ -286,6 +286,7 @@ export type MessageSendInput = MessageDraftInput & {
 };
 
 export interface MessageVolunteer {
+  isTestAccount?: boolean;
   userId: string;
   firstName: string;
   lastName: string;

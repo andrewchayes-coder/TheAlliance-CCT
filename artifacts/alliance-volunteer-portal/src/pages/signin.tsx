@@ -61,11 +61,11 @@ function Form() {
         <div className="text-right text-sm"><Link href="/forgot-password" className="font-bold text-blue underline underline-offset-4">Forgot password?</Link></div>
         <SubmitButton busy={busy} busyText="Signing in">Sign in</SubmitButton>
       </form>
-      <div className="my-6 flex items-center gap-3 text-xs font-semibold" aria-hidden="true">
+      {auth.session?.googleEnabled && <><div className="my-6 flex items-center gap-3 text-xs font-semibold" aria-hidden="true">
         <span className="h-px flex-1 bg-gray" />or<span className="h-px flex-1 bg-gray" />
       </div>
       <Button type="button" variant="secondary" className="w-full" onClick={google} aria-describedby={gNote ? 'g-note' : undefined}>Continue with Google</Button>
-      {gNote && <div id="g-note" className="mt-4"><Notice kind="info">Google sign-in hasn’t been set up for this portal yet. Please use your email and password.</Notice></div>}
+      {gNote && <div id="g-note" className="mt-4"><Notice kind="info">Google sign-in hasn’t been set up for this portal yet. Please use your email and password.</Notice></div>}</>}
       <p className="mt-6 text-sm">New here? <Link href="/signup" className="font-bold text-blue underline underline-offset-4">Create a Resource Coordinator account</Link></p>
     </PublicLayout>
   );

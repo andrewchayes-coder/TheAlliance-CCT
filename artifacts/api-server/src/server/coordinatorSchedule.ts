@@ -1,5 +1,6 @@
 import { createScheduleService, assignmentIsHeld, slotIsActive, pacificDay, calendarDay, addCalendarDays, type ScheduleData } from './scheduleService';
 import { attentionReasons } from '../volunteer-attention';
+import { operatingWeekStart } from '@workspace/shared/calendar-display';
 type Profile = Parameters<typeof attentionReasons>[0];
 export type CoordinatorPerson = {
   profileId: string; userId: string; firstName: string; lastName: string; email: string;
@@ -16,7 +17,7 @@ export function coordinatorProjection(data: CoordinatorData,
   const service = createScheduleService(data, () => now);
   const standing = createScheduleService({ ...data, skips: [], closedDates: [],blocks:[] });
   const persons = new Map(people.map(p => [p.profileId, p]));
-  const today = pacificDay(now), currentWeek = mondayOf(today);
+  const today = pacificDay(now), currentWeek = operatingWeekStart(today);
   const closure = new Map(data.closedDates.map(c => [c.date, c.reason]));
   const actualDates = new Map<string, ReturnType<typeof service.getOccurrences>>();
   const actualOn = (date: string) => {

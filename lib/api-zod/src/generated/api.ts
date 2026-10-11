@@ -1341,6 +1341,7 @@ export const PreviewAdminMessageResponse = zod.object({
   "html": zod.string(),
   "text": zod.string(),
   "recipients": zod.array(zod.object({
+  "isTestAccount": zod.boolean().optional(),
   "userId": zod.string().uuid(),
   "firstName": zod.string(),
   "lastName": zod.string(),
@@ -1356,6 +1357,7 @@ export const FindMessageVolunteersQueryParams = zod.object({
 })
 
 export const FindMessageVolunteersResponseItem = zod.object({
+  "isTestAccount": zod.boolean().optional(),
   "userId": zod.string().uuid(),
   "firstName": zod.string(),
   "lastName": zod.string(),
@@ -1382,6 +1384,7 @@ export const GetAdminMessageResponse = zod.object({
   "readAt": zod.coerce.date().nullable()
 }),
   "recipients": zod.array(zod.object({
+  "isTestAccount": zod.boolean().optional(),
   "userId": zod.string().uuid(),
   "firstName": zod.string(),
   "lastName": zod.string(),

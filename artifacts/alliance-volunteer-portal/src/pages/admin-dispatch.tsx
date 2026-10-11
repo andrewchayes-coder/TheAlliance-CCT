@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { formatPhone } from '@workspace/shared/profileFields';
 import { Link } from 'wouter';
 import { TestBadge } from '@/components/test-badge';
 import { AlertTriangle, CalendarDays, ChevronRight, ClipboardList, Mail, Phone, RefreshCw, Users } from 'lucide-react';
@@ -52,7 +53,7 @@ function Body() {
                       <div key={p.assignmentId} className="mt-3 border-t border-gray pt-3" data-testid={`card-on-shift-${p.userId}`}>
                         <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{fullName(p)}<TestBadge test={p.isTestAccount} /></Link>
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          {p.phone ? <a href={`tel:${p.phone}`} data-testid={`link-tel-${p.userId}`} className="flex min-h-11 items-center gap-2 rounded-lg bg-navy px-3 font-bold text-white"><Phone size={18} aria-hidden="true" />{p.phone}</a>
+                          {p.phone ? <a href={`tel:${p.phone}`} data-testid={`link-tel-${p.userId}`} className="flex min-h-11 items-center gap-2 rounded-lg bg-navy px-3 font-bold text-white"><Phone size={18} aria-hidden="true" />{formatPhone(p.phone) || p.phone}</a>
                             : <span className="flex min-h-11 items-center rounded-lg bg-gray px-3 text-sm">No phone on file</span>}
                           <a href={`mailto:${p.email}`} data-testid={`link-mail-${p.userId}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg bg-gray px-3 font-bold"><Mail size={18} aria-hidden="true" className="shrink-0" /><span className="truncate">{p.email}</span></a>
                         </div>

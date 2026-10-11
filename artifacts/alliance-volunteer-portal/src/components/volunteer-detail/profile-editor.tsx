@@ -123,30 +123,30 @@ export function ProfileCard({ userId, detail, blockedReason }: { userId: string;
       <h2 id="v-profile" className="alliance-display">Profile</h2>
       <p className="mt-1 text-sm text-navy-soft">Visible to Alliance staff only.</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm font-bold">Date of birth
-          <input type="date" className={inp} value={cur.dob} onChange={e => set('dob', e.target.value)} data-testid="input-dob" /></label>
-        <label className="block text-sm font-bold">County <span className="font-normal text-navy-soft">(admin only)</span>
-          <select className={inp} value={cur.county} onChange={e => set('county', e.target.value)} data-testid="select-county">
+        <label htmlFor={`profile-${userId}-dob`} className="block text-sm font-bold">Date of birth
+          <input id={`profile-${userId}-dob`} type="date" className={inp} value={cur.dob} onChange={e => set('dob', e.target.value)} data-testid="input-dob" /></label>
+        <label htmlFor={`profile-${userId}-county`} className="block text-sm font-bold">County <span className="font-normal text-navy-soft">(admin only)</span>
+          <select id={`profile-${userId}-county`} className={inp} value={cur.county} onChange={e => set('county', e.target.value)} data-testid="select-county">
             {counties.map(c => <option key={c} value={c}>{c}</option>)}</select></label>
-        <label className="block text-sm font-bold sm:col-span-2">Address
-          <input className={inp} maxLength={300} autoComplete="off" value={cur.addr} onChange={e => set('addr', e.target.value)} data-testid="input-address" /></label>
+        <label htmlFor={`profile-${userId}-address`} className="block text-sm font-bold sm:col-span-2">Address
+          <input id={`profile-${userId}-address`} className={inp} maxLength={300} autoComplete="off" value={cur.addr} onChange={e => set('addr', e.target.value)} data-testid="input-address" /></label>
         <div className="grid grid-cols-[1fr_5rem_7rem] gap-3 sm:col-span-2">
-          <label className="block min-w-0 text-sm font-bold">City
-            <input className={inp} maxLength={100} value={cur.city} onChange={e => set('city', e.target.value)} data-testid="input-city" /></label>
-          <label className="block text-sm font-bold">State
-            <select className={inp} value={cur.state} onChange={e => set('state', e.target.value)} data-testid="select-state">
+          <label htmlFor={`profile-${userId}-city`} className="block min-w-0 text-sm font-bold">City
+            <input id={`profile-${userId}-city`} className={inp} maxLength={100} value={cur.city} onChange={e => set('city', e.target.value)} data-testid="input-city" /></label>
+          <label htmlFor={`profile-${userId}-state`} className="block text-sm font-bold">State
+            <select id={`profile-${userId}-state`} className={inp} value={cur.state} onChange={e => set('state', e.target.value)} data-testid="select-state">
               <option value="">--</option>{states.map(x => <option key={x} value={x}>{x}</option>)}</select></label>
-          <label className="block text-sm font-bold">ZIP
-            <input className={inp} maxLength={10} inputMode="numeric" value={cur.zip} onChange={e => set('zip', e.target.value)} data-testid="input-zip" /></label>
+          <label htmlFor={`profile-${userId}-zip`} className="block text-sm font-bold">ZIP
+            <input id={`profile-${userId}-zip`} className={inp} maxLength={10} inputMode="numeric" value={cur.zip} onChange={e => set('zip', e.target.value)} data-testid="input-zip" /></label>
         </div>
         <fieldset className="grid gap-3 sm:col-span-2 sm:grid-cols-3">
           <legend className="mb-1 font-bold">Emergency contact</legend>
-          <label className="block text-sm font-bold">Name
-            <input className={inp} maxLength={200} value={cur.en} onChange={e => set('en', e.target.value)} data-testid="input-ec-name" /></label>
-          <label className="block text-sm font-bold">Relationship
-            <input className={inp} maxLength={100} value={cur.er} onChange={e => set('er', e.target.value)} data-testid="input-ec-relationship" /></label>
-          <label className="block text-sm font-bold">Phone
-            <input type="tel" className={inp} maxLength={30} value={cur.ep} onChange={e => set('ep', e.target.value)} data-testid="input-ec-phone" /></label>
+          <label htmlFor={`profile-${userId}-ec-name`} className="block text-sm font-bold">Name
+            <input id={`profile-${userId}-ec-name`} className={inp} maxLength={200} value={cur.en} onChange={e => set('en', e.target.value)} data-testid="input-ec-name" /></label>
+          <label htmlFor={`profile-${userId}-ec-relationship`} className="block text-sm font-bold">Relationship
+            <input id={`profile-${userId}-ec-relationship`} className={inp} maxLength={100} value={cur.er} onChange={e => set('er', e.target.value)} data-testid="input-ec-relationship" /></label>
+          <label htmlFor={`profile-${userId}-ec-phone`} className="block text-sm font-bold">Phone
+            <input id={`profile-${userId}-ec-phone`} type="tel" className={inp} maxLength={30} value={formatPhone(cur.ep) || cur.ep} onChange={e => set('ep', e.target.value)} data-testid="input-ec-phone" /></label>
           {tel && <a href={`tel:${tel}`} className="text-sm font-bold text-blue underline underline-offset-4 sm:col-span-3" data-testid="link-ec-phone">Call {cur.en.trim() || 'emergency contact'} at {formatPhone(tel) || tel}</a>}
         </fieldset>
       </div>

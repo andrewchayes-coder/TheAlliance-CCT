@@ -27,7 +27,7 @@ type Draft = z.infer<typeof messageDraftSchema>;
 type Actor = { id: string; sessionVersion: number };
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const selection = { userId: usersTable.id, firstName: usersTable.firstName, lastName: usersTable.lastName,
-  email: usersTable.email, status: volunteerProfilesTable.status };
+  email: usersTable.email, status: volunteerProfilesTable.status, isTestAccount: usersTable.isTestAccount };
 async function recipients(client: typeof db | Tx, draft?: Draft, query?: { q?: string; ids?: string[] }) {
   const ids = draft && ['single', 'selected'].includes(draft.audience) ? draft.userIds : query?.ids;
   const q = query?.q?.replace(/[\\%_]/g, '\\$&');

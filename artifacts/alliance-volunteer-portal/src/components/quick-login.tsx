@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useGetQuickLoginStatus, getGetQuickLoginStatusQueryKey, useGetMe, getGetMeQueryKey } from '@workspace/api-client-react';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
-
-const FALLBACK_LABELS: Record<string, string> = {
-  admin: 'Admin', 'vol-active': 'Volunteer · Active', 'vol-active-noshift': 'Volunteer · Active, no shift',
-  'vol-onboarding-ready': 'Volunteer · Onboarding, ready to activate', 'vol-onboarding-new': 'Volunteer · Onboarding, new',
-};
-const personaLabel = (key: string, fallback: string) => FALLBACK_LABELS[key] ?? fallback;
+import { testPersonaLabel as personaLabel } from '@workspace/shared/testAccounts';
 
 function useStatus(enabled = true) {
   const q = useGetQuickLoginStatus({ query: { queryKey: getGetQuickLoginStatusQueryKey(), enabled, retry: false, staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: 'always' }, request: FETCH_CREDS });

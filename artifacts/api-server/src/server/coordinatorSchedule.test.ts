@@ -69,4 +69,9 @@ describe('Coordinator projection', () => {
     expect(p.week('2026-03-09').blocks.map(b => b.slotId)).toEqual(['s3']);
     expect(p.overview().needsAttention).toBe(2);
   });
+  it('ADM-37 weekend overview uses the coming week while explicit weeks stay unchanged', () => {
+    const p = coordinatorProjection(base(), people, new Date('2026-03-08T19:00:00Z'));
+    expect(p.overview().weekStart).toBe('2026-03-09');
+    expect(p.week('2026-03-02').weekStart).toBe('2026-03-02');
+  });
 });

@@ -286,6 +286,16 @@ These earlier checklist checks go beyond an exact persona-plan case. They remain
 | ACT-15 | CHANGED | Dashboard contrast | View completed onboarding/not-active, active/no-shift, and active/with-shift dashboards. Run the automated axe color-contrast checks. Also inspect shift confirmation on its navy card. | Display headings, next-shift date and labels are white on navy; all three dashboard contrast checks pass. |
 | ADM-36 | CHANGED | Shift notification classification | Book/change a standing shift, take a week off, claim/cancel a one-time shift, and apply an admin removal/block/cancellation. Inspect the log, filter by Shift, and review monthly totals and the six-month chart. | Those emails are labeled Shift, not Welcome. Genuine welcome and approval emails remain Welcome; reminders and admin coverage alerts retain their own types. Historical rows are not rewritten. |
 
+## Fix 3 — UI and copy polish
+
+| Test ID | Tag | Workflow | Steps | Expected result |
+| --- | --- | --- | --- | --- |
+| VIS-08 | CHANGED | Sign-in and install metadata | Sign in with googleEnabled false, then true when configured. Inspect /manifest.webmanifest response headers. | Disabled Google button and its “or” divider are hidden, without removing Google code. Enabled Google remains available. Manifest Content-Type is application/manifest+json. |
+| VIS-08 | CHANGED | My Shifts dates and displayed phones | View a standing shift starting in the future, then a past start date. Inspect displayed mobile/emergency numbers, including On shift now and the schedule side panel. | Future dates say “Starts”; past dates say “Started”. Ten-digit US phones display as (XXX) XXX-XXXX; tap-to-call remains available. |
+| ADM-37 | CHANGED | QA persona labels | Inspect both Active personas on the master schedule, its side panel, On shift now, Team → Test accounts and message recipient search. | Schedule surfaces distinguish “Test · Active” and “Test · Active, no shift”, keeping gray TEST badges. Team uses the same shared persona labels as sign-in. Test recipients have TEST badges. |
+| ADM-37 | CHANGED | Weekend default week | On Saturday and Sunday (also DST weekends), open the master schedule with no week parameter and press Today after navigating away. Check admin-home This week stats. Select a previous week explicitly. | Default/Today and overview stats use the coming Monday–Friday week. Explicit previous-week selection still works; live On shift now logic is unchanged. |
+| ADM-37 | CHANGED | Staff Profile and capacity guidance | Click each Profile-card label and inspect htmlFor/id associations. Edit a slot with N assignments. | Each label focuses its own control. The helper says “N volunteers are assigned, so capacity can't go below N.” Capacity enforcement is unchanged. |
+
 ## Master/app disagreements
 
 The master has not been edited. Current workflow expectations above are adjusted only where the app/policy differ; gaps are called out explicitly.
@@ -309,6 +319,8 @@ The master has not been edited. Current workflow expectations above are adjusted
 ## Coverage table — test ID → QA-CHECKLIST.md section
 
 | Test ID | Checklist section |
+| VIS-08 | Fix 3 — UI and copy polish |
+| ADM-37 | Fix 3 — UI and copy polish |
 | ADM-35 | Fix 2 — production regression workflows |
 | ACT-15 | Fix 2 — production regression workflows |
 | ADM-36 | Fix 2 — production regression workflows |

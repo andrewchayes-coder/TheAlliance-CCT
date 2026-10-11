@@ -7,11 +7,11 @@ export const testProfileFields = {
 // Remove the legacyEmail aliases only after production ensureTestAccounts has
 // migrated both replaced personas in place and an operator confirms no old identities remain.
 export const testAccounts = [
-  { key: 'admin', label: 'Test Admin', description: 'Explore the staff tools with a QA administrator.', lastName: 'Admin', role: 'admin', email: 'qa-admin@example.org', ...testProfileFields },
-  { key: 'vol-active', label: 'Test Volunteer Active', lastName: 'Active', role: 'volunteer', email: 'qa-vol-active@example.org',
+  { key: 'admin', label: 'Admin', description: 'Explore the staff tools with a QA administrator.', lastName: 'Admin', role: 'admin', email: 'qa-admin@example.org', ...testProfileFields },
+  { key: 'vol-active', label: 'Volunteer · Active', lastName: 'Active', role: 'volunteer', email: 'qa-vol-active@example.org',
     description: 'Approved volunteer; a standing shift is provided in development when there is room.',
     status: 'active', onboardingComplete: true, ...testProfileFields },
-  { key: 'vol-active-noshift', label: 'Test Volunteer Active — No Shift', lastName: 'Active (No Shift)', role: 'volunteer', email: 'qa-vol-active-noshift@example.org',
+  { key: 'vol-active-noshift', label: 'Volunteer · Active, no shift', lastName: 'Active (No Shift)', role: 'volunteer', email: 'qa-vol-active-noshift@example.org',
     description: 'Approved volunteer ready to choose a first weekly shift.',
     status: 'active', onboardingComplete: true, ...testProfileFields },
   { key: 'vol-onboarding-ready', label: 'Volunteer · Onboarding, ready to activate', lastName: 'Onboarding (Ready)', role: 'volunteer',
@@ -24,3 +24,9 @@ export const testAccounts = [
     status: 'onboarding', onboardingComplete: false },
 ] as const;
 export type TestAccountKey = typeof testAccounts[number]['key'];
+export const testPersonaLabel = (key: string, fallback: string) => testAccounts.find(person => person.key === key)?.label ?? fallback;
+export function testScheduleLabel(person: { isTestAccount?: boolean; email?: string }) {
+  if (!person.isTestAccount) return null;
+  const label = testAccounts.find(account => account.email.toLowerCase() === person.email?.toLowerCase())?.label;
+  return label?.replace(/^Volunteer · /, 'Test · ') ?? 'Test volunteer';
+}

@@ -1650,6 +1650,7 @@ components:
       type: object
       required: [userId, firstName, lastName, email, status]
       properties:
+        isTestAccount: { type: boolean }
         userId: { type: string, format: uuid }
         firstName: { type: string }
         lastName: { type: string }

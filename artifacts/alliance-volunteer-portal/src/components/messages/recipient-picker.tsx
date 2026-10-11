@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { TestBadge } from '@/components/test-badge';
 import { Search, X } from 'lucide-react';
 import { getFindMessageVolunteersQueryKey, useFindMessageVolunteers, type MessageVolunteer } from '@workspace/api-client-react';
 import { Button } from '@/components/brand-system';
@@ -50,7 +51,7 @@ export function RecipientPicker({ audience, ids, names, disabled, onAdd, onRemov
           <ul className="mt-3 max-h-72 divide-y divide-gray overflow-y-auto rounded-lg border border-gray" aria-label="Search results">
             {rows.map(v => { const on = picked.has(v.userId); return (
               <li key={v.userId} className="flex items-center gap-3 px-3 py-2" data-testid={`result-${v.userId}`}>
-                <div className="min-w-0 flex-1"><p className="truncate font-bold">{nm(v)}</p><p className="break-all text-xs text-navy-soft">{v.email} · {v.status.replace(/_/g, ' ')}</p></div>
+                <div className="min-w-0 flex-1"><p className="truncate font-bold">{nm(v)}<TestBadge test={v.isTestAccount} /></p><p className="break-all text-xs text-navy-soft">{v.email} · {v.status.replace(/_/g, ' ')}</p></div>
                 <Button type="button" variant="secondary" disabled={disabled || (!on && !single && ids.length >= MAX_RECIPIENTS)} aria-pressed={on}
                   onClick={() => on ? onRemove(v.userId) : onAdd([v])} data-testid={`button-pick-${v.userId}`}>{on ? 'Remove' : single ? 'Choose' : 'Add'}</Button>
               </li>); })}

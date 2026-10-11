@@ -17,6 +17,8 @@ import { CustomShiftDialog } from '@/components/schedule-extras/custom-shift-dia
 import { BlockedPanel, BlockThisShift, CustomPanel } from '@/components/schedule-extras/shift-panels';
 import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
 import { POLL, addDays, dayLabel, fullName, layoutBlocks, timeGeometry, mondayOf, range, shortName, updatedLabel, validDate } from '@/lib/coordinator';
+import { operatingWeekStart } from '@workspace/shared/calendar-display';
+import { formatPhone } from '@workspace/shared/profileFields';
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 const STATE_CLS: Record<string, string> = {
@@ -81,7 +83,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
                   {v.skipped && <span className="ml-2 text-xs font-bold">Off this week</span>}
                   {!v.accountActive && <span className="ml-2 text-xs font-bold">Inactive account</span>}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                    {v.phone && <a href={`tel:${v.phone}`} className="inline-flex items-center gap-1 underline"><Phone size={14} aria-hidden="true" />{v.phone}</a>}
+                    {v.phone && <a href={`tel:${v.phone}`} className="inline-flex items-center gap-1 underline"><Phone size={14} aria-hidden="true" />{formatPhone(v.phone) || v.phone}</a>}
                     <a href={`mailto:${v.email}`} className="inline-flex min-w-0 items-center gap-1 break-all underline"><Mail size={14} aria-hidden="true" />{v.email}</a>
                   </div>
                 </li>
@@ -170,7 +172,7 @@ function Body() {
   const [, nav] = useLocation();
   const qp = new URLSearchParams(search).get('weekStart');
   const today = pacificToday();
-  const weekStart = mondayOf(validDate(qp) ? qp! : today);
+  const weekStart = validDate(qp) ? mondayOf(qp!) : operatingWeekStart(today);
   const go = (d: string, replace = false) => nav(`/admin/schedule?weekStart=${mondayOf(d)}`, { replace });
   const q = useGetAdminScheduleWeek({ weekStart }, {
     query: { queryKey: getGetAdminScheduleWeekQueryKey({ weekStart }), ...POLL, placeholderData: keepPreviousData }, request: FETCH_CREDS,
@@ -188,7 +190,7 @@ function Body() {
   const pick = dates.includes(pickState) ? pickState : dates.includes(week?.today ?? '') ? week!.today : dates[0] ?? '';
   const block = sel && week && !stale ? week.blocks.find(b => b.slotId === sel.slotId && b.date === sel.date) ?? null : null;
   const gone = !!sel && !!week && !stale && !block;
-  const thisWeek = weekStart === mondayOf(week?.today ?? today);
+  const thisWeek = weekStart === operatingWeekStart(week?.today ?? today);
   const summary = week && !stale ? `${week.openSpots} open spots, ${week.underCoveredShifts} under-covered` : '';
   return (
     <AppLayout role="admin">
@@ -202,7 +204,7 @@ function Body() {
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="nav-week">
           <Button variant="secondary" onClick={() => go(addDays(weekStart, -7))} aria-label="Previous week" data-testid="button-prev-week"><ChevronLeft size={18} aria-hidden="true" /></Button>
-          <Button variant="secondary" onClick={() => go(week?.today ?? today)} disabled={thisWeek} data-testid="button-today">Today</Button>
+          <Button variant="secondary" onClick={() => go(operatingWeekStart(week?.today ?? today))} disabled={thisWeek} data-testid="button-today">Today</Button>
           <Button variant="secondary" onClick={() => go(addDays(weekStart, 7))} aria-label="Next week" data-testid="button-next-week"><ChevronRight size={18} aria-hidden="true" /></Button>
           <p className="ml-1 font-bold" data-testid="text-week-label" aria-live="polite">{dayLabel(weekStart, { month: 'short', day: 'numeric' })} to {dayLabel(week?.days[week.days.length - 1]?.date ?? addDays(weekStart, 4), { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           {week && <p className="ml-auto text-sm text-navy-soft" data-testid="text-updated">Updated {updatedLabel(week.updatedAt)}</p>}
