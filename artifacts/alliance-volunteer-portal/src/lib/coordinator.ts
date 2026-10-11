@@ -29,7 +29,25 @@ export const ACTIONS: Record<string, string> = {
 export const humanize = (a: string) => ACTIONS[a] ?? (a.replace(/[_.-]+/g, ' ').trim().replace(/^./, c => c.toUpperCase()) || 'Updated');
 
 /** Interval partitioning: transitive overlap groups, greedy lanes inside each group. */
+const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+/** Standard regular grid: 2-hour slot starting on a whole hour 9..16. */
+export const isStandardRegular = (b: CoordinatorBlock) =>
+  b.kind !== 'custom' && toMin(b.startTime) % 60 === 0 && toMin(b.endTime) - toMin(b.startTime) === 120 && toMin(b.startTime) >= 540 && toMin(b.startTime) <= 960;
+/** Explicit lane: odd start hour = lane A (0), even start hour = lane B (1). */
+export const standardLane = (b: CoordinatorBlock) => (toMin(b.startTime) / 60) % 2 === 1 ? 0 : 1;
+
 export function layoutBlocks(blocks: CoordinatorBlock[]) {
+  if (blocks.some(isStandardRegular)) {
+    const placed: { b: CoordinatorBlock; lane: number }[] = blocks.filter(isStandardRegular).map(b => ({ b, lane: standardLane(b) }));
+    const rest = blocks.filter(b => !isStandardRegular(b)).sort((a, b) => a.startTime.localeCompare(b.startTime) || b.endTime.localeCompare(a.endTime));
+    for (const b of rest) {
+      let lane = 0;
+      while (placed.some(p => p.lane === lane && p.b.startTime < b.endTime && p.b.endTime > b.startTime)) lane++;
+      placed.push({ b, lane });
+    }
+    const lanes = Math.max(2, ...placed.map(p => p.lane + 1));
+    return placed.map(p => ({ ...p, lanes }));
+  }
   const s = [...blocks].sort((a, b) => a.startTime.localeCompare(b.startTime) || b.endTime.localeCompare(a.endTime));
   const out: { b: CoordinatorBlock; lane: number; lanes: number }[] = [];
   let group: { b: CoordinatorBlock; lane: number }[] = []; let gEnd = '';
@@ -50,10 +68,11 @@ export function layoutBlocks(blocks: CoordinatorBlock[]) {
 /** Shared time rows expand locally to fit content, without lengthening a block past its end. */
 export function timeGeometry(blocks: CoordinatorBlock[]) {
   const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
-  const start = Math.floor(Math.min(480, ...blocks.map(b => minutes(b.startTime))) / 60) * 60;
-  const end = Math.ceil(Math.max(1020, ...blocks.map(b => minutes(b.endTime))) / 60) * 60;
+  const start = Math.floor(Math.min(540, ...blocks.map(b => minutes(b.startTime))) / 60) * 60;
+  const end = Math.ceil(Math.max(1080, ...blocks.map(b => minutes(b.endTime))) / 60) * 60;
   const hours = Array.from({ length: (end - start) / 60 + 1 }, (_, i) => start + i * 60);
-  const ticks = [...new Set([...hours, ...blocks.flatMap(b => [minutes(b.startTime), minutes(b.endTime)])])].sort((a, b) => a - b);
+  const halves = hours.slice(0, -1).map(h => h + 30);
+  const ticks = [...new Set([...hours, ...halves, ...blocks.flatMap(b => [minutes(b.startTime), minutes(b.endTime)])])].sort((a, b) => a - b);
   const heights = ticks.slice(1).map((t, i) => (t - ticks[i]!) * 1.2);
   for (const b of blocks) {
     const from = ticks.indexOf(minutes(b.startTime)), to = ticks.indexOf(minutes(b.endTime));

@@ -60,7 +60,7 @@ export function buildSeedFixtures(hashes: { admin: string; volunteers: string[] 
   });
 
   const slots: (typeof shiftSlotsTable.$inferInsert)[] = [];
-  const timePairs = [['09:00', '11:00'], ['11:00', '13:00'], ['13:00', '15:00'], ['15:00', '17:00']] as const;
+  const timePairs = Array.from({length:8},(_,hour)=>[`${String(hour+9).padStart(2,'0')}:00`,`${String(hour+11).padStart(2,'0')}:00`]);
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   for (let day = 1; day <= 5; day++) {
     for (const [startTime, endTime] of timePairs) {
@@ -71,8 +71,8 @@ export function buildSeedFixtures(hashes: { admin: string; volunteers: string[] 
     }
   }
   const startDate = addDays(today, 1 - weekday(today));
-  const primarySlots = [0, 1, 2, 4, 5, 6, 8, 9, 10, 12];
-  const secondSlots = [1, 0, 11, 13, 14, 16, 17, 18];
+  const primarySlots = [0, 2, 4, 8, 10, 12, 16, 18, 20, 24];
+  const secondSlots = [2, 0, 6, 26, 28, 32, 34, 36];
   const activeProfiles = profiles.filter(profile => profile.status === 'active');
   const assignments: (typeof shiftAssignmentsTable.$inferInsert)[] = [];
   activeProfiles.forEach((profile, index) => {

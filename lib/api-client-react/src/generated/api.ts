@@ -38,6 +38,8 @@ import type {
   CoordinatorWeek,
   CoverageAlertInput,
   CoverageAlertSettings,
+  CustomAssignInput,
+  CustomShiftInput,
   DeleteResource200,
   DevEmailCheck,
   DevEmailCheckError,
@@ -54,6 +56,7 @@ import type {
   ListAdminMessagesParams,
   ListTeamUsersParams,
   ListVolunteerRosterParams,
+  LoadStandardGrid200,
   Me,
   MessageDraftInput,
   MessagePreview,
@@ -84,11 +87,13 @@ import type {
   ResourceUpload,
   RunAdminReminderCheckParams,
   ScheduleClosedDateInput,
+  ScheduleExtras,
   ScheduleSettings,
   ScheduleSlotInput,
   ScheduleSlotUpdate,
   SigninInput,
   SignupInput,
+  SlotBlockInput,
   TeamUsersResponse,
   TestAccountsOverview,
   TestAccountsResetInput,
@@ -136,6 +141,734 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getLoadStandardGridUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/standard-grid`
+}
+
+export const loadStandardGrid = async ( options?: Parameters<typeof customFetch>[1]): Promise<LoadStandardGrid200> => {
+
+  return customFetch<LoadStandardGrid200>(getLoadStandardGridUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLoadStandardGridMutationKey = () => ['loadStandardGrid'] as const;
+
+export const getLoadStandardGridMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loadStandardGrid>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof loadStandardGrid>>, TError,void, TContext> => {
+
+const mutationKey = getLoadStandardGridMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof loadStandardGrid>>, void> = () => {
+
+
+          return  loadStandardGrid(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LoadStandardGridMutationResult = NonNullable<Awaited<ReturnType<typeof loadStandardGrid>>>
+
+    export type LoadStandardGridMutationError = ErrorType<unknown>
+
+
+    export const useLoadStandardGrid = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof loadStandardGrid>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof loadStandardGrid>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLoadStandardGridMutationOptions(options));
+    }
+
+export const getGetScheduleExtrasUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/extras`
+}
+
+export const getScheduleExtras = async ( options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+  return customFetch<ScheduleExtras>(getGetScheduleExtrasUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetScheduleExtrasQueryKey = () => {
+    return [
+    `/api/admin/schedule/extras`
+    ] as const;
+    }
+
+
+export const getGetScheduleExtrasQueryOptions = <TData = Awaited<ReturnType<typeof getScheduleExtras>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleExtras>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetScheduleExtrasQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getScheduleExtras>>> = ({ signal }) => getScheduleExtras({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getScheduleExtras>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetScheduleExtrasQueryResult = NonNullable<Awaited<ReturnType<typeof getScheduleExtras>>>
+export type GetScheduleExtrasQueryError = ErrorType<unknown>
+
+
+
+export function useGetScheduleExtras<TData = Awaited<ReturnType<typeof getScheduleExtras>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getScheduleExtras>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetScheduleExtrasQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getBlockScheduleSlotsUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/blocks`
+}
+
+export const blockScheduleSlots = async (slotBlockInput: SlotBlockInput, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleExtras>(getBlockScheduleSlotsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(slotBlockInput)
+  }
+);}
+
+
+
+
+
+export const getBlockScheduleSlotsMutationKey = () => ['blockScheduleSlots'] as const;
+
+export const getBlockScheduleSlotsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockScheduleSlots>>, TError,BlockScheduleSlotsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockScheduleSlots>>, TError,BlockScheduleSlotsMutationVariables, TContext> => {
+
+const mutationKey = getBlockScheduleSlotsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockScheduleSlots>>, BlockScheduleSlotsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  blockScheduleSlots(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockScheduleSlotsMutationResult = NonNullable<Awaited<ReturnType<typeof blockScheduleSlots>>>
+    export type BlockScheduleSlotsMutationBody = BodyType<SlotBlockInput>
+    export type BlockScheduleSlotsMutationError = ErrorType<unknown>
+    export type BlockScheduleSlotsMutationVariables = {data: BodyType<SlotBlockInput>}
+
+    export const useBlockScheduleSlots = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockScheduleSlots>>, TError,BlockScheduleSlotsMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockScheduleSlots>>,
+        TError,
+        BlockScheduleSlotsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBlockScheduleSlotsMutationOptions(options));
+    }
+
+export const getUnblockScheduleSlotUrl = (blockId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/blocks/${blockId}`
+}
+
+export const unblockScheduleSlot = async (blockId: string, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+  return customFetch<ScheduleExtras>(getUnblockScheduleSlotUrl(blockId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnblockScheduleSlotMutationKey = () => ['unblockScheduleSlot'] as const;
+
+export const getUnblockScheduleSlotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockScheduleSlot>>, TError,UnblockScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockScheduleSlot>>, TError,UnblockScheduleSlotMutationVariables, TContext> => {
+
+const mutationKey = getUnblockScheduleSlotMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockScheduleSlot>>, UnblockScheduleSlotMutationVariables> = (props) => {
+          const {blockId} = props ?? {};
+
+          return  unblockScheduleSlot(blockId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockScheduleSlotMutationResult = NonNullable<Awaited<ReturnType<typeof unblockScheduleSlot>>>
+
+    export type UnblockScheduleSlotMutationError = ErrorType<unknown>
+    export type UnblockScheduleSlotMutationVariables = {blockId: string}
+
+    export const useUnblockScheduleSlot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockScheduleSlot>>, TError,UnblockScheduleSlotMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockScheduleSlot>>,
+        TError,
+        UnblockScheduleSlotMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUnblockScheduleSlotMutationOptions(options));
+    }
+
+export const getCreateCustomShiftUrl = () => {
+
+
+
+
+  return `/api/admin/schedule/custom-shifts`
+}
+
+export const createCustomShift = async (customShiftInput: CustomShiftInput, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleExtras>(getCreateCustomShiftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(customShiftInput)
+  }
+);}
+
+
+
+
+
+export const getCreateCustomShiftMutationKey = () => ['createCustomShift'] as const;
+
+export const getCreateCustomShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomShift>>, TError,CreateCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCustomShift>>, TError,CreateCustomShiftMutationVariables, TContext> => {
+
+const mutationKey = getCreateCustomShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCustomShift>>, CreateCustomShiftMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCustomShift(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCustomShiftMutationResult = NonNullable<Awaited<ReturnType<typeof createCustomShift>>>
+    export type CreateCustomShiftMutationBody = BodyType<CustomShiftInput>
+    export type CreateCustomShiftMutationError = ErrorType<unknown>
+    export type CreateCustomShiftMutationVariables = {data: BodyType<CustomShiftInput>}
+
+    export const useCreateCustomShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomShift>>, TError,CreateCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCustomShift>>,
+        TError,
+        CreateCustomShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCustomShiftMutationOptions(options));
+    }
+
+export const getCancelCustomShiftUrl = (customShiftId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/custom-shifts/${customShiftId}/cancel`
+}
+
+export const cancelCustomShift = async (customShiftId: string, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+  return customFetch<ScheduleExtras>(getCancelCustomShiftUrl(customShiftId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCancelCustomShiftMutationKey = () => ['cancelCustomShift'] as const;
+
+export const getCancelCustomShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCustomShift>>, TError,CancelCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelCustomShift>>, TError,CancelCustomShiftMutationVariables, TContext> => {
+
+const mutationKey = getCancelCustomShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelCustomShift>>, CancelCustomShiftMutationVariables> = (props) => {
+          const {customShiftId} = props ?? {};
+
+          return  cancelCustomShift(customShiftId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelCustomShiftMutationResult = NonNullable<Awaited<ReturnType<typeof cancelCustomShift>>>
+
+    export type CancelCustomShiftMutationError = ErrorType<unknown>
+    export type CancelCustomShiftMutationVariables = {customShiftId: string}
+
+    export const useCancelCustomShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelCustomShift>>, TError,CancelCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelCustomShift>>,
+        TError,
+        CancelCustomShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCancelCustomShiftMutationOptions(options));
+    }
+
+export const getAssignCustomShiftUrl = (customShiftId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/custom-shifts/${customShiftId}/assignments`
+}
+
+export const assignCustomShift = async (customShiftId: string,
+    customAssignInput: CustomAssignInput, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ScheduleExtras>(getAssignCustomShiftUrl(customShiftId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(customAssignInput)
+  }
+);}
+
+
+
+
+
+export const getAssignCustomShiftMutationKey = () => ['assignCustomShift'] as const;
+
+export const getAssignCustomShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignCustomShift>>, TError,AssignCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof assignCustomShift>>, TError,AssignCustomShiftMutationVariables, TContext> => {
+
+const mutationKey = getAssignCustomShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignCustomShift>>, AssignCustomShiftMutationVariables> = (props) => {
+          const {customShiftId,data} = props ?? {};
+
+          return  assignCustomShift(customShiftId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AssignCustomShiftMutationResult = NonNullable<Awaited<ReturnType<typeof assignCustomShift>>>
+    export type AssignCustomShiftMutationBody = BodyType<CustomAssignInput>
+    export type AssignCustomShiftMutationError = ErrorType<unknown>
+    export type AssignCustomShiftMutationVariables = {customShiftId: string;data: BodyType<CustomAssignInput>}
+
+    export const useAssignCustomShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof assignCustomShift>>, TError,AssignCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof assignCustomShift>>,
+        TError,
+        AssignCustomShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAssignCustomShiftMutationOptions(options));
+    }
+
+export const getRemoveCustomShiftAssignmentUrl = (customShiftId: string,
+    assignmentId: string,) => {
+
+
+
+
+  return `/api/admin/schedule/custom-shifts/${customShiftId}/assignments/${assignmentId}`
+}
+
+export const removeCustomShiftAssignment = async (customShiftId: string,
+    assignmentId: string, options?: Parameters<typeof customFetch>[1]): Promise<ScheduleExtras> => {
+
+  return customFetch<ScheduleExtras>(getRemoveCustomShiftAssignmentUrl(customShiftId,assignmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveCustomShiftAssignmentMutationKey = () => ['removeCustomShiftAssignment'] as const;
+
+export const getRemoveCustomShiftAssignmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCustomShiftAssignment>>, TError,RemoveCustomShiftAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeCustomShiftAssignment>>, TError,RemoveCustomShiftAssignmentMutationVariables, TContext> => {
+
+const mutationKey = getRemoveCustomShiftAssignmentMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeCustomShiftAssignment>>, RemoveCustomShiftAssignmentMutationVariables> = (props) => {
+          const {customShiftId,assignmentId} = props ?? {};
+
+          return  removeCustomShiftAssignment(customShiftId,assignmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveCustomShiftAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof removeCustomShiftAssignment>>>
+
+    export type RemoveCustomShiftAssignmentMutationError = ErrorType<unknown>
+    export type RemoveCustomShiftAssignmentMutationVariables = {customShiftId: string;assignmentId: string}
+
+    export const useRemoveCustomShiftAssignment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeCustomShiftAssignment>>, TError,RemoveCustomShiftAssignmentMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeCustomShiftAssignment>>,
+        TError,
+        RemoveCustomShiftAssignmentMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveCustomShiftAssignmentMutationOptions(options));
+    }
+
+export const getClaimCustomShiftUrl = (customShiftId: string,) => {
+
+
+
+
+  return `/api/volunteer/custom-shifts/${customShiftId}/claim`
+}
+
+export const claimCustomShift = async (customShiftId: string, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerSchedule> => {
+
+  return customFetch<VolunteerSchedule>(getClaimCustomShiftUrl(customShiftId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getClaimCustomShiftMutationKey = () => ['claimCustomShift'] as const;
+
+export const getClaimCustomShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimCustomShift>>, TError,ClaimCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof claimCustomShift>>, TError,ClaimCustomShiftMutationVariables, TContext> => {
+
+const mutationKey = getClaimCustomShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof claimCustomShift>>, ClaimCustomShiftMutationVariables> = (props) => {
+          const {customShiftId} = props ?? {};
+
+          return  claimCustomShift(customShiftId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClaimCustomShiftMutationResult = NonNullable<Awaited<ReturnType<typeof claimCustomShift>>>
+
+    export type ClaimCustomShiftMutationError = ErrorType<unknown>
+    export type ClaimCustomShiftMutationVariables = {customShiftId: string}
+
+    export const useClaimCustomShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimCustomShift>>, TError,ClaimCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof claimCustomShift>>,
+        TError,
+        ClaimCustomShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClaimCustomShiftMutationOptions(options));
+    }
+
+export const getCancelOwnCustomShiftUrl = (customShiftId: string,) => {
+
+
+
+
+  return `/api/volunteer/custom-shifts/${customShiftId}/cancel`
+}
+
+export const cancelOwnCustomShift = async (customShiftId: string, options?: Parameters<typeof customFetch>[1]): Promise<VolunteerSchedule> => {
+
+  return customFetch<VolunteerSchedule>(getCancelOwnCustomShiftUrl(customShiftId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCancelOwnCustomShiftMutationKey = () => ['cancelOwnCustomShift'] as const;
+
+export const getCancelOwnCustomShiftMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOwnCustomShift>>, TError,CancelOwnCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelOwnCustomShift>>, TError,CancelOwnCustomShiftMutationVariables, TContext> => {
+
+const mutationKey = getCancelOwnCustomShiftMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelOwnCustomShift>>, CancelOwnCustomShiftMutationVariables> = (props) => {
+          const {customShiftId} = props ?? {};
+
+          return  cancelOwnCustomShift(customShiftId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelOwnCustomShiftMutationResult = NonNullable<Awaited<ReturnType<typeof cancelOwnCustomShift>>>
+
+    export type CancelOwnCustomShiftMutationError = ErrorType<unknown>
+    export type CancelOwnCustomShiftMutationVariables = {customShiftId: string}
+
+    export const useCancelOwnCustomShift = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOwnCustomShift>>, TError,CancelOwnCustomShiftMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelOwnCustomShift>>,
+        TError,
+        CancelOwnCustomShiftMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCancelOwnCustomShiftMutationOptions(options));
+    }
 
 export const getGetPublishedResourceListUrl = () => {
 

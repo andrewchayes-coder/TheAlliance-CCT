@@ -1,5 +1,5 @@
 import { and, eq, gte, lte, inArray, isNull, ne, or } from 'drizzle-orm';
-import { db, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, closedDatesTable } from '@workspace/db';
+import { db, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, closedDatesTable,slotBlocksTable,customShiftsTable,customShiftAssignmentsTable } from '@workspace/db';
 import { GetScheduleSettingsResponse } from '@workspace/api-zod';
 import { assignmentIsHeld, pacificDay, slotIsActive, createScheduleService } from './scheduleService';
 export type ScheduleTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -19,7 +19,13 @@ export async function readScheduleData(tx: ScheduleTransaction, profileId?: stri
   const skips = assignments.length ? await tx.select().from(shiftSkipsTable)
     .where(inArray(shiftSkipsTable.shiftAssignmentId, assignments.map(a => a.id))) : [];
   const closedDates = await tx.select().from(closedDatesTable).orderBy(closedDatesTable.date);
-  return { slots, assignments, skips, closedDates };
+  const blocks=await tx.select().from(slotBlocksTable);
+  const customShifts=await tx.select().from(customShiftsTable).where(and(
+    range?gte(customShiftsTable.date,range.from):undefined,range?.to?lte(customShiftsTable.date,range.to):undefined));
+  const customAssignments=customShifts.length?await tx.select().from(customShiftAssignmentsTable).where(and(
+    inArray(customShiftAssignmentsTable.customShiftId,customShifts.map(s=>s.id)),
+    profileId?eq(customShiftAssignmentsTable.volunteerProfileId,profileId):undefined)):[];
+  return { slots, assignments, skips, closedDates,blocks,customShifts,customAssignments };
 }
 /** Scope volunteer consumers at the query, never project a global personnel snapshot. */
 export async function loadScheduleService(profileId?: string) {

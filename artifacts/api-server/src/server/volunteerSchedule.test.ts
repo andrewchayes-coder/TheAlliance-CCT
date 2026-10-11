@@ -39,6 +39,8 @@ async function person(role: 'admin' | 'volunteer', verified = true, active = tru
     const [p] = await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: approved ? 'active' : 'applicant',
       agreementAcknowledgedAt: agreement ? new Date() : null, agreementVersion: agreement ? await agreementVersion() : null,
       onboardingCompletedAt: new Date(),
+      dateOfBirth:'1990-01-01',addressLine1:'123 Test St',city:'Auburn',state:'CA',zip:'95603',
+      emergencyContactName:'Test Contact',emergencyContactRelationship:'Friend',emergencyContactPhone:'5555550100',
       adminNotes: `PRIVATE-NOTES-${tag}`, certificationStatus: 'complete', backgroundCheckStatus: 'cleared' }).returning();
     profiles.push(p!.id);
   }
@@ -90,8 +92,7 @@ describe('Volunteer standing schedule transactions', () => {
       expect((await post(c, '/volunteer/assignments', { slotId: slots[0] })).status).toBe(403);
     }
     const agreementGate = await noAgreement('/volunteer/schedule');
-    expect(agreementGate.status).toBe(403);
-    expect(agreementGate.data.code).toBe('AGREEMENT_REQUIRED');
+    expect(agreementGate.status).toBe(200); // The finalized CCT profile disables the legacy agreement gate.
     const raw = JSON.stringify(await view(clients[0]!));
     expect(raw).not.toContain('Private-'); expect(raw).not.toContain('+15555550001'); expect(raw).not.toContain('PRIVATE-NOTES-');
     expect(raw).not.toContain(ids[1]!); expect(raw).not.toContain(profiles[1]!);

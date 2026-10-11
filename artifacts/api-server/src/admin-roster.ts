@@ -8,6 +8,8 @@ import { pacificDay } from './volunteer-shifts';
 import { attentionReasons, type AttentionReason } from './volunteer-attention';
 import { appConfig } from '@workspace/shared/appConfig';
 import { normalizeVolunteerStatus, missingProfileFields } from '@workspace/shared/profileFields';
+import {customShiftsTable,customShiftAssignmentsTable} from '@workspace/db';
+import {slotInstant} from './server/scheduleService';
 export { attentionReasons, type AttentionReason } from './volunteer-attention';
 
 type Profile = typeof volunteerProfilesTable.$inferSelect;
@@ -152,11 +154,24 @@ export function rosterCsv(people: RosterPerson[]) {
       return value instanceof Date ? value.toISOString() : typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
     }), ...onboardingQuestions.map(q => formatOnboardingAnswer(person.profile.onboardingAnswers[q.id])), heldShiftsText(person)]));
 }
-export function scheduleCsv(people: RosterPerson[]) {
-  return csv(['Volunteer', 'Email', 'Profile ID', 'Assignment ID', 'Day', 'Start time', 'End time', 'Start date', 'End date', 'Upcoming skip dates'],
-    people.filter(p => !p.user.isTestAccount).flatMap(person => person.shifts.map(shift => [
+export async function customCsvRows(people:RosterPerson[],now=new Date()) {
+  const real=people.filter(p=>!p.user.isTestAccount);
+  if(!real.length)return [];
+  const rows=await db.select({shift:customShiftsTable,assignment:customShiftAssignmentsTable})
+    .from(customShiftAssignmentsTable).innerJoin(customShiftsTable,eq(customShiftsTable.id,customShiftAssignmentsTable.customShiftId))
+    .where(and(inArray(customShiftAssignmentsTable.volunteerProfileId,real.map(p=>p.profile.id)),isNull(customShiftsTable.cancelledAt),isNull(customShiftAssignmentsTable.cancelledAt)));
+  return rows.filter(row=>slotInstant(row.shift.date,row.shift.endTime)>now).map(({shift,assignment})=>{
+    const p=real.find(p=>p.profile.id===assignment.volunteerProfileId)!;
+    return [`${p.user.firstName} ${p.user.lastName}`,p.user.email,p.profile.id,assignment.id,
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(`${shift.date}T00:00:00Z`).getUTCDay()],
+      shift.startTime,shift.endTime,shift.date,shift.date,'','One-time',shift.label??''];
+  });
+}
+export function scheduleCsv(people: RosterPerson[],customRows:string[][]=[]) {
+  return csv(['Volunteer', 'Email', 'Profile ID', 'Assignment ID', 'Day', 'Start time', 'End time', 'Start date', 'End date', 'Upcoming skip dates','Shift type','Label'],
+    [...people.filter(p => !p.user.isTestAccount).flatMap(person => person.shifts.map(shift => [
       `${person.user.firstName} ${person.user.lastName}`, person.user.email, person.profile.id, shift.assignmentId,
       weekdays[shift.dayOfWeek], shift.startTime, shift.endTime, shift.startDate, shift.endDate,
-      shift.upcomingSkipDates.join('; '),
-    ])));
+      shift.upcomingSkipDates.join('; '),'Weekly',shift.label??'',
+    ])),...customRows]);
 }

@@ -35,7 +35,8 @@ export function selectReminders(snapshot: ReminderSnapshot, now: Date, config: R
     return occurrence.assignedVolunteers.flatMap(a => {
       const person = people.get(a.volunteerProfileId);
       return person ? variants.map(variant => ({ occurrence, assignmentId: a.assignmentId, person, variant,
-        relatedId: `${a.assignmentId}:${occurrence.date}:${variant}` })) : [];
+        relatedId: occurrence.kind==='custom' ? `custom:${occurrence.slot.id}:${a.volunteerProfileId}:${variant}`
+          : `${a.assignmentId}:${occurrence.date}:${variant}` })) : [];
     });
   });
 }

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ShiftOccurrenceKind } from './shiftOccurrenceKind';
 
 export interface ShiftOccurrence {
   assignmentId: string;
@@ -15,4 +16,5 @@ export interface ShiftOccurrence {
   endsAt: Date;
   /** @nullable */
   label: string | null;
+  kind?: ShiftOccurrenceKind;
 }

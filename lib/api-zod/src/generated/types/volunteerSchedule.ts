@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { VolunteerAvailableSlot } from './volunteerAvailableSlot';
+import type { VolunteerCustomShift } from './volunteerCustomShift';
 import type { VolunteerStandingShift } from './volunteerStandingShift';
 
 export interface VolunteerSchedule {
@@ -18,4 +19,5 @@ export interface VolunteerSchedule {
   today: string;
   slots: VolunteerAvailableSlot[];
   assignments: VolunteerStandingShift[];
+  customShifts?: VolunteerCustomShift[];
 }

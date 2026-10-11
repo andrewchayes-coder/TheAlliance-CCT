@@ -7,6 +7,7 @@ import {
   ChangeVolunteerStatusResponse,
 } from '@workspace/api-zod';
 import { approvalRequirements, checkRevision, lockedVolunteer, loadAdminVolunteerDetail, releasePreview, WorkflowError } from '../admin-volunteer-detail';
+import {releaseCustomAssignments} from '../server/customShiftRelease';
 import { pacificDay } from '../volunteer-shifts';
 import { sendEmail, createEmailTemplate } from '../email';
 import { appOrigin } from '../auth/session';
@@ -43,6 +44,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
         if (missing.length) throw new WorkflowError(422, 'Approval is not ready. Complete each missing requirement first.', missing);
       }
       const released = input.status === 'inactive' ? await releasePreview(tx, profile.id, today) : [];
+      const customReleased=input.status==='inactive'?await releaseCustomAssignments(tx,profile.id):[];
       if (input.status === 'inactive') {
         const actual = released.map(row => row.assignmentId).sort();
         const confirmed = [...new Set(input.releaseAssignmentIds ?? [])].sort();
@@ -63,15 +65,15 @@ router.post('/volunteers/:userId/status', async (req, res) => {
       const [event] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'status_changed',
         details: { from: normalizeVolunteerStatus(profile.status), to: input.status, releasedAssignmentIds: released.map(row => row.assignmentId),
           releasedShifts: released.map(row => ({ dayOfWeek: row.dayOfWeek, startTime: row.startTime, endTime: row.endTime })),
-          previousAssignments: released.map(row => ({ id: row.assignmentId, shiftSlotId: row.shiftSlotId,
+          previousCustomAssignments:customReleased,previousAssignments: released.map(row => ({ id: row.assignmentId, shiftSlotId: row.shiftSlotId,
             volunteerProfileId: profile.id, startDate: row.startDate, endDate: row.endDate, endedReason: null })) } }).returning();
-      return { user, profile, activityId: event!.id, released };
+      return { user, profile, activityId: event!.id, released,customReleased };
     });
     // Side effects happen only after the status, released assignments, and audit commit.
     if (result.activityId && input.status === 'inactive') {
       try {
-        await onAssignmentsReleased({ volunteerProfileId: result.profile.id, assignmentIds: result.released.map(row => row.assignmentId),
-          shiftSlotIds: [...new Set(result.released.map(row => row.shiftSlotId))], effectiveDate: today, activityId: result.activityId });
+        await onAssignmentsReleased({ volunteerProfileId: result.profile.id, assignmentIds: [...result.released.map(row => row.assignmentId),...(result.customReleased??[]).map(a=>a.id)],
+          shiftSlotIds: [...new Set([...result.released.map(row => row.shiftSlotId),...(result.customReleased??[]).map(a=>a.customShiftId)])], effectiveDate: today, activityId: result.activityId });
       } catch (error) { logger.error({ err: error, activityId: result.activityId }, 'Uncovered-shift integration hook failed after committed release.'); }
     }
     let emailDelivery = null;

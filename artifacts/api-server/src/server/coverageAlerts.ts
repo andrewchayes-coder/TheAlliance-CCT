@@ -21,6 +21,10 @@ export function releaseGaps(data: ScheduleData, event: ReleasedAssignments,
   if (skip && !date) return [];
   const previous = Array.isArray(details.previousAssignments) ? details.previousAssignments as ScheduleAssignment[] : null;
   const before: ScheduleData = { ...data,
+    customAssignments:(data.customAssignments??[]).map(a=>{
+      const previous=Array.isArray(details.previousCustomAssignments)?details.previousCustomAssignments:[];
+      return previous.some(p=>p && typeof p==='object' && 'id' in p && p.id===a.id)?{...a,cancelledAt:null}:a;
+    }),
     assignments: data.assignments.map(a => {
       if (!event.assignmentIds.includes(a.id)) return a;
       if (skip) return a;
@@ -60,6 +64,12 @@ async function notify(rows: ReturnType<typeof gaps>, relatedId: string, reason?:
     }
   }
   return ok;
+}
+/** A cancelled reservation is an actual one-person reduction, not an unrelated existing gap. */
+export async function notifyCustomReduction(customShiftId:string,eventId:string,reason:string,now=new Date()) {
+  const data=await db.transaction(tx=>readScheduleData(tx),{isolationLevel:'repeatable read'});
+  const rows=gaps(data,now,14).filter(o=>o.kind==='custom' && o.slot.id===customShiftId);
+  if(rows.length)await notify(rows,eventId,reason);
 }
 export async function alertReleasedAssignments(event: ReleasedAssignments, now = new Date()) {
   const snapshot = await db.transaction(async tx => {

@@ -5,6 +5,77 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface CustomAssignInput {
+  userId: string;
+  override: boolean;
+  /** @maxLength 2000 */
+  reason?: string;
+}
+
+export interface SlotBlockInput {
+  fromDate: string;
+  toDate: string;
+  slotIds?: string[];
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  reason: string;
+  emailVolunteers: boolean;
+}
+
+export interface SlotBlock {
+  id: string;
+  shiftSlotId: string;
+  date: string;
+  reason: string;
+}
+
+export interface CustomShiftInput {
+  date: string;
+  startTime: string;
+  endTime: string;
+  /**
+     * @minimum 1
+     * @maximum 10
+     */
+  capacity: number;
+  /**
+     * @maxLength 120
+     * @nullable
+     */
+  label?: string | null;
+  openToVolunteers: boolean;
+}
+
+export type VolunteerCustomShift = CustomShiftInput & ({
+  id: string;
+  assignedCount: number;
+  openSpots: number;
+  /** @nullable */
+  ownAssignmentId: string | null;
+  canCancel: boolean;
+});
+
+export type AdminCustomShiftAssignmentsItem = {
+  id: string;
+  userId: string;
+  volunteerProfileId: string;
+  firstName: string;
+  lastName: string;
+  isTestAccount: boolean;
+};
+
+export type AdminCustomShift = CustomShiftInput & {
+  id: string;
+  assignments: AdminCustomShiftAssignmentsItem[];
+};
+
+export interface ScheduleExtras {
+  blocks: SlotBlock[];
+  customShifts: AdminCustomShift[];
+}
+
 export type EmailLogType = typeof EmailLogType[keyof typeof EmailLogType];
 
 
@@ -398,6 +469,7 @@ export interface VolunteerSchedule {
   today: string;
   slots: VolunteerAvailableSlot[];
   assignments: VolunteerStandingShift[];
+  customShifts?: VolunteerCustomShift[];
 }
 
 export interface CoordinatorVolunteer {
@@ -421,6 +493,15 @@ export const CoordinatorBlockState = {
   under: 'under',
   empty: 'empty',
   closed: 'closed',
+  blocked: 'blocked',
+} as const;
+
+export type CoordinatorBlockKind = typeof CoordinatorBlockKind[keyof typeof CoordinatorBlockKind];
+
+
+export const CoordinatorBlockKind = {
+  regular: 'regular',
+  custom: 'custom',
 } as const;
 
 export interface CoordinatorBlock {
@@ -437,6 +518,11 @@ export interface CoordinatorBlock {
   assignedCount: number;
   openSpots: number;
   state: CoordinatorBlockState;
+  kind?: CoordinatorBlockKind;
+  /** @nullable */
+  blockedReason?: string | null;
+  /** @nullable */
+  blockId?: string | null;
   /** @nullable */
   closedReason: string | null;
   volunteers: CoordinatorVolunteer[];
@@ -923,6 +1009,14 @@ export interface MessageReadResult {
   readAt: string;
 }
 
+export type ShiftOccurrenceKind = typeof ShiftOccurrenceKind[keyof typeof ShiftOccurrenceKind];
+
+
+export const ShiftOccurrenceKind = {
+  regular: 'regular',
+  custom: 'custom',
+} as const;
+
 export interface ShiftOccurrence {
   assignmentId: string;
   date: string;
@@ -932,6 +1026,7 @@ export interface ShiftOccurrence {
   endsAt: string;
   /** @nullable */
   label: string | null;
+  kind?: ShiftOccurrenceKind;
 }
 
 export type VolunteerResourceType = typeof VolunteerResourceType[keyof typeof VolunteerResourceType];
@@ -1402,6 +1497,11 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type LoadStandardGrid200 = {
+  created: number;
+  skipped: number;
+};
 
 export type DeleteResource200 = {
   ok: boolean;

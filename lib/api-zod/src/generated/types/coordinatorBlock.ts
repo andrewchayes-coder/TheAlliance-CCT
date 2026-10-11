@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CoordinatorBlockKind } from './coordinatorBlockKind';
 import type { CoordinatorBlockState } from './coordinatorBlockState';
 import type { CoordinatorVolunteer } from './coordinatorVolunteer';
 
@@ -22,6 +23,11 @@ export interface CoordinatorBlock {
   assignedCount: number;
   openSpots: number;
   state: CoordinatorBlockState;
+  kind?: CoordinatorBlockKind;
+  /** @nullable */
+  blockedReason?: string | null;
+  /** @nullable */
+  blockId?: string | null;
   /** @nullable */
   closedReason: string | null;
   volunteers: CoordinatorVolunteer[];

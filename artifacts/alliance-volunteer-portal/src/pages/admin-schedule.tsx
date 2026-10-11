@@ -3,7 +3,7 @@ import { useMemo, useState, useRef, type RefObject } from 'react';
 import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation, useSearch } from 'wouter';
 import { keepPreviousData } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Mail, Phone, RefreshCw, Settings } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Mail, Phone, RefreshCw, Settings } from 'lucide-react';
 import { getGetAdminScheduleWeekQueryKey, useGetAdminScheduleWeek, type CoordinatorBlock, type CoordinatorWeek } from '@workspace/api-client-react';
 import { AppLayout, Button } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
@@ -12,15 +12,21 @@ import { FETCH_CREDS } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { clock, pacificToday } from '@/components/volunteer-detail/format';
+import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
+import { CustomShiftDialog } from '@/components/schedule-extras/custom-shift-dialog';
+import { BlockedPanel, BlockThisShift, CustomPanel } from '@/components/schedule-extras/shift-panels';
 import { AdminScheduleControls } from '@/components/schedule-controls/admin-schedule-controls';
 import { POLL, addDays, dayLabel, fullName, layoutBlocks, timeGeometry, mondayOf, range, shortName, updatedLabel, validDate } from '@/lib/coordinator';
 
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 const STATE_CLS: Record<string, string> = {
   covered: 'border-blue bg-white', under: 'border-[var(--alliance-amber-ink)] bg-gray',
-  empty: 'border-[var(--alliance-amber-ink)] bg-[var(--alliance-amber)]', closed: 'border-navy-soft bg-gray opacity-80',
+  empty: 'border-[var(--alliance-amber-ink)] bg-[var(--alliance-amber)]', closed: 'border-navy-soft bg-gray opacity-80', blocked: 'border-navy-soft bg-gray',
 };
+const isCustom = (b: CoordinatorBlock) => b.kind === 'custom';
+const cardCls = (b: CoordinatorBlock) => b.state === 'blocked' ? STATE_CLS.blocked : isCustom(b) ? `border-2 border-dashed border-blue ${b.state === 'covered' ? 'bg-white' : 'bg-gray'}` : STATE_CLS[b.state];
 function badge(b: CoordinatorBlock) {
+  if (b.state === 'blocked') return `Blocked \u2013 ${b.blockedReason ?? 'no reason given'}`;
   if (b.state === 'under') return `${b.openSpots} open`;
   if (b.state === 'empty') return 'Open';
   if (b.state === 'closed') return `Closed${b.closedReason ? ` - ${b.closedReason}` : ''}`;
@@ -31,9 +37,10 @@ function BlockBody({ b, full }: { b: CoordinatorBlock; full?: boolean }) {
   const bd = badge(b);
   return (<>
     <span className="block text-xs font-bold">{clock(b.startTime)}<span className="block">to {clock(b.endTime)}</span></span>
+    {isCustom(b) && <OneTimeTag className="mb-0.5" />}
     {b.label && <span className="block truncate text-xs">{b.label}</span>}
-    <span className="block text-xs font-bold" data-testid={`filled-${b.slotId}-${b.date}`}>{b.assignedCount}/{b.capacity}</span>
-    {bd && <span title={bd} className={`block truncate text-xs font-bold ${b.state === 'closed' ? '' : 'text-[var(--alliance-amber-ink)]'}`}>{bd}</span>}
+    <span className="block text-xs font-bold" data-testid={`filled-${b.slotId}-${b.date}`}>{b.state === 'blocked' ? null : `${b.assignedCount}/${b.capacity}`}</span>
+    {bd && <span title={bd} className={`block truncate text-xs font-bold ${b.state === 'closed' || b.state === 'blocked' ? '' : 'text-[var(--alliance-amber-ink)]'}`}>{bd}</span>}
     {b.volunteers.map(v => <span key={v.assignmentId} className="block text-xs">
       <span className={`block truncate ${v.skipped ? 'line-through' : ''}`}>{full ? fullName(v) : shortName(v)}<TestBadge test={v.isTestAccount} /></span>
       {v.skipped && <span className="block text-sm">week off</span>}
@@ -63,6 +70,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
             <div><dt className="alliance-label">Capacity</dt><dd data-testid="text-drawer-capacity">{block.capacity}</dd></div>
             <div><dt className="alliance-label">Assigned</dt><dd>{block.assignedCount}</dd></div>
           </dl>
+          {isCustom(block) && <div className="mt-2"><OneTimeTag /></div>}
           {block.closedReason && <p className="mt-3 rounded-lg bg-gray p-3 text-sm">Closed: {block.closedReason}</p>}
           <h3 className="alliance-label mt-5">Volunteers</h3>
           {block.volunteers.length === 0 ? <p className="mt-2 text-sm">No one assigned.</p> : (
@@ -80,7 +88,12 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
               ))}
             </ul>
           )}
-          <AdminScheduleControls key={`${block.slotId}-${block.date}`} slotId={block.slotId} closed={block.state === 'closed'} closedReason={block.closedReason} />
+          {block.state === 'blocked' ? <BlockedPanel blockId={block.blockId} reason={block.blockedReason} />
+            : isCustom(block) ? <CustomPanel key={block.slotId} shiftId={block.slotId} />
+            : (<>
+              <AdminScheduleControls key={`${block.slotId}-${block.date}`} slotId={block.slotId} closed={block.state === 'closed'} closedReason={block.closedReason} />
+              {block.state !== 'closed' && <BlockThisShift key={`b-${block.slotId}-${block.date}`} slotId={block.slotId} date={block.date} />}
+            </>)}
         </>)}
       </SheetContent>
     </Sheet>
@@ -91,7 +104,7 @@ function Desktop({ week, onOpen }: { week: CoordinatorWeek; onOpen: (b: Coordina
   const { hours, height, position } = useMemo(() => timeGeometry(week.blocks), [week.blocks]);
   return (
     <div className="alliance-card hidden overflow-x-auto lg:block" data-testid="grid-week">
-      <div className="grid min-w-[760px]" style={{ gridTemplateColumns: '56px repeat(5, minmax(0, 1fr))' }}>
+      <div className="grid min-w-[760px]" style={{ gridTemplateColumns: `56px repeat(${week.days.length}, minmax(0, 1fr))` }}>
         <div />
         {week.days.map(day => (
           <div key={day.date} className={`border-b border-gray px-2 pb-2 text-center ${day.date === week.today ? 'font-bold text-blue' : ''}`} data-testid={`head-day-${day.date}`}>
@@ -107,11 +120,12 @@ function Desktop({ week, onOpen }: { week: CoordinatorWeek; onOpen: (b: Coordina
           return (
             <div key={day.date} className={`relative border-l border-gray ${day.date === week.today ? 'bg-blue/5' : ''} ${day.closedReason ? 'bg-gray/60' : ''}`} style={{ height }}>
               {hours.map(h => <div key={h} className="absolute inset-x-0 border-t border-gray" style={{ top: position(h) }} />)}
+              {hours.slice(0, -1).map(h => <div key={`half-${h}`} className="absolute inset-x-0 border-t border-dotted border-gray/70" style={{ top: position(h + 30) }} />)}
               {lay.map(({ b, lane, lanes }) => {
                 return (
                   <button key={`${b.slotId}-${b.date}`} type="button" onClick={event => onOpen(b, event.currentTarget)} data-testid={`block-${b.slotId}-${b.date}`}
                     aria-label={`${range(b)}, ${b.state}, ${b.assignedCount} of ${b.capacity} assigned`}
-                    className={`absolute overflow-hidden rounded-md border-l-4 p-1 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-blue ${STATE_CLS[b.state]}`}
+                    className={`absolute overflow-hidden rounded-md ${isCustom(b) ? '' : 'border-l-4'} p-1 text-left shadow-sm focus-visible:outline-2 focus-visible:outline-blue ${cardCls(b)}`}
                     style={{ top: position(mins(b.startTime)), height: position(mins(b.endTime)) - position(mins(b.startTime)) - 2, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 4px)` }}>
                     <BlockBody b={b} />
                   </button>
@@ -130,7 +144,7 @@ function Mobile({ week, pick, setPick, onOpen }: { week: CoordinatorWeek; pick: 
   const list = week.blocks.filter(b => b.date === pick).sort((a, b) => a.startTime.localeCompare(b.startTime));
   return (
     <div className="lg:hidden" data-testid="list-day">
-      <div role="group" aria-label="Choose a day" className="grid grid-cols-5 gap-1 rounded-lg bg-gray p-1">
+      <div role="group" aria-label="Choose a day" className="grid gap-1 rounded-lg bg-gray p-1" style={{ gridTemplateColumns: `repeat(${week.days.length}, minmax(0, 1fr))` }}>
         {week.days.map(d => (
           <button key={d.date} type="button" aria-pressed={d.date === pick} onClick={() => setPick(d.date)} data-testid={`button-day-${d.date}`}
             className={`min-h-12 min-w-11 rounded-md text-xs font-bold ${d.date === pick ? 'bg-white shadow-sm' : ''} ${d.date === week.today ? (d.date === pick ? 'text-blue' : 'underline decoration-blue decoration-2 underline-offset-4') : ''}`}>
@@ -142,8 +156,8 @@ function Mobile({ week, pick, setPick, onOpen }: { week: CoordinatorWeek; pick: 
       {list.length === 0 ? <p className="alliance-card mt-3" data-testid="text-no-blocks">Nothing is scheduled for this day yet.</p> : (
         <ul className="mt-3 space-y-2">
           {list.map(b => (
-            <li key={b.slotId}><button type="button" onClick={event => onOpen(b, event.currentTarget)} data-testid={`block-${b.slotId}-${b.date}`}
-              className={`w-full rounded-lg border-l-4 p-3 text-left ${STATE_CLS[b.state]}`}><BlockBody b={b} /></button></li>
+            <li key={`${b.slotId}-${b.date}`}><button type="button" onClick={event => onOpen(b, event.currentTarget)} data-testid={`block-${b.slotId}-${b.date}`}
+              className={`w-full rounded-lg ${isCustom(b) ? '' : 'border-l-4'} p-3 text-left ${cardCls(b)}`}><BlockBody b={b} /></button></li>
           ))}
         </ul>
       )}
@@ -163,6 +177,7 @@ function Body() {
   });
   const week = q.data;
   const stale = !!week && week.weekStart !== weekStart;
+  const [adding, setAdding] = useState(false);
   const [sel, setSel] = useState<{ slotId: string; date: string } | null>(null);
   const returnFocus = useRef<HTMLButtonElement | null>(null);
   const openBlock = (b: CoordinatorBlock, trigger: HTMLButtonElement) => {
@@ -180,13 +195,16 @@ function Body() {
       <div data-testid="view-admin-schedule">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div><p className="alliance-label">Coordinator</p><h1 className="alliance-display mt-2">Master schedule</h1></div>
+          <div className="flex flex-wrap items-center gap-3">
+          <Button variant="secondary" onClick={() => setAdding(true)} data-testid="button-add-one-time"><Plus size={16} aria-hidden="true" className="mr-1" />Add a one-time shift</Button>
           <Link href="/admin/schedule/settings" data-testid="link-schedule-settings" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue underline underline-offset-4"><Settings size={16} aria-hidden="true" />Schedule settings</Link>
+          </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="nav-week">
           <Button variant="secondary" onClick={() => go(addDays(weekStart, -7))} aria-label="Previous week" data-testid="button-prev-week"><ChevronLeft size={18} aria-hidden="true" /></Button>
           <Button variant="secondary" onClick={() => go(week?.today ?? today)} disabled={thisWeek} data-testid="button-today">Today</Button>
           <Button variant="secondary" onClick={() => go(addDays(weekStart, 7))} aria-label="Next week" data-testid="button-next-week"><ChevronRight size={18} aria-hidden="true" /></Button>
-          <p className="ml-1 font-bold" data-testid="text-week-label" aria-live="polite">{dayLabel(weekStart, { month: 'short', day: 'numeric' })} to {dayLabel(addDays(weekStart, 4), { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          <p className="ml-1 font-bold" data-testid="text-week-label" aria-live="polite">{dayLabel(weekStart, { month: 'short', day: 'numeric' })} to {dayLabel(week?.days[week.days.length - 1]?.date ?? addDays(weekStart, 4), { month: 'short', day: 'numeric', year: 'numeric' })}</p>
           {week && <p className="ml-auto text-sm text-navy-soft" data-testid="text-updated">Updated {updatedLabel(week.updatedAt)}</p>}
         </div>
         {summary && <p className="mt-2 text-sm" data-testid="text-week-summary">{summary}</p>}
@@ -208,6 +226,7 @@ function Body() {
           </>)}
         </div>
       </div>
+      {adding && <CustomShiftDialog onClose={() => setAdding(false)} onDone={() => undefined} />}
       <Drawer block={block} gone={gone} onClose={() => setSel(null)} returnFocus={returnFocus} />
     </AppLayout>
   );

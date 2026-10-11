@@ -11,6 +11,75 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/schedule/standard-grid:
+    post:
+      operationId: loadStandardGrid
+      tags: [schedule]
+      responses:
+        '200': { description: Grid loaded, content: { application/json: { schema: { type: object, required: [created, skipped], properties: { created: { type: integer }, skipped: { type: integer } } } } } }
+  /admin/schedule/extras:
+    get:
+      operationId: getScheduleExtras
+      tags: [schedule]
+      responses:
+        '200': { description: Staff schedule extras, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/blocks:
+    post:
+      operationId: blockScheduleSlots
+      tags: [schedule]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SlotBlockInput' } } } }
+      responses:
+        '200': { description: Blocks saved, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/blocks/{blockId}:
+    delete:
+      operationId: unblockScheduleSlot
+      tags: [schedule]
+      parameters: [{ name: blockId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Block removed, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/custom-shifts:
+    post:
+      operationId: createCustomShift
+      tags: [schedule]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CustomShiftInput' } } } }
+      responses:
+        '200': { description: Shift created, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/custom-shifts/{customShiftId}/cancel:
+    post:
+      operationId: cancelCustomShift
+      tags: [schedule]
+      parameters: [{ name: customShiftId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Shift cancelled, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/custom-shifts/{customShiftId}/assignments:
+    post:
+      operationId: assignCustomShift
+      tags: [schedule]
+      parameters: [{ name: customShiftId, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CustomAssignInput' } } } }
+      responses:
+        '200': { description: Assigned, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /admin/schedule/custom-shifts/{customShiftId}/assignments/{assignmentId}:
+    delete:
+      operationId: removeCustomShiftAssignment
+      tags: [schedule]
+      parameters: [{ name: customShiftId, in: path, required: true, schema: { type: string } }, { name: assignmentId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Removed, content: { application/json: { schema: { $ref: '#/components/schemas/ScheduleExtras' } } } }
+  /volunteer/custom-shifts/{customShiftId}/claim:
+    post:
+      operationId: claimCustomShift
+      tags: [schedule]
+      parameters: [{ name: customShiftId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Spot reserved, content: { application/json: { schema: { $ref: '#/components/schemas/VolunteerSchedule' } } } }
+  /volunteer/custom-shifts/{customShiftId}/cancel:
+    post:
+      operationId: cancelOwnCustomShift
+      tags: [schedule]
+      parameters: [{ name: customShiftId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Reservation cancelled, content: { application/json: { schema: { $ref: '#/components/schemas/VolunteerSchedule' } } } }
   /resources:
     get:
       operationId: getPublishedResourceList
@@ -1169,6 +1238,76 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    CustomAssignInput:
+      type: object
+      required: [userId, override]
+      properties:
+        userId: { type: string }
+        override: { type: boolean }
+        reason: { type: string, maxLength: 2000 }
+    SlotBlockInput:
+      type: object
+      required: [fromDate, toDate, reason, emailVolunteers]
+      properties:
+        fromDate: { type: string }
+        toDate: { type: string }
+        slotIds: { type: array, items: { type: string } }
+        reason: { type: string, minLength: 1, maxLength: 1000 }
+        emailVolunteers: { type: boolean, default: true }
+    SlotBlock:
+      type: object
+      required: [id, shiftSlotId, date, reason]
+      properties:
+        id: { type: string }
+        shiftSlotId: { type: string }
+        date: { type: string }
+        reason: { type: string }
+    CustomShiftInput:
+      type: object
+      required: [date, startTime, endTime, capacity, openToVolunteers]
+      properties:
+        date: { type: string }
+        startTime: { type: string }
+        endTime: { type: string }
+        capacity: { type: integer, minimum: 1, maximum: 10, default: 2 }
+        label: { type: [string, 'null'], maxLength: 120 }
+        openToVolunteers: { type: boolean, default: false }
+    VolunteerCustomShift:
+      allOf:
+        - { $ref: '#/components/schemas/CustomShiftInput' }
+        - type: object
+          required: [id, assignedCount, openSpots, ownAssignmentId, canCancel]
+          properties:
+            id: { type: string }
+            assignedCount: { type: integer }
+            openSpots: { type: integer }
+            ownAssignmentId: { type: [string, 'null'] }
+            canCancel: { type: boolean }
+    AdminCustomShift:
+      allOf:
+        - { $ref: '#/components/schemas/CustomShiftInput' }
+        - type: object
+          required: [id, assignments]
+          properties:
+            id: { type: string }
+            assignments:
+              type: array
+              items:
+                type: object
+                required: [id, userId, volunteerProfileId, firstName, lastName, isTestAccount]
+                properties:
+                  id: { type: string }
+                  userId: { type: string }
+                  volunteerProfileId: { type: string }
+                  firstName: { type: string }
+                  lastName: { type: string }
+                  isTestAccount: { type: boolean }
+    ScheduleExtras:
+      type: object
+      required: [blocks, customShifts]
+      properties:
+        blocks: { type: array, items: { $ref: '#/components/schemas/SlotBlock' } }
+        customShifts: { type: array, items: { $ref: '#/components/schemas/AdminCustomShift' } }
     EmailLogType:
       type: string
       enum: [verification, password_reset, welcome, reminder, message, admin_alert, invite]
@@ -1525,6 +1664,7 @@ components:
         today: { type: string }
         slots: { type: array, items: { $ref: '#/components/schemas/VolunteerAvailableSlot' } }
         assignments: { type: array, items: { $ref: '#/components/schemas/VolunteerStandingShift' } }
+        customShifts: { type: array, items: { $ref: '#/components/schemas/VolunteerCustomShift' } }
     CoordinatorVolunteer:
       type: object
       required: [assignmentId, userId, firstName, lastName, email, phone, skipped, accountActive]
@@ -1553,7 +1693,10 @@ components:
         capacity: { type: integer }
         assignedCount: { type: integer }
         openSpots: { type: integer }
-        state: { type: string, enum: [covered, under, empty, closed] }
+        state: { type: string, enum: [covered, under, empty, closed, blocked] }
+        kind: { type: string, enum: [regular, custom] }
+        blockedReason: { type: [string, 'null'] }
+        blockId: { type: [string, 'null'] }
         closedReason: { type: [string, 'null'] }
         volunteers:
           type: array
@@ -1838,6 +1981,7 @@ components:
         startsAt: { type: string, format: date-time }
         endsAt: { type: string, format: date-time }
         label: { type: [string, "null"] }
+        kind: { type: string, enum: [regular, custom] }
     VolunteerResource:
       type: object
       required: [id, title, type, summary, category, body, href, isQuickLink]

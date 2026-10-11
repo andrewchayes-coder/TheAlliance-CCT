@@ -4,10 +4,13 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 
 ## Unreleased
 ### Added
+- Community Care Team standard grid loader (40 overlapping weekday slots), date-specific shift blocks, and one-time shifts with volunteer signup and audited staff capacity overrides.
+- One-time shifts in live dispatch, coverage alerts, reminders, schedule CSV and volunteer upcoming shifts; date blocks suppress operational occurrences without cancelling standing assignments.
 - Staff roster with configurable per-admin columns, global sorting, contact links and new profile filters; private profile and inline start-date editors.
 - Fixed, single-screen CCT profile onboarding with per-field draft saves, US address, past DOB and emergency contact details.
 - Staff-editable volunteer start date with first-activation default and audited start-date/status changes.
 ### Changed
+- Master schedule uses a 30-minute grid with explicit odd/even-hour lanes, gray blocked occurrences and dashed-blue one-time shifts. Inactivation/deactivation also releases future one-time reservations.
 - Roster attention counts now flag active volunteers without shifts, incomplete onboarding older than seven days, and onboarding older than thirty days. Private-field edits record field names only; county editing is staff-only.
 - Refreshed the five quick-login personas for the three-status model: ready-to-activate and new onboarding accounts replace the old training/applicant identities in place, with updated fake profile defaults and labels.
 - Simplified volunteer workflow to Onboarding, Active and Inactive. Legacy enum values/data remain intact and read as Onboarding.

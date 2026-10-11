@@ -3,7 +3,7 @@ import {
   ListVolunteerRosterQueryParams, ListVolunteerRosterResponse, GetAdminVolunteerParams,
   ExportVolunteerRosterQueryParams, ExportVolunteerScheduleQueryParams,
 } from '@workspace/api-zod';
-import { rosterSnapshot, filterRoster, sortRoster, rosterEntry, rosterSummary, rosterCsv, scheduleCsv } from '../admin-roster';
+import { rosterSnapshot, filterRoster, sortRoster, rosterEntry, rosterSummary, rosterCsv, scheduleCsv, customCsvRows } from '../admin-roster';
 import { pacificDay } from '../volunteer-shifts';
 import { loadAdminVolunteerDetail, WorkflowError } from '../admin-volunteer-detail';
 
@@ -33,7 +33,7 @@ for (const kind of ['roster', 'schedule'] as const) {
     res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store',
       'Content-Disposition': `attachment; filename="alliance-${kind}-${pacificDay(now)}.csv"`,
       'X-Content-Type-Options': 'nosniff' });
-    res.send(kind === 'roster' ? rosterCsv(matched) : scheduleCsv(matched));
+    res.send(kind === 'roster' ? rosterCsv(matched) : scheduleCsv(matched,await customCsvRows(matched,now)));
   });
 }
 router.get('/volunteers/:userId', async (req, res): Promise<void> => {

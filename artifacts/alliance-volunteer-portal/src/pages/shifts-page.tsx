@@ -4,7 +4,7 @@ import { Link } from 'wouter';
 import { CheckCircle2 } from 'lucide-react';
 import {
   getGetVolunteerDashboardQueryKey, getGetVolunteerScheduleQueryKey, useBookVolunteerShift, useChangeVolunteerShift,
-  useDropVolunteerShift, useGetVolunteerSchedule, useSkipVolunteerShift, useUndoVolunteerSkip,
+  useClaimCustomShift, useCancelOwnCustomShift, useDropVolunteerShift, useGetVolunteerSchedule, useSkipVolunteerShift, useUndoVolunteerSkip,
   type VolunteerShiftResult, type VolunteerStandingShift,
 } from '@workspace/api-client-react';
 import { EmptyState } from '@/components/brand-system';
@@ -14,6 +14,9 @@ import { ErrorBlock, LoadingBlock, VolunteerPage, volunteerRouteIncomplete } fro
 import { ShiftGrid } from '@/components/shift-grid';
 import { ShiftCards, ContactLink } from '@/components/shift-cards';
 import { ShiftDialogs, type Actions, type Dlg } from '@/components/shift-dialogs';
+import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
+import { Button } from '@/components/brand-system';
+import { clock, calDate } from '@/components/volunteer-detail/format';
 import { slotTitle } from '@/lib/shift-utils';
 
 function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => void }) {
@@ -39,6 +42,20 @@ function ShiftsBody() {
   const opts = { request: auth.request };
   const book = useBookVolunteerShift(opts), change = useChangeVolunteerShift(opts), drop = useDropVolunteerShift(opts);
   const skip = useSkipVolunteerShift(opts), undo = useUndoVolunteerSkip(opts);
+  const claim = useClaimCustomShift(opts), cancelOwn = useCancelOwnCustomShift(opts);
+  const [customBusy, setCustomBusy] = useState<string | null>(null);
+  const [customErr, setCustomErr] = useState<string | null>(null);
+  const runCustom = (id: string, fn: () => Promise<unknown>) => {
+    setCustomBusy(id); setCustomErr(null);
+    fn().then(r => {
+      qc.setQueryData(getGetVolunteerScheduleQueryKey(), r);
+      void qc.invalidateQueries({ queryKey: getGetVolunteerScheduleQueryKey() });
+      void qc.invalidateQueries({ queryKey: getGetVolunteerDashboardQueryKey() });
+    }).catch(e => {
+      setCustomErr(readError(e, "We couldn't save that change. Please try again.").message);
+      void qc.invalidateQueries({ queryKey: getGetVolunteerScheduleQueryKey() });
+    }).finally(() => setCustomBusy(null));
+  };
   const [dlg, setDlg] = useState<Dlg | null>(null);
   const [changing, setChanging] = useState<VolunteerStandingShift | null>(null);
   const [done, setDone] = useState<VolunteerShiftResult | null>(null);
@@ -94,6 +111,28 @@ function ShiftsBody() {
                 onUndo={(a, d) => { if (d.skipId) { const skipId = d.skipId; void run(() => undo.mutateAsync({ assignmentId: a.id, skipId })); } }} />
             )}
           </section>
+          {(s.customShifts?.length ?? 0) > 0 && (
+            <section aria-labelledby="one-time-h" data-testid="section-one-time-shifts">
+              <h2 id="one-time-h" className="alliance-section-kicker mb-3">One-time shifts</h2>
+              {customErr && <Notice>{customErr}</Notice>}
+              <ul className="grid gap-2">
+                {s.customShifts!.map(c => (
+                  <li key={c.id} className="rounded-xl border-2 border-dashed border-blue bg-white p-4" data-testid={`card-custom-${c.id}`}>
+                    <p className="font-bold">{calDate(c.date)}, {clock(c.startTime)} to {clock(c.endTime)} <OneTimeTag className="ml-1 align-middle" /></p>
+                    {c.label && <p className="text-sm">{c.label}</p>}
+                    <p className="mt-1 text-sm">{c.ownAssignmentId ? 'You are signed up.' : `${c.openSpots} ${c.openSpots === 1 ? 'spot' : 'spots'} open`}</p>
+                    <div className="mt-3">
+                      {c.ownAssignmentId ? (c.canCancel
+                        ? <Button type="button" variant="secondary" disabled={customBusy === c.id} onClick={() => runCustom(c.id, () => cancelOwn.mutateAsync({ customShiftId: c.id }))} data-testid={`button-cancel-custom-${c.id}`}>{customBusy === c.id ? 'Cancelling...' : 'Cancel my spot'}</Button>
+                        : <p className="text-sm" data-testid={`text-contact-custom-${c.id}`}>This shift is less than 24 hours away. To cancel, contact <ContactLink email={s.contactEmail} />.</p>)
+                        : c.openToVolunteers && c.openSpots > 0 && (
+                          <Button type="button" disabled={!s.canBook || customBusy === c.id} onClick={() => runCustom(c.id, () => claim.mutateAsync({ customShiftId: c.id }))} data-testid={`button-claim-custom-${c.id}`}>{customBusy === c.id ? 'Claiming...' : 'Claim this shift'}</Button>)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           <section aria-labelledby="week-h">
             <h2 id="week-h" className="alliance-section-kicker mb-3">{changing ? 'Pick a new shift' : 'Weekly schedule, Monday to Friday'}</h2>
             {changing && (

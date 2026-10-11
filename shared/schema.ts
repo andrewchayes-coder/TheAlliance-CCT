@@ -290,6 +290,33 @@ export const insertShiftSlotSchema = createInsertSchema(shiftSlotsTable, {
 }).omit(generatedFields).refine(value => value.endTime > value.startTime, {
   path: ['endTime'], message: 'The end time must be after the start time',
 });
+
+export const slotBlocksTable = pgTable('slot_blocks', {
+  id: primaryKey(),
+  shiftSlotId: uuid('shift_slot_id').notNull().references(()=>shiftSlotsTable.id,{onDelete:'restrict'}),
+  date: date('date',{mode:'string'}).notNull(),
+  reason: text('reason').notNull(),
+  createdByUserId: uuid('created_by_user_id').notNull().references(()=>usersTable.id,{onDelete:'restrict'}),
+  createdAt: timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},table=>[uniqueIndex('slot_blocks_slot_date_unique').on(table.shiftSlotId,table.date)]);
+
+export const customShiftsTable = pgTable('custom_shifts', {
+  id: primaryKey(), date: date('date',{mode:'string'}).notNull(),
+  startTime:text('start_time').notNull(),endTime:text('end_time').notNull(),
+  capacity:integer('capacity').notNull().default(2),label:text('label'),
+  openToVolunteers:boolean('open_to_volunteers').notNull().default(false),
+  createdByUserId:uuid('created_by_user_id').notNull().references(()=>usersTable.id,{onDelete:'restrict'}),
+  cancelledAt:timestamp('cancelled_at',{withTimezone:true}),
+  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},table=>[check('custom_shifts_capacity_valid',sql`${table.capacity} between 1 and 10`),
+  check('custom_shifts_time_valid',sql`${table.startTime} ~ '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$' and ${table.endTime} ~ '^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$' and ${table.startTime} < ${table.endTime}`),
+  index('custom_shifts_date_idx').on(table.date)]);
+export const customShiftAssignmentsTable = pgTable('custom_shift_assignments', {
+  id:primaryKey(),customShiftId:uuid('custom_shift_id').notNull().references(()=>customShiftsTable.id,{onDelete:'restrict'}),
+  volunteerProfileId:uuid('volunteer_profile_id').notNull().references(()=>volunteerProfilesTable.id,{onDelete:'restrict'}),
+  createdByUserId:uuid('created_by_user_id').notNull().references(()=>usersTable.id,{onDelete:'restrict'}),
+  cancelledAt:timestamp('cancelled_at',{withTimezone:true}),createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+},table=>[uniqueIndex('custom_shift_assignments_live_unique').on(table.customShiftId,table.volunteerProfileId).where(sql`${table.cancelledAt} is null`)]);
 export const insertShiftAssignmentSchema = createInsertSchema(shiftAssignmentsTable, {
   startDate: calendarDate, endDate: calendarDate.nullable().optional(),
 }).omit(generatedFields).refine(value => !value.endDate || value.endDate >= value.startDate || !!value.endedReason, {

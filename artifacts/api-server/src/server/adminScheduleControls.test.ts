@@ -34,11 +34,13 @@ beforeAll(async () => {
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   for (const role of ['admin', 'volunteer', 'volunteer', 'volunteer'] as const) {
     const [u] = await db.insert(usersTable).values({ role, email: `${tag}-${ids.length}@example.invalid`,
-      firstName: 'Jordan', lastName: 'Review', emailVerifiedAt: new Date(), passwordHash: 'not-usable' }).returning();
+      firstName: 'Jordan', lastName: 'Review',phone:'5555550100', emailVerifiedAt: new Date(), passwordHash: 'not-usable' }).returning();
     ids.push(u!.id);
     if (role === 'volunteer') {
       const [p] = await db.insert(volunteerProfilesTable).values({ userId: u!.id, status: 'active',
         agreementAcknowledgedAt: new Date(), onboardingCompletedAt: new Date(), certificationStatus: 'complete',
+        dateOfBirth:'1990-01-01',addressLine1:'123 Test St',city:'Auburn',state:'CA',zip:'95603',
+        emergencyContactName:'Test Contact',emergencyContactRelationship:'Friend',emergencyContactPhone:'5555550100',
         backgroundCheckStatus: 'cleared' }).returning(); profiles.push(p!.id);
     }
   }
@@ -89,8 +91,8 @@ it('requires an explicit reason for either override, audits both, and never bypa
   expect(all.some(a => a.details?.reason === 'Cover the referral surge' && JSON.stringify(a.details.overrides).includes('volunteer_shift_limit'))).toBe(true);
   await expect(adminScheduleAction(actor, { kind: 'assign', userId: ids[2]!, slotId: slots[0]!, override: false }, now)).rejects.toMatchObject({ status: 422 });
   await adminScheduleAction(actor, { kind: 'assign', userId: ids[2]!, slotId: slots[0]!, override: true, reason: 'Train alongside Jordan' }, now);
-  await db.update(volunteerProfilesTable).set({ backgroundCheckStatus: 'pending' }).where(eq(volunteerProfilesTable.id, profiles[2]!));
-  await expect(adminScheduleAction(actor, { kind: 'assign', userId: ids[3]!, slotId: slots[3]!, override: true, reason: 'Cannot bypass clearance' }, now))
+  await db.update(volunteerProfilesTable).set({ dateOfBirth: null }).where(eq(volunteerProfilesTable.id, profiles[2]!));
+  await expect(adminScheduleAction(actor, { kind: 'assign', userId: ids[3]!, slotId: slots[3]!, override: true, reason: 'Cannot bypass profile eligibility' }, now))
     .rejects.toMatchObject({ status: 422 });
   const [overlap] = await db.insert(shiftSlotsTable).values({ dayOfWeek: 3, startTime: '21:30', endTime: '22:30', capacity: 1, label: tag }).returning();
   slots.push(overlap!.id);
@@ -109,7 +111,7 @@ it('supports close-in week off and undo, logs removals, and sends one combined d
   expect(skip).toBeDefined();
   const [event] = await db.select().from(activityLogTable).where(and(eq(activityLogTable.volunteerProfileId, profiles[0]!),
     eq(activityLogTable.action, 'admin_shift_skip')));
-  const activeAdmins = await db.select({ id: usersTable.id }).from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true)));
+  const activeAdmins = await db.select({ id: usersTable.id }).from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true),eq(usersTable.isTestAccount,false)));
   const delivered = await db.select().from(notificationLogTable).where(eq(notificationLogTable.relatedId, event!.id));
   expect(delivered).toHaveLength(activeAdmins.length); expect(delivered.every(m => m.status === 'logged')).toBe(true);
   expect(delivered[0]!.subject).toContain('Jordan R. took the week off');
@@ -132,16 +134,16 @@ it('processes an empty digest without email and deduplicates a nonempty digest b
   expect(priorLogs).toHaveLength(0);
   try {
     await db.update(appSettingsTable).set({ dailyDigestEnabled: true, lastDigestDate: null }).where(eq(appSettingsTable.id, 'schedule'));
-    mock.mockResolvedValue({ slots: [], assignments: [], skips: [], closedDates: [] });
+    mock.mockResolvedValue({ slots: [], assignments: [], skips: [], closedDates: [],blocks:[],customShifts:[],customAssignments:[] });
     await coverage.runDailyDigest(at);
     expect((await coverage.alertSettings()).lastDigestDate).toBe(date);
     expect((await db.select().from(notificationLogTable).where(eq(notificationLogTable.relatedId, date)))).toHaveLength(0);
     await db.update(appSettingsTable).set({ lastDigestDate: null }).where(eq(appSettingsTable.id, 'schedule'));
     const [s] = await db.select().from(shiftSlotsTable).where(eq(shiftSlotsTable.id, slots[0]!));
-    mock.mockResolvedValue({ slots: [s!], assignments: [], skips: [], closedDates: [] });
+    mock.mockResolvedValue({ slots: [s!], assignments: [], skips: [], closedDates: [],blocks:[],customShifts:[],customAssignments:[] });
     await coverage.runDailyDigest(at); await coverage.runDailyDigest(at);
     const messages = await db.select().from(notificationLogTable).where(eq(notificationLogTable.relatedId, date));
-    const admins = await db.select().from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true)));
+    const admins = await db.select().from(usersTable).where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true),eq(usersTable.isTestAccount,false)));
     expect(messages).toHaveLength(admins.length); expect(messages.every(m => m.status === 'logged')).toBe(true);
     await db.update(appSettingsTable).set({ lastDigestDate: null }).where(eq(appSettingsTable.id, 'schedule'));
     await coverage.runDailyDigest(at); // Even if a worker retries the run, per-recipient notification history wins.

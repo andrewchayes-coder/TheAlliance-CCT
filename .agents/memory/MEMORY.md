@@ -17,3 +17,4 @@
 - [Production migrations](production-migrations.md) — use runtime production context; reconcile push-created schemas before baselining; never copy development fixtures.
 - [Production QA accounts](production-qa-accounts.md) — built-in synthetic personas are explicitly approved in production; never convert real users or copy other development fixtures.
 - [Staff profile privacy](staff-profile-privacy.md) — roster details at a glance; county is staff-managed and private-field edit audits record names, never values.
+- [CCT scheduling policy](cct-scheduling-policy.md) — intentional hourly overlap, date-specific blocks, and one-time shifts separate from standing commitments.

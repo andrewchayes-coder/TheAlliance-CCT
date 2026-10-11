@@ -14,7 +14,7 @@ export type CoordinatorData = Omit<ScheduleData, 'closedDates'> & { closedDates:
 export function coordinatorProjection(data: CoordinatorData,
   people: readonly CoordinatorPerson[], now = new Date()) {
   const service = createScheduleService(data, () => now);
-  const standing = createScheduleService({ ...data, skips: [], closedDates: [] });
+  const standing = createScheduleService({ ...data, skips: [], closedDates: [],blocks:[] });
   const persons = new Map(people.map(p => [p.profileId, p]));
   const today = pacificDay(now), currentWeek = mondayOf(today);
   const closure = new Map(data.closedDates.map(c => [c.date, c.reason]));
@@ -25,10 +25,12 @@ export function coordinatorProjection(data: CoordinatorData,
   };
   const block = (occ: ReturnType<typeof service.getOccurrences>[number], includeSkipped = false) => {
     const closedReason = closure.get(occ.date) ?? null;
-    const actual = closedReason !== null ? [] : actualOn(occ.date)
+    const blockedSlot=(data.blocks??[]).find(b=>b.shiftSlotId===occ.slot.id && b.date===occ.date);
+    const suppressed = closedReason!==null || !!blockedSlot;
+    const actual = suppressed ? [] : actualOn(occ.date)
       .find(o => o.slot.id === occ.slot.id)?.assignedVolunteers ?? [];
     const assigned = new Set(actual.map(a => a.volunteerProfileId));
-    const roster = closedReason !== null ? [] : includeSkipped ? occ.assignedVolunteers : actual;
+    const roster = suppressed ? [] : includeSkipped ? occ.assignedVolunteers : actual;
     const volunteers = roster.flatMap(a => {
       const p = persons.get(a.volunteerProfileId);
       if (!p) return [];
@@ -39,17 +41,19 @@ export function coordinatorProjection(data: CoordinatorData,
     const count = assigned.size, open = Math.max(0, occ.slot.capacity - count);
     return { slotId: occ.slot.id, date: occ.date, dayOfWeek: occ.slot.dayOfWeek, startTime: occ.slot.startTime,
       endTime: occ.slot.endTime, startsAt: occ.startsAt.toISOString(), endsAt: occ.endsAt.toISOString(), label: occ.slot.label,
-      capacity: occ.slot.capacity, assignedCount: count, openSpots: closedReason !== null ? 0 : open,
-      state: closedReason !== null ? 'closed' as const : count === 0 ? 'empty' as const : open ? 'under' as const : 'covered' as const,
+      capacity: occ.slot.capacity, assignedCount: count, openSpots: suppressed ? 0 : open,
+      kind:occ.kind??'regular',blockedReason:blockedSlot?.reason??null,blockId:blockedSlot && 'id' in blockedSlot ? String(blockedSlot.id):null,
+      state: closedReason !== null ? 'closed' as const : blockedSlot ? 'blocked' as const : count === 0 ? 'empty' as const : open ? 'under' as const : 'covered' as const,
       closedReason, volunteers };
   };
   function week(date: string) {
     const weekStart = mondayOf(date);
     const coverage = service.getCoverage(weekStart);
+    const weekend=(data.customShifts??[]).some(s=>!s.cancelledAt && s.date>=addCalendarDays(weekStart,5) && s.date<=addCalendarDays(weekStart,6));
     return { weekStart, today, updatedAt: now.toISOString(),
-      days: Array.from({ length: 5 }, (_, i) => ({ date: addCalendarDays(weekStart, i), dayOfWeek: i + 1,
+      days: Array.from({ length: weekend?7:5 }, (_, i) => ({ date: addCalendarDays(weekStart, i), dayOfWeek: (i+1)%7,
         closedReason: closure.get(addCalendarDays(weekStart, i)) ?? null })),
-      blocks: standing.getOccurrences(weekStart, addCalendarDays(weekStart, 4)).map(o => block(o, true)),
+      blocks: standing.getOccurrences(weekStart, addCalendarDays(weekStart, weekend?6:4)).map(o => block(o, true)),
       openSpots: coverage.reduce((n, c) => n + Math.max(0, c.capacity - c.assignedCount), 0),
       underCoveredShifts: coverage.filter(c => c.underCapacity).length };
   }

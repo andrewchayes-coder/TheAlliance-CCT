@@ -44,6 +44,15 @@ export function volunteerScheduleView(data: BookingData, profileId: string | und
   });
   return { canBook: blockedReasons.length === 0, blockedReasons, contactEmail,
     minShifts: appConfig.minShiftsPerVolunteer, maxShifts: appConfig.maxShiftsPerVolunteer, today,
+    customShifts:(data.customShifts??[]).filter(s=>!s.cancelledAt && slotInstant(s.date,s.endTime)>now &&
+      !data.closedDates.some(c=>c.date===s.date) && (s.openToVolunteers || (data.customAssignments??[]).some(a=>
+        a.customShiftId===s.id && a.volunteerProfileId===profileId && !a.cancelledAt))).map(s=>{
+        const assigned=(data.customAssignments??[]).filter(a=>a.customShiftId===s.id && !a.cancelledAt);
+        return {id:s.id,date:s.date,startTime:s.startTime,endTime:s.endTime,capacity:s.capacity,label:s.label,
+          openToVolunteers:s.openToVolunteers,assignedCount:assigned.length,openSpots:Math.max(0,s.capacity-assigned.length),
+          ownAssignmentId:assigned.find(a=>a.volunteerProfileId===profileId)?.id??null,
+          canCancel:slotInstant(s.date,s.startTime).getTime()-now.getTime()>=24*3600000};
+      }).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime)),
     slots: data.slots.filter(s => slotIsActive(s, today)).sort((a, b) =>
       a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime) || a.id.localeCompare(b.id)).map(s => {
         const heldCount = new Set(held.filter(a => a.shiftSlotId === s.id).map(a => a.volunteerProfileId)).size;

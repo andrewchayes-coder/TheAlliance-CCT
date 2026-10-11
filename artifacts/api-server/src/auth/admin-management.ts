@@ -7,6 +7,7 @@ import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin, randomToken } from './session';
 import { hashPassword, tokenHash } from './security';
 import { lockSchedule } from '../server/scheduleMutations';
+import {releaseCustomAssignments} from '../server/customShiftRelease';
 import { pacificDay, assignmentIsHeld } from '../server/scheduleService';
 import { onAssignmentsReleased, type ReleasedAssignments } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
@@ -126,11 +127,12 @@ export async function setAccountActive(actor: AdminActor, userId: string, isActi
           const today = pacificDay(new Date());
           const rows = (await tx.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.volunteerProfileId, profile.id)))
             .filter(a => assignmentIsHeld(a, today));
+          const custom=await releaseCustomAssignments(tx,profile.id);
           for (const a of rows) await tx.update(shiftAssignmentsTable).set({ endDate: today, endedReason: 'admin_removed', updatedAt: new Date() })
             .where(eq(shiftAssignmentsTable.id, a.id));
           const [activity] = await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id,
-            actorUserId: actor.id, action: 'account_deactivated', details: { previousAssignments: rows } }).returning();
-          event = { volunteerProfileId: profile.id, assignmentIds: rows.map(a => a.id), shiftSlotIds: [...new Set(rows.map(a => a.shiftSlotId))],
+            actorUserId: actor.id, action: 'account_deactivated', details: { previousAssignments: rows,previousCustomAssignments:custom } }).returning();
+          event = { volunteerProfileId: profile.id, assignmentIds: [...rows.map(a => a.id),...custom.map(a=>a.id)], shiftSlotIds: [...new Set([...rows.map(a => a.shiftSlotId),...custom.map(a=>a.customShiftId)])],
             effectiveDate: today, activityId: activity!.id };
         }
       }

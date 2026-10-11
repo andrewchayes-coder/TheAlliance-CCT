@@ -5,6 +5,14 @@ import { hasQuickLoginAccess, quickLoginNotFound } from './quick-login-lock';
 
 export type Guard = 'public' | 'public:quick-login' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  {method:'GET',path:'/admin/schedule/extras',guard:'admin'},
+  {method:'POST',path:'/admin/schedule/standard-grid',guard:'admin'},
+  {method:'POST',path:'/admin/schedule/blocks',guard:'admin'},
+  {method:'DELETE',path:/^\/admin\/schedule\/blocks\/[^/]+$/,guard:'admin'},
+  {method:'POST',path:'/admin/schedule/custom-shifts',guard:'admin'},
+  {method:'POST',path:/^\/admin\/schedule\/custom-shifts\/[^/]+\/(cancel|assignments)$/,guard:'admin'},
+  {method:'DELETE',path:/^\/admin\/schedule\/custom-shifts\/[^/]+\/assignments\/[^/]+$/,guard:'admin'},
+  {method:'POST',path:/^\/volunteer\/custom-shifts\/[^/]+\/(claim|cancel)$/,guard:'volunteer'},
   { method: 'GET', path: '/auth/quick-login/status', guard: 'public:quick-login' },
   { method: 'POST', path: '/auth/quick-login', guard: 'public:quick-login' },
   { method: 'GET', path: '/admin/resources', guard: 'admin' },

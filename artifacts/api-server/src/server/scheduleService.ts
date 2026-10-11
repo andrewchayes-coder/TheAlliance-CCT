@@ -13,10 +13,14 @@ export type ScheduleData = {
   slots: readonly ScheduleSlot[]; assignments: readonly ScheduleAssignment[];
   skips: readonly { shiftAssignmentId: string; skipDate: string }[];
   closedDates: readonly { date: string }[];
+  blocks?: readonly {shiftSlotId:string;date:string;reason:string}[];
+  customShifts?: readonly {id:string;date:string;startTime:string;endTime:string;capacity:number;label:string|null;openToVolunteers:boolean;cancelledAt:Date|null}[];
+  customAssignments?: readonly {id:string;customShiftId:string;volunteerProfileId:string;cancelledAt:Date|null}[];
 };
 export type Occurrence = {
   slot: ScheduleSlot; date: string; startsAt: Date; endsAt: Date;
   assignedVolunteers: { assignmentId: string; volunteerProfileId: string }[];
+  kind?: 'regular'|'custom';
 };
 export function slotIsActive(slot: ScheduleSlot, date: string): boolean {
   return slot.isActive && (!slot.retireAfterDate || slot.retireAfterDate >= date);
@@ -34,6 +38,7 @@ export function createScheduleService(data: ScheduleData, clock: () => Date = ()
   const assignments = data.assignments.map(a => ({ ...a }));
   const closed = new Set(data.closedDates.map(c => c.date));
   const skipped = new Set(data.skips.map(s => `${s.shiftAssignmentId}:${s.skipDate}`));
+  const blocked = new Set((data.blocks??[]).map(b=>`${b.shiftSlotId}:${b.date}`));
   const bySlot = new Map<string, ScheduleAssignment[]>();
   for (const a of assignments) {
     const list = bySlot.get(a.shiftSlotId);
@@ -48,7 +53,7 @@ export function createScheduleService(data: ScheduleData, clock: () => Date = ()
       if (closed.has(date)) continue;
       const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
       for (const slot of slots) {
-        if (slot.dayOfWeek !== weekday || !slotIsActive(slot, date)) continue;
+        if (slot.dayOfWeek !== weekday || !slotIsActive(slot, date) || blocked.has(`${slot.id}:${date}`)) continue;
         const seen = new Set<string>();
         const assignedVolunteers = (bySlot.get(slot.id) ?? [])
           .filter(a => assignmentIsHeld(a, date) && a.startDate <= date && !skipped.has(`${a.id}:${date}`))
@@ -57,6 +62,16 @@ export function createScheduleService(data: ScheduleData, clock: () => Date = ()
           .map(a => ({ assignmentId: a.id, volunteerProfileId: a.volunteerProfileId }));
         results.push({ slot: { ...slot }, date, startsAt: slotInstant(date, slot.startTime),
           endsAt: slotInstant(date, slot.endTime), assignedVolunteers });
+      }
+      for(const custom of data.customShifts??[]) {
+        if(custom.cancelledAt || custom.date !== date) continue;
+        const seen=new Set<string>();
+        const assignedVolunteers=(data.customAssignments??[]).filter(a=>a.customShiftId===custom.id && !a.cancelledAt)
+          .filter(a=>{if(seen.has(a.volunteerProfileId))return false;seen.add(a.volunteerProfileId);return true;})
+          .map(a=>({assignmentId:a.id,volunteerProfileId:a.volunteerProfileId}));
+        results.push({kind:'custom',slot:{id:custom.id,dayOfWeek:weekday,startTime:custom.startTime,endTime:custom.endTime,
+          capacity:custom.capacity,label:custom.label,isActive:true},date,startsAt:slotInstant(date,custom.startTime),
+          endsAt:slotInstant(date,custom.endTime),assignedVolunteers});
       }
     }
     return results.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime() || a.slot.id.localeCompare(b.slot.id));

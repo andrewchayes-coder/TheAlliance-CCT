@@ -6,6 +6,8 @@ import {
 import { safeResourceHref } from './onboarding';
 import { appConfig } from '@workspace/shared/appConfig';
 import { upcomingOccurrences, pacificDay } from './volunteer-shifts';
+import {loadScheduleService} from './server/scheduleRepository';
+import {addCalendarDays} from './server/scheduleService';
 
 const messageProjection = {
   id: messagesTable.id, recipientId: messageRecipientsTable.id, subject: messagesTable.subject,
@@ -51,8 +53,12 @@ export async function volunteerDashboard(userId: string) {
     db.select({ total: count() }).from(messageRecipientsTable)
       .where(and(eq(messageRecipientsTable.recipientUserId, userId), isNull(messageRecipientsTable.readAt))),
   ]);
-  const upcomingShifts = upcomingOccurrences(assignments, new Set(closures.map(row => row.date)),
-    new Set(skips.map(row => `${row.assignmentId}:${row.date}`)), now);
+  const service=active && profile?await loadScheduleService(profile.id):null;
+  const upcomingShifts = (service?.getOccurrences(today,addCalendarDays(today,365))??[])
+    .filter(o=>o.endsAt>now).flatMap(o=>o.assignedVolunteers.filter(a=>a.volunteerProfileId===profile!.id).map(a=>({
+      assignmentId:a.assignmentId,date:o.date,startTime:o.slot.startTime,endTime:o.slot.endTime,
+      startsAt:o.startsAt.toISOString(),endsAt:o.endsAt.toISOString(),label:o.slot.label,kind:o.kind??'regular',
+    }))).slice(0,4);
   return {
     shiftCount: assignments.length, nextShift: upcomingShifts[0] ?? null, upcomingShifts, quickLinks,
     unreadMessage: unread[0] ?? null, unreadCount: totals[0]?.total ?? 0, schedulingOpen: active && (!appConfig.requireAgreementAcknowledgment || !!profile?.agreementAcknowledgedAt),

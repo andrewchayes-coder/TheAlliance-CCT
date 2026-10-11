@@ -1,0 +1,33 @@
+The client confirmed the shift grid and admin controls. New tables reach production through Replit Publish (dev schema sync), so keep changes additive: no drops, renames, or pg enum types.
+
+STANDARD GRID
+Mon–Fri, 2-hour shifts that overlap by one hour, 9:00 AM–6:00 PM, capacity 2 each:
+9–11, 10–12, 11–1, 12–2, 1–3, 2–4, 3–5, 4–6 (8 shifts × 5 days = 40 slots).
+- Update the dev seed to this grid.
+- On /admin/schedule/settings, add a button "Load Community Care Team standard grid" with a confirm dialog. It creates any of the 40 slots that don't already exist (match on day + start + end) and skips the rest, so it's safe to click twice.
+- Keep the rule that a volunteer can't hold two overlapping shifts. Message: "That time overlaps with your {day} {time} shift."
+- Master schedule week view: with 8 overlapping shifts per day, render overlapping blocks in two lanes per day (shifts starting on odd hours in lane A, even hours in lane B) on a 30-minute time grid, so every block stays readable. The mobile day list is unchanged.
+- "On shift now" will often show two overlapping shifts (e.g., at 10:30 both 9–11 and 10–12 are live). Group by shift and show each shift's end time.
+
+BLOCK A SHIFT ON A DATE (new)
+- Table slot_blocks: id, shiftSlotId, date, reason, createdByUserId, createdAt. Unique (shiftSlotId, date).
+- Master schedule side panel: "Block this shift on {date}" (reason required) and "Unblock".
+- Settings page: "Block shifts" form with a date range and which shifts (all, or pick slots), for things like staff trainings or partial-day closures.
+- Blocked occurrences are excluded from getOccurrences, on-shift-now/up-next, coverage gaps, alerts, the daily digest, and reminders. Show them on the master schedule as gray "Blocked – {reason}".
+- Optional email to assigned volunteers (checkbox, default on): "No shift on {weekday, date} — {reason}. Your regular shift continues the following week."
+- Whole-day closed dates stay as they are.
+
+CUSTOM ONE-TIME SHIFTS (new)
+- Table custom_shifts: id, date, startTime, endTime, capacity (default 2), label, openToVolunteers (bool, default false), createdByUserId, cancelledAt, createdAt.
+- Table custom_shift_assignments: id, customShiftId, volunteerProfileId, createdByUserId, cancelledAt, createdAt.
+- Admins create one from the master schedule ("+ Add a one-time shift") or the settings page, and can assign volunteers directly. Exceeding capacity uses the same Override checkbox + reason as regular shifts, recorded in activity_log.
+- If openToVolunteers is on, active volunteers see it on /shifts under "One-time shifts" and can claim a spot. Same transaction + row lock as regular sign-up. A one-time shift does NOT count toward the 2 standing-shift cap, but it can't overlap one of their own shifts that day. Volunteers can cancel up to 24 hours before.
+- Include custom shifts in getOccurrences, on-shift-now/up-next, coverage, admin alerts, reminders (relatedId `custom:${customShiftId}:${volunteerProfileId}:24h`), the schedule CSV, and the volunteer dashboard's upcoming list.
+- Render them with a dashed blue border and a "One-time" tag.
+- Cancelling a custom shift asks for confirmation and emails the assigned volunteers.
+
+CAPACITY OVERRIDE
+Confirm the existing admin override (exceed capacity with Override + reason) works for regular and custom shifts, and that volunteers can never exceed capacity themselves.
+
+TESTS (Vitest, scheduleService)
+Add: the full overlapping grid, two overlapping live shifts in getOnShiftNow, a blocked occurrence, a custom shift in now/next and coverage, reminder de-dupe for custom shifts, and a DST-week custom shift.

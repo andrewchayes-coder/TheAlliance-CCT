@@ -9,26 +9,15 @@ import { RequireAdmin } from '@/auth/guards';
 import { FETCH_CREDS } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { clock } from '@/components/volunteer-detail/format';
+import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
 import { POLL, activeVols, activityTime, dayLabel, fullName, humanize, range, updatedLabel } from '@/lib/coordinator';
-
-type OnShift = { userId: string; name: string; phone: string | null; email: string; isTestAccount?: boolean; shifts: { id: string; end: string; label: string | null }[] };
-
-function dedupe(blocks: CoordinatorBlock[]): OnShift[] {
-  const m = new Map<string, OnShift>();
-  for (const b of blocks) for (const v of activeVols(b)) {
-    const e = m.get(v.userId) ?? { userId: v.userId, name: fullName(v), phone: v.phone, email: v.email, isTestAccount: v.isTestAccount, shifts: [] };
-    if (!e.shifts.some(s => s.id === b.slotId)) e.shifts.push({ id: b.slotId, end: b.endTime, label: b.label });
-    m.set(v.userId, e);
-  }
-  return [...m.values()].map(e => ({ ...e, shifts: e.shifts.sort((a, b) => a.end.localeCompare(b.end)) }));
-}
 
 const H = ({ children, id }: { children: string; id: string }) => <h2 id={id} className="alliance-label mb-3">{children}</h2>;
 
 function Body() {
   const q = useGetAdminOverview({ query: { queryKey: getGetAdminOverviewQueryKey(), ...POLL }, request: FETCH_CREDS });
   const d = q.data;
-  const people = d ? dedupe(d.onShiftNow) : [];
+  const cards = d ? d.onShiftNow.filter(b => b.state !== 'blocked') : [];
   return (
     <AppLayout role="admin">
       <div className="flex flex-wrap items-end justify-between gap-2" data-testid="view-admin-overview">
@@ -48,25 +37,30 @@ function Body() {
         )}
         <section aria-labelledby="on-now" className="mt-6" data-testid="section-on-shift">
           <H id="on-now">On shift now</H>
-          {people.length === 0 ? (
+          {cards.length === 0 ? (
             d.operatingNow ? (
               <div className="rounded-xl bg-[var(--alliance-amber)] p-5 text-[var(--alliance-amber-ink)]" data-testid="text-no-one-on-shift"><p className="flex items-center gap-2 text-lg font-bold"><AlertTriangle size={20} aria-hidden="true" />No one is on shift right now</p></div>
             ) : <div className="alliance-card" data-testid="text-outside-hours"><p className="font-bold">Outside shift hours</p></div>
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
-              {people.map(p => (
-                <li key={p.userId} className="alliance-card border-l-4 border-blue" data-testid={`card-on-shift-${p.userId}`}>
-                  <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{p.name}<TestBadge test={p.isTestAccount} /></Link>
-                  <p className="text-sm text-navy-soft" data-testid={`text-ends-${p.userId}`}>
-                    {p.shifts.map(s => `Shift ends ${clock(s.end)}${s.label ? ` (${s.label})` : ''}`).join('; ')}
-                  </p>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    {p.phone ? <a href={`tel:${p.phone}`} data-testid={`link-tel-${p.userId}`} className="flex min-h-11 items-center gap-2 rounded-lg bg-navy px-3 font-bold text-white"><Phone size={18} aria-hidden="true" />{p.phone}</a>
-                      : <span className="flex min-h-11 items-center rounded-lg bg-gray px-3 text-sm">No phone on file</span>}
-                    <a href={`mailto:${p.email}`} data-testid={`link-mail-${p.userId}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg bg-gray px-3 font-bold"><Mail size={18} aria-hidden="true" className="shrink-0" /><span className="truncate">{p.email}</span></a>
-                  </div>
-                </li>
-              ))}
+              {cards.map(b => {
+                const v = activeVols(b);
+                return (
+                  <li key={`${b.slotId}-${b.date}`} className="alliance-card border-l-4 border-blue" data-testid={`card-on-shift-${b.slotId}`}>
+                    <p className="font-bold" data-testid={`text-ends-${b.slotId}`}>Shift ends {clock(b.endTime)}{b.label ? ` (${b.label})` : ''}{b.kind === 'custom' && <OneTimeTag className="ml-2 align-middle" />}</p>
+                    {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-on-shift-${b.slotId}`}>Empty shift: no one assigned</p> : v.map(p => (
+                      <div key={p.assignmentId} className="mt-3 border-t border-gray pt-3" data-testid={`card-on-shift-${p.userId}`}>
+                        <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{fullName(p)}<TestBadge test={p.isTestAccount} /></Link>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {p.phone ? <a href={`tel:${p.phone}`} data-testid={`link-tel-${p.userId}`} className="flex min-h-11 items-center gap-2 rounded-lg bg-navy px-3 font-bold text-white"><Phone size={18} aria-hidden="true" />{p.phone}</a>
+                            : <span className="flex min-h-11 items-center rounded-lg bg-gray px-3 text-sm">No phone on file</span>}
+                          <a href={`mailto:${p.email}`} data-testid={`link-mail-${p.userId}`} className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg bg-gray px-3 font-bold"><Mail size={18} aria-hidden="true" className="shrink-0" /><span className="truncate">{p.email}</span></a>
+                        </div>
+                      </div>
+                    ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
@@ -78,7 +72,7 @@ function Body() {
                 const v = activeVols(b);
                 return (
                   <li key={`${b.slotId}-${b.date}`} className="alliance-card" data-testid={`card-up-next-${b.slotId}`}>
-                    <p className="font-bold">{dayLabel(b.date, { weekday: 'long', month: 'short', day: 'numeric' })}, {range(b)}{b.label ? ` · ${b.label}` : ''}</p>
+                    <p className="font-bold">{dayLabel(b.date, { weekday: 'long', month: 'short', day: 'numeric' })}, {range(b)}{b.label ? ` · ${b.label}` : ''}{b.kind === 'custom' && <OneTimeTag className="ml-2 align-middle" />}</p>
                     {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-shift-${b.slotId}`}>Empty shift: no one assigned</p>
                       : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-blue underline underline-offset-4">{fullName(x)}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
                   </li>

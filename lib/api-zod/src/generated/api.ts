@@ -8,6 +8,462 @@
 import * as zod from 'zod';
 
 
+export const LoadStandardGridResponse = zod.object({
+  "created": zod.number().int(),
+  "skipped": zod.number().int()
+})
+
+
+export const getScheduleExtrasResponseCustomShiftsItemOneCapacityDefault = 2;
+export const getScheduleExtrasResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const getScheduleExtrasResponseCustomShiftsItemOneLabelMax = 120;
+
+export const getScheduleExtrasResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const GetScheduleExtrasResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(getScheduleExtrasResponseCustomShiftsItemOneCapacityMax).default(getScheduleExtrasResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(getScheduleExtrasResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(getScheduleExtrasResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const blockScheduleSlotsBodyReasonMax = 1000;
+
+export const blockScheduleSlotsBodyEmailVolunteersDefault = true;
+
+export const BlockScheduleSlotsBody = zod.object({
+  "fromDate": zod.string(),
+  "toDate": zod.string(),
+  "slotIds": zod.array(zod.string()).optional(),
+  "reason": zod.string().min(1).max(blockScheduleSlotsBodyReasonMax),
+  "emailVolunteers": zod.boolean().default(blockScheduleSlotsBodyEmailVolunteersDefault)
+})
+
+export const blockScheduleSlotsResponseCustomShiftsItemOneCapacityDefault = 2;
+export const blockScheduleSlotsResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const blockScheduleSlotsResponseCustomShiftsItemOneLabelMax = 120;
+
+export const blockScheduleSlotsResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const BlockScheduleSlotsResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(blockScheduleSlotsResponseCustomShiftsItemOneCapacityMax).default(blockScheduleSlotsResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(blockScheduleSlotsResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(blockScheduleSlotsResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const UnblockScheduleSlotParams = zod.object({
+  "blockId": zod.coerce.string()
+})
+
+export const unblockScheduleSlotResponseCustomShiftsItemOneCapacityDefault = 2;
+export const unblockScheduleSlotResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const unblockScheduleSlotResponseCustomShiftsItemOneLabelMax = 120;
+
+export const unblockScheduleSlotResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const UnblockScheduleSlotResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(unblockScheduleSlotResponseCustomShiftsItemOneCapacityMax).default(unblockScheduleSlotResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(unblockScheduleSlotResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(unblockScheduleSlotResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const createCustomShiftBodyCapacityDefault = 2;
+export const createCustomShiftBodyCapacityMax = 10;
+
+export const createCustomShiftBodyLabelMax = 120;
+
+export const createCustomShiftBodyOpenToVolunteersDefault = false;
+
+export const CreateCustomShiftBody = zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(createCustomShiftBodyCapacityMax).default(createCustomShiftBodyCapacityDefault),
+  "label": zod.string().max(createCustomShiftBodyLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(createCustomShiftBodyOpenToVolunteersDefault)
+})
+
+export const createCustomShiftResponseCustomShiftsItemOneCapacityDefault = 2;
+export const createCustomShiftResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const createCustomShiftResponseCustomShiftsItemOneLabelMax = 120;
+
+export const createCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const CreateCustomShiftResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(createCustomShiftResponseCustomShiftsItemOneCapacityMax).default(createCustomShiftResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(createCustomShiftResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(createCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const CancelCustomShiftParams = zod.object({
+  "customShiftId": zod.coerce.string()
+})
+
+export const cancelCustomShiftResponseCustomShiftsItemOneCapacityDefault = 2;
+export const cancelCustomShiftResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const cancelCustomShiftResponseCustomShiftsItemOneLabelMax = 120;
+
+export const cancelCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const CancelCustomShiftResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(cancelCustomShiftResponseCustomShiftsItemOneCapacityMax).default(cancelCustomShiftResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(cancelCustomShiftResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(cancelCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const AssignCustomShiftParams = zod.object({
+  "customShiftId": zod.coerce.string()
+})
+
+export const assignCustomShiftBodyReasonMax = 2000;
+
+
+
+export const AssignCustomShiftBody = zod.object({
+  "userId": zod.string(),
+  "override": zod.boolean(),
+  "reason": zod.string().max(assignCustomShiftBodyReasonMax).optional()
+})
+
+export const assignCustomShiftResponseCustomShiftsItemOneCapacityDefault = 2;
+export const assignCustomShiftResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const assignCustomShiftResponseCustomShiftsItemOneLabelMax = 120;
+
+export const assignCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const AssignCustomShiftResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(assignCustomShiftResponseCustomShiftsItemOneCapacityMax).default(assignCustomShiftResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(assignCustomShiftResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(assignCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const RemoveCustomShiftAssignmentParams = zod.object({
+  "customShiftId": zod.coerce.string(),
+  "assignmentId": zod.coerce.string()
+})
+
+export const removeCustomShiftAssignmentResponseCustomShiftsItemOneCapacityDefault = 2;
+export const removeCustomShiftAssignmentResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const removeCustomShiftAssignmentResponseCustomShiftsItemOneLabelMax = 120;
+
+export const removeCustomShiftAssignmentResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const RemoveCustomShiftAssignmentResponse = zod.object({
+  "blocks": zod.array(zod.object({
+  "id": zod.string(),
+  "shiftSlotId": zod.string(),
+  "date": zod.string(),
+  "reason": zod.string()
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(removeCustomShiftAssignmentResponseCustomShiftsItemOneCapacityMax).default(removeCustomShiftAssignmentResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(removeCustomShiftAssignmentResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(removeCustomShiftAssignmentResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "userId": zod.string(),
+  "volunteerProfileId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "isTestAccount": zod.boolean()
+}))
+})))
+})
+
+
+export const ClaimCustomShiftParams = zod.object({
+  "customShiftId": zod.coerce.string()
+})
+
+export const claimCustomShiftResponseCustomShiftsItemOneCapacityDefault = 2;
+export const claimCustomShiftResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const claimCustomShiftResponseCustomShiftsItemOneLabelMax = 120;
+
+export const claimCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const ClaimCustomShiftResponse = zod.object({
+  "canBook": zod.boolean(),
+  "blockedReasons": zod.array(zod.string()),
+  "contactEmail": zod.string().nullable(),
+  "minShifts": zod.number().int(),
+  "maxShifts": zod.number().int(),
+  "today": zod.string(),
+  "slots": zod.array(zod.object({
+  "id": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "heldCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "startDates": zod.array(zod.string())
+})),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "slotId": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "nextDates": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+})),
+  "weeksOff": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+}))
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(claimCustomShiftResponseCustomShiftsItemOneCapacityMax).default(claimCustomShiftResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(claimCustomShiftResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(claimCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "canCancel": zod.boolean()
+}))).optional()
+})
+
+
+export const CancelOwnCustomShiftParams = zod.object({
+  "customShiftId": zod.coerce.string()
+})
+
+export const cancelOwnCustomShiftResponseCustomShiftsItemOneCapacityDefault = 2;
+export const cancelOwnCustomShiftResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const cancelOwnCustomShiftResponseCustomShiftsItemOneLabelMax = 120;
+
+export const cancelOwnCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
+export const CancelOwnCustomShiftResponse = zod.object({
+  "canBook": zod.boolean(),
+  "blockedReasons": zod.array(zod.string()),
+  "contactEmail": zod.string().nullable(),
+  "minShifts": zod.number().int(),
+  "maxShifts": zod.number().int(),
+  "today": zod.string(),
+  "slots": zod.array(zod.object({
+  "id": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "capacity": zod.number().int(),
+  "heldCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "startDates": zod.array(zod.string())
+})),
+  "assignments": zod.array(zod.object({
+  "id": zod.string(),
+  "slotId": zod.string(),
+  "dayOfWeek": zod.number().int(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "startDate": zod.string(),
+  "endDate": zod.string().nullable(),
+  "nextDates": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+})),
+  "weeksOff": zod.array(zod.object({
+  "date": zod.string(),
+  "startsAt": zod.coerce.date(),
+  "endsAt": zod.coerce.date(),
+  "skipped": zod.boolean(),
+  "skipId": zod.string().nullable(),
+  "canSkip": zod.boolean(),
+  "canUndo": zod.boolean()
+}))
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(cancelOwnCustomShiftResponseCustomShiftsItemOneCapacityMax).default(cancelOwnCustomShiftResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(cancelOwnCustomShiftResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(cancelOwnCustomShiftResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "canCancel": zod.boolean()
+}))).optional()
+})
+
+
 export const GetPublishedResourceListResponseItem = zod.object({
   "id": zod.string().uuid(),
   "type": zod.enum(['document', 'article', 'link']),
@@ -670,6 +1126,13 @@ export const UpdateCoverageAlertSettingsResponse = zod.object({
 })
 
 
+export const getVolunteerScheduleResponseCustomShiftsItemOneCapacityDefault = 2;
+export const getVolunteerScheduleResponseCustomShiftsItemOneCapacityMax = 10;
+
+export const getVolunteerScheduleResponseCustomShiftsItemOneLabelMax = 120;
+
+export const getVolunteerScheduleResponseCustomShiftsItemOneOpenToVolunteersDefault = false;
+
 export const GetVolunteerScheduleResponse = zod.object({
   "canBook": zod.boolean(),
   "blockedReasons": zod.array(zod.string()),
@@ -716,7 +1179,21 @@ export const GetVolunteerScheduleResponse = zod.object({
   "canSkip": zod.boolean(),
   "canUndo": zod.boolean()
 }))
-}))
+})),
+  "customShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "capacity": zod.number().int().min(1).max(getVolunteerScheduleResponseCustomShiftsItemOneCapacityMax).default(getVolunteerScheduleResponseCustomShiftsItemOneCapacityDefault),
+  "label": zod.string().max(getVolunteerScheduleResponseCustomShiftsItemOneLabelMax).nullish(),
+  "openToVolunteers": zod.boolean().default(getVolunteerScheduleResponseCustomShiftsItemOneOpenToVolunteersDefault)
+}).and(zod.object({
+  "id": zod.string(),
+  "assignedCount": zod.number().int(),
+  "openSpots": zod.number().int(),
+  "ownAssignmentId": zod.string().nullable(),
+  "canCancel": zod.boolean()
+}))).optional()
 })
 
 
@@ -812,7 +1289,10 @@ export const GetAdminOverviewResponse = zod.object({
   "capacity": zod.number().int(),
   "assignedCount": zod.number().int(),
   "openSpots": zod.number().int(),
-  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed', 'blocked']),
+  "kind": zod.enum(['regular', 'custom']).optional(),
+  "blockedReason": zod.string().nullish(),
+  "blockId": zod.string().nullish(),
   "closedReason": zod.string().nullable(),
   "volunteers": zod.array(zod.object({
   "assignmentId": zod.string(),
@@ -838,7 +1318,10 @@ export const GetAdminOverviewResponse = zod.object({
   "capacity": zod.number().int(),
   "assignedCount": zod.number().int(),
   "openSpots": zod.number().int(),
-  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed', 'blocked']),
+  "kind": zod.enum(['regular', 'custom']).optional(),
+  "blockedReason": zod.string().nullish(),
+  "blockId": zod.string().nullish(),
   "closedReason": zod.string().nullable(),
   "volunteers": zod.array(zod.object({
   "assignmentId": zod.string(),
@@ -894,7 +1377,10 @@ export const GetAdminScheduleWeekResponse = zod.object({
   "capacity": zod.number().int(),
   "assignedCount": zod.number().int(),
   "openSpots": zod.number().int(),
-  "state": zod.enum(['covered', 'under', 'empty', 'closed']),
+  "state": zod.enum(['covered', 'under', 'empty', 'closed', 'blocked']),
+  "kind": zod.enum(['regular', 'custom']).optional(),
+  "blockedReason": zod.string().nullish(),
+  "blockId": zod.string().nullish(),
   "closedReason": zod.string().nullable(),
   "volunteers": zod.array(zod.object({
   "assignmentId": zod.string(),
@@ -1800,7 +2286,8 @@ export const GetVolunteerDashboardResponse = zod.object({
   "endTime": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
-  "label": zod.string().nullable()
+  "label": zod.string().nullable(),
+  "kind": zod.enum(['regular', 'custom']).optional()
 }),zod.null()]),
   "upcomingShifts": zod.array(zod.object({
   "assignmentId": zod.string().uuid(),
@@ -1809,7 +2296,8 @@ export const GetVolunteerDashboardResponse = zod.object({
   "endTime": zod.string(),
   "startsAt": zod.coerce.date(),
   "endsAt": zod.coerce.date(),
-  "label": zod.string().nullable()
+  "label": zod.string().nullable(),
+  "kind": zod.enum(['regular', 'custom']).optional()
 })),
   "quickLinks": zod.array(zod.object({
   "id": zod.string().uuid(),

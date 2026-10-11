@@ -14,4 +14,5 @@ export const CoordinatorBlockState = {
   under: 'under',
   empty: 'empty',
   closed: 'closed',
+  blocked: 'blocked',
 } as const;

@@ -1,5 +1,15 @@
 # Community Care Team Volunteer Portal — UAT checklist
 
+## CCT overlapping grid, blocks, and one-time shifts
+| ID | Steps | Expected |
+|---|---|---|
+| CCT-S01 | Load the standard grid twice in Schedule Settings. Review Mon–Fri. | Forty standard 2-hour, capacity-2 slots from 9 AM–6 PM; second load creates none; existing slot settings and assignments unchanged. |
+| CCT-S02 | Inspect master schedule on desktop and 375px phone; inspect dispatch at 10:30 AM Pacific in dev. | Odd-hour lane A/even-hour lane B, correctly spaced half-hour guides; mobile day list; both overlapping live shifts grouped separately with end times. |
+| CCT-S03 | Block an owned slot/date with a reason and optional email off; unblock it. Test a range of selected slots and all slots. | Gray “Blocked – reason”; operational occurrences, coverage, alerts and reminders omit it; standing assignment retained; unblock restores availability unless it conflicts with a one-time reservation. |
+| CCT-S04 | Create an open one-time shift; have an active test volunteer claim it. Compare standing-shift count; inspect dashboard and schedule CSV. | Dashed-blue One-time tag; counts only on volunteer listings; own reservation visible; standing cap unchanged; one-time date in upcoming list and CSV. |
+| CCT-S05 | Two volunteers race for one remaining seat. Staff try over-capacity assignment without/with Override and reason. Try overlapping shifts and cancellation just inside/outside 24 hours. | One volunteer succeeds; staff override requires an audited reason; overlaps always refused; timely volunteer cancellation allowed, otherwise staff contact guidance. |
+| CCT-S06 | Admin cancel an assigned one-time shift; retry cancellation. Test reminders with an isolated API/data scope across Pacific DST, late runs and reruns. | Confirmation and assigned-recipient email; cancelled occurrence gone; no duplicate cancellation emails or custom reminders; keys `custom:shiftId:profileId:24h`; no real staff/volunteer sends during QA. |
+
 ## CCT brand and program identity
 - At 375px and 768px, check public pages show the stacked logo above the card and the mission below it; signed-in headers are white with a navy bottom rule, using the mark on phones and horizontal logo on desktop.
 - Check Open Sans sentence-case titles, navy field labels, gray inputs with blue focus rings, blue primary buttons, and white/blue secondary buttons with blue/white hover.

@@ -12,6 +12,7 @@ import { appOrigin } from '../auth/session';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
 import { agreementVersion, lockAgreementVersion } from './agreements';
+import {customOverlap,overlapMessage} from './customShiftService';
 
 export async function volunteerSchedule(userId: string, now = new Date()) {
   return db.transaction(async tx => {
@@ -71,11 +72,20 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
         throw new WorkflowError(422, `You can hold up to ${appConfig.maxShiftsPerVolunteer} weekly shifts. Choose Change shift instead.`);
       const dates = startDates(data, slot, now), first = input.startDate ?? dates[0];
       if (!first || !dates.includes(calendarDay(first))) throw new WorkflowError(422, 'Choose an upcoming open date for this weekday within the next four weeks.');
-      if (own.some(a => {
+      const overlapping = own.find(a => {
         if (a.id === old?.id) return false;
         const s = data.slots.find(s => s.id === a.shiftSlotId)!;
         return s.dayOfWeek === slot.dayOfWeek && s.startTime < slot.endTime && slot.startTime < s.endTime;
-      })) throw new WorkflowError(422, 'This shift overlaps a weekly shift you already hold. Choose a different time.');
+      });
+      if(overlapping) {
+        const conflict=data.slots.find(s=>s.id===overlapping.shiftSlotId)!;
+        throw new WorkflowError(422,overlapMessage(first,conflict.startTime,conflict.endTime));
+      }
+      for(const custom of data.customShifts) {
+        if(custom.date<first || new Date(`${custom.date}T00:00:00Z`).getUTCDay()!==slot.dayOfWeek)continue;
+        const overlap=customOverlap(data,profile!.id,custom.date,slot.startTime,slot.endTime);
+        if(overlap?.kind==='custom')throw new WorkflowError(422,overlapMessage(custom.date,overlap.slot.startTime,overlap.slot.endTime));
+      }
       // Read seat occupancy after acquiring the row lock, not from the earlier eligibility snapshot.
       const reservations = await tx.select({ profileId: shiftAssignmentsTable.volunteerProfileId })
         .from(shiftAssignmentsTable).where(ongoingForSlot(slot.id, today));
@@ -126,6 +136,8 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
         eq(shiftSkipsTable.id, input.skipId), eq(shiftSkipsTable.shiftAssignmentId, old!.id))).for('update');
       if (!skip) throw new WorkflowError(404, 'This week off could not be found.');
       if (slotInstant(skip.skipDate, oldSlot!.startTime) <= now) throw new WorkflowError(422, `This shift has already started. Please contact ${staffContactText}.`);
+      const conflict=customOverlap(data,profile!.id,skip.skipDate,oldSlot!.startTime,oldSlot!.endTime,oldSlot!.id);
+      if(conflict)throw new WorkflowError(422,overlapMessage(skip.skipDate,conflict.slot.startTime,conflict.slot.endTime));
       await tx.delete(shiftSkipsTable).where(eq(shiftSkipsTable.id, skip.id));
       message = `You're back on the schedule for ${dateLabel(skip.skipDate)}. Thank you for your help.`;
     }

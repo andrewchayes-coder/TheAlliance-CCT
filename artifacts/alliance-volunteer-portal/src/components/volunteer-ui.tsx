@@ -1,3 +1,4 @@
+import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
 import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppLayout, Button, Card } from '@/components/brand-system';
@@ -57,7 +58,7 @@ export function UpcomingShifts({ shifts, schedulingOpen, max, now }: { shifts: S
                 <span className="block text-xs font-bold">{dayLabel(s.date, now).slice(0, 3)}</span>
                 <span className="block text-lg font-bold leading-tight">{Number(s.date.slice(8))}</span>
               </div>
-              <div className="min-w-0"><p className="font-bold">{shiftWhen(s, now)}</p>{s.label && <p className="text-sm text-navy-soft">{s.label}</p>}</div>
+              <div className="min-w-0"><p className="font-bold">{shiftWhen(s, now)}{s.kind === 'custom' && <OneTimeTag className="ml-2 align-middle" />}</p>{s.label && <p className="text-sm text-navy-soft">{s.label}</p>}</div>
             </li>
           ))}
         </ul>

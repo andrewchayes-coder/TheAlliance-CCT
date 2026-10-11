@@ -25,7 +25,7 @@ async function quickLinks() {
 async function snapshot(from: string, to: string, profileId?: string): Promise<ReminderSnapshot> {
   return db.transaction(async tx => {
     const schedule = await readScheduleData(tx, profileId, { from, to });
-    const ids = [...new Set(schedule.assignments.map(a => a.volunteerProfileId))];
+    const ids = [...new Set([...schedule.assignments,...schedule.customAssignments].map(a => a.volunteerProfileId))];
     const people = ids.length ? await tx.select({ profileId: volunteerProfilesTable.id, userId: usersTable.id,
       email: usersTable.email, firstName: usersTable.firstName, status: volunteerProfilesTable.status,
       isActive: usersTable.isActive, verifiedAt: usersTable.emailVerifiedAt }).from(volunteerProfilesTable)
@@ -126,7 +126,7 @@ export async function reminderJobStatus() {
   const [lastRun] = await db.select().from(reminderJobRunsTable).orderBy(desc(reminderJobRunsTable.startedAt)).limit(1);
   const totals = await db.select({ status: notificationLogTable.status, total: count() }).from(notificationLogTable)
     .where(and(eq(notificationLogTable.type, 'reminder'), gte(notificationLogTable.createdAt, new Date(Date.now() - 7 * 86400000)),
-      sql`${notificationLogTable.relatedId} ~ '^[0-9a-f-]{36}:[0-9]{4}-[0-9]{2}-[0-9]{2}:(24h|am)$'`))
+      sql`(${notificationLogTable.relatedId} ~ '^[0-9a-f-]{36}:[0-9]{4}-[0-9]{2}-[0-9]{2}:(24h|am)$' or ${notificationLogTable.relatedId} ~ '^custom:[0-9a-f-]{36}:[0-9a-f-]{36}:(24h|am)$')`))
     .groupBy(notificationLogTable.status);
   return { lastRun: lastRun ? serialize(lastRun) : null, schedulerEnabled: automaticJobsEnabled(),
     externalTriggerConfigured: (process.env.JOBS_SECRET?.length ?? 0) >= 32, timezone: TIME_ZONE, cron: '*/15 * * * *',

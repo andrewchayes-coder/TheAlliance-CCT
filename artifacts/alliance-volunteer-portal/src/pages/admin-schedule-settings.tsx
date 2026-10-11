@@ -1,12 +1,16 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
 import { useState } from 'react';
-import { useGetScheduleSettings, useCopyMondaySlots, type ScheduleSlot } from '@workspace/api-client-react';
+import { useGetScheduleSettings, useCopyMondaySlots, useLoadStandardGrid, type ScheduleSlot } from '@workspace/api-client-react';
 import { AppLayout, Button, StatusBadge } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { RequireAdmin } from '@/auth/guards';
 import { FETCH_CREDS, FRESH_MS, readError, useAuth } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DAYS, calDate, clock, daysUntil } from '@/components/volunteer-detail/format';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useInvalidateSchedule } from '@/components/schedule-controls/use-controls';
+import { CustomShiftDialog } from '@/components/schedule-extras/custom-shift-dialog';
+import { BlockShiftsForm, BlockList } from '@/components/schedule-extras/block-shifts';
 import { DigestToggle } from '@/components/schedule-controls/digest-toggle';
 import { SlotDialog } from '@/components/schedule-settings/slot-dialog';
 import { ClosedDates } from '@/components/schedule-settings/closed-dates';
@@ -37,6 +41,17 @@ function Body() {
   const sync = useScheduleSync();
   const q = useGetScheduleSettings({ query: { queryKey: ['/api/admin/schedule/settings'], staleTime: FRESH_MS, refetchOnWindowFocus: 'always', retry: false }, request: FETCH_CREDS });
   const copy = useCopyMondaySlots({ request });
+  const refreshAll = useInvalidateSchedule();
+  const grid = useLoadStandardGrid({ request });
+  const [confirmGrid, setConfirmGrid] = useState(false);
+  const [oneTime, setOneTime] = useState(false);
+  const doGrid = () => {
+    setCopyErr(null); setResult(null);
+    grid.mutate(undefined, {
+      onSuccess: r => { void refreshAll(); setConfirmGrid(false); setResult(`Standard grid loaded: ${r.created} created, ${r.skipped} already existed.`); },
+      onError: e => { setConfirmGrid(false); setCopyErr(readError(e).message); },
+    });
+  };
   const [editing, setEditing] = useState<Editing>(null);
   const [result, setResult] = useState<string | null>(null);
   const [copyErr, setCopyErr] = useState<string | null>(null);
@@ -62,7 +77,9 @@ function Body() {
           <h1 className="alliance-display">Schedule settings</h1>
           <p className="mt-1 max-w-xl text-sm">Weekly volunteer time slots and the dates the office is closed.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
+          <Button type="button" variant="secondary" className="h-auto min-h-11 w-full max-w-full whitespace-normal text-center sm:w-auto" onClick={() => setConfirmGrid(true)} data-testid="button-load-standard-grid">Load Community Care Team standard grid</Button>
+          <Button type="button" variant="secondary" className="h-auto min-h-11 w-full max-w-full whitespace-normal sm:w-auto" onClick={() => setOneTime(true)} data-testid="button-add-one-time">Add a one-time shift</Button>
           <Button type="button" variant="secondary" onClick={doCopy} disabled={copy.isPending || !data} data-testid="button-copy-monday">{copy.isPending ? 'Copying...' : 'Copy Monday to all weekdays'}</Button>
           <Button type="button" onClick={() => setEditing({ slot: null, day: 1 })} disabled={!data} data-testid="button-add-slot">Add slot</Button>
         </div>
@@ -70,6 +87,18 @@ function Body() {
       <p className="mt-2 text-xs text-navy-soft">Copying only adds Monday slots that are missing on other days. It never changes or removes existing slots.</p>
       <div className="mt-3">{result && <Notice kind="success">{result}</Notice>}</div>
       {copyErr && <div className="mt-3"><Notice>{copyErr}</Notice></div>}
+
+      <Dialog open={confirmGrid} onOpenChange={o => { if (!o && !grid.isPending) setConfirmGrid(false); }}>
+        <DialogContent data-testid="dialog-load-grid">
+          <DialogHeader><DialogTitle>Load the standard grid?</DialogTitle>
+            <DialogDescription>Adds the standard Monday to Friday grid of two-hour slots, 9:00 AM to 6:00 PM. Slots that already exist are skipped, so it is safe to run again.</DialogDescription></DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setConfirmGrid(false)} disabled={grid.isPending} data-testid="button-grid-no">Cancel</Button>
+            <Button type="button" onClick={doGrid} disabled={grid.isPending} data-testid="button-grid-yes">{grid.isPending ? 'Loading...' : 'Load grid'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {oneTime && <CustomShiftDialog onClose={() => setOneTime(false)} onDone={setResult} />}
 
       <DigestToggle />
 
@@ -93,6 +122,8 @@ function Body() {
             </section>
           );
         })}
+        <BlockShiftsForm slots={data.slots} />
+        <BlockList slots={data.slots} />
         <ClosedDates items={data.closedDates} onDone={setResult} />
         {editing && (
           <SlotDialog slot={editing.slot} defaultDay={editing.day} all={data.slots} onClose={() => setEditing(null)}
