@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { capacityError, volunteerCount } from '@workspace/shared/schedule-copy';
 import { volunteerContactText } from '@workspace/shared/appConfig';
 import {
   db, shiftSlotsTable, shiftAssignmentsTable, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable,
@@ -40,9 +41,9 @@ export async function updateSlot(slotId: string, input: SlotUpdate, actorUserId:
     if (!sameIds(input.expectedAssignmentIds, held.map(a => a.id)))
       throw new WorkflowError(409, 'The assigned volunteers changed. Refresh and review the assignment count before saving.');
     const count = new Set(held.map(a => a.volunteerProfileId)).size;
-    if (input.capacity < slot.capacity && input.capacity < count) throw new WorkflowError(422, `${count} volunteers are assigned. Capacity cannot be reduced below ${count}; move or end assignments first.`);
+    if (input.capacity < slot.capacity && input.capacity < count) throw new WorkflowError(422, capacityError(count));
     if (!input.isActive && count && !input.deactivation)
-      throw new WorkflowError(400, `Choose when to end the assignments for these ${count} volunteers.`);
+      throw new WorkflowError(400, `Choose when to end the assignments for ${volunteerCount(count)}.`);
     let retireAfterDate = input.isActive && slotIsActive(slot, today) && !input.cancelRetirement ? slot.retireAfterDate : null;
     const mode = !input.isActive ? input.deactivation?.mode ?? 'now' : null;
     if (mode === 'keep_until') {

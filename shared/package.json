@@ -8,6 +8,7 @@
     "./schema": "./schema.ts",
     "./time": "./time.ts",
     "./calendar-display": "./calendar-display.ts",
+    "./schedule-copy": "./schedule-copy.ts",
     "./profileFields": "./profileFields.ts",
     "./markdown": "./markdown.ts",
     "./onboardingQuestions": "./onboardingQuestions.ts",

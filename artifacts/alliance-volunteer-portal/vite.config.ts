@@ -2,16 +2,6 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import { readFile } from 'node:fs/promises';
-import type { IncomingMessage, ServerResponse } from 'node:http';
-
-const serveManifest = (directory: string) => (req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => {
-  if (!req.url?.split('?')[0].endsWith('/manifest.webmanifest')) { next(); return; }
-  void readFile(path.resolve(import.meta.dirname, directory, 'manifest.webmanifest')).then(body => {
-    res.setHeader('Content-Type', 'application/manifest+json');
-    res.end(body);
-  }).catch(next);
-};
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
@@ -42,11 +32,7 @@ export default defineConfig({
   plugins: [
     {
       name: 'brand-static-cache',
-      configurePreviewServer(server) {
-        server.middlewares.use(serveManifest('dist/public'));
-      },
       configureServer(server) {
-        server.middlewares.use(serveManifest('public'));
         server.middlewares.use((req, res, next) => {
           if (req.url?.includes('/brand/')) res.setHeader('Cache-Control', 'public, max-age=31536000');
           next();

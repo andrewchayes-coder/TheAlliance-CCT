@@ -42,7 +42,7 @@ const time = (s: string) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', 
   .format(new Date(`2000-01-01T${s}:00Z`));
 export const gapLine = (o: ReturnType<typeof gaps>[number]) =>
   `${new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' })
-    .format(new Date(`${o.date}T12:00:00Z`))}, ${time(o.slot.startTime)}–${time(o.slot.endTime)} now has ${o.assignedVolunteers.length} of ${o.slot.capacity} volunteers`;
+    .format(new Date(`${o.date}T12:00:00Z`))}, ${time(o.slot.startTime)}–${time(o.slot.endTime)} now has ${o.assignedVolunteers.length} of ${o.slot.capacity} ${o.slot.capacity === 1 ? 'volunteer' : 'volunteers'}`;
 async function notify(rows: ReturnType<typeof gaps>, relatedId: string, reason?: string) {
   const admins = await db.select({ id: usersTable.id, email: usersTable.email }).from(usersTable)
     .where(and(eq(usersTable.role, 'admin'), eq(usersTable.isActive, true), eq(usersTable.isTestAccount, false)));

@@ -124,6 +124,8 @@ pnpm run typecheck
 | ADM-02 | CHANGED | On shift now / Up next | On admin home, use ?at= in dev: a Tuesday at 10:30 AM, a time during hours with an empty slot, and 8:00 PM. | 10:30: two groups (9–11 and 10–12), each with its own end time, names, tap-to-call phone and email. Empty slot: amber "No one is on shift right now". 8 PM: "Outside shift hours". Up next, "Updated h:mm AM" refreshing every 60 s, coverage summary, needs-attention count and recent activity all show. Test accounts carry the TEST badge. |
 | ADM-07 | CHANGED | Master schedule view | Open /admin/schedule on desktop and at 375 px. Use week navigation and Today. | Two lanes per day on a 30-minute grid; every block readable. Blocks show time, "2/2", first name + last initial. Full = white with blue accent; under capacity = gray with amber "1 open"; empty = soft amber "Open". Today highlighted. Mobile shows a day list with a day picker. |
 
+| ADM-37 | CHANGED | Admin schedule — future standing assignments | Open the side panel for a standing shift starting in 15 days. Check the dates and week-off buttons; also test a future end date. Attempt a week off before start or after end through both admin and volunteer endpoints. | The side panel lists no dates before the assignment starts and has no Mark week off button for them. Ordinary dates stop at the end date; stored future weeks off remain listed. Out-of-period week-off requests return clear 422 errors. My Shifts and dashboard likewise exclude occurrences before start or after end. |
+
 ## Staff roster and CSV exports
 
 | Test ID | Tag | Workflow | Steps | Expected result |
@@ -290,11 +292,11 @@ These earlier checklist checks go beyond an exact persona-plan case. They remain
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 | --- | --- | --- | --- | --- |
-| VIS-08 | CHANGED | Sign-in and install metadata | Sign in with googleEnabled false, then true when configured. Inspect /manifest.webmanifest response headers. | Disabled Google button and its “or” divider are hidden, without removing Google code. Enabled Google remains available. Manifest Content-Type is application/manifest+json. |
+| VIS-08 | CHANGED | Sign-in and install metadata | Sign in with googleEnabled false, then true when configured. Inspect /manifest.json response headers and body, including after Publish. | Disabled Google button and its “or” divider are hidden, without removing Google code. Enabled Google remains available. Manifest is valid JSON with Content-Type application/json (an optional charset is fine), not the index.html fallback. |
 | VIS-08 | CHANGED | My Shifts dates and displayed phones | View a standing shift starting in the future, then a past start date. Inspect displayed mobile/emergency numbers, including On shift now and the schedule side panel. | Future dates say “Starts”; past dates say “Started”. Ten-digit US phones display as (XXX) XXX-XXXX; tap-to-call remains available. |
 | ADM-37 | CHANGED | QA persona labels | Inspect both Active personas on the master schedule, its side panel, On shift now, Team → Test accounts and message recipient search. | Schedule surfaces distinguish “Test · Active” and “Test · Active, no shift”, keeping gray TEST badges. Team uses the same shared persona labels as sign-in. Test recipients have TEST badges. |
 | ADM-37 | CHANGED | Weekend default week | On Saturday and Sunday (also DST weekends), open the master schedule with no week parameter and press Today after navigating away. Check admin-home This week stats. Select a previous week explicitly. | Default/Today and overview stats use the coming Monday–Friday week. Explicit previous-week selection still works; live On shift now logic is unchanged. |
-| ADM-37 | CHANGED | Staff Profile and capacity guidance | Click each Profile-card label and inspect htmlFor/id associations. Edit a slot with N assignments. | Each label focuses its own control. The helper says “N volunteers are assigned, so capacity can't go below N.” Capacity enforcement is unchanged. |
+| ADM-37 | CHANGED | Staff Profile and capacity guidance | Click each Profile-card label and inspect htmlFor/id associations. Edit slots with 1 and 2 assignments. | Each label focuses its own control. Helpers say “1 volunteer is assigned, so capacity can't go below 1.” / “2 volunteers are assigned, so capacity can't go below 2.” Server capacity errors use the same singular/plural grammar. Capacity enforcement is unchanged. |
 
 ## Master/app disagreements
 
@@ -320,7 +322,7 @@ The master has not been edited. Current workflow expectations above are adjusted
 
 | Test ID | Checklist section |
 | VIS-08 | Fix 3 — UI and copy polish |
-| ADM-37 | Fix 3 — UI and copy polish |
+| ADM-37 | Coordinator dispatch and master schedule; Fix 3 — UI and copy polish |
 | ADM-35 | Fix 2 — production regression workflows |
 | ACT-15 | Fix 2 — production regression workflows |
 | ADM-36 | Fix 2 — production regression workflows |

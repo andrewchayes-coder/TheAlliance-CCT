@@ -22,3 +22,4 @@
 - [Source audit scope](source-audit-scope.md) — distinguish application text from managed binary runtime history; do not delete platform state to satisfy a grep.
 - [Production SQL tool](production-sql-tool.md) — operator SQL is split at semicolons; provide independent, repeatable statements without transaction or DO wrappers.
 - [Operating week defaults](operating-week-default.md) — weekend default/Today and overview coverage use the coming Monday; explicit weeks and live dispatch stay unchanged.
+- [Static manifest MIME](static-manifest-mime.md) — dev Vite header checks do not prove static-production behavior; use a JSON manifest and check the built asset.

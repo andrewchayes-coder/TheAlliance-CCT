@@ -143,8 +143,8 @@ _Private/incognito window, not signed in._
 _A fresh account you create in dev with an email you control (plus-addressing works). Not a test account, because test accounts never receive email. With no Postmark token in dev, emails and links print to the console. Keep this account; ADM-27 deactivates it._
 
 - [ ] **NEW-01 · Sign-up** (P4)  
-  **Do:** Go to /signup. Try a 9-character password and a mismatched confirm, then sign up properly.  
-  **Expect:** Short and mismatched passwords are rejected. Intro copy shows. Account is created and you land on /verify-email with your address shown.
+  **Do:** Go to /signup. Try a 7-character password and a mismatched confirm, then sign up properly with a password of at least 8 characters.  
+  **Expect:** The 7-character password (minimum is 8) and the mismatched confirm are rejected; 8 characters is accepted. Intro copy shows. Account is created and you land on /verify-email with your address shown.
 
 - [ ] **NEW-02 · Verification gate (server-enforced)** (P4)  
   **Do:** While unverified, visit /dashboard, /shifts, /onboarding, then call a protected API (e.g. GET /api/shifts) from devtools.  

@@ -4,13 +4,14 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
   activityLogTable, notificationLogTable, sessionsTable, appSettingsTable } from '@workspace/db';
-import { slotInstant, pacificDay } from './scheduleService';
+import { slotInstant, pacificDay, addCalendarDays } from './scheduleService';
 import * as repository from './scheduleRepository';
 process.env.NODE_ENV = 'development'; process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = '';
 type Client = (path: string, method?: string, body?: unknown) => Promise<{ status: number; data: any }>;
 const tag = `override-${randomUUID()}`, ids: string[] = [], profiles: string[] = [], slots: string[] = [], sessions: string[] = [];
 let base: string, origin: string, server: Server, admin: Client, vol: Client, anon: Client;
 let adminScheduleAction: typeof import('./adminScheduleControls').adminScheduleAction;
+let adminScheduleControls: typeof import('./adminScheduleControls').adminScheduleControls;
 let coverage: typeof import('./coverageAlerts'), savedSettings: typeof appSettingsTable.$inferSelect;
 const now = slotInstant('2026-10-05', '07:00');
 async function client(id?: string): Promise<Client> {
@@ -28,7 +29,7 @@ async function client(id?: string): Promise<Client> {
 }
 beforeAll(async () => {
   const { default: app } = await import('../app'); origin = (await import('../auth/session')).appOrigin;
-  ({ adminScheduleAction } = await import('./adminScheduleControls')); coverage = await import('./coverageAlerts');
+  ({ adminScheduleAction, adminScheduleControls } = await import('./adminScheduleControls')); coverage = await import('./coverageAlerts');
   [savedSettings] = await db.select().from(appSettingsTable).where(eq(appSettingsTable.id, 'schedule'));
   server = createServer(app); await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
   base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
@@ -63,6 +64,47 @@ afterAll(async () => {
   await db.delete(sessionsTable).where(inArray(sessionsTable.sid, sessions));
   await db.delete(usersTable).where(inArray(usersTable.id, ids));
   await new Promise<void>((r, j) => server.close(e => e ? j(e) : r())); await pool.end();
+});
+it('ADM-37 future assignments expose only held dates and reject out-of-period weeks off for either role', async () => {
+  const today = pacificDay(new Date()), startDate = addCalendarDays(today, 15), endDate = addCalendarDays(today, 30);
+  const [slot] = await db.insert(shiftSlotsTable).values({
+    dayOfWeek: 2, startTime: '16:00', endTime: '17:00', capacity: 1, label: tag,
+  }).returning();
+  slots.push(slot!.id);
+  const [assignment] = await db.insert(shiftAssignmentsTable).values({
+    volunteerProfileId: profiles[0]!, shiftSlotId: slot!.id, startDate, endDate, createdByUserId: ids[0]!,
+  }).returning();
+  try {
+    const response = await admin(`/admin/schedule/controls?userId=${ids[1]}`);
+    expect(response.status).toBe(200);
+    const held = response.data.assignments.find((a: any) => a.id === assignment!.id);
+    expect(held.dates.length).toBeGreaterThan(0);
+    expect(held.dates.every((d: any) => d.date >= startDate && d.date <= endDate)).toBe(true);
+    const mine = await vol('/volunteer/schedule');
+    expect(mine.status).toBe(200);
+    const own = mine.data.assignments.find((a: any) => a.id === assignment!.id);
+    expect(own.nextDates.length).toBeGreaterThan(0);
+    expect(own.nextDates.every((d: any) => d.date >= startDate && d.date <= endDate)).toBe(true);
+    for (const [date, message] of [
+      [addCalendarDays(startDate,-7), "That date is before this volunteer's standing shift starts."],
+      [addCalendarDays(endDate,1), "That date is after this volunteer's standing shift ends."],
+    ]) {
+      for (const [client, prefix] of [[admin,'admin/schedule'],[vol,'volunteer']] as const) {
+        const result = await client(`/${prefix}/assignments/${assignment!.id}/skips`, 'POST', { date });
+        expect(result.status).toBe(422);
+        expect(result.data.error).toBe(message);
+      }
+    }
+    expect(await db.select().from(shiftSkipsTable).where(eq(shiftSkipsTable.shiftAssignmentId, assignment!.id))).toHaveLength(0);
+    // Existing stored weeks off beyond the ordinary 35-day display horizon remain available for undo.
+    await db.update(shiftAssignmentsTable).set({endDate: addCalendarDays(today,90)}).where(eq(shiftAssignmentsTable.id,assignment!.id));
+    const distantSkip = addCalendarDays(held.dates[0].date,42);
+    const [skip] = await db.insert(shiftSkipsTable).values({shiftAssignmentId:assignment!.id,skipDate:distantSkip}).returning();
+    const controls = await adminScheduleControls({userId:ids[1]});
+    expect(controls.assignments.find(a => a.id === assignment!.id)?.dates).toContainEqual(expect.objectContaining({date:distantSkip,skipId:skip!.id}));
+  } finally {
+    await db.delete(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.id,assignment!.id));
+  }
 });
 it('guards all new API methods and persists the staff digest setting', async () => {
   const paths: [string, string][] = [['/admin/schedule/controls', 'GET'], ['/admin/schedule/assignments', 'POST'],

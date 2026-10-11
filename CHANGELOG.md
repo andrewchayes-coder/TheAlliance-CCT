@@ -2,6 +2,13 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.1.2 — 2026-10-11
+
+### Fixed
+- Renamed the web app manifest to `/manifest.json` so production static hosting serves browser-compatible JSON without relying on Vite middleware.
+- Staff schedule controls list only dates within a standing assignment's start/end period, while retaining stored future weeks off. Both staff and volunteer week-off actions return clear 422 errors for dates outside that period.
+- Slot capacity guidance and server errors use correct singular/plural wording, including “1 volunteer is assigned.”
+
 ## v1.1.1 — 2026-10-11
 
 ### Fixed

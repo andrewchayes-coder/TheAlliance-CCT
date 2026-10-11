@@ -3,9 +3,25 @@ import { operatingWeekStart, shiftStartVerb } from '@workspace/shared/calendar-d
 import { formatPhone } from '@workspace/shared/profileFields';
 import { testAccounts, testPersonaLabel, testScheduleLabel } from '@workspace/shared/testAccounts';
 import { readFileSync } from 'node:fs';
+import { capacityHint, capacityError, volunteerCount } from '@workspace/shared/schedule-copy';
 import { resolve } from 'node:path';
 
 describe('VIS-08 / ADM-37 presentation helpers', () => {
+  it('VIS-08 uses a real JSON manifest asset, not the SPA fallback', () => {
+    const root = resolve('../alliance-volunteer-portal');
+    const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8'));
+    expect(manifest.name).toBe('Community Care Team Volunteer Portal');
+    expect(manifest.icons).toHaveLength(2);
+    const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+    expect(html).toContain('<link rel="manifest" href="%BASE_URL%manifest.json"');
+    expect(html).not.toContain('manifest.webmanifest');
+  });
+  it.each([1, 2])('ADM-37 client capacity hint and server error use correct grammar for %i', count => {
+    const phrase = count === 1 ? '1 volunteer is assigned' : '2 volunteers are assigned';
+    expect(capacityHint(count)).toBe(`${phrase}, so capacity can't go below ${count}.`);
+    expect(capacityError(count)).toBe(`${phrase}. Capacity cannot be reduced below ${count}; move or end assignments first.`);
+    expect(volunteerCount(count)).toBe(count === 1 ? '1 volunteer' : '2 volunteers');
+  });
   it.each([
     ['2026-10-09','2026-10-05'], ['2026-10-10','2026-10-12'], ['2026-10-11','2026-10-12'],
     ['2026-10-12','2026-10-12'], ['2026-03-07','2026-03-09'], ['2026-03-08','2026-03-09'],

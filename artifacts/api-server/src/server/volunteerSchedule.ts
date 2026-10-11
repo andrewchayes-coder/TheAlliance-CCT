@@ -120,6 +120,10 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
       release = true; message = 'Your weekly shift has been released. Thank you for keeping your schedule up to date.';
     } else if (input.kind === 'skip') {
       const date = calendarDay(input.date);
+      if (date < calendarDay(old!.startDate))
+        throw new WorkflowError(422, "That date is before this volunteer's standing shift starts.");
+      if (old!.endDate && date > calendarDay(old!.endDate))
+        throw new WorkflowError(422, "That date is after this volunteer's standing shift ends.");
       const occurrence = createScheduleService({ ...data, skips: [] }).getOccurrences(date, date)
         .find(o => o.slot.id === oldSlot!.id && o.assignedVolunteers.some(a => a.assignmentId === old!.id));
       if (!occurrence || date > addCalendarDays(today, 365)) throw new WorkflowError(422, 'Choose an upcoming date from this standing shift.');

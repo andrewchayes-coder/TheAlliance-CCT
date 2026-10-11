@@ -41,8 +41,11 @@ export async function adminScheduleControls(filter: { slotId?: string; userId?: 
     assignments: held.flatMap(a => {
       const p = people.find(p => p.profile.id === a.volunteerProfileId), s = data.slots.find(s => s.id === a.shiftSlotId)!;
       if (!p || filter.slotId && s.id !== filter.slotId || filter.userId && p.user.id !== filter.userId) return [];
-      const potential = createScheduleService({ ...data, slots: [s], assignments: [a], skips: [], closedDates: [] })
-        .getOccurrences(today, addCalendarDays(today, 35)).filter(o => o.endsAt > now).slice(0, 5);
+      const from = a.startDate > today ? a.startDate : today;
+      const horizon = addCalendarDays(today, 35);
+      const to = a.endDate && a.endDate < horizon ? a.endDate : horizon;
+      const potential = from > to ? [] : createScheduleService({ ...data, slots: [s], assignments: [a], skips: [], closedDates: [] })
+        .getOccurrences(from, to).filter(o => o.endsAt > now && o.assignedVolunteers.some(v => v.assignmentId === a.id)).slice(0, 5);
       const dates = new Map(potential.map(o => [o.date, { date: o.date,
         skipId: data.skips.find(skip => skip.shiftAssignmentId === a.id && skip.skipDate === o.date)?.id ?? null }]));
       // Include all stored upcoming weeks off, even if a later closure suppresses the occurrence.
@@ -129,6 +132,10 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
       const slot = data.slots.find(s => s.id === old!.shiftSlotId)!;
       if (input.kind === 'skip') {
         const date = calendarDay(input.date);
+        if (date < calendarDay(old!.startDate))
+          throw new WorkflowError(422, "That date is before this volunteer's standing shift starts.");
+        if (old!.endDate && date > calendarDay(old!.endDate))
+          throw new WorkflowError(422, "That date is after this volunteer's standing shift ends.");
         const occurrence = createScheduleService({ ...data, skips: [] }).getOccurrences(date, date)
           .find(o => o.slot.id === slot.id && o.assignedVolunteers.some(a => a.assignmentId === old!.id));
         if (!occurrence || occurrence.endsAt <= now || date > addCalendarDays(today, 365))
