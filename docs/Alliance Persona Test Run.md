@@ -1,10 +1,18 @@
-# Alliance Volunteer App — Persona Test Run (Prompts 1–28)
+# Alliance Volunteer App — Persona Test Run (Prompts 1–28 + Oct 11 fixes)
 
-Hayes Strategy Group · Oct 10, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5) and Build Prompts v2 (21–28). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
+Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5), Build Prompts v2 (21–28) and Build Prompts v3 (Fix 1–3, Oct 11). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
 
-**What this tests:** the finished app after Prompt 26 (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
+**What this tests:** the finished app after Prompt 26 and the v3–v5 fixes (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
 
-**How this relates to QA-CHECKLIST.md:** that file lives in Replit. Prompt 19 created it and only Prompt 26 updates it; Prompts 27–28 don't touch it. Use this doc as the master list. After Prompt 26, compare it with QA-CHECKLIST.md for gaps.
+**Oct 12 update (D0a, Replit's 13 differences):** Synced with the "Master/app disagreements" list at the bottom of QA-CHECKLIST.md (v1.1.3). Updated to match how the app actually works: SYS-01, SYS-05, SYS-08, SYS-09, SYS-10, SYS-11, SYS-12, SYS-17, SYS-18, VIS-03, NEW-01, ADM-03, ADM-15, PRD-03 and PRD-05. Already matched (fixed Oct 11, so no change): the Community Care Team contact checks (ANS-05, ACT-04, ACT-07, PRD-06) and ADM-18. No new bugs: the one real gap (SYS-08, the roster's background-check badge and filter) is accepted while tracking stays off (C8). MIL/NTF stay optional and aren't built. This version is re-uploaded to `docs/` by Build Prompts v6.
+
+**Oct 11 update (v5 / v1.1.3):** ACT-10, ADM-04, ADM-24, ADM-25 and PRD-06 updated for Fix 5 (synced with Replit's docs/ copy). SYS-13 expectation corrected to match how the app blocks dev features (not-found page / 403).
+
+**Oct 11 update (v4):** added ADM-38; VIS-08 and ADM-37 updated for Fix 4 (manifest.json, singular capacity copy).
+
+**Oct 11 update:** added VIS-08, ACT-15, ADM-35–37 and PRD-14 for the v3 fixes; updated NEW-07, ONBN-02 and ACT-08. Volunteer-facing contact checks now expect the Community Care Team (cct@defendingthecause.org) instead of Cindi, per Prompt 25 (SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06).
+
+**How this relates to QA-CHECKLIST.md:** that file lives in Replit. Prompt 19 created it, Prompt 26 and 26b updated it, and each later prompt adds its own items. Use this doc as the master list, and re-upload it to `docs/` in Replit when it changes.
 
 ## Before you start
 
@@ -19,16 +27,16 @@ Hayes Strategy Group · Oct 10, 2026 · Built from every **Check** line in Build
 | Code | Persona | Setup | Env | Tests |
 |---|---|---|---|---|
 | SYS | Developer / system | Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse, docs. | Dev | 18 |
-| VIS | Signed-out visitor | Private/incognito window, not signed in. | Dev | 7 |
+| VIS | Signed-out visitor | Private/incognito window, not signed in. | Dev | 8 |
 | NEW | New sign-up (real account) | A fresh account you create in dev with an email you control (plus-addressing works). Not a test account, because test accounts never receive email. With no Postmark token in dev, emails and links print to the console. Keep this account; ADM-27 deactivates it. | Dev | 13 |
 | ONBN | Volunteer · Onboarding, new | Quick-login persona. Verified, profile fields empty. | Dev | 4 |
 | ONBR | Volunteer · Onboarding, ready to activate | Quick-login persona. Profile complete, waiting for staff approval. | Dev | 4 |
 | ANS | Volunteer · Active, no shift | Quick-login persona. Approved, holds no standing shift. | Dev | 8 |
-| ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 14 |
-| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 34 |
+| ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 15 |
+| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 38 |
 | MIL | Admin · Prompt 27 (optional) | Only if Prompt 27 (milestones) is approved and built. | Dev | 5 |
 | NTF | Admin · Prompt 28 (optional) | Only if Prompt 28 (admin shift-activity notifications) is approved and built. | Dev | 4 |
-| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 13 |
+| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 14 |
 
 ## SYS — Developer / system
 
@@ -36,7 +44,7 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
 
 - [ ] **SYS-01 · Seed** (P2, P22, P24)  
   **Do:** Run `npm run seed` twice.  
-  **Expect:** Both runs finish with no errors and no duplicates. DB has 1 admin, 18 dummy volunteers with status onboarding / active / inactive only (none applicant or in_training), and 40 shift slots (Mon–Fri × 9–11, 10–12, 11–1, 12–2, 1–3, 2–4, 3–5, 4–6, capacity 2).
+  **Expect:** Both runs finish with no errors and no duplicates. The seed itself creates 1 admin and 18 dummy volunteers (these counts don't include the 5 QA test accounts, which are created separately; count `users` and `volunteer_profiles` separately, since they aren't the same rows). Statuses are onboarding / active / inactive only (none applicant or in_training), and there are 40 shift slots (Mon–Fri × 9–11, 10–12, 11–1, 12–2, 1–3, 2–4, 3–5, 4–6, capacity 2).
 
 - [ ] **SYS-02 · Automated tests** (P10, P19, P24, P26, QL-1, QL-2, QL-5)  
   **Do:** Run `npm test`.  
@@ -51,40 +59,40 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
   **Expect:** Passes end to end: sign-up → verify → complete profile → admin activates (no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it.
 
 - [ ] **SYS-05 · Leftover search** (P21, P26, QL-4)  
-  **Do:** Run `grep -rni "02928F\|027A77\|lulo\|montserrat\|Resource Coordination Program" --exclude-dir=node_modules .` then `grep -rn "applicant\|in_training" --exclude-dir=node_modules client server shared`.  
-  **Expect:** The first search returns nothing. The second returns only the pg enum definition in shared/schema.ts (those values must stay in the enum) and the read-time mapping that treats them as onboarding. Nothing in shared/testAccounts.ts, UI copy, emails, or docs.
+  **Do:** Search the app source, skipping dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`: `grep -rniE "02928F|027A77|lulo|montserrat|Resource Coordination Program" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db` then `grep -rnE "applicant|in_training" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db`.  
+  **Expect:** No old colors, fonts or program name in any screen or email. applicant / in_training appear only in the database enum definition (lib/db, those values must stay) and the read-time mapping that treats them as onboarding (shared/legacy-compatibility.ts). Any other hit (for example a deliberate email alias kept for compatibility) is reviewed and explained, not an automatic fail. Nothing in shared/testAccounts.ts, UI copy or emails.
 
 - [ ] **SYS-06 · Schema is additive** (P22, P23, P24, QL-1, QL-4)  
   **Do:** Diff shared/schema.ts against the last published version.  
   **Expect:** Only additive changes: new nullable/defaulted columns, the 'onboarding' enum value, the new tables slot_blocks, custom_shifts, custom_shift_assignments, users.isTestAccount, the 'suppressed' status. No drops, renames, type conversions, or new pg enum types.
 
-- [ ] **SYS-07 · Config flags** (P6, P22)  
-  **Do:** Open shared/appConfig.ts and shared/onboardingQuestions.ts.  
-  **Expect:** trackCertificationInApp, trackBackgroundCheckInApp and requireAgreementAcknowledgment are false. minimumAge is null. onboardingQuestions exports an empty array. Identity values match P21 (appName, shortName, programName, volunteerRoleName, staffContactName Cindi, staffContactEmail, missionLine).
+- [ ] **SYS-07 · Config flags** (P6, P22, P25)  
+  **Do:** Open shared/appConfig.ts and shared/onboardingQuestions.ts. Run `grep -rni cindi --exclude-dir=node_modules artifacts shared`.  
+  **Expect:** trackCertificationInApp, trackBackgroundCheckInApp and requireAgreementAcknowledgment are false. minimumAge is null. onboardingQuestions exports an empty array. Identity values match P21, and the volunteer-facing contact is the Community Care Team (cct@defendingthecause.org). The grep finds no volunteer-facing Cindi references.
 
 - [ ] **SYS-08 · Flags are reversible** (P22)  
   **Do:** In dev only: set trackBackgroundCheckInApp to true, restart, and look at the roster and a volunteer detail page. Then set it back to false and restart.  
-  **Expect:** With true, the background-check badge, filter, CSV column and detail card come back. With false, all of them are gone again. (Revert before continuing.)
+  **Expect:** With true, the background-check card on the volunteer detail page and the background-check CSV column come back. The roster's background-check badge and filter do not come back: the new roster (Prompt 23) removed them. This is a known, accepted limit while tracking stays off (C8); if the Alliance turns tracking on, adding them back to the roster is a change order. With false, everything is gone again. (Revert before continuing.)
 
 - [ ] **SYS-09 · Email template (log mode)** (P3, P21, P25)  
   **Do:** With no POSTMARK_SERVER_TOKEN in dev, send a test email to a non-test address (dev test route or Admin → Notifications → Send test email).  
-  **Expect:** Console prints the email. A notification_log row has status `logged`. From = "The Alliance Community Care Team" <cct@defendingthecause.org>. Reply-To = cindi@defendingthecause.org. White header with logo-horizontal.png from APP_BASE_URL/brand/ over a 4px navy rule, blue button, footer with "Questions? Email Cindi at cindi@defendingthecause.org.", the mission line, and "You're receiving this because you serve with The Alliance Community Care Team." Plain-text version included.
+  **Expect:** Console prints the email. A notification_log row has status `logged`. From = "The Alliance Community Care Team" <cct@defendingthecause.org>. Reply-To = EMAIL_REPLY_TO if set, otherwise the sender address (cct@defendingthecause.org). White header with logo-horizontal.png from APP_BASE_URL/brand/ over a 4px navy rule, blue button, footer pointing questions to the Community Care Team (cct@defendingthecause.org), the mission line, and "You're receiving this because you serve with The Alliance Community Care Team." No mention of Cindi. Plain-text version included.
 
 - [ ] **SYS-10 · EMAIL_FROM / EMAIL_REPLY_TO** (P25)  
-  **Do:** Set EMAIL_FROM to a malformed value and restart. Restore it. Then set EMAIL_REPLY_TO to another address and send a test email. Then unset EMAIL_REPLY_TO.  
-  **Expect:** Malformed EMAIL_FROM fails startup loudly and names the secret. With EMAIL_REPLY_TO set, Reply-To uses it. Unset, Reply-To falls back to Cindi.
+  **Do:** Set EMAIL_FROM to a malformed value and start the app in production mode (NODE_ENV=production); then try a send in dev. Restore it. Then set EMAIL_REPLY_TO to another address and send a test email. Then unset EMAIL_REPLY_TO.  
+  **Expect:** In production mode a malformed EMAIL_FROM stops startup with a clear error that names the secret. In dev, startup isn't checked, but the send is refused with a clear error. With EMAIL_REPLY_TO set, Reply-To uses it. Unset, Reply-To falls back to the sender address (cct@defendingthecause.org).
 
 - [ ] **SYS-11 · Test accounts exist once** (QL-1, QL-4)  
   **Do:** Restart dev twice, then query users where isTestAccount = true.  
-  **Expect:** Exactly 5 rows: qa-admin@example.org plus the 4 volunteer personas. No orphaned old vol-training / vol-applicant users.
+  **Expect:** Exactly 5 user rows with isTestAccount = true (qa-admin@example.org plus the 4 volunteer personas) and 4 matching volunteer profiles (the test admin has none). No orphaned old vol-training / vol-applicant users.
 
 - [ ] **SYS-12 · Job runner** (P15)  
-  **Do:** Set RUN_JOBS=true in dev and watch the log for a 15-minute run, then set it back. Call POST /api/jobs/run without the JOBS_SECRET header, then with it.  
-  **Expect:** The scheduler logs a run every 15 minutes only when RUN_JOBS=true. Without the header: 401/403. With it: 200 and the job runs.
+  **Do:** Set RUN_JOBS=true in dev and watch the log for a 15-minute run, then set it back. Call POST /api/jobs/run with no `X-Jobs-Secret` header, then with `X-Jobs-Secret` set to the JOBS_SECRET value.  
+  **Expect:** The scheduler logs a run every 15 minutes only when RUN_JOBS=true. Without the header: 401/403. With it: 200 and the job runs. `X-Jobs-Secret` is the only header accepted (sending the secret under any other header name, such as JOBS_SECRET, is refused).
 
 - [ ] **SYS-13 · Production-mode lockdown** (P19)  
   **Do:** Run locally with NODE_ENV=production (or check on prod): open /style-guide, the dev test-email route, a page with ?at=, trigger an error, and try `npm run seed`.  
-  **Expect:** /style-guide and the test route are 404. ?at= is ignored. Error responses show no stack trace. Seed refuses to run.
+  **Expect:** /style-guide shows the app's not-found page (the single-page app may return HTTP 200) and the dev test-email route is blocked (403 ROUTE_NOT_DECLARED or 404); neither dev feature works. ?at= is ignored. Error responses show no stack trace. Seed refuses to run.
 
 - [ ] **SYS-14 · Health route** (P20)  
   **Do:** GET /api/health.  
@@ -99,12 +107,12 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
   **Expect:** DEPLOY.md covers the standard grid, blocking shifts, one-time shifts, Postmark DNS, EMAIL_FROM/EMAIL_REPLY_TO (in the secrets list), and a "Quick login (testing)" section: `QUICK_LOGIN_ENABLED` true/false only, republish after changing it, Reset test accounts, turn it off before real volunteers are invited. QA-CHECKLIST.md has NEW/CHANGED tags and the quick-login items (no unlock or lock steps). CHANGELOG.md has v1.1.0 and the on/off-switch line. The grep returns nothing.
 
 - [ ] **SYS-17 · Static brand files** (P21)  
-  **Do:** List client/public/brand/ and check the response headers on /brand/logo-horizontal.png.  
+  **Do:** List artifacts/alliance-volunteer-portal/public/brand/ and check the response headers on /brand/logo-horizontal.png.  
   **Expect:** logo-horizontal.png, logo-stacked.png, logo-mark.png, favicon-32.png, apple-touch-icon.png, icon-192.png, icon-512.png are present, served as static files (not from Object Storage) with long Cache-Control headers.
 
 - [ ] **SYS-18 · QA-CHECKLIST.md in sync (Prompt 26b)** (P26)  
-  **Do:** After Prompt 26b, run `diff <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' "docs/Alliance Persona Test Run.md" | sort -u) <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' QA-CHECKLIST.md | sort -u)`.  
-  **Expect:** No output: every test ID is in QA-CHECKLIST.md. No applicant, in_training, certification, background-check or agreement steps remain. MIL/NTF items are marked optional.
+  **Do:** After the D0a re-upload (Build Prompts v6), run `diff <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' "docs/Alliance Persona Test Run.md" | sort -u) <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' QA-CHECKLIST.md | sort -u)` and read the "Master/app disagreements" section of QA-CHECKLIST.md.  
+  **Expect:** No diff output: every test ID is in QA-CHECKLIST.md. The disagreements section lists none still open (only the MIL/NTF note that those optional features aren't built). No applicant, in_training, certification, background-check or agreement steps remain. MIL/NTF items are marked optional.
 
 ## VIS — Signed-out visitor
 
@@ -120,7 +128,7 @@ _Private/incognito window, not signed in._
 
 - [ ] **VIS-03 · Quick-login card (dev)** (QL-3, QL-4)  
   **Do:** Look below the sign-in card in dev.  
-  **Expect:** Amber dashed "QUICK LOGIN — TESTING" card with 5 buttons: Admin, Volunteer · Active, Volunteer · Active, no shift, Volunteer · Onboarding, ready to activate, Volunteer · Onboarding, new. One column at 375 px, 44 px tall. No button mentions training, certification, or applicant.
+  **Expect:** Amber dashed "Quick login — testing" card (sentence case, per the CCT brand) with 5 buttons: Admin, Volunteer · Active, Volunteer · Active, no shift, Volunteer · Onboarding, ready to activate, Volunteer · Onboarding, new. One column at 375 px, 44 px tall. No button mentions training, certification, or applicant.
 
 - [ ] **VIS-04 · Favicon & manifest** (P18, P21)  
   **Do:** Check the browser tab, the web manifest, and Add to Home Screen on a phone.  
@@ -138,13 +146,17 @@ _Private/incognito window, not signed in._
   **Do:** Sign in with a wrong password repeatedly.  
   **Expect:** Generic error (doesn't say which field is wrong), then a friendly rate-limit message.
 
+- [ ] **VIS-08 · Google button & manifest type** (F3)  
+  **Do:** With Google sign-in not configured, open /signin. Check the response headers of /manifest.json (renamed from /manifest.webmanifest in v1.1.2).  
+  **Expect:** No "Continue with Google" button (`/api/auth/session` reports googleEnabled: false). The manifest is served as JSON (`application/json` or `application/manifest+json`), not `text/plain` and not the app's HTML page.
+
 ## NEW — New sign-up (real account)
 
 _A fresh account you create in dev with an email you control (plus-addressing works). Not a test account, because test accounts never receive email. With no Postmark token in dev, emails and links print to the console. Keep this account; ADM-27 deactivates it._
 
 - [ ] **NEW-01 · Sign-up** (P4)  
-  **Do:** Go to /signup. Try a 7-character password and a mismatched confirm, then sign up properly with a password of at least 8 characters.  
-  **Expect:** The 7-character password (minimum is 8) and the mismatched confirm are rejected; 8 characters is accepted. Intro copy shows. Account is created and you land on /verify-email with your address shown.
+  **Do:** Go to /signup. Try a 7-character password and a mismatched confirm, then sign up properly (8+ characters).  
+  **Expect:** The 7-character password (minimum is 8) and the mismatched confirm are rejected. Intro copy shows. Account is created and you land on /verify-email with your address shown.
 
 - [ ] **NEW-02 · Verification gate (server-enforced)** (P4)  
   **Do:** While unverified, visit /dashboard, /shifts, /onboarding, then call a protected API (e.g. GET /api/shifts) from devtools.  
@@ -166,9 +178,9 @@ _A fresh account you create in dev with an email you control (plus-addressing wo
   **Do:** Look over /onboarding.  
   **Expect:** One screen. Intro: "Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to." Email read-only; name and phone prefilled and editable. DOB, address, city, state (default CA), ZIP, emergency contact name / relationship (with suggestions) / phone. "Only Alliance staff can see this." under DOB and emergency contact. No questionnaire, no agreement checkbox, no county.
 
-- [ ] **NEW-07 · Onboarding validation** (P22)  
-  **Do:** Try a future DOB, a 4-digit ZIP, a short phone, and a blank required field. Then submit the same bad values straight to the API from devtools.  
-  **Expect:** Each is blocked in the form and the API returns 400. ZIP+4 is accepted. Phones display as (XXX) XXX-XXXX.
+- [ ] **NEW-07 · Onboarding validation** (P22, F2)  
+  **Do:** Try a future DOB, a 4-digit ZIP, a short phone, and a blank required field. Then send the same bad values straight to the API from devtools, including a partial `PATCH /api/onboarding` with just `{"zip":"9560"}` or `{"phone":"12345"}`.  
+  **Expect:** Each is blocked in the form, and the API returns 400 with field errors, including for the partial PATCH (empty values are still allowed for save-as-you-go). ZIP+4 is accepted. Phones display as (XXX) XXX-XXXX.
 
 - [ ] **NEW-08 · Save on blur** (P22)  
   **Do:** Fill about half the fields, then refresh.  
@@ -202,9 +214,9 @@ _Quick-login persona. Verified, profile fields empty._
   **Do:** Click "Volunteer · Onboarding, new".  
   **Expect:** Lands on /onboarding. Amber banner: "You're signed in as a TEST account (Volunteer · Onboarding, new). Emails to this account are not sent." The banner pushes content down and doesn't cover the top bar or bottom tabs.
 
-- [ ] **ONBN-02 · Locked until profile done** (P22)  
-  **Do:** With fields empty, visit /dashboard, /shifts and /messages.  
-  **Expect:** Each redirects to /onboarding.
+- [ ] **ONBN-02 · Locked until profile done** (P22, F2)  
+  **Do:** With fields empty, visit /dashboard, /shifts, /messages, /resources and /profile.  
+  **Expect:** Each redirects to /onboarding. (Failed in production on Oct 11 for /shifts, which showed "Your profile is awaiting approval" instead; fixed by v3 Fix 2.)
 
 - [ ] **ONBN-03 · Complete profile** (QL-1, P22)  
   **Do:** Complete the profile.  
@@ -254,9 +266,9 @@ _Quick-login persona. Approved, holds no standing shift._
   **Do:** Try to add Tue 9–11 or Tue 11–1.  
   **Expect:** Blocked: "That time overlaps with your Tuesday 10:00 AM–12:00 PM shift."
 
-- [ ] **ANS-05 · Can't drop only shift** (P12)  
+- [ ] **ANS-05 · Can't drop only shift** (P12, P25)  
   **Do:** Click Drop on the only shift.  
-  **Expect:** Blocked. Offers Change shift and tells you to contact Cindi if you need to step back.
+  **Expect:** Blocked. Offers Change shift and tells you to contact the Community Care Team (cct@defendingthecause.org) if you need to step back.
 
 - [ ] **ANS-06 · Change shift** (P12)  
   **Do:** Change to another open slot.  
@@ -276,7 +288,7 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
 
 - [ ] **ACT-01 · Quick login & banner** (QL-1, QL-3)  
   **Do:** After Reset test accounts, click "Volunteer · Active". Use Switch account in the banner, then Sign out.  
-  **Expect:** Dashboard shows "Your next shift" for its one seeded shift. Switch account lists the other 4 personas and one click switches. Sign out returns to /signin.
+  **Expect:** Dashboard shows "Your next shift" for its one seeded shift. Switch account lists the other 4 personas and one click switches (cross-role switching: ADM-35). Sign out returns to /signin.
 
 - [ ] **ACT-02 · Layout & voice** (P7, P21)  
   **Do:** Look over the dashboard at 375 px and desktop.  
@@ -286,9 +298,9 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
   **Do:** Add a second non-overlapping standing shift, then try a third.  
   **Expect:** The second succeeds. The third is blocked with the max-2 message.
 
-- [ ] **ACT-04 · Week off & undo** (P12)  
+- [ ] **ACT-04 · Week off & undo** (P12, P25)  
   **Do:** Take a week off on an occurrence more than 24 hours away, then Undo. Then try a week off on one less than 24 hours away (use ?at= in dev).  
-  **Expect:** The week off removes that date from the upcoming list and Undo restores it. Inside 24 hours you get "Please contact The Alliance" with Cindi's contact.
+  **Expect:** The week off removes that date from the upcoming list and Undo restores it. Inside 24 hours you get "Please contact The Alliance" with the Community Care Team contact (cct@defendingthecause.org).
 
 - [ ] **ACT-05 · Week off triggers coverage gap** (P12, P13)  
   **Do:** Take a week off on an occurrence within the next 7 days (but more than 24 hours away) that leaves the slot under capacity. Then check ADM-13.  
@@ -300,19 +312,19 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
 
 - [ ] **ACT-07 · Inbox** (P14, P25)  
   **Do:** After ADM-16 sends this persona a single message, open /messages.  
-  **Expect:** Unread dot and a nav badge. Opening it marks it read and clears the badge. Markdown renders. No reply box; the "Questions?" line names Cindi at cindi@defendingthecause.org.
+  **Expect:** Unread dot and a nav badge. Opening it marks it read and clears the badge. Markdown renders. No reply box; the "Questions?" line names the Community Care Team (cct@defendingthecause.org).
 
-- [ ] **ACT-08 · Resource hub** (P17)  
-  **Do:** Open /resources. Use search and category chips. Open an article. Download a document.  
-  **Expect:** Quick-link buttons at the top. Search and chips filter. Article page has clean typography. Documents download. Items unpublished in ADM-30 aren't shown.
+- [ ] **ACT-08 · Resource hub** (P17, F2)  
+  **Do:** Open /resources. Use search and category chips. Open an article. Download a document. (Dev: also delete one document's file from storage and try again.)  
+  **Expect:** Quick-link buttons at the top. Search and chips filter. Article page has clean typography. Documents download. Items unpublished in ADM-30 aren't shown. A document whose file is missing returns "This document isn't available right now." (404), never a 500, and shows a "File missing" warning on /admin/resources.
 
 - [ ] **ACT-09 · Downloads need sign-in** (P17)  
   **Do:** Copy a document download URL, sign out (or use a private window) and open it.  
   **Expect:** Refused (401 or sent to sign-in). Not a public URL.
 
 - [ ] **ACT-10 · Profile edits** (P7, P22)  
-  **Do (CHANGED):** On /profile, edit phone, address and emergency contact. Read the Email hint and find Email address below; compare onboarding's hint.
-  **Expect (CHANGED):** Changes save. The read-only Email field says "To change your email, use Email address below." Self-service changes require verification. Onboarding retains the staff-contact hint. DOB, status and start date remain read-only.
+  **Do:** On /profile, edit phone, address and emergency contact. Read the hint under Email and find the Email address section below; compare the hint on /onboarding.  
+  **Expect:** Changes save. The read-only Email field says "To change your email, use Email address below." Self-service email changes require verification. Onboarding keeps its staff-contact hint. DOB, status and start date stay read-only (start date filled in).
 
 - [ ] **ACT-11 · Admin APIs blocked** (P5)  
   **Do:** From devtools, call several /api/admin/* routes. Visit /admin.  
@@ -330,6 +342,10 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
   **Do:** Walk every volunteer screen at 375 px and 768 px.  
   **Expect:** No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed.
 
+- [ ] **ACT-15 · Dashboard cards readable** (F2)  
+  **Do:** View the dashboard as Volunteer · Active, no shift (choose-shift card) and as Volunteer · Active with a shift (next-shift card), at 375 px and desktop. Run the axe contrast check.  
+  **Expect:** The "Choose your weekly shift" heading and the next-shift date line are white on navy and clearly readable. No contrast failures. (Both were navy on navy in production on Oct 11.)
+
 ## ADM — Admin
 
 _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org)._
@@ -343,12 +359,12 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** 10:30: two groups (9–11 and 10–12), each with its own end time, names, tap-to-call phone and email. Empty slot: amber "No one is on shift right now". 8 PM: "Outside shift hours". Up next, "Updated h:mm AM" refreshing every 60 s, coverage summary, needs-attention count and recent activity all show. Test accounts carry the TEST badge.
 
 - [ ] **ADM-03 · Load standard grid** (P24)  
-  **Do:** Settings → "Load Community Care Team standard grid" → confirm. Delete two slots and click again. Click a third time.  
-  **Expect:** On the seeded grid it creates 0 (all 40 exist). After deleting two, it recreates exactly those two. The third click creates none.
+  **Do:** Settings → "Load Community Care Team standard grid" → confirm, on the seeded grid. Click it again. Then in an isolated dev setup with no shift slots, click it twice.  
+  **Expect:** On the seeded grid it creates 0 (all 40 exist), and again 0. On the empty grid the first click creates 40 and the second creates 0. The slot editor deactivates slots rather than deleting them; a deactivated slot still counts as existing, so the loader doesn't recreate it (reactivate it in the editor instead).
 
 - [ ] **ADM-04 · Grid editor** (P10)  
-  **Do (CHANGED):** Open a new slot and check capacity and default end time. Edit an existing slot with a different capacity. Add an overlapping slot. Try "Copy Monday to all weekdays" on a scratch setup.
-  **Expect (CHANGED):** New slots default to capacity 2, matching the standard grid; existing capacities are preserved. Overlap shows an "overlaps with …" note, not an error. End time defaults to start + 2 hours. Copy fills the weekdays.
+  **Do:** Open a new slot and check its capacity and default end time. Edit an existing slot with a different capacity. Add a slot that overlaps another. Try "Copy Monday to all weekdays" on a scratch setup.  
+  **Expect:** New slots default to capacity 2 (matching the standard grid); existing capacities are kept. Overlap shows an "overlaps with …" note, not an error. End time defaults to start + 2 hours. Copy fills the weekdays.
 
 - [ ] **ADM-05 · Capacity & deactivation guards** (P10)  
   **Do:** Lower a slot's capacity below its assigned count. Deactivate a slot that has volunteers.  
@@ -391,8 +407,8 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** One digest per real admin for the day (relatedId = date); none to the test admin. Nothing sent when there are no gaps, or when the toggle is off.
 
 - [ ] **ADM-15 · Reminders** (P15, P24)  
-  **Do:** Create a one-time shift starting 24 h to 24 h 15 min from now; assign ACT and a seeded dummy volunteer. /admin/notifications/jobs → Run reminder check now, twice. Also click "Send test reminder to me".  
-  **Expect:** One reminder per volunteer ("Reminder: your shift tomorrow, …" with quick-link buttons and the week-off line). The second run sends nothing new. Week-off, blocked and closed-date occurrences get none. Last-run time and 7-day count update; the test reminder arrives.
+  **Do:** Create a one-time shift that starts within the next 24 hours (e.g. 3 hours from now); assign ACT and a seeded dummy (non-test) volunteer. /admin/notifications/jobs → Run reminder check now, twice. Signed in as a real dev admin (admin@example.org, not the Test Admin), click "Send test reminder to me".  
+  **Expect:** The manual check catches up on every shift starting within the next 24 hours: one reminder per volunteer ("Reminder: your shift tomorrow, …" or today's date, with quick-link buttons and the week-off line), logged for the dummy volunteer and `suppressed` for ACT. The second run sends nothing new. Week-off, blocked and closed-date occurrences get none. Last-run time and 7-day count update. The test reminder is logged for the real admin (from the Test Admin it would be `suppressed`).
 
 - [ ] **ADM-16 · Messaging** (P14, QL-1)  
   **Do:** New message → All active volunteers, email on. Check the preview count, send. Then send a single message to Volunteer · Active. After ACT-07, reopen the sent list.  
@@ -404,7 +420,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 
 - [ ] **ADM-18 · Roster defaults** (P23, QL-1)  
   **Do:** Open /admin/volunteers. Toggle "Show test accounts".  
-  **Expect:** Default columns: name, status, mobile (tap to call), email (tap to email), city, start date, shifts held (amber "No shift" for active with 0), last login. Test accounts hidden by default; toggled on, 5 appear with TEST badges. Summary chips exclude them either way.
+  **Expect:** Default columns: name, status, mobile (tap to call), email (tap to email), city, start date, shifts held (amber "No shift" for active with 0), last login. Test accounts hidden by default; toggled on, the 4 volunteer personas appear with TEST badges (the test admin is on Team). Summary chips exclude them either way.
 
 - [ ] **ADM-19 · Columns, sort, layout** (P23)  
   **Do:** Use the Columns picker to show DOB, full address, ZIP, emergency contact, county. Reload. Sort by several columns. Check desktop and mobile.  
@@ -412,7 +428,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 
 - [ ] **ADM-20 · Filters & chips** (P8, P23)  
   **Do:** Combine filters (e.g. Active + No shift; city + profile incomplete).  
-  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention" (active with 0 shifts, incomplete profile > 7 days, onboarding > 30 days). No certification or background columns or filters.
+  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention" (active with 0 shifts, incomplete profile > 7 days in onboarding, onboarding > 30 days). No certification or background columns or filters.
 
 - [ ] **ADM-21 · CSV exports** (P8, P23, P24, QL-1)  
   **Do:** Export the Roster CSV and Schedule CSV and open both in Google Sheets.  
@@ -427,12 +443,12 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** Move to Active is disabled and lists exactly which fields are missing.
 
 - [ ] **ADM-24 · Volunteer detail page** (P9, P23)  
-  **Do (CHANGED):** On any volunteer: change only start date inline and inspect Activity; then save start date with another profile field. Edit DOB, emergency contact, county and notes.
-  **Expect (CHANGED):** Start-date-only edits create one "Start date changed" entry, without a duplicate Profile updated entry. Mixed edits log only other field names in Profile updated, never values. Profile card is staff-only, emergency phone is tap-to-call, county is admin-only (default Placer), and notes autosave. No certification, background or agreement cards.
+  **Do:** On any volunteer: change only the start date inline and look at Recent activity; then save the start date together with another profile field. Edit DOB, emergency contact, county and admin notes.  
+  **Expect:** A start-date-only edit creates one "Start date changed" entry, with no duplicate "Profile updated" entry. Mixed edits list only the other field names in "Profile updated", never values. Profile card is staff-only with tap-to-call emergency phone; county is admin-only (default Placer); notes autosave. No certification, background or agreement cards.
 
 - [ ] **ADM-25 · Inactivate releases shifts** (P9, P13, P22)  
-  **Do (CHANGED):** Move Volunteer · Active to Inactive. Without reloading, inspect Current shifts, Standing shifts and dates, and the master schedule. Then Reset test accounts.
-  **Expect (CHANGED):** Confirm dialog lists the shifts being released. Assignments end today; both lists clear immediately, with no stale Mark week off buttons, and the master week refreshes. A coverage-gap alert goes to real admins. The persona's dashboard shows the gentle inactive note. Reset restores it.
+  **Do:** Move Volunteer · Active (with a shift) to Inactive. Without reloading, look at Current shifts, Standing shifts and dates, and the master schedule. Then Reset test accounts.  
+  **Expect:** Confirm dialog lists the shifts being released. Assignments end today; both shift lists clear immediately (no stale Mark week off buttons) and the master week refreshes. A coverage-gap alert goes to real admins if a released shift is within 14 days. The persona's dashboard shows the gentle inactive note. Reset restores it.
 
 - [ ] **ADM-26 · Invite admin** (P5)  
   **Do:** Team → Invite admin with an address you control. Open the invite link and set a password.  
@@ -448,7 +464,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 
 - [ ] **ADM-29 · Postmark card** (P25)  
   **Do:** Look at the Postmark card in dev (no token).  
-  **Expect:** Shows from name, from address, reply-to, token not set, and "Before sending, the defendingthecause.org DKIM and Return-Path records must show Verified in Postmark." (PRD-06 checks it with a token.)
+  **Expect:** Shows from name, from address, reply-to (cct@defendingthecause.org), token not set, and "Before sending, the defendingthecause.org DKIM and Return-Path records must show Verified in Postmark." (PRD-06 checks it with a token.)
 
 - [ ] **ADM-30 · Resource admin** (P17)  
   **Do:** Upload a PDF and a DOCX; try a >15 MB file and a .exe. Replace a file. Write an article with live preview. Add a quick link with http:// then https://. Drag to reorder and reload. Unpublish one item.  
@@ -460,7 +476,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 
 - [ ] **ADM-32 · Reset test accounts** (QL-1, P26)  
   **Do:** Team → Test accounts card → Reset test accounts (confirm).  
-  **Expect:** Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set). The reset is in the activity log.
+  **Expect:** Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set). The reset is in the activity log. All test sessions are signed out, including the admin doing the reset. Real (non-test) records are untouched.
 
 - [ ] **ADM-33 · TEST badges on one-time claims** (QL-1, P26)  
   **Do:** After ACT-06, look at the one-time shift on the master schedule, its side panel, and the roster.  
@@ -470,7 +486,23 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Do:** Walk every admin screen at 375 px and 768 px.  
   **Expect:** No horizontal scrolling. Tables become cards. On shift now is usable one-handed.
 
-## MIL — Admin · Prompt 27 (optional) (optional)
+- [ ] **ADM-35 · Switch account across roles** (QL-3, F2)  
+  **Do:** From the test-account banner, switch volunteer → Admin, Admin → volunteer, volunteer → volunteer, and onboarding-new → Admin. Start each switch from a different page (e.g. /profile, /admin/team).  
+  **Expect:** Each switch lands on the right home page for the new persona (/admin, /dashboard or /onboarding) with no stuck "Taking you to the right place" spinner. (Failed in production on Oct 11 for cross-role switches; fixed by v3 Fix 2.)
+
+- [ ] **ADM-36 · Shift email type** (F2)  
+  **Do:** As ANS, book a shift, take a week off, and claim then cancel a one-time shift. Open /admin/notifications and filter by type.  
+  **Expect:** Those emails are logged as type "Shift" (not "Welcome"). The welcome and "You're approved" emails stay "Welcome". The filter, monthly by-type counts and 6-month chart all include Shift.
+
+- [ ] **ADM-37 · Polish pass** (F3)  
+  **Do:** Book a shift that starts next week and look at My Shifts. Put both Active personas on the schedule. Open the master schedule and admin home with `?at=` set to a Saturday. Check the volunteer Profile card with a screen reader or the accessibility tree. Look at the Team → Test accounts card, message recipient search, and the slot editor capacity helper.  
+  **Expect:** "Starts {date}" for a future start ("Started" only once it has passed). The two Active personas are distinguishable (persona labels, TEST badge). On a weekend the schedule and "This week" show the coming week. Profile card labels are linked to their inputs, and every phone shows as (XXX) XXX-XXXX. Team card labels match the sign-in buttons. Test accounts carry TEST in message search. Capacity helper reads "1 volunteer is assigned, so capacity can't go below 1." for one, and "{N} volunteers are assigned…" for more; the server error uses the same singular/plural.
+
+- [ ] **ADM-38 · Week off only inside the assignment period** (F4)  
+  **Do:** Give an Active persona a standing shift with a start date 15+ days out. Open that shift in the Master schedule side panel. Try marking a week off before the start date through the API.  
+  **Expect:** The panel lists only dates on or after the start date (plus any stored future weeks off), with no "Mark week off" for earlier weeks. The API returns 422 ("That date is before this volunteer's standing shift starts."). The volunteer's own week-off action rejects out-of-period dates the same way. Reset test accounts afterwards.
+
+## MIL — Admin · Prompt 27 (optional)
 
 _Only if Prompt 27 (milestones) is approved and built._
 
@@ -494,7 +526,7 @@ _Only if Prompt 27 (milestones) is approved and built._
   **Do:** Look for the test personas (DOB 1990-01-01) in milestones.  
   **Expect:** Not specified in Prompt 27. Decide: hidden, or shown with a TEST badge. Log what you see.
 
-## NTF — Admin · Prompt 28 (optional) (optional)
+## NTF — Admin · Prompt 28 (optional)
 
 _Only if Prompt 28 (admin shift-activity notifications) is approved and built._
 
@@ -516,31 +548,31 @@ _Only if Prompt 28 (admin shift-activity notifications) is approved and built._
 
 ## PRD — Production
 
-_After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). Turn it off before real volunteers are invited._
+_After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). Turn it off before real volunteers are invited. While production still has seed data (before PRD-14), avoid anything that emails the @example.org dummies or admin@example.org through Postmark._
 
 - [ ] **PRD-01 · Enum value before publish** (P22)  
   **Do:** Before publishing Prompt 22's schema, run `ALTER TYPE volunteer_status ADD VALUE IF NOT EXISTS 'onboarding';` in the production Database tool.  
   **Expect:** Runs without error.
 
-- [ ] **PRD-02 · Publish change list** (P22, P26)  
-  **Do:** Publish and read the schema change list.  
+- [ ] **PRD-02 · Publish change list** (P22, P26, F2)  
+  **Do:** Publish and read the schema change list. (For Fix 2, run `ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'shift';` first.)  
   **Expect:** Only additive changes. If anything is dropped, renamed or converted, choose Cancel deployment. Never "Copy your development database schema & data to production".
 
 - [ ] **PRD-03 · Status update** (P22)  
-  **Do:** Run `UPDATE volunteer_profiles SET status = 'onboarding' WHERE status IN ('applicant', 'in_training');` then `SELECT status, count(*) FROM volunteer_profiles GROUP BY status;`.  
-  **Expect:** No applicant or in_training rows remain.
+  **Do:** Only with Drew's approval (one-time step, done Oct 11 after the Prompt 22 publish, tracker A8c): run `SELECT status, count(*) FROM volunteer_profiles GROUP BY status;`. If applicant or in_training rows show up, ask before running `UPDATE volunteer_profiles SET status = 'onboarding' WHERE status IN ('applicant', 'in_training');`.  
+  **Expect:** No applicant or in_training rows. (Even if some existed, the app reads them as onboarding, so nothing breaks while waiting for approval.)
 
-- [ ] **PRD-04 · Health & clean data** (P20, P26)  
+- [ ] **PRD-04 · Health & clean data** (P20, P26, F1)  
   **Do:** GET /api/health. Check users for admin@example.org or dummy volunteers.  
-  **Expect:** Health OK. No seed data. The only @example.org users are the 5 qa-* test accounts.
+  **Expect:** Health OK. No seed data. The only @example.org users are the 5 qa-* test accounts. (Failed on Oct 11: production had the full dev seed. PRD-14 cleans it up.)
 
 - [ ] **PRD-05 · Grid in production** (P24, P26)  
   **Do:** Click "Load Community Care Team standard grid" once, then once more.  
-  **Expect:** First click creates 40 slots; the second creates none.
+  **Expect:** The first click fills in only the standard slots that don't exist yet (20 after the Fix 1 purge, which kept 4 existing times; 40 on an empty grid). Deactivated slots count as existing and aren't recreated. The second click creates none.
 
 - [ ] **PRD-06 · Live test email** (P25, P26)  
-  **Do (CHANGED):** In production with Postmark configured, sign in as a normal verified admin. Open Admin → Notifications and click "Send test email to me"; on Reminder jobs click "Send test reminder to me". Repeat as TEST admin. Test anonymous/volunteer access and a recipient override.
-  **Expect (CHANGED):** Both buttons are visible and send only to the signed-in admin, logging sent. TEST sends log suppressed and deliver nothing. Anonymous/volunteer access and recipient overrides are rejected; CSRF is required. The configured CCT sender, logo and configured Reply-To or sender fallback render. Card shows token set; DKIM and Return-Path show Verified in Postmark.
+  **Do:** In production, sign in as yourself (a real admin). Admin → Notifications → "Send test email to me"; Reminder jobs → "Send test reminder to me". Repeat as the test Admin.  
+  **Expect:** Both buttons show and send only to the signed-in admin (logged sent). From the test Admin they log suppressed and deliver nothing. Volunteers and signed-out users can't call them. Email arrives from The Alliance Community Care Team <cct@defendingthecause.org> with the configured Reply-To and the logo. Card shows token set; DKIM and Return-Path show Verified in Postmark.
 
 - [ ] **PRD-07 · Quick login on, no unlock** (QL-3, QL-5)  
   **Do:** With `QUICK_LOGIN_ENABLED=true` in Secrets (republished), open /signin in a fresh private window.  
@@ -563,16 +595,20 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
   **Expect:** No quick-login card. The status call returns 404. Normal sign-in still works.
 
 - [ ] **PRD-12 · External cron** (P15, P13)  
-  **Do:** Watch /admin/notifications/jobs for 30+ minutes. On a weekday after 7 AM, check the log for the digest.  
-  **Expect:** Last-run time updates every 15 minutes from the external cron. The 7 AM digest is logged if there are gaps (tracker A4, A6).
+  **Do:** Watch /admin/notifications/jobs for 30+ minutes. On a weekday after 7 AM, check Schedule settings → "Last daily check" and the log for the digest.  
+  **Expect:** Last-run time updates every 15 minutes from the external cron. On weekdays the daily check runs after 7 AM and the digest is logged if there are gaps (tracker A4, A6). "No daily check yet" over a weekend is expected.
 
 - [ ] **PRD-13 · Production lockdown** (P20, P19)  
   **Do:** Restart logs; open /style-guide; add ?at= to admin home.  
   **Expect:** Startup secrets check passes. /style-guide is 404. ?at= is ignored.
 
+- [ ] **PRD-14 · Seed data purge** (F1)  
+  **Do:** After your real admin exists, run the Fix 1 pre-checks, the numbered statements in order, and the post-checks in the production Database tool. Then open the roster (test accounts on and off), master schedule, email log and /resources, and quick-login as all 5 personas.  
+  **Expect:** The pre-check shows at least 1 active admin not on example.org; then 19 users to delete and 5 qa-* users. Every statement succeeds. The post-checks are 0 for non-test @example.org users, profiles, assignments, messages, resources and notification rows, with qa-* users = 5 and shift_slots unchanged. The roster only has the test personas, the schedule has no names, the email log has no dummy rows, /resources is empty, and quick login works.
+
 ## Coverage by prompt
 
-Every prompt's Check maps to at least one test.
+Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3.
 
 | Prompt | Tests |
 |---|---|
@@ -600,15 +636,19 @@ Every prompt's Check maps to at least one test.
 | P22 | SYS-01, SYS-06, SYS-07, SYS-08, NEW-05, NEW-06, NEW-07, NEW-08, NEW-09, NEW-10, NEW-11, ONBN-02, ONBN-03, ONBR-01, ONBR-03, ONBR-04, ACT-10, ACT-12, ADM-22, ADM-23, ADM-25, ADM-31, PRD-01, PRD-02, PRD-03 |
 | P23 | SYS-06, ADM-18, ADM-19, ADM-20, ADM-21, ADM-24 |
 | P24 | SYS-01, SYS-02, SYS-06, ANS-03, ANS-04, ANS-07, ACT-06, ACT-13, ADM-02, ADM-03, ADM-07, ADM-09, ADM-10, ADM-11, ADM-12, ADM-15, ADM-21, PRD-05 |
-| P25 | SYS-09, SYS-10, ACT-07, ADM-29, PRD-06 |
+| P25 | SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, ADM-29, PRD-06 |
 | P26 | SYS-02, SYS-03, SYS-04, SYS-05, SYS-15, SYS-16, SYS-18, ADM-32, ADM-33, PRD-02, PRD-04, PRD-05, PRD-06, PRD-09 |
 | P27 | MIL-01, MIL-02, MIL-03, MIL-04, MIL-05 |
 | P28 | NTF-01, NTF-02, NTF-03, NTF-04 |
 | QL-1 | SYS-02, SYS-06, SYS-11, ONBN-03, ONBN-04, ACT-01, ACT-13, ADM-13, ADM-14, ADM-16, ADM-18, ADM-21, ADM-28, ADM-32, ADM-33, MIL-05, NTF-04, PRD-10 |
 | QL-2 | SYS-02, SYS-03, PRD-11 |
-| QL-3 | VIS-03, ONBN-01, ANS-01, ACT-01, ADM-01, PRD-07 |
+| QL-3 | VIS-03, ONBN-01, ANS-01, ACT-01, ADM-01, ADM-35, PRD-07 |
 | QL-4 | SYS-05, SYS-06, SYS-11, SYS-16, VIS-03, ONBN-01, ONBR-01, ONBR-04, ADM-22, PRD-09 |
 | QL-5 | SYS-02, SYS-03, SYS-16, PRD-07, PRD-08, PRD-11 |
+| F1 | PRD-04, PRD-14 |
+| F2 | NEW-07, ONBN-02, ACT-08, ACT-15, ADM-35, ADM-36, PRD-02 |
+| F3 | VIS-08, ADM-37 |
+| F4 | VIS-08, ADM-37, ADM-38 |
 
 ## Superseded v1 checks
 
@@ -621,12 +661,13 @@ Every prompt's Check maps to at least one test.
 | P9 | Can't activate without a cleared background check | P22 removed the gate: activation needs only verified email + complete profile (ADM-22, ADM-23). |
 | P17 | Agreement version bump prompts re-acknowledgment | Off while requireAgreementAcknowledgment = false (ADM-31). |
 | P20 | Migrations run with drizzle-kit migrate | Oct 10 decision: schema reaches prod through Replit Publish (PRD-01 to PRD-03). |
+| P21 | Cindi (staffContactName/Email) is the volunteer-facing contact and default Reply-To | P25 made the Community Care Team (cct@defendingthecause.org) the volunteer contact and Reply-To; Cindi is staff-only (SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06). |
 | QL-1 / QL-3 | Personas vol-training and vol-applicant; buttons "In training" / "Applicant" | QL-4 replaced them with the two Onboarding personas (VIS-03, ONBN, ONBR). |
 | QL-2 / QL-3 | Production lock: `QUICK_LOGIN_KEY`, the `/qa?key=` unlock with a 30-day cookie, `/qa/lock`, "Hide test logins on this device"; prod 404 until unlocked | QL-5 (Oct 10) removed all of it. Production quick login is on/off with `QUICK_LOGIN_ENABLED` only (SYS-02, SYS-03, SYS-16, PRD-07, PRD-08, PRD-11). |
 
 ## Keeping this current
 
 - **This doc is the master test list.** Any new or changed build prompt gets its tests added here (and to the .xlsx) in the same session.
-- **Prompt 26b** (Build Prompts v2) has Replit merge this doc into QA-CHECKLIST.md after Prompt 26, with test IDs on each step. SYS-18 checks it.
-- **Prompts 27 and 28** each end with a line telling Replit to add their workflows to QA-CHECKLIST.md, so the file stays current if they're built.
+- **Prompt 26b** (Build Prompts v2) merged this doc into QA-CHECKLIST.md, with test IDs on each step. SYS-18 checks it.
+- **Every later prompt** (27, 28, the v3 fixes) ends with a line telling Replit to add its workflows to QA-CHECKLIST.md, so the file stays current.
 - After any later prompt, upload the updated version of this doc to `docs/` in Replit so QA-CHECKLIST.md can be re-synced.
