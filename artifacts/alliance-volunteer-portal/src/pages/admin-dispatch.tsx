@@ -87,7 +87,7 @@ function Body() {
           <div className="grid gap-3 sm:grid-cols-3">
             <Link href={`/admin/schedule?weekStart=${d.weekStart}`} data-testid="link-open-spots" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.openSpots}</span><span className="text-sm">Open spots</span></Link>
             <Link href={`/admin/schedule?weekStart=${d.weekStart}`} data-testid="link-under-covered" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.underCoveredShifts}</span><span className="text-sm">Under-covered shifts</span></Link>
-            <Link href="/admin/volunteers?needsAttention=true" data-testid="link-needs-attention" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.needsAttention}</span><span className="text-sm">Volunteers need attention</span></Link>
+            <Link href="/admin/volunteers?needsAttention=any" data-testid="link-needs-attention" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.needsAttention}</span><span className="text-sm">Volunteers need attention</span><span className="mt-1 block text-xs text-navy-soft">Includes new registrations awaiting review</span></Link>
           </div>
         </section>
         <section aria-labelledby="act" className="mt-8" data-testid="section-activity">

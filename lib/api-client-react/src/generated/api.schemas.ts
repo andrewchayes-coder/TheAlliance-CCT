@@ -669,6 +669,7 @@ export type AttentionReason = typeof AttentionReason[keyof typeof AttentionReaso
 
 
 export const AttentionReason = {
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
@@ -1756,6 +1757,7 @@ export type ListVolunteerRosterNeedsAttention = typeof ListVolunteerRosterNeedsA
 
 export const ListVolunteerRosterNeedsAttention = {
   any: 'any',
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
@@ -1864,6 +1866,7 @@ export type ExportVolunteerRosterNeedsAttention = typeof ExportVolunteerRosterNe
 
 export const ExportVolunteerRosterNeedsAttention = {
   any: 'any',
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
@@ -1916,10 +1919,12 @@ export type ExportVolunteerScheduleNeedsAttention = typeof ExportVolunteerSchedu
 
 export const ExportVolunteerScheduleNeedsAttention = {
   any: 'any',
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',
   onboarding_incomplete: 'onboarding_incomplete',
+  onboarding_overdue: 'onboarding_overdue',
 } as const;
 
 export type ListTeamUsersParams = {

@@ -1,6 +1,6 @@
 ---
-name: Notification test isolation
-description: Why reminder/broadcast browser QA must isolate its complete API and data scope.
+name: QA test isolation
+description: Isolate email side effects and namespace fixture queries in shared development data.
 ---
 Reminder and broadcast smoke tests must use an isolated data scope and API, not merely individually owned test users in the shared development database.
 
@@ -12,4 +12,10 @@ Production-mode email-route tests should still use an isolated development data 
 
 **Why:** production intentionally refuses log-only email delivery. A route test that merely flips NODE_ENV on a development fixture will fail for configuration rather than test the production access rules.
 
-**How to apply:** enable production semantics only inside the owned test process, supply synthetic email configuration with a mocked successful provider response, and assert the provider recipient and absence of provider calls for TEST accounts.
+**How to apply:** isolate production email behavior behind a mocked provider. Assertions must distinguish real delivery, log-only development delivery, and test-account suppression.
+
+Paginated integration-test assertions must narrow queries to their owned fixture namespace before asserting which record appears.
+
+**Why:** the development database can simultaneously contain browser fixtures and other test runs; a global sorted first-page assertion can fail even when filtering and sorting are correct.
+
+**How to apply:** use a fixture email or namespace in integration queries; verify global sorting and counting with pure projections or controlled snapshots rather than assuming the shared database is otherwise empty.

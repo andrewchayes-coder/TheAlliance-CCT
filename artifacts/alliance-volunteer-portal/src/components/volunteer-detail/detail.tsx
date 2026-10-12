@@ -90,16 +90,15 @@ export function VolunteerDetail() {
           </dl>
           <div className="mt-4 flex flex-wrap gap-4 text-sm font-bold">
             <Link href={`/admin/volunteers/${e.user.id}/onboarding`} className="text-blue underline underline-offset-4" data-testid="link-review-onboarding">Review onboarding</Link>
-            <Link href="/admin/team" className="text-blue underline underline-offset-4" data-testid="link-manage-account">Manage account</Link>
+            <button type="button" onClick={() => document.getElementById('review-account')?.scrollIntoView({ behavior: 'smooth' })} className="text-blue underline underline-offset-4" data-testid="link-manage-account">Manage account details</button>
           </div>
 
-          <div className="mt-6"><h2 className="alliance-display mb-3">Account</h2><AccountEditor key={userId} userId={userId} managed /></div>
-
           <StatusPanel userId={userId} detail={d} blockedReason={statusBlock} />
-          <ProfileCard userId={userId} detail={d} blockedReason={trackBlock} />
-          <TrackingPanel userId={userId} detail={d} blockedReason={trackBlock} onDirty={setTrackDirty} />
+          <div id="review-account" className="mt-6"><h2 className="alliance-display mb-3">Account details (not program approval)</h2><AccountEditor key={userId} userId={userId} managed /></div>
+          <div id="review-profile"><ProfileCard userId={userId} detail={d} blockedReason={trackBlock} /></div>
+          <div id="review-tracking"><TrackingPanel userId={userId} detail={d} blockedReason={trackBlock} onDirty={setTrackDirty} /></div>
 
-          <section className="alliance-card mt-6" aria-labelledby="v-onb">
+          <section id="review-onboarding" className="alliance-card mt-6" aria-labelledby="v-onb">
             <h2 id="v-onb" className="alliance-display">Onboarding</h2>
             <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
               {flags.agree && <Item label="Agreement acknowledged">{stamp(p.agreementAcknowledgedAt) ?? 'Not recorded'}</Item>}

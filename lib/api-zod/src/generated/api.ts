@@ -2168,7 +2168,7 @@ export const ListVolunteerRosterQueryParams = zod.object({
   "sortDirection": zod.enum(['asc', 'desc']).optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
-  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional(),
+  "needsAttention": zod.enum(['any', 'awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional(),
   "showTestAccounts": zod.enum(['true', 'false']).optional(),
   "limit": zod.coerce.number().int().min(1).max(listVolunteerRosterQueryLimitMax).default(listVolunteerRosterQueryLimitDefault),
   "offset": zod.coerce.number().int().min(listVolunteerRosterQueryOffsetMin).default(listVolunteerRosterQueryOffsetDefault)
@@ -2219,7 +2219,7 @@ export const ListVolunteerRosterResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
+  "attention": zod.array(zod.enum(['awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 })),
   "total": zod.number().int(),
   "limit": zod.number().int(),
@@ -2284,7 +2284,7 @@ export const GetAdminVolunteerResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
+  "attention": zod.array(zod.enum(['awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -2379,7 +2379,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
+  "attention": zod.array(zod.enum(['awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -2513,7 +2513,7 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
+  "attention": zod.array(zod.enum(['awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -2610,7 +2610,7 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "updatedAt": zod.coerce.date()
 }),
   "shiftCount": zod.number().int(),
-  "attention": zod.array(zod.enum(['no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
+  "attention": zod.array(zod.enum(['awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']))
 }),
   "adminNotes": zod.string().nullable(),
   "shifts": zod.array(zod.object({
@@ -2664,7 +2664,7 @@ export const ExportVolunteerRosterQueryParams = zod.object({
   "sortDirection": zod.enum(['asc', 'desc']).optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
-  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional()
+  "needsAttention": zod.enum(['any', 'awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional()
 })
 
 export const ExportVolunteerRosterResponse = zod.unknown()
@@ -2680,7 +2680,7 @@ export const ExportVolunteerScheduleQueryParams = zod.object({
   "county": zod.coerce.string().optional(),
   "certificationStatus": zod.enum(['not_started', 'in_progress', 'complete']).optional(),
   "backgroundCheckStatus": zod.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
-  "needsAttention": zod.enum(['any', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete']).optional()
+  "needsAttention": zod.enum(['any', 'awaiting_review', 'no_shift', 'certification_expiring', 'background_pending', 'onboarding_incomplete', 'onboarding_overdue']).optional()
 })
 
 export const ExportVolunteerScheduleResponse = zod.unknown()

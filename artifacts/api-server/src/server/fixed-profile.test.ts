@@ -3,7 +3,6 @@ import { retiredVolunteerStatuses } from '@workspace/shared/legacy-compatibility
 import { randomUUID, randomBytes } from 'node:crypto';
 import type { Server } from 'node:http';
 import { eq, inArray } from 'drizzle-orm';
-import { db, pool, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable } from '@workspace/db';
 import { profileCompletionSchema, profileDraftSchema, normalizeVolunteerStatus, formatPhone, pacificToday } from '@workspace/shared/profileFields';
 import { appConfig } from '@workspace/shared/appConfig';
 import type { Request, Response } from 'express';
@@ -15,22 +14,29 @@ vi.mock('../email', async importOriginal => ({
   ...await importOriginal<typeof import('../email')>(),
   sendEmail: vi.fn(async () => ({ ok:true, status:'suppressed' as const })),
 }));
+import { db, pool, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable, sessionsTable, authRateLimitsTable } from '@workspace/db';
 const { default:app } = await import('../app');
-const { hashPassword, checkPassword } = await import('../auth/security');
+
+const { hashPassword, checkPassword, tokenHash } = await import('../auth/security');
 const { appOrigin } = await import('../auth/session');
 const { approvalRequirements, WorkflowError } = await import('../admin-volunteer-detail');
 const { rosterSnapshot, rosterCsv } = await import('../admin-roster');
 const { sendEmail } = await import('../email');
+
+const { mintToken } = await import('../auth/accounts');
 let server:Server, base:string, volunteerId:string, otherId:string, adminId:string;
 const ids:string[] = [], password = 'synthetic-profile-test-password';
+
+const sessionIds=new Set<string>(),rateIdentities=new Set<string>();
 const ipBytes=randomBytes(2), testIp=`198.18.${ipBytes[0]}.${ipBytes[1]}`;
+rateIdentities.add(testIp);
 const complete = {
   firstName:'Profile',lastName:'QA',phone:'9165550100',dateOfBirth:'1990-01-01',addressLine1:'123 Synthetic QA Lane',
   city:'Sacramento',state:'CA',zip:'95814-1234',emergencyContactName:'Synthetic Contact',
   emergencyContactRelationship:'Friend',emergencyContactPhone:'9165550101',
 };
 type Client = {request:(path:string,method?:string,body?:unknown)=>Promise<{status:number;data:any}>};
-async function client(email:string):Promise<Client> {
+async function client(email?:string):Promise<Client> {
   let cookie = '', token = '';
   const request:Client['request'] = async (path,method='GET',body) => {
     const response = await fetch(`${base}/api${path}`, {method,headers:{
@@ -39,12 +45,18 @@ async function client(email:string):Promise<Client> {
       'x-forwarded-proto':'https',
     },...(body === undefined ? {} : {body:JSON.stringify(body)})});
     const updated = response.headers.getSetCookie().find(value=>value.startsWith('alliance.sid='));
-    if (updated) cookie = updated.split(';')[0]!;
+    if (updated) {
+      cookie = updated.split(';')[0]!;
+      const value=decodeURIComponent(cookie.split('=').slice(1).join('='));
+      if(value.startsWith('s:')) sessionIds.add(value.slice(2).split('.')[0]!);
+    }
     const data:any = await response.json();
     if (data.csrfToken) token = data.csrfToken;
     return {status:response.status,data};
   };
   await request('/auth/session');
+  if(!email) return {request};
+  rateIdentities.add(email);
   const result = await request('/auth/signin','POST',{email,password});
   expect(result.status).toBe(200);
   await request('/auth/session');
@@ -60,6 +72,7 @@ beforeAll(async()=>{
     const [user] = await db.insert(usersTable).values({email:`${kind}-${tag}@example.invalid`,firstName:`${kind}-${tag}`,
       lastName:'Synthetic QA',phone:'9165550100',passwordHash:hash,role,isTestAccount:false,emailVerifiedAt:new Date()}).returning();
     ids.push(user!.id);
+    rateIdentities.add(user!.id);rateIdentities.add(user!.email);
     if(kind==='admin') adminId=user!.id;
     else {
       const {firstName:_,lastName:_last,phone:_phone,...fields}=complete;
@@ -74,6 +87,10 @@ beforeAll(async()=>{
   admin=await client(`admin-${tag}@example.invalid`);
 },30000);
 afterAll(async()=>{
+  if(sessionIds.size) await db.delete(sessionsTable).where(inArray(sessionsTable.sid,[...sessionIds]));
+  const rateKeys=[...rateIdentities].flatMap(identity=>['signup','signup-ip','signup-email','signin','signin-ip','signin-email','verify-ip','resend-minute']
+    .map(scope=>`${scope}:${tokenHash(identity)}`));
+  if(rateKeys.length) await db.delete(authRateLimitsTable).where(inArray(authRateLimitsTable.key,rateKeys));
   if(ids.length) {
     await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientUserId,ids));
     await db.delete(activityLogTable).where(inArray(activityLogTable.actorUserId,ids));
@@ -82,6 +99,71 @@ afterAll(async()=>{
   }
   await new Promise<void>(resolve=>server.close(()=>resolve()));
   await pool.end();
+});
+
+// Staff tools use the existing admin permission; there is no separate persisted staff role.
+describe.each(['Admin','Staff'] as const)('%s signup-to-approval review workflow',persona=>{
+  it('classifies signup before verification, enforces requirements, approves, reopens review and survives email failure',async()=>{
+    const tag=randomUUID(),email=`review-${tag}@example.invalid`;
+    rateIdentities.add(email);
+    const actorUser=await db.insert(usersTable).values({firstName:persona,lastName:'Synthetic Staff',email:`actor-${tag}@example.invalid`,
+      phone:'9165550100',role:'admin',passwordHash:await hashPassword(password),emailVerifiedAt:new Date()}).returning();
+    ids.push(actorUser[0]!.id);rateIdentities.add(actorUser[0]!.id);
+    const actor=await client(actorUser[0]!.email);
+    const before=(await actor.request('/admin/volunteers')).data.summary;
+    const overviewBefore=(await actor.request('/admin/overview')).data.needsAttention;
+    const fresh=await client();
+    const signup=await fresh.request('/auth/signup','POST',{firstName:'Review',lastName:tag,email,phone:'9165550100',password,confirmPassword:password});
+    expect(signup.status).toBe(200);
+    await fresh.request('/auth/session');
+    const [user]=await db.select().from(usersTable).where(eq(usersTable.email,email));ids.push(user!.id);rateIdentities.add(user!.id);
+    const path=`/admin/volunteers/${user!.id}`;
+    let detail=(await actor.request(path)).data;
+    expect(detail.entry.attention).toEqual(['awaiting_review']);
+    expect(detail.entry.user.emailVerifiedAt).toBeNull();
+    expect(detail.entry.user.isActive).toBe(true); // Login access is not approval.
+    for(const needsAttention of ['awaiting_review','any']) {
+      const list=await actor.request(`/admin/volunteers?search=${email}&needsAttention=${needsAttention}`);
+      expect(list.data.total).toBe(1);expect(list.data.volunteers[0].user.id).toBe(user!.id);
+      expect(list.data.summary.needsAttention).toBe(before.needsAttention+1);
+    }
+    expect((await actor.request('/admin/overview')).data.needsAttention).toBe(overviewBefore+1);
+    const blocked=await actor.request(`${path}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
+    expect(blocked.status).toBe(422);
+    expect(blocked.data.missing.map((r:{key:string})=>r.key)).toEqual(expect.arrayContaining(['email_verified','onboarding_completed','profile_dateOfBirth']));
+    const token=await mintToken(user!.id,'email_verify');
+    expect((await fresh.request('/auth/verify','POST',{token:token.raw})).status).toBe(200);
+    await fresh.request('/auth/session');
+    detail=(await actor.request(path)).data;
+    expect(detail.entry.profile.status).toBe('onboarding');
+    expect(detail.approvalRequirements.find((r:{key:string})=>r.key==='email_verified').met).toBe(true);
+    expect((await fresh.request('/onboarding','PATCH',{...complete,complete:true})).status).toBe(200);
+    detail=(await actor.request(path)).data;
+    expect(detail.approvalRequirements.every((r:{met:boolean})=>r.met)).toBe(true);
+    expect(detail.entry.attention).toEqual(['awaiting_review']);
+    expect((await actor.request(`/admin/volunteers?search=${email}&needsAttention=awaiting_review`)).data.total).toBe(1);
+    let approved=await actor.request(`${path}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
+    expect(approved.status).toBe(200);
+    expect(approved.data.detail.entry.profile.status).toBe('active');
+    expect(approved.data.detail.entry.attention).toEqual(['no_shift']);
+    expect((await actor.request(`/admin/volunteers?search=${email}&needsAttention=awaiting_review`)).data.total).toBe(0);
+    expect((await actor.request(`/admin/volunteers?search=${email}&needsAttention=any`)).data.total).toBe(1);
+    expect((await actor.request('/admin/overview')).data.needsAttention).toBe(overviewBefore+1);
+    expect((await actor.request(`${path}/status`,'POST',{status:'onboarding',expectedUpdatedAt:detail.entry.profile.updatedAt})).status).toBe(409);
+    detail=approved.data.detail;
+    const returned=await actor.request(`${path}/status`,'POST',{status:'onboarding',expectedUpdatedAt:detail.entry.profile.updatedAt});
+    expect(returned.status).toBe(200);detail=returned.data.detail;
+    expect(detail.entry.attention).toEqual(['awaiting_review']);
+    vi.mocked(sendEmail).mockResolvedValueOnce({ok:false,error:'Synthetic delivery failure'});
+    approved=await actor.request(`${path}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
+    expect(approved.status).toBe(200);expect(approved.data.emailDelivery.ok).toBe(false);
+    expect(approved.data.detail.entry.profile.status).toBe('active');
+    const reopen=await actor.request(`${path}/status`,'POST',{status:'onboarding',expectedUpdatedAt:approved.data.detail.entry.profile.updatedAt});
+    vi.mocked(sendEmail).mockRejectedValueOnce(new Error('Synthetic provider exception'));
+    const exceptional=await actor.request(`${path}/status`,'POST',{status:'active',expectedUpdatedAt:reopen.data.detail.entry.profile.updatedAt});
+    expect(exceptional.status).toBe(200);expect(exceptional.data.emailDelivery.ok).toBe(false);
+    expect((await actor.request(path)).data.entry.profile.status).toBe('active');
+  },30000);
 });
 describe('fixed profile validation and compatibility',()=>{
   it('normalizes stored legacy status values in the authenticated me endpoint',async()=>{
@@ -208,7 +290,7 @@ describe('fixed profile validation and compatibility',()=>{
       for(const value of ['904 Private Test St','1992-02-03','Private Emergency Contact','5555550100','2026-02-02'])
         expect(JSON.stringify(event.details)).not.toContain(value);
     }
-    const filtered=await admin.request('/admin/volunteers?city=Auburn&county=Placer&shiftPresence=no_shift&profileIncomplete=false&sortBy=email&sortDirection=desc&limit=1');
+    const filtered=await admin.request(`/admin/volunteers?search=${encodeURIComponent(detail.entry.user.email)}&city=Auburn&county=Placer&shiftPresence=no_shift&profileIncomplete=false&sortBy=email&sortDirection=desc&limit=1`);
     expect(filtered.status).toBe(200);
     expect(filtered.data.volunteers.some((row:{user:{id:string}})=>row.user.id===volunteerId)).toBe(true);
     expect(filtered.data.cities).toContain('Auburn');expect(filtered.data.counties).toContain('Placer');

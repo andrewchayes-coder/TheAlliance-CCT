@@ -14,7 +14,7 @@
 - [Postgres test clients](postgres-test-clients.md) — infer clients from an async connect wrapper; the overloaded method's return type can resolve to void.
 - [Private storage SDK](private-storage-sdk.md) — default discovery can fail after provisioning; keep the SDK intact in bundled APIs under pnpm.
 - [Brand accessibility](brand-accessibility.md) — CCT blue works on white, not gray; the exact placeholder style has a contrast exception; never cache private data generically.
-- [Notification test isolation](security-test-isolation.md) — reminder/broadcast QA needs an isolated API and data scope; owned-user cleanup alone cannot undo sends to shared users.
+- [QA test isolation](security-test-isolation.md) — isolate email actions and namespace paginated fixture queries; owned-user cleanup cannot undo sends to shared users.
 - [Production migrations](production-migrations.md) — use runtime production context; reconcile push-created schemas before baselining; never copy development fixtures.
 - [Production QA accounts](production-qa-accounts.md) — built-in synthetic personas are explicitly approved in production; never convert real users or copy other development fixtures.
 - [Staff profile privacy](staff-profile-privacy.md) — roster details at a glance; county is staff-managed and private-field edit audits record names, never values.
@@ -23,3 +23,4 @@
 - [Production SQL tool](production-sql-tool.md) — operator SQL is split at semicolons; provide independent, repeatable statements without transaction or DO wrappers.
 - [Operating week defaults](operating-week-default.md) — weekend default/Today and overview coverage use the coming Monday; explicit weeks and live dispatch stay unchanged.
 - [Static manifest MIME](static-manifest-mime.md) — dev Vite header checks do not prove static-production behavior; use a JSON manifest and check the built asset.
+- [Merge verification](merge-verification.md) — rerun full workspace and affected API checks after automatic reconciliation, including files not reported as conflicts.

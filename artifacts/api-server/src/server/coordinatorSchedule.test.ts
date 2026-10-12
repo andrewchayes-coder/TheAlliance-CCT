@@ -18,6 +18,14 @@ const base = (): CoordinatorData => ({
   skips: [], closedDates: [],
 });
 describe('Coordinator projection', () => {
+  it('counts fresh and completed onboarding once, excludes test accounts, and retains no-shift after approval',()=>{
+    const fresh={...people[0]!,userId:'fresh',profileId:'fresh',profile:{...people[0]!.profile,status:'onboarding',createdAt:new Date('2026-03-09T17:00:00Z'),onboardingCompletedAt:null}} as CoordinatorPerson;
+    const ready={...fresh,userId:'ready',profileId:'ready',profile:{...fresh.profile,onboardingCompletedAt:new Date()}};
+    const synthetic={...ready,userId:'synthetic',profileId:'synthetic',isTestAccount:true};
+    const now=new Date('2026-03-09T17:30:00Z');
+    expect(coordinatorProjection(base(),[...people,fresh,ready,synthetic],now).overview().needsAttention).toBe(2);
+    expect(coordinatorProjection(base(),[...people,fresh,{...ready,profile:{...ready.profile,status:'active'}},synthetic],now).overview().needsAttention).toBe(2);
+  });
   it('normalizes Sunday and DST weeks to Monday without changing calendar dates', () => {
     expect(mondayOf('2026-03-08')).toBe('2026-03-02'); expect(mondayOf('2026-03-09')).toBe('2026-03-09');
     expect(mondayOf('2026-11-01')).toBe('2026-10-26'); expect(mondayOf('2026-11-02')).toBe('2026-11-02');

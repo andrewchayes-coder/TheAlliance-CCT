@@ -132,6 +132,14 @@ test('roster combines filters/search, pages matching profiles and keeps global s
     assert.equal(filtered.data.total, 1); assert.equal(filtered.data.volunteers[0].user.id, volunteers[index]);
   }
   assert.equal((await request(`/admin/volunteers?search=${namespace}&needsAttention=any`)).data.total, 3);
+  const review=await request(`/admin/volunteers?search=${namespace}&needsAttention=awaiting_review`);
+  assert.equal(review.status,200);
+  assert.deepEqual(new Set(review.data.volunteers.map((v:any)=>v.user.id)),new Set([volunteers[2],volunteers[3]]));
+  const csv=await request(`/admin/volunteers/roster.csv?search=${namespace}&needsAttention=awaiting_review`);
+  assert.equal(csv.status,200);
+  for(const i of [2,3]) assert.ok(csv.data.includes(`roster-${namespace}-${i}@example.org`));
+  for(const i of [0,1,4]) assert.ok(!csv.data.includes(`roster-${namespace}-${i}@example.org`));
+  assert.equal((await request(`/admin/volunteers/schedule.csv?search=${namespace}&needsAttention=awaiting_review`)).status,200);
   assert.equal((await request('/admin/volunteers?limit=0')).status, 400);
   assert.equal((await request('/admin/volunteers?status=wrong')).status, 400);
 });
@@ -234,6 +242,7 @@ test('tracking persists calendar days/nulls, rejects invalid dates/stale saves, 
   assert.equal((await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, volunteers[1]!)))[0]!.certificationExpiresAt, null);
   const moved = await request(`${path}/status`, 'POST', { status: 'onboarding', expectedUpdatedAt: cleared.data.entry.profile.updatedAt });
   assert.equal(moved.status, 200); assert.equal(moved.data.detail.entry.profile.status, 'onboarding');
+  assert.deepEqual(moved.data.detail.entry.attention,['awaiting_review']);
 });
 test('notes compare-and-set protects another staff edit, clearing works, and volunteer responses never include notes', async () => {
   const request = await client(admin), path = `/admin/volunteers/${volunteers[0]}`;

@@ -11,6 +11,7 @@ export type ListVolunteerRosterNeedsAttention = typeof ListVolunteerRosterNeedsA
 
 export const ListVolunteerRosterNeedsAttention = {
   any: 'any',
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',

@@ -875,7 +875,7 @@ paths:
         - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
-        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, awaiting_review, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
         - { name: showTestAccounts, in: query, schema: { type: string, enum: ['true', 'false'] } }
         - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 25 } }
         - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
@@ -965,7 +965,7 @@ paths:
         - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
-        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, awaiting_review, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
       responses:
         "200":
           description: All matching volunteers, not only the visible page
@@ -981,7 +981,7 @@ paths:
         - { name: county, in: query, schema: { type: string } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
-        - { name: needsAttention, in: query, schema: { type: string, enum: [any, no_shift, certification_expiring, background_pending, onboarding_incomplete] } }
+        - { name: needsAttention, in: query, schema: { type: string, enum: [any, awaiting_review, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue] } }
       responses:
         "200":
           description: Active standing assignments belonging to matching volunteers
@@ -1998,7 +1998,7 @@ components:
           properties: { sent: { type: integer }, logged: { type: integer }, failed: { type: integer } }
     AttentionReason:
       type: string
-      enum: [no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue]
+      enum: [awaiting_review, no_shift, certification_expiring, background_pending, onboarding_incomplete, onboarding_overdue]
     AdminAssignedShift:
       type: object
       required: [assignmentId, dayOfWeek, startTime, endTime, label, startDate, endDate, upcomingSkipDates]

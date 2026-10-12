@@ -17,7 +17,7 @@ export const BG: Record<string, [string, Badge]> = {
   not_started: ['Not started', 'neutral'], pending: ['Pending', 'attention'], cleared: ['Cleared', 'good'], not_cleared: ['Not cleared', 'blocked'],
 };
 export const ATTN: Record<string, string> = {
-  any: 'Any attention', no_shift: 'No shift', certification_expiring: 'Certification expiring',
+  any: 'Any attention', awaiting_review: 'Awaiting review', no_shift: 'No shift', certification_expiring: 'Certification expiring',
   background_pending: 'Background pending', onboarding_incomplete: 'Profile incomplete for more than 7 days',
   onboarding_overdue: 'Onboarding for more than 30 days',
 };

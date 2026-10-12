@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useChangeVolunteerStatus,
+  getGetAdminOverviewQueryKey, getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useChangeVolunteerStatus,
   getGetAdminScheduleControlsQueryKey, getGetAdminScheduleWeekQueryKey,
   type AdminAssignedShift, type AdminVolunteerDetail, type VolunteerStatusUpdate,
 } from '@workspace/api-client-react';
@@ -9,14 +9,15 @@ import { Button } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { readError, useAuth } from '@/auth/auth-context';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
-import { DAYS, STATUS, flags, STATUS_ORDER, calDate, clock } from './format';
+import { DAYS, STATUS, STATUS_ORDER, calDate, clock } from './format';
+import { ReviewChecklist } from './review-checklist';
 
 type Target = VolunteerStatusUpdate['status'];
 type Snapshot = { target: Target; expectedUpdatedAt: string; shifts: AdminAssignedShift[] };
 
 const COPY: Record<string, string> = {
   onboarding: 'This moves the volunteer back to Onboarding. They stay in the roster and keep their shifts.',
-  active: 'This approves the volunteer as Active and sends them an approval email.',
+  active: 'This approves the volunteer as Active. An approval email will be attempted after saving. Email delivery failure does not undo approval.',
   inactive: 'This marks the volunteer Inactive. Every shift below ends today, and those seats open up for others.',
 };
 
@@ -45,7 +46,7 @@ function Confirm({ snap, current, busy, error, onCancel, onConfirm }: {
   return (
     <dialog ref={ref} onCancel={e => { e.preventDefault(); if (!busy) onCancel(); }} aria-labelledby="status-dlg-h" data-testid="dialog-status"
       className="m-auto w-[min(92vw,34rem)] max-h-[88dvh] overflow-y-auto rounded-2xl bg-white p-5 text-navy">
-      <h2 id="status-dlg-h" className="alliance-display">Change status to {label}?</h2>
+      <h2 id="status-dlg-h" className="alliance-display">{snap.target === 'active' ? 'Approve as Active?' : `Change status to ${label}?`}</h2>
       <p className="mt-2 text-sm">{COPY[snap.target]}</p>
       {snap.target === 'inactive' && (
         snap.shifts.length === 0 ? <p className="mt-3 text-sm font-bold">No current or future shifts will be released.</p> : (
@@ -58,7 +59,7 @@ function Confirm({ snap, current, busy, error, onCancel, onConfirm }: {
       {error && <div className="mt-3"><Notice>{error}</Notice></div>}
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <Button type="button" variant="secondary" onClick={onCancel} disabled={busy} data-testid="button-status-cancel">{error || changed ? 'Close' : 'Cancel'}</Button>
-        <Button type="button" onClick={onConfirm} disabled={busy || changed} data-testid="button-status-confirm">{busy ? 'Saving…' : `Confirm ${label}`}</Button>
+        <Button type="button" onClick={onConfirm} disabled={busy || changed} data-testid="button-status-confirm">{busy ? 'Saving…' : snap.target === 'active' ? 'Confirm approval as Active' : `Confirm ${label}`}</Button>
       </div>
     </dialog>
   );
@@ -72,7 +73,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ kind: 'good' | 'warn'; text: string } | null>(null);
   const cur = normalizeVolunteerStatus(detail.entry.profile.status);
-  const missing = detail.approvalRequirements.filter(r => !r.met && !(r.key === 'agreement_acknowledged' && !flags.agree) && !(r.key === 'certification_complete' && !flags.cert) && !(r.key === 'background_cleared' && !flags.bg));
+  const missing = detail.approvalRequirements.filter(r => !r.met);
 
   const open = (t: Target) => {
     setError(null); setResult(null);
@@ -88,6 +89,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
         qc.setQueryData(getGetAdminVolunteerQueryKey(userId), r.detail);
         void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) });
         void qc.invalidateQueries({ queryKey: getListVolunteerRosterQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() });
         void qc.invalidateQueries({ queryKey: getGetAdminScheduleControlsQueryKey({ userId }) });
         void qc.invalidateQueries({ queryKey: getGetAdminScheduleControlsQueryKey() });
         void qc.invalidateQueries({ queryKey: getGetAdminScheduleWeekQueryKey() });
@@ -96,21 +98,31 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
         if (snap.target === 'inactive') text += ` ${r.releasedAssignmentCount} ${r.releasedAssignmentCount === 1 ? 'shift' : 'shifts'} ended today.`;
         if (snap.target === 'active' && r.emailDelivery) {
           if (r.emailDelivery.ok) text += r.emailDelivery.status === 'logged' ? ' Approval email logged for testing (not sent).' :
-            r.emailDelivery.status === 'sent' ? ' Approval email sent.' : ' Approval email processed.';
+            r.emailDelivery.status === 'sent' ? ' Approval email sent.' : ' Approval email not sent (test-account delivery suppressed).';
           else { kind = 'warn'; text += r.emailDelivery.skipped ? ' The approval email was skipped and was not sent. Let the volunteer know directly.' : ' The approval email failed to send. The approval stands, so let the volunteer know directly.'; }
         }
         setResult({ kind, text }); setSnap(null);
       },
       onError: e => {
         const f = readError(e);
-        setError(f.status === 409 ? 'This volunteer or their shifts changed since you opened this window. Nothing was changed. Close it and review the latest before confirming again.' : f.message);
+        if (f.status === 409 || f.status === 422) {
+          void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) });
+          void qc.invalidateQueries({ queryKey: getListVolunteerRosterQueryKey() });
+          void qc.invalidateQueries({ queryKey: getGetAdminOverviewQueryKey() });
+        }
+        const unmet = (e as { data?: { missing?: unknown } })?.data?.missing;
+        const labels = Array.isArray(unmet) ? unmet.flatMap(r => r && typeof r === 'object' && 'label' in r && typeof r.label === 'string' ? [r.label] : []) : [];
+        setError(f.status === 409 ? 'This volunteer or their shifts changed since you opened this window. Nothing was changed. Close it and review the latest before confirming again.'
+          : labels.length ? `${f.message} Missing: ${labels.join('; ')}. Close this window to review the next steps.` : f.message);
       },
     });
   };
 
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-status">
-      <h2 id="v-status" className="alliance-display">Program status</h2>
+      <h2 id="v-status" className="alliance-display">{cur === 'onboarding' ? 'Volunteer review and approval' : 'Program status'}</h2>
+      {cur === 'onboarding' && <ReviewChecklist detail={detail} userId={userId} />}
+      {cur !== 'active' && missing.length === 0 && <Button className="mt-4" type="button" disabled={!!blockedReason || m.isPending} onClick={() => open('active')} data-testid="button-approve-active">Approve as Active</Button>}
       <ol className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="Volunteer status steps">
         {STATUS_ORDER.map((s, i) => {
           const on = s === cur;
@@ -129,7 +141,7 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
       {blockedReason && <p className="mt-2 text-sm font-bold" role="status">{blockedReason}</p>}
       {cur !== 'active' && missing.length > 0 && (
         <div className="mt-3 text-sm" data-testid="list-missing">
-          <p className="font-bold">Active is unavailable until these are done:</p>
+          <p className="font-bold">Approval is blocked until these requirements are complete:</p>
           <ul className="mt-1 list-disc pl-5">{missing.map(r => <li key={r.key}>{r.label}</li>)}</ul>
         </div>
       )}

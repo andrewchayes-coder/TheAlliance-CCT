@@ -10,6 +10,7 @@ export type AttentionReason = typeof AttentionReason[keyof typeof AttentionReaso
 
 
 export const AttentionReason = {
+  awaiting_review: 'awaiting_review',
   no_shift: 'no_shift',
   certification_expiring: 'certification_expiring',
   background_pending: 'background_pending',

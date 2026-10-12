@@ -82,8 +82,13 @@ router.post('/volunteers/:userId/status', async (req, res) => {
         paragraphs: ["Thank you for preparing to support local families. You're approved to serve as a Resource Coordinator with The Alliance's Community Care Team.",
           'Choose a weekly shift that works for you. We look forward to serving alongside you.'],
         cta: { label: 'Choose your weekly shift', url: `${appOrigin}/shifts` } });
-      emailDelivery = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,
-        subject: "You're approved! Choose your weekly shift", ...copy, relatedId: result.activityId });
+      try {
+        emailDelivery = await sendEmail({ type: 'welcome', to: result.user.email, toUserId: result.user.id,
+          subject: "You're approved! Choose your weekly shift", ...copy, relatedId: result.activityId });
+      } catch (error) {
+        logger.error({ err: error, activityId: result.activityId }, 'Approval committed; approval email failed.');
+        emailDelivery = { ok: false, error: 'Approval saved, but the approval email could not be sent.' };
+      }
       try {
         const [delivery] = await db.select({ status: notificationLogTable.status }).from(notificationLogTable)
           .where(and(eq(notificationLogTable.recipientUserId, result.user.id), eq(notificationLogTable.relatedId, result.activityId),

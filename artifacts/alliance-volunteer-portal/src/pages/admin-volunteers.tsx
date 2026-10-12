@@ -17,6 +17,7 @@ import { FETCH_CREDS, FRESH_MS } from '@/auth/auth-context';
 import { appConfig } from '@workspace/shared/appConfig';
 import { formatPhone, normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { VolunteerDetail } from '@/components/volunteer-detail/detail';
+import { ATTN, attnVisible } from '@/components/volunteer-detail/format';
 import { onMessageSelected as defaultOnMessageSelected } from '@/lib/messaging';
 
 const PAGE = 25;
@@ -64,6 +65,9 @@ const addressOf = (e: VolunteerRosterEntry) => {
 
 const Dash = () => <span className="text-navy-soft" aria-label="Not provided">&mdash;</span>;
 const linkCls = 'font-bold text-blue underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue';
+function AttentionBadges({ entry }: { entry: VolunteerRosterEntry }) {
+  return <div className="flex flex-wrap gap-1">{entry.attention.filter(attnVisible).map(reason => <StatusBadge key={reason} status="attention">{ATTN[reason] ?? reason}</StatusBadge>)}</div>;
+}
 
 function Cell({ k, e }: { k: SortKey; e: VolunteerRosterEntry }) {
   const p = e.profile;
@@ -109,7 +113,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
   const [presence, setPresence] = useState('');
   const [incomplete, setIncomplete] = useState('');
   const [showTests, setShowTests] = useState(false);
-  const [attn, setAttn] = useState(() => { const v = new URLSearchParams(window.location.search).get('needsAttention'); return v === 'true' || v === 'any' ? 'any' : ''; });
+  const [attn, setAttn] = useState(() => { const v = new URLSearchParams(window.location.search).get('needsAttention'); return v === 'true' ? 'any' : v && Object.hasOwn(ATTN, v) && attnVisible(v) ? v : ''; });
   const [sortBy, setSortBy] = useState<SortKey | ''>('');
   const [dir, setDir] = useState<Dir>('asc');
   const [offset, setOffset] = useState(0);
@@ -147,7 +151,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
 
   const qs = new URLSearchParams({ ...filters, ...sort } as Record<string, string>).toString();
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k, v]) => k === 'search' || k === 'status' || k === 'county' || (k === 'needsAttention' && v === 'any'))) as Record<string, string>).toString();
+  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k]) => k === 'search' || k === 'status' || k === 'county' || k === 'needsAttention')) as Record<string, string>).toString();
   const csv = (name: string) => name === 'schedule' ? `${base}/api/admin/volunteers/schedule.csv${schedQs ? `?${schedQs}` : ''}` : `${base}/api/admin/volunteers/${name}.csv${qs ? `?${qs}` : ''}`;
 
   const pageIds = rows.map(r => r.user.id);
@@ -229,7 +233,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
             </select></label>
           <label className="text-sm font-bold">Needs attention
             <select className={`${selectCls} mt-1 font-normal`} value={attn} onChange={e => setAttn(e.target.value)} data-testid="filter-attention">
-              <option value="">Everyone</option><option value="any">Any attention</option>
+              <option value="">Everyone</option>{Object.entries(ATTN).filter(([key]) => attnVisible(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select></label>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
@@ -297,9 +301,9 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
                     {rows.map(e => (
                       <tr key={e.user.id} className="group cursor-pointer" data-testid={`row-volunteer-${e.user.id}`} onClick={open(e.user.id)}>
                         <td className="sticky left-0 z-10 border-b border-gray bg-white px-2 group-hover:bg-gray"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
-                        {visible.map(c => (
+                        {visible.map((c, i) => (
                           <td key={c.key} className={`border-b border-gray px-3 py-1 group-hover:bg-gray ${c.key === 'name' ? 'sticky left-10 z-10 bg-white shadow-[1px_0_0_0_rgb(0_0_0/0.08)]' : c.key === 'address' || c.key === 'emergencyContact' ? 'min-w-[16rem]' : ''}`}>
-                            <Cell k={c.key} e={e} /></td>
+                            <Cell k={c.key} e={e} />{i === 0 && <AttentionBadges entry={e} />}</td>
                         ))}
                       </tr>
                     ))}
@@ -324,6 +328,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
                           {nameShown ? <Cell k="name" e={e} /> : <span className="font-bold">{fullName(e)}</span>}
                           {cols.includes('status') && <Cell k="status" e={e} />}
                         </div>
+                        <AttentionBadges entry={e} />
                         <dl className="mt-2 grid grid-cols-1 gap-x-3 gap-y-2 text-sm min-[420px]:grid-cols-2">
                           {visible.filter(c => c.key !== 'name' && c.key !== 'status').map(c => (
                             <div key={c.key} className={`min-w-0 break-words ${c.key === 'email' || c.key === 'address' || c.key === 'emergencyContact' ? 'min-[420px]:col-span-2' : ''}`}>
