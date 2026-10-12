@@ -1,13 +1,13 @@
 # Community Care Team — QA checklist
 
-Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test Run](docs/Alliance%20Persona%20Test%20Run.md), preserved unchanged. All **124** master IDs have a primary test row and a coverage-table entry. Coverage is a mapping, not a claim that manual UAT or optional features have passed.
+Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test Run](docs/Alliance%20Persona%20Test%20Run.md), preserved unchanged during this sync. **CHANGED:** All **131** Oct 12 master IDs have a primary test row and a coverage-table entry. Coverage is a mapping, not a claim that manual UAT or optional features have passed.
 
 ## v1.1.0 workflow tags
 
 - **NEW**: a master check missing as an explicit workflow in the earlier checklist.
 - **CHANGED**: rewritten for current CCT branding, fixed-profile/status model, privacy, email identity or switch-only quick login; matching IDs added. Combined tags mean both.
 - Every primary row puts its master ID beside its steps. Retained extra checks below have no exact matching master ID and are disclosed separately.
-- Record tester, environment, date, Pass/Fail/Blocked and evidence beside each row when pasting into the tracker. A known master/app gap should be Blocked/Fail, not silently passed.
+- Record tester, environment, date, Pass/Fail/Blocked and evidence beside each row when pasting into the tracker. **CHANGED:** An unaccepted master/app gap should be Blocked/Fail, not silently passed; SYS-08 explicitly tests the accepted tracking limit recorded below.
 
 ## Test safety and setup
 
@@ -29,20 +29,20 @@ pnpm run typecheck
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-01 | NEW; CHANGED | Seed | Run the guarded development seed twice, then verify-seed (commands below). Never seed production. | One ordinary dummy admin, 18 ordinary dummy volunteers with canonical statuses/complete fake fields, and 40 Mon–Fri overlapping slots, 09–11 through 16–18, capacity 2; no duplicates. Count five QA users separately. |
+| SYS-01 | NEW; CHANGED | Seed | In development only, run `npm run seed` twice; count `users` and `volunteer_profiles` separately after each run. Never seed production. | Both runs finish without errors or duplicates and have matching counts. The seed creates 1 admin and 18 dummy volunteers, excluding the 5 separately created QA users. Only onboarding / active / inactive statuses, none applicant or in_training. There are 40 Mon–Fri slots, 09–11 through 16–18 with hourly overlap and capacity 2. Users and volunteer profiles are different row counts. |
 | SYS-02 | CHANGED | Automated tests | Run `npm test`. | All pass, including scheduleService (DST weeks, full overlapping grid, two live overlapping shifts, skip date, closed date, blocked occurrence, custom shift in now/next and coverage, custom-shift reminder de-dupe, DST-week custom shift), the route-guard test, privacy tests (incl. DOB/address/emergency contact), the quick-login on/off tests (production is off unless `QUICK_LOGIN_ENABLED` is "true" in any case; no key or cookie tests remain; a persona mapped to a non-test user is refused), and ensureTestAccounts idempotency (5 test users after two runs). |
 | SYS-03 | CHANGED | Route-guard test | Inspect the registered-route guard test and quick-login endpoints. | Quick-login routes tagged public:quick-login, not exempted via a blanket allowlist. Retired testing entry-point routes no longer registered; normal session/CSRF tests remain. |
 | SYS-04 | CHANGED | Playwright smoke test | Run the Playwright smoke test. | Passes end to end: sign-up → verify → complete profile → admin activates (no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it. |
-| SYS-05 | CHANGED | Leftover search | Search portal/API/shared/database source for obsolete brand/status flows; exclude dependencies, generated outputs, reference migrations, the unchanged master and independent Canvas scaffold. Review compatibility hits. | Current CCT brand and three statuses in product flows. Historical enum values/read mapping and legacy email aliases may remain; whole-workspace zero-hit expectations and the master’s paths are outdated. |
+| SYS-05 | CHANGED | Leftover search | Search `artifacts/alliance-volunteer-portal`, `artifacts/api-server`, `shared` and `lib/db` for 02928F, 027A77, lulo, montserrat, Resource Coordination Program, applicant and in_training, using the master’s grep commands. Exclude dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`. | No obsolete colors, fonts or program name in screens or emails. applicant / in_training remain only in the retained database enum and read-time mapping in `shared/legacy-compatibility.ts`. Review and explain other deliberate compatibility hits, such as email aliases, rather than automatically failing them. No obsolete values in `shared/testAccounts.ts`, UI copy or emails. |
 | SYS-15 | CHANGED | Lighthouse | Run Lighthouse (mobile) accessibility on the volunteer dashboard, /onboarding, and admin home. | Each scores 95 or higher. |
 | SYS-16 | NEW; CHANGED | Docs | Review DEPLOY.md, this checklist, CHANGELOG.md and QA-TEST-ACCOUNTS.md; run the QL-5 retired-access audit, excluding the unchanged master under docs. | Current grid/blocks/custom shifts, Postmark DNS and configured identity documented; true/false quick-login switch, republish, reset and turn-off-before-invites guidance. v1.1.0 recorded; no retired-access identifiers in active files. |
-| SYS-18 | NEW; CHANGED | QA-CHECKLIST.md in sync (Prompt 26b) | Compare every master ID against primary rows and the coverage table; review NEW/CHANGED tags and unmatched retained checks. | All 124 IDs mapped once as primary rows. Optional IDs conditional. Master unchanged; discrepancies and unmatched checks disclosed. |
+| SYS-18 | NEW; CHANGED | QA-CHECKLIST.md in sync (Prompt 26b) | After the Oct 12 master re-upload, run the master’s ID-diff command and read “Master/app disagreements (resolved Oct 12)”. Check primary rows and the coverage table. | No diff output: all 131 master IDs are present. No unresolved master/app disagreements; SYS-08 records its accepted limit, and MIL/NTF remain optional and not built. No obsolete applicant / in_training or certification, background-check or agreement-gating workflows remain in normal v2 tests. Explicit legacy-schema and flag checks remain documented. |
 
 ## CCT brand and program identity
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-17 | CHANGED | Static brand files | List artifacts/alliance-volunteer-portal/public/brand/ and inspect /brand/logo-horizontal.png response headers. | Approved horizontal/stacked/mark/favicon/touch/192/512 assets present, static long Cache-Control, no runtime storage dependency. |
+| SYS-17 | CHANGED | Static brand files | List `artifacts/alliance-volunteer-portal/public/brand/` and inspect the response headers on `/brand/logo-horizontal.png`. | `logo-horizontal.png`, `logo-stacked.png`, `logo-mark.png`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png` and `icon-512.png` are present and served as static files with long Cache-Control headers, not from Object Storage. |
 | VIS-01 | NEW | Style guide | Open /style-guide in dev. | Shows navy / Alliance Blue / gray / white only, Open Sans in sentence case (no forced uppercase), buttons, inputs, badges ("good" = blue), both logos, and an email preview. No blue text on gray. Works at 375 px. |
 | VIS-02 | CHANGED | Sign-in page brand | Open /signin at 375 px and on desktop. | No navy band. Stacked logo centered (max 240 px) above the card. Mission line in 15 px navy under the card. Gray inputs with a blue focus ring. Primary button blue, hover navy. |
 | VIS-04 | CHANGED | Favicon & manifest | Check the browser tab, the web manifest, and Add to Home Screen on a phone. | Favicon is the circle mark. Manifest name "Community Care Team Volunteer Portal", short_name "CCT Portal", theme #06365D, background #FFFFFF, 192/512 icons. Home-screen icon uses apple-touch-icon. |
@@ -54,7 +54,7 @@ pnpm run typecheck
 | VIS-05 | CHANGED | Signed-out redirects | Visit /dashboard, /shifts and /admin. Call GET /api/me and GET /api/admin/volunteers. | Pages redirect to /signin. The APIs return 401. |
 | VIS-06 | CHANGED | Forgot password is non-revealing | Submit /forgot-password once with an unknown email and once with a real one. | Both show the same confirmation message. |
 | VIS-07 | CHANGED | Sign-in errors & rate limit | Sign in with a wrong password repeatedly. | Generic error (doesn't say which field is wrong), then a friendly rate-limit message. |
-| NEW-01 | CHANGED | Sign-up | Open /signup; try a 7-character password, mismatched confirmation and invalid phone, then valid names, US phone and matching password of at least 8 characters. | Friendly intro and validation; volunteer/onboarding profile created; /verify-email shows address. Stored phone ten digits. A 9-character password is not intrinsically too short. |
+| NEW-01 | CHANGED | Sign-up | Go to /signup. Try a 7-character password and a mismatched confirmation, then sign up correctly with a matching password of at least 8 characters. | The 7-character password and mismatched confirmation are rejected; the minimum is 8 characters. Intro copy shows. The account is created and /verify-email displays the supplied email address. |
 | NEW-02 | CHANGED | Verification gate (server-enforced) | While unverified, visit /dashboard, /shifts, /onboarding, then call a protected API (e.g. GET /api/shifts) from devtools. | Every page sends you back to /verify-email. The protected API returns 401/403, not data. |
 | NEW-03 | CHANGED | Resend rate limit | Click "Resend email" twice within a minute. | The second click is blocked with a friendly message (1/minute, 5/hour). |
 | NEW-04 | CHANGED | Unverified sign-in | Sign out, then sign back in before verifying. | You land on /verify-email. |
@@ -67,7 +67,7 @@ pnpm run typecheck
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
 | SYS-07 | NEW; CHANGED | Config flags | Inspect shared/appConfig.ts and shared/onboardingQuestions.ts. | Three tracking flags false; minimumAge null; question array empty; CCT identity, mission and Resource Coordinator role match v2. Public contact is the Community Care Team mailbox, not a personal staff contact. |
-| SYS-08 | NEW; CHANGED | Flags are reversible | Developer-only compatibility check in isolated dev: enable the retained background-tracking flag, compare detail/CSV/roster, then restore false. | KNOWN GAP: detail/CSV handling can return but the v2 roster has no tracking badge/filter controls. Do not mark the master’s full reversibility expectation passed. Normal v2 hides disabled tracking. |
+| SYS-08 | NEW; CHANGED | Flags are reversible | In development only, set `trackBackgroundCheckInApp` to true, restart, inspect the roster and volunteer detail, and check the CSV column. Restore false and restart before continuing. | With true, the detail background-check card and CSV column return; the roster badge and filter do not. This is the accepted C8 limit while tracking stays off; restoring roster controls if tracking is enabled would be a change order. With false, all background-check display/CSV tracking is hidden again. |
 | NEW-06 | CHANGED | Onboarding screen | Look over /onboarding. | One screen. Intro: "Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to." Email read-only; name and phone prefilled and editable. DOB, address, city, state (default CA), ZIP, emergency contact name / relationship (with suggestions) / phone. "Only Alliance staff can see this." under DOB and emergency contact. No questionnaire, no agreement checkbox, no county. |
 | NEW-07 | CHANGED | Onboarding validation | Blur-save empty/null draft fields; then try a future DOB, invalid calendar date, 4-digit ZIP, short/nonnumeric phone, and overlong fields in the form and PATCH /api/onboarding. Repeat invalid nonempty values on volunteer Profile and the admin Profile card. Finish onboarding with required fields blank. | Empty/null drafts are allowed, but completion requires all fields. Invalid nonempty saves return 400 with fieldErrors and do not save the bad values. ZIP+4 is accepted; formatted US phones are stored as 10 digits. |
 | NEW-08 | CHANGED | Save on blur | Fill about half the fields, then refresh. | Everything you entered is still there. |
@@ -107,7 +107,7 @@ pnpm run typecheck
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
 | ACT-06 | CHANGED | One-time shifts | After ADM-11, open /shifts → One-time shifts. Claim a spot. Try one that overlaps your own shift that day. Cancel one more than 24 hours away, then try one less than 24 hours away. Try to claim a full one. | Claim works and shows in the dashboard upcoming list with a One-time tag. It doesn't count toward the 2 standing shifts. The overlapping claim is blocked. Cancel works outside 24 hours and is blocked inside it (with contact note). A full one-time shift can't be claimed. |
-| ADM-03 | CHANGED | Load standard grid | Load standard grid twice on the seeded grid; also load twice in an empty isolated dev schema. Do not delete operational slots. | Seeded grid creates 0; empty grid creates 40 then 0. No slot-delete UI exists, so the master’s delete-two-slots instruction cannot be followed. |
+| ADM-03 | CHANGED | Load standard grid | In Settings, confirm “Load Community Care Team standard grid” twice on the seeded grid. Repeat twice in an empty isolated development grid with no slots. | Seeded grid creates 0 then 0 because all 40 slots exist; empty grid creates 40 then 0. The editor deactivates rather than deletes slots. Deactivated slots still count as existing and are not recreated; reactivate them in the editor instead. |
 | ADM-04 | CHANGED | Grid editor | Open a new slot and check capacity and default end time. Edit an existing slot with a different capacity. Add an overlapping slot. Try "Copy Monday to all weekdays" on a scratch setup. | New slots default to capacity 2, matching the standard grid. Existing slots retain their own capacity. Overlap shows an "overlaps with …" note, not an error. End time defaults to start + 2 hours. Copy fills the weekdays. |
 | ADM-05 | CHANGED | Capacity & deactivation guards | Lower a slot's capacity below its assigned count. Deactivate a slot that has volunteers. | Capacity change is blocked with a clear message. Deactivation shows the assigned count and makes you choose keep-until-date or end now; end now emails each volunteer. |
 | ADM-06 | CHANGED | Closed date | Add a closed date (next weekday, "Test closure"), check the schedule, then delete it. | Master schedule shows gray "Closed – Test closure". No occurrences, coverage warnings, or reminders that day. Deleting restores them. |
@@ -124,7 +124,7 @@ pnpm run typecheck
 | ADM-02 | CHANGED | On shift now / Up next | On admin home, use ?at= in dev: a Tuesday at 10:30 AM, a time during hours with an empty slot, and 8:00 PM. | 10:30: two groups (9–11 and 10–12), each with its own end time, names, tap-to-call phone and email. Empty slot: amber "No one is on shift right now". 8 PM: "Outside shift hours". Up next, "Updated h:mm AM" refreshing every 60 s, coverage summary, needs-attention count and recent activity all show. Test accounts carry the TEST badge. |
 | ADM-07 | CHANGED | Master schedule view | Open /admin/schedule on desktop and at 375 px. Use week navigation and Today. | Two lanes per day on a 30-minute grid; every block readable. Blocks show time, "2/2", first name + last initial. Full = white with blue accent; under capacity = gray with amber "1 open"; empty = soft amber "Open". Today highlighted. Mobile shows a day list with a day picker. |
 
-| ADM-37 | CHANGED | Admin schedule — future standing assignments | Open the side panel for a standing shift starting in 15 days. Check the dates and week-off buttons; also test a future end date. Attempt a week off before start or after end through both admin and volunteer endpoints. | The side panel lists no dates before the assignment starts and has no Mark week off button for them. Ordinary dates stop at the end date; stored future weeks off remain listed. Out-of-period week-off requests return clear 422 errors with code VALIDATION_FAILED, not INTERNAL_ERROR, preserving the date-specific message. My Shifts and dashboard likewise exclude occurrences before start or after end. |
+| ADM-38 | CHANGED | Admin schedule — future standing assignments | Give an Active persona a standing shift starting 15 or more days out. Open its Master schedule side panel and try marking a week off before the start date through the API. Check the volunteer’s own out-of-period week-off action. Reset test accounts afterwards. | Only dates on or after the assignment start, plus stored future weeks off, are listed; earlier dates have no “Mark week off” action. The API returns 422 with “That date is before this volunteer's standing shift starts.” The volunteer action rejects out-of-period dates the same way. |
 
 ## Staff roster and CSV exports
 
@@ -164,18 +164,18 @@ pnpm run typecheck
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-12 | CHANGED | Job runner | In isolated dev enable RUN_JOBS, observe a 15-minute run, restore false. POST /api/jobs/run with missing/wrong/correct X-Jobs-Secret, then the alternate header named after the environment variable. | Only X-Jobs-Secret authenticates; alternate/query/cookie credentials refused. Valid call returns bounded results (approximately 20-second budget). Production runs no internal scheduler; dev requires RUN_JOBS=true. |
+| SYS-12 | CHANGED | Job runner | In development, set `RUN_JOBS=true`, watch for a 15-minute scheduler run, then restore it. Call POST /api/jobs/run without `X-Jobs-Secret`, then with `X-Jobs-Secret` containing the JOBS_SECRET value; also try a differently named header such as JOBS_SECRET. | The scheduler logs runs every 15 minutes only when RUN_JOBS=true. Missing header returns 401/403; the correct header returns 200 and runs the job. X-Jobs-Secret is the only accepted header; a secret sent under any other header name is refused. |
 | ACT-13 | CHANGED | Reminder de-dupe for test account | After ADM-15, check this persona's reminder rows in the notification log. | One `suppressed` reminder row. Running the reminder check again adds no second row. (If it does, suppressed rows aren't counted by the de-dupe check: report it as a bug.) |
 | ADM-13 | CHANGED | Coverage-gap alert | After ACT-05, filter the notification log by type admin_alert. | Exactly one alert per real admin (e.g. admin@example.org): "Coverage gap: {Tue Oct …}, 10:00–12:00 now has 1 of 2 volunteers (Test A. took the week off)." with a button to that week. No row for qa-admin@example.org. |
 | ADM-14 | CHANGED | Daily digest | With the digest toggle on and a gap in the next 7 days, trigger the digest twice the same day (job endpoint or Run now). Then remove all gaps and trigger. Then turn the toggle off and trigger. | One digest per real admin for the day (relatedId = date); none to the test admin. Nothing sent when there are no gaps, or when the toggle is off. |
-| ADM-15 | CHANGED | Reminders | In isolated dev create a custom shift due within the next 24 hours, assign ACT plus a non-test dummy, run reminders twice and 15 minutes late; test week-off/block/closure exclusions. Use an ordinary synthetic admin for logged test-to-me checks. | One delivery per eligible assignment/date; reruns skip confirmed rows. TEST mail suppressed, not delivered. Late unsent recipients catch up; uncertainty never resent; statistics update. More than 24 hours away is not yet due. |
+| ADM-15 | CHANGED | Reminders | With external delivery disabled in isolated development, create a one-time shift starting within the next 24 hours, e.g. 3 hours from now. Assign ACT and a seeded non-test dummy volunteer. At /admin/notifications/jobs run the reminder check twice. As the ordinary dev admin (admin@example.org, not Test Admin), click “Send test reminder to me”. | Catch-up produces one reminder per assigned volunteer, logged for the dummy and suppressed for ACT; subject reflects tomorrow or today’s date, with quick-link buttons and the week-off line. The second check sends nothing new. Week-off, blocked and closed-date occurrences receive none. Last-run time and the 7-day count update. The ordinary admin’s test reminder is logged; Test Admin’s would be suppressed. |
 
 ## Email identity and notification monitoring
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-09 | CHANGED | Email template (log mode) | Use an isolated dev API with provider delivery disabled and a non-test synthetic recipient. Send a test email; do not use TEST mail to prove logged delivery. | Console includes full text/links and From/Reply-To; notification row logged. CCT logo/header/blue button/footer and plain text included. Sender is configured identity; footer is the team contact, not a personal mailbox. |
-| SYS-10 | NEW; CHANGED | EMAIL_FROM / EMAIL_REPLY_TO | In isolated dev test malformed EMAIL_FROM, restore valid Display Name &lt;address&gt;, and set/unset EMAIL_REPLY_TO before logged sends. | Invalid identity fails loudly without exposing credentials. Explicit Reply-To wins; absent override falls back to configured sender address, not a hardcoded staff mailbox. |
+| SYS-09 | CHANGED | Email template (log mode) | With no POSTMARK_SERVER_TOKEN in isolated development, send a test email to a non-test address via the dev test route or Admin → Notifications → Send test email. Do not use a TEST recipient to prove logged delivery. | The console prints the email and notification_log records status logged. From is `"The Alliance Community Care Team" <cct@defendingthecause.org>`; Reply-To uses EMAIL_REPLY_TO if set, otherwise the sender address. White header with APP_BASE_URL/brand/logo-horizontal.png over a 4px navy rule, blue CTA, Community Care Team contact/footer, mission line, and “You're receiving this because you serve with The Alliance Community Care Team.” No Cindi mention; plain text included. |
+| SYS-10 | NEW; CHANGED | EMAIL_FROM / EMAIL_REPLY_TO | In an isolated local setup with external delivery disabled, set EMAIL_FROM to a malformed value and start with NODE_ENV=production, then try a send in development. Restore it. Set EMAIL_REPLY_TO to another address and send a test email, then unset EMAIL_REPLY_TO. | Production-mode startup refuses malformed EMAIL_FROM with a clear error naming the secret. Development startup does not perform that check, but sending is clearly refused. Explicit EMAIL_REPLY_TO is used; when unset, Reply-To falls back to the sender address (cct@defendingthecause.org). Restore all temporary settings. |
 | ADM-28 | CHANGED | Notification log & monthly count | Open /admin/notifications. Compare the month count with the log filtered to sent + logged. Use filters and search. Retry a failed row. Set the monthly limit so the next send crosses 80%, send twice, then restore 100. | Count equals sent + logged (suppressed excluded), with a by-type breakdown and 6-month chart. Filters and search work; Retry resends. Crossing 80% sends one "Heads up" email to real admins; the second send doesn't repeat it. |
 | ADM-29 | CHANGED | Postmark card | Inspect Postmark card in dev without provider; use an ordinary isolated admin for a logged test email. | Configured From/name/address, Reply-To, token status and DKIM/Return-Path guidance. TEST recipients produce suppressed rows, not real mail. |
 
@@ -192,8 +192,8 @@ pnpm run typecheck
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-11 | CHANGED | Test accounts exist once | Restart isolated dev twice and run ensureTestAccounts twice; inspect flagged users/profiles and shared/testAccounts.ts definitions. | Exactly five flagged, active, verified users of expected roles; four volunteer profiles and one admin. Replaced personas reuse their identities/history; no orphaned aliases or duplicate users. |
-| VIS-03 | CHANGED | Quick-login card (dev) | Look below the sign-in card in dev. | Amber dashed Quick login — testing card with the five current persona buttons, one column at 375px and at least 44px targets. Current onboarding labels only; CCT sentence-case styling. |
+| SYS-11 | CHANGED | Test accounts exist once | Restart development twice, then query users with isTestAccount = true and count their matching volunteer profiles. | Exactly 5 flagged users: qa-admin@example.org plus 4 volunteer personas; exactly 4 matching volunteer profiles, because the test admin has none. No duplicate or orphaned old vol-training / vol-applicant users. |
+| VIS-03 | CHANGED | Quick-login card (dev) | Look below the sign-in card in development. | Amber dashed “Quick login — testing” card in sentence case, with 5 buttons: Admin; Volunteer · Active; Volunteer · Active, no shift; Volunteer · Onboarding, ready to activate; Volunteer · Onboarding, new. One column at 375px and at least 44px targets. No button mentions training, certification or applicant. |
 | ONBN-01 | CHANGED | Quick login | Click "Volunteer · Onboarding, new". | Lands on /onboarding. Amber banner: "You're signed in as a TEST account (Volunteer · Onboarding, new). Emails to this account are not sent." The banner pushes content down and doesn't cover the top bar or bottom tabs. |
 | ONBN-04 | CHANGED | Reset restores persona | As admin, Team → Reset test accounts. Quick-login as this persona again. | Profile fields are empty again and it lands on /onboarding. |
 | ONBR-01 | CHANGED | Quick login | Click "Volunteer · Onboarding, ready to activate". | Lands on /dashboard (not /onboarding). Checklist shows Profile complete ✓ and waits on Training & paperwork and Approval. |
@@ -220,9 +220,9 @@ pnpm run typecheck
 | SYS-14 | NEW | Health route | GET /api/health. | Returns database and email-config status with no secret values. |
 | PRD-01 | NEW | Enum value before publish | Before publishing Prompt 22's schema, run `ALTER TYPE volunteer_status ADD VALUE IF NOT EXISTS 'onboarding';` in the production Database tool. | Runs without error. |
 | PRD-02 | NEW | Publish change list | Publish and read the schema change list. | Only additive changes. If anything is dropped, renamed or converted, choose Cancel deployment. Never "Copy your development database schema & data to production". |
-| PRD-03 | NEW; CHANGED | Status update | Inspect production statuses read-only. Only if separately approved, an authorized operator may run DEPLOY.md’s optional backfill after the enum commits. Do not execute it during checklist sync. | Read normalization works without backfill. Approved optional update touches only legacy statuses; no fabricated real profile values, active/inactive unchanged. |
+| PRD-03 | NEW; CHANGED | Status update | Operator-approved one-time step, completed Oct 11 after the Prompt 22 publish: run `SELECT status, count(*) FROM volunteer_profiles GROUP BY status;`. If legacy applicant / in_training rows appear, ask before running the master’s UPDATE to onboarding. Do not run production SQL during this documentation sync. | No applicant / in_training rows. Read-time normalization treats any legacy rows as onboarding, so the app continues working while separate approval for a backfill is pending. |
 | PRD-04 | NEW | Health & clean data | GET /api/health. Check users for admin@example.org or dummy volunteers. | Health OK. No seed data. The only @example.org users are the 5 qa-* test accounts. |
-| PRD-05 | NEW; CHANGED | Grid in production | Click "Load Community Care Team standard grid" once, then once more. | Empty grid first creates 40 then 0; an existing grid creates 0 and is not overwritten. Closures/blocks/custom shifts use Pacific time. |
+| PRD-05 | NEW; CHANGED | Grid in production | Click “Load Community Care Team standard grid” once, then once more. | The first click creates only missing standard slots: 20 after the Fix 1 purge that retained 4 existing times, or 40 on an empty grid. Deactivated slots count as existing and are not recreated. The second click creates none. |
 | PRD-06 | NEW; CHANGED | Live test email and reminder | In production as a normal verified admin, open Admin → Notifications and click "Send test email to me"; open Reminder jobs and click "Send test reminder to me". Inspect delivery and logs. Repeat with TEST admin; try either route anonymously or as a volunteer, and with a recipient override. | Both buttons are visible in production and send only to the signed-in admin. Normal sends use the configured CCT identity and log sent; TEST sends log suppressed and deliver nothing. Anonymous/volunteer access and recipient overrides are rejected; CSRF remains required. Logo and configured Reply-To/fallback render, token is configured, DKIM/Return-Path verified. |
 | PRD-07 | CHANGED | Quick login on, no unlock | With `QUICK_LOGIN_ENABLED=true` in Secrets (republished), open /signin in a fresh private window. | Testing card appears immediately with test-account and production pills and all five buttons; no device-specific access action. |
 | PRD-08 | CHANGED | Old unlock routes gone | Visit retired testing entry points described in master PRD-08 without sharing credentials; return to /signin. | Normal not-found page, no session/device-unlock action. Enabled quick login is independent of those URLs. |
@@ -231,6 +231,7 @@ pnpm run typecheck
 | PRD-11 | CHANGED | Turn quick login off | When prod testing is done (and before the first pilot invites): set `QUICK_LOGIN_ENABLED=false`, republish, open /signin in a fresh window, and call GET /api/auth/quick-login/status. | No quick-login card. The status call returns 404. Normal sign-in still works. |
 | PRD-12 | CHANGED | External cron | Watch /admin/notifications/jobs for 30+ minutes. On a weekday after 7 AM, check the log for the digest. | cron-job.org POST every 15 minutes, X-Jobs-Secret header, JSON {}; production built-in scheduler disabled. Approximately 20-second budget, unsent catch-up, confirmed/suppressed dedupe and no uncertain resend. |
 | PRD-13 | CHANGED | Production lockdown | Restart logs; open /style-guide; add ?at= to admin home. | Startup secrets check passes. /style-guide is 404. ?at= is ignored. |
+| PRD-14 | NEW | Seed data purge | Separately authorized production operation only: after a real admin exists, run the Fix 1 pre-checks, numbered statements in order, and post-checks in the production Database tool. Inspect roster with test accounts off/on, master schedule, email log and /resources; quick-login as all 5 personas. Do not execute this purge during documentation sync. | Pre-checks show at least 1 active admin outside example.org, 19 users to delete and 5 qa-* users. Every statement succeeds. Post-checks show 0 non-test @example.org users, profiles, assignments, messages, resources and notification rows; 5 qa-* users remain and shift_slots are unchanged. Roster contains only test personas, schedule has no names, email log has no dummy rows, /resources is empty, and all 5 quick logins work. |
 
 ## Milestones — Optional: only if Prompt 27 / 28 is built
 
@@ -293,39 +294,34 @@ These earlier checklist checks go beyond an exact persona-plan case. They remain
 | Test ID | Tag | Workflow | Steps | Expected result |
 | --- | --- | --- | --- | --- |
 | VIS-08 | CHANGED | Sign-in and install metadata | Sign in with googleEnabled false, then true when configured. Inspect /manifest.json response headers and body, including after Publish. | Disabled Google button and its “or” divider are hidden, without removing Google code. Enabled Google remains available. Manifest is valid JSON with Content-Type application/json (an optional charset is fine), not the index.html fallback. |
-| VIS-08 | CHANGED | My Shifts dates and displayed phones | View a standing shift starting in the future, then a past start date. Inspect displayed mobile/emergency numbers, including On shift now and the schedule side panel. | Future dates say “Starts”; past dates say “Started”. Ten-digit US phones display as (XXX) XXX-XXXX; tap-to-call remains available. |
+| ADM-37 | CHANGED | My Shifts dates and displayed phones | View a standing shift starting in the future, then a past start date. Inspect displayed mobile/emergency numbers, including On shift now and the schedule side panel. | Future dates say “Starts”; past dates say “Started”. Ten-digit US phones display as (XXX) XXX-XXXX; tap-to-call remains available. |
 | ADM-37 | CHANGED | QA persona labels | Inspect both Active personas on the master schedule, its side panel, On shift now, Team → Test accounts and message recipient search. | Schedule surfaces distinguish “Test · Active” and “Test · Active, no shift”, keeping gray TEST badges. Team uses the same shared persona labels as sign-in. Test recipients have TEST badges. |
 | ADM-37 | CHANGED | Weekend default week | On Saturday and Sunday (also DST weekends), open the master schedule with no week parameter and press Today after navigating away. Check admin-home This week stats. Select a previous week explicitly. | Default/Today and overview stats use the coming Monday–Friday week. Explicit previous-week selection still works; live On shift now logic is unchanged. |
 | ADM-37 | CHANGED | Staff Profile and capacity guidance | Click each Profile-card label and inspect htmlFor/id associations. Edit slots with 1 and 2 assignments. | Each label focuses its own control. Helpers say “1 volunteer is assigned, so capacity can't go below 1.” / “2 volunteers are assigned, so capacity can't go below 2.” Server capacity errors use the same singular/plural grammar. Capacity enforcement is unchanged. |
 
-## Master/app disagreements
+## Master/app disagreements (resolved Oct 12)
 
-The master has not been edited. Current workflow expectations above are adjusted only where the app/policy differ; gaps are called out explicitly.
+**CHANGED:** The user’s Oct 12 master resolves the 13 earlier assessments retained below. No master or app edits were made during this sync. SYS-08 is an explicitly accepted limit, not a newly implemented roster feature; MIL/NTF remain optional and unbuilt.
 
-| Master ID(s) | Difference |
-|---|---|
-| SYS-05, SYS-17 | Master assumes client/server/shared-schema locations and whole-workspace zero hits. Actual paths are artifacts/... and lib/db; historical migrations, the unchanged master, deliberate identity aliases and registered Canvas scaffolding require exclusions. |
-| SYS-01, SYS-11 | Ordinary seed counts exclude the additional five QA identities. User rows and volunteer-profile rows are not interchangeable. |
-| SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06 | Master expects personal Cindi contact/Reply-To/footer fields. Current app uses public Community Care Team contact; Reply-To uses explicit EMAIL_REPLY_TO or configured sender fallback. Dev rejects malformed identity at send; startup checks are production-only. |
-| SYS-08 | Master promises flag restoration of roster badges/filters. The v2 roster has removed those controls; retained detail/CSV behavior is only partial compatibility. Known gap, not a passed master test. |
-| SYS-12 | Master names an alternate machine header. Only X-Jobs-Secret is accepted. The environment variable is not an accepted header name. |
-| VIS-03 | Master quotes uppercase card/pill text; current CCT brand uses sentence-case testing labels. |
-| NEW-01 | Master treats a nine-character password as too short; actual minimum is eight. The negative test uses seven characters. |
-| ADM-03 | Master asks to delete two slots in the editor; current editor offers deactivation, not deletion. Idempotence is checked with the seeded grid and an empty isolated grid. |
-| ADM-15 | Master expects a future 24h–24h15m reminder and test-admin delivery. Current catch-up selects already-due reminders (within next 24h); TEST mail is suppressed. Use an ordinary synthetic admin in an isolated dev scope for logged delivery. |
-| ADM-18 | Master expects five entries in the volunteer roster; four are volunteers and the fifth is the admin in Team. |
-| PRD-03 | Master makes a production backfill unconditional. Current policy requires separate operator approval; read normalization works without it. No production update was performed. |
-| PRD-05 | Loader creates 40 only on an empty grid, not a previously configured one. |
-| MIL-*, NTF-* | Future feature checks remain conditional; checklist coverage does not claim those features exist. |
+| Master ID(s) | Original difference / assessment | Resolution |
+|---|---|---|
+| SYS-05, SYS-17 | Master assumes client/server/shared-schema locations and whole-workspace zero hits. Actual paths are artifacts/... and lib/db; historical migrations, the unchanged master, deliberate identity aliases and registered Canvas scaffolding require exclusions. | Master now uses artifacts/, shared/ and lib/db paths with the same dependency, build, migration, docs and Canvas exclusions; compatibility hits are reviewed and explained. |
+| SYS-01, SYS-11 | Ordinary seed counts exclude the additional five QA identities. User rows and volunteer-profile rows are not interchangeable. | Master now separates the seed’s 1 admin / 18 volunteers from the 5 QA users and distinguishes users from volunteer profiles: QA users = 5, QA volunteer profiles = 4. |
+| SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06 | Master expects personal Cindi contact/Reply-To/footer fields. Current app uses public Community Care Team contact; Reply-To uses explicit EMAIL_REPLY_TO or configured sender fallback. Dev rejects malformed identity at send; startup checks are production-only. | The master already used the Community Care Team contact as of Oct 11; that earlier assessment was outdated. SYS-09/SYS-10 now explicitly state sender-address Reply-To fallback and production-only EMAIL_FROM startup validation; development refuses malformed identity at send. |
+| SYS-08 | Master promises flag restoration of roster badges/filters. The v2 roster has removed those controls; retained detail/CSV behavior is only partial compatibility. Known gap, not a passed master test. | Accepted C8 limit: only the detail card and CSV column return with the flag, not the roster badge/filter. Tracking remains off; adding roster controls if tracking is enabled would require a change order. The master now tests this accepted behavior. |
+| SYS-12 | Master names an alternate machine header. Only X-Jobs-Secret is accepted. The environment variable is not an accepted header name. | Master now names X-Jobs-Secret as the only accepted header; other names, including JOBS_SECRET, are refused. |
+| VIS-03 | Master quotes uppercase card/pill text; current CCT brand uses sentence-case testing labels. | Master now expects sentence case: “Quick login — testing”. |
+| NEW-01 | Master treats a nine-character password as too short; actual minimum is eight. The negative test uses seven characters. | Master now tests rejection of a 7-character password and successful signup with 8 or more characters. |
+| ADM-03 | Master asks to delete two slots in the editor; current editor offers deactivation, not deletion. Idempotence is checked with the seeded grid and an empty isolated grid. | Master now checks seeded-grid results of 0 then 0 and empty isolated-grid results of 40 then 0; deactivated slots count as existing and are not recreated. |
+| ADM-15 | Master expects a future 24h–24h15m reminder and test-admin delivery. Current catch-up selects already-due reminders (within next 24h); TEST mail is suppressed. Use an ordinary synthetic admin in an isolated dev scope for logged delivery. | Master now uses a shift within the next 24 hours, a non-test volunteer, and an ordinary dev admin for logged delivery; ACT/Test Admin mail is suppressed and reruns send nothing new. |
+| ADM-18 | Master expects five entries in the volunteer roster; four are volunteers and the fifth is the admin in Team. | The master already expected 4 volunteer personas in the roster, with the test admin on Team; no master change was needed. |
+| PRD-03 | Master makes a production backfill unconditional. Current policy requires separate operator approval; read normalization works without it. No production update was performed. | Master now makes the one-time backfill operator-approved and records completion on Oct 11; read normalization remains safe while waiting for approval. No production SQL was run during this sync. |
+| PRD-05 | Loader creates 40 only on an empty grid, not a previously configured one. | Master now says the loader fills only missing slots; deactivated slots are not recreated. It creates 20 after the Fix 1 purge that kept 4 times, or 40 on an empty grid, then 0 on rerun. |
+| MIL-*, NTF-* | Future feature checks remain conditional; checklist coverage does not claim those features exist. | Unchanged: optional only if Prompt 27 / 28 is built; neither feature is built. |
 
 ## Coverage table — test ID → QA-CHECKLIST.md section
 
 | Test ID | Checklist section |
-| VIS-08 | Fix 3 — UI and copy polish |
-| ADM-37 | Coordinator dispatch and master schedule; Fix 3 — UI and copy polish |
-| ADM-35 | Fix 2 — production regression workflows |
-| ACT-15 | Fix 2 — production regression workflows |
-| ADM-36 | Fix 2 — production regression workflows |
 |---|---|
 | SYS-01 | Test preparation and automation |
 | SYS-02 | Test preparation and automation |
@@ -352,6 +348,7 @@ The master has not been edited. Current workflow expectations above are adjusted
 | VIS-05 | Public access and authentication |
 | VIS-06 | Public access and authentication |
 | VIS-07 | Public access and authentication |
+| VIS-08 | Fix 3 — UI and copy polish |
 | NEW-01 | Public access and authentication |
 | NEW-02 | Public access and authentication |
 | NEW-03 | Public access and authentication |
@@ -395,6 +392,7 @@ The master has not been edited. Current workflow expectations above are adjusted
 | ACT-12 | Security, privacy and mobile accessibility |
 | ACT-13 | Reminders and coverage alerts |
 | ACT-14 | Security, privacy and mobile accessibility |
+| ACT-15 | Fix 2 — production regression workflows |
 | ADM-01 | Quick login and synthetic QA accounts |
 | ADM-02 | Coordinator dispatch and master schedule |
 | ADM-03 | CCT grid, blocked dates and one-time shifts |
@@ -429,6 +427,10 @@ The master has not been edited. Current workflow expectations above are adjusted
 | ADM-32 | Quick login and synthetic QA accounts |
 | ADM-33 | Quick login and synthetic QA accounts |
 | ADM-34 | Security, privacy and mobile accessibility |
+| ADM-35 | Fix 2 — production regression workflows |
+| ADM-36 | Fix 2 — production regression workflows |
+| ADM-37 | Fix 3 — UI and copy polish |
+| ADM-38 | Coordinator dispatch and master schedule |
 | MIL-01 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-02 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-03 | Milestones — Optional: only if Prompt 27 / 28 is built |
@@ -451,3 +453,4 @@ The master has not been edited. Current workflow expectations above are adjusted
 | PRD-11 | Production readiness and operation |
 | PRD-12 | Production readiness and operation |
 | PRD-13 | Production readiness and operation |
+| PRD-14 | Production readiness and operation |

@@ -12,6 +12,9 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - New slot capacity defaults to the shared Community Care Team standard of two; existing capacities remain unchanged.
 - Admin test email and reminder buttons and their protected routes work in production, target only the signed-in administrator, and preserve TEST-account suppression with clear result copy.
 
+### Docs
+- QA-CHECKLIST.md re-synced with the Oct 12 master test list; all 13 master/app disagreements resolved.
+
 ## v1.1.2 — 2026-10-11
 
 ### Fixed
