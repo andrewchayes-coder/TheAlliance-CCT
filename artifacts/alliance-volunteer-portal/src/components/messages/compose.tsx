@@ -120,8 +120,9 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
         </div>
       )}
       <fieldset className="alliance-card" disabled={busy}>
-        <legend className="alliance-display px-1">Who gets it</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Audience">
+        <legend className="sr-only">Who gets it</legend>
+        <h2 className="alliance-display mb-4 text-xl leading-7" aria-hidden="true">Who gets it</h2>
+        <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Audience">
           {AUD.map(([v, l, d]) => (
             <label key={v} className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border p-3 ${audience === v ? 'border-navy bg-gray' : 'border-gray'}`}>
               <input type="radio" name="audience" className="mt-1 size-5" checked={audience === v} onChange={() => pickAudience(v)} data-testid={`radio-audience-${v}`} />
@@ -135,7 +136,8 @@ export function Compose({ initialIds, initialSingle, onSent }: { initialIds: str
       </fieldset>
 
       <fieldset className="alliance-card mt-5" disabled={busy}>
-        <legend className="alliance-display px-1">Message</legend>
+        <legend className="sr-only">Message</legend>
+        <h2 className="alliance-display mb-4 text-xl leading-7" aria-hidden="true">Message</h2>
         <label className="mt-2 block text-sm font-bold">Subject
           <input className="alliance-input mt-1 font-normal" maxLength={SUBJECT_MAX} value={subject} onChange={e => { touch(); setSubject(e.target.value); }} data-testid="input-subject" />
         </label>
