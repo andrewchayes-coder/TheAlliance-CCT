@@ -300,6 +300,15 @@
   font-weight: 700;
   line-height: 1.3;
 }
+.volunteer-detail-meta > div { min-width: 0; }
+.volunteer-detail-meta dt { font-size: 14px; line-height: 20px; }
+.volunteer-detail-meta dd { margin-top: 4px; font-size: 13px; line-height: 20px; }
+.volunteer-detail-meta dd a {
+  max-width: 100%;
+  min-height: 44px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
 .bg-gray .alliance-label, .alliance-input-label { color: var(--alliance-navy); }
 
 .alliance-button {

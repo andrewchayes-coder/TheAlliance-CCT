@@ -76,14 +76,14 @@ export function VolunteerDetail() {
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
           <h1 className="alliance-display" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Pill map={STATUS} value={normalizeVolunteerStatus(p.status)} />
             {p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}
             {e.attention.filter(attnVisible).map(a => <StatusBadge key={a} status="attention">{ATTN[a] ?? a}</StatusBadge>)}
           </div>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-5">
-            <Item label="Email"><a href={`mailto:${e.user.email}`} className="break-all font-bold text-blue underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
-            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="font-bold text-blue underline underline-offset-4" data-testid="link-phone">{formatPhone(e.user.phone) || e.user.phone}</a> : 'Not provided'}</Item>
+          <dl className="volunteer-detail-meta mt-4 grid items-start gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.85fr)_minmax(0,0.95fr)_repeat(2,minmax(0,1.15fr))]" data-testid="volunteer-header-details">
+            <Item label="Email"><a href={`mailto:${e.user.email}`} className="inline-flex items-start font-bold text-blue underline underline-offset-4" data-testid="link-email">{e.user.email}</a></Item>
+            <Item label="Phone">{e.user.phone ? <a href={`tel:${e.user.phone}`} className="inline-flex items-start font-bold text-blue underline underline-offset-4" data-testid="link-phone">{formatPhone(e.user.phone) || e.user.phone}</a> : 'Not provided'}</Item>
             <StartDateEditor userId={userId} detail={d} />
             <Item label="Joined">{stamp(e.user.createdAt)}</Item>
             <Item label="Last login">{stamp(e.user.lastLoginAt) ?? 'Never'}</Item>

@@ -60,9 +60,9 @@ export function StartDateEditor({ userId, detail }: { userId: string; detail: Ad
       <dt className="alliance-label">Start date</dt>
       <dd>
         {val === null ? (
-          <span className="inline-flex flex-wrap items-center gap-2">
+          <span className="inline-flex flex-wrap items-start gap-2">
             <span data-testid="text-start-date">{cur ? calDate(cur) : 'Not set'}</span>
-            <button type="button" className="min-h-11 px-1 text-sm font-bold text-blue underline underline-offset-4" data-testid="button-edit-start-date"
+            <button type="button" className="inline-flex min-h-11 items-start px-1 text-[length:inherit] leading-[inherit] font-bold text-blue underline underline-offset-4" data-testid="button-edit-start-date"
               onClick={() => { s.begin(); s.setSaved(false); setVal(cur); }}>Edit</button>
           </span>
         ) : (
