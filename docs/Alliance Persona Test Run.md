@@ -4,6 +4,10 @@ Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every
 
 **What this tests:** the finished app after Prompt 26 and the v3–v5 fixes (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
 
+**Oct 12 update (v7, Reminder jobs page):** added ADM-39 and updated PRD-12 for Build Prompts v7 Fix 7 (v1.1.5): plain-language scheduler status, a warning when scheduled runs stop, and the last scheduled run shown separately from manual checks. This version goes up to `docs/` with v7 Step 1.
+
+**Oct 12 update (v1.1.4):** ADM-20, ADM-22 and ADM-23 updated for the guided volunteer review (Awaiting review badge, approval checklist, Approve as Active); ACT-14 and ADM-34 now check the shared page header. Not yet in Replit's docs/ copy; it goes up with the next build prompt. Test IDs are unchanged, so SYS-18 still passes.
+
 **Oct 12 update (D0a, Replit's 13 differences):** Synced with the "Master/app disagreements" list at the bottom of QA-CHECKLIST.md (v1.1.3). Updated to match how the app actually works: SYS-01, SYS-05, SYS-08, SYS-09, SYS-10, SYS-11, SYS-12, SYS-17, SYS-18, VIS-03, NEW-01, ADM-03, ADM-15, PRD-03 and PRD-05. Already matched (fixed Oct 11, so no change): the Community Care Team contact checks (ANS-05, ACT-04, ACT-07, PRD-06) and ADM-18. No new bugs: the one real gap (SYS-08, the roster's background-check badge and filter) is accepted while tracking stays off (C8). MIL/NTF stay optional and aren't built. This version is re-uploaded to `docs/` by Build Prompts v6.
 
 **Oct 11 update (v5 / v1.1.3):** ACT-10, ADM-04, ADM-24, ADM-25 and PRD-06 updated for Fix 5 (synced with Replit's docs/ copy). SYS-13 expectation corrected to match how the app blocks dev features (not-found page / 403).
@@ -33,7 +37,7 @@ Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every
 | ONBR | Volunteer · Onboarding, ready to activate | Quick-login persona. Profile complete, waiting for staff approval. | Dev | 4 |
 | ANS | Volunteer · Active, no shift | Quick-login persona. Approved, holds no standing shift. | Dev | 8 |
 | ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 15 |
-| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 38 |
+| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 39 |
 | MIL | Admin · Prompt 27 (optional) | Only if Prompt 27 (milestones) is approved and built. | Dev | 5 |
 | NTF | Admin · Prompt 28 (optional) | Only if Prompt 28 (admin shift-activity notifications) is approved and built. | Dev | 4 |
 | PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 14 |
@@ -340,7 +344,7 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
 
 - [ ] **ACT-14 · Phone & tablet walk** (P18)  
   **Do:** Walk every volunteer screen at 375 px and 768 px.  
-  **Expect:** No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed.
+  **Expect:** No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed. Every page uses the same page header (title, subtitle, actions), and long titles and action buttons wrap cleanly at 375 px (v1.1.4).
 
 - [ ] **ACT-15 · Dashboard cards readable** (F2)  
   **Do:** View the dashboard as Volunteer · Active, no shift (choose-shift card) and as Volunteer · Active with a shift (next-shift card), at 375 px and desktop. Run the axe contrast check.  
@@ -426,21 +430,21 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Do:** Use the Columns picker to show DOB, full address, ZIP, emergency contact, county. Reload. Sort by several columns. Check desktop and mobile.  
   **Expect:** Picker choice survives reload. Sorting works on every column. Sticky header and first column on desktop; stacked cards on mobile.
 
-- [ ] **ADM-20 · Filters & chips** (P8, P23)  
-  **Do:** Combine filters (e.g. Active + No shift; city + profile incomplete).  
-  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention" (active with 0 shifts, incomplete profile > 7 days in onboarding, onboarding > 30 days). No certification or background columns or filters.
+- [ ] **ADM-20 · Filters & chips** (P8, P23, v1.1.4)  
+  **Do:** Use the Needs attention filter with each reason (Awaiting review, No shift, Profile incomplete for more than 7 days, Onboarding for more than 30 days), then combine filters (e.g. Active + No shift; city + Awaiting review). Export the Roster and Schedule CSVs with a reason selected.  
+  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention". Every Onboarding volunteer shows an "Awaiting review" badge on the roster as soon as they sign up (v1.1.4), alongside any other reasons (active with 0 shifts, incomplete profile > 7 days in onboarding, onboarding > 30 days). The CSV exports use the same reason filter. No certification or background columns, filters or reasons.
 
 - [ ] **ADM-21 · CSV exports** (P8, P23, P24, QL-1)  
   **Do:** Export the Roster CSV and Schedule CSV and open both in Google Sheets.  
   **Expect:** Dated filenames, open cleanly. Roster: status, start date, DOB, address, city, state, ZIP, emergency contact name/relationship/phone, county, shifts held ("Tue 10:00–12:00; …"); no certification, background, agreement or onboarding-answer columns. Schedule: one row per active assignment including one-time shifts, with upcoming skip dates. No test accounts in either.
 
-- [ ] **ADM-22 · Activate a volunteer** (QL-4, P9, P22)  
-  **Do:** Open Volunteer · Onboarding, ready to activate (show test accounts on). Move to Active (confirm). (Do this from device B during ONBR-04.)  
-  **Expect:** Stepper is Onboarding → Active → Inactive. Activation works with no certification or background check. Start date is set to today. Approval email logged as suppressed. Activity log records the change.
+- [ ] **ADM-22 · Activate a volunteer** (QL-4, P9, P22, v1.1.4)  
+  **Do:** Open Volunteer · Onboarding, ready to activate (show test accounts on). Read the "Volunteer review and approval" checklist, then click Approve as Active → Confirm approval as Active. (Do this from device B during ONBR-04.)  
+  **Expect:** The checklist says "Ready for staff approval", shows every requirement as Complete and "Pending: Staff approval as Active". The dialog is titled "Approve as Active?" and says the approval email is attempted after saving. Activation works with no certification or background check. Start date is set to today. The result says the approval email wasn't sent (test-account delivery suppressed) and it's logged as suppressed. The roster, overview and Needs attention update without a reload. Activity log records the change.
 
-- [ ] **ADM-23 · Activation blocked when incomplete** (P22)  
+- [ ] **ADM-23 · Activation blocked when incomplete** (P22, v1.1.4)  
   **Do:** Open Volunteer · Onboarding, new (after a reset, before ONBN-03).  
-  **Expect:** Move to Active is disabled and lists exactly which fields are missing.
+  **Expect:** The checklist says "Waiting on volunteer requirements" and lists each missing item (Onboarding completed and each empty profile field) with who completes it and a link to the right section, plus "Message volunteer about missing steps". Approve as Active isn't offered. If approval is attempted through the API, it returns 422 with the missing items listed.
 
 - [ ] **ADM-24 · Volunteer detail page** (P9, P23)  
   **Do:** On any volunteer: change only the start date inline and look at Recent activity; then save the start date together with another profile field. Edit DOB, emergency contact, county and admin notes.  
@@ -484,7 +488,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 
 - [ ] **ADM-34 · Phone & tablet walk** (P18)  
   **Do:** Walk every admin screen at 375 px and 768 px.  
-  **Expect:** No horizontal scrolling. Tables become cards. On shift now is usable one-handed.
+  **Expect:** No horizontal scrolling. Tables become cards. On shift now is usable one-handed. Every admin page uses the same page header, with actions wrapping under the title on narrow screens (v1.1.4).
 
 - [ ] **ADM-35 · Switch account across roles** (QL-3, F2)  
   **Do:** From the test-account banner, switch volunteer → Admin, Admin → volunteer, volunteer → volunteer, and onboarding-new → Admin. Start each switch from a different page (e.g. /profile, /admin/team).  
@@ -501,6 +505,10 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 - [ ] **ADM-38 · Week off only inside the assignment period** (F4)  
   **Do:** Give an Active persona a standing shift with a start date 15+ days out. Open that shift in the Master schedule side panel. Try marking a week off before the start date through the API.  
   **Expect:** The panel lists only dates on or after the start date (plus any stored future weeks off), with no "Mark week off" for earlier weeks. The API returns 422 ("That date is before this volunteer's standing shift starts."). The volunteer's own week-off action rejects out-of-period dates the same way. Reset test accounts afterwards.
+
+- [ ] **ADM-39 · Reminder jobs page explains the scheduler** (F7)  
+  **Do:** In dev with RUN_JOBS off and no JOBS_SECRET, open Admin → Reminder jobs. Click Run reminder check now. Optional: set a 32+ character JOBS_SECRET, restart, and wait 20+ minutes without calling the job (remove it afterwards).  
+  **Expect:** The Scheduler row says "Not scheduled" (amber) and the top notice says reminders aren't scheduled. No "Automatic scheduler" or "External trigger" rows and no autoscale note. After the manual check, Last run shows "Manual (Run reminder check now)" with a "Last scheduled run" line (or "No scheduled run yet"). Count tiles read Due, Sent, Logged (not delivered), Failed, Skipped, Test accounts (not sent), Carried to next run, Unconfirmed. With JOBS_SECRET set, the Scheduler row says cron-job.org, and after 20 minutes with no scheduled run the notice turns red ("No scheduled run in the last 20 minutes…").
 
 ## MIL — Admin · Prompt 27 (optional)
 
@@ -594,9 +602,9 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
   **Do:** When prod testing is done (and before the first pilot invites): set `QUICK_LOGIN_ENABLED=false`, republish, open /signin in a fresh window, and call GET /api/auth/quick-login/status.  
   **Expect:** No quick-login card. The status call returns 404. Normal sign-in still works.
 
-- [ ] **PRD-12 · External cron** (P15, P13)  
-  **Do:** Watch /admin/notifications/jobs for 30+ minutes. On a weekday after 7 AM, check Schedule settings → "Last daily check" and the log for the digest.  
-  **Expect:** Last-run time updates every 15 minutes from the external cron. On weekdays the daily check runs after 7 AM and the digest is logged if there are gaps (tracker A4, A6). "No daily check yet" over a weekend is expected.
+- [ ] **PRD-12 · External cron** (P15, P13, F7)  
+  **Do:** Open Admin → Reminder jobs and watch it for 30+ minutes. Click Run reminder check now once. On a weekday after 7 AM, check Schedule settings → "Last daily check" and the log for the digest.  
+  **Expect:** The top notice is green ("Scheduled runs are on time. Last one at {time}") and the time is under 15 minutes old, updating on its own every 15 minutes. The Scheduler row says "cron-job.org (outside service), every 15 minutes" with a green badge; Last run source is "Scheduled (cron-job.org)". After the manual click, Last run shows Manual, the "Last scheduled run" line still shows the cron-job.org run, and the notice stays green. On weekdays the daily check runs after 7 AM and the digest is logged if there are gaps (tracker A4, A6). "No daily check yet" over a weekend is expected.
 
 - [ ] **PRD-13 · Production lockdown** (P20, P19)  
   **Do:** Restart logs; open /style-guide; add ?at= to admin home.  
@@ -608,7 +616,7 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
 
 ## Coverage by prompt
 
-Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3.
+Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3; F4 is v4; F7 is v7 (Reminder jobs page).
 
 | Prompt | Tests |
 |---|---|
@@ -649,6 +657,7 @@ Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in 
 | F2 | NEW-07, ONBN-02, ACT-08, ACT-15, ADM-35, ADM-36, PRD-02 |
 | F3 | VIS-08, ADM-37 |
 | F4 | VIS-08, ADM-37, ADM-38 |
+| F7 | ADM-39, PRD-12 |
 
 ## Superseded v1 checks
 
