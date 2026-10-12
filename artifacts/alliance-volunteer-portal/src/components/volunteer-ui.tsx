@@ -1,4 +1,5 @@
 import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
+import { PageHeader } from '@/components/page-header';
 import { ContactLink } from '@/components/shift-cards';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AppLayout, Button, Card } from '@/components/brand-system';
@@ -17,9 +18,8 @@ export function useNow(ms = 30_000) {
 export function VolunteerPage({ kicker, title, children }: { kicker: string; title: string; children: ReactNode }) {
   return (
     <>
-      <p className="alliance-label">{kicker}</p>
-      <h1 className="alliance-display mt-2 text-navy">{title}</h1>
-      <div className="mt-6 grid gap-5">{children}</div>
+      <PageHeader eyebrow={kicker} title={title} />
+      <div className="grid gap-5">{children}</div>
     </>
   );
 }

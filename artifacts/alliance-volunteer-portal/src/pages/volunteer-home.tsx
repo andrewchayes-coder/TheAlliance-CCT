@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { Link } from 'wouter';
 import { CheckCircle2, Circle, ExternalLink, Mail } from 'lucide-react';
 import { getGetVolunteerDashboardQueryKey, useGetVolunteerDashboard, type Me } from '@workspace/api-client-react';
@@ -79,8 +80,7 @@ function Home({ me }: { me: Me }) {
   const m = d?.unreadMessage;
   return (
     <>
-      <p className="alliance-label">Volunteer home</p>
-      <h1 className="alliance-display mt-2">Welcome back, Resource Coordinator {me.user.firstName}.</h1>
+      <PageHeader eyebrow="Volunteer home" title={`Welcome back, Resource Coordinator ${me.user.firstName}.`} />
       <div className="mt-6 grid gap-5 lg:grid-cols-2">
         {q.isPending ? <div className="lg:col-span-2"><LoadingBlock /></div> : q.isError ? (
           <div className="lg:col-span-2"><ErrorBlock what="your dashboard" onRetry={() => { void q.refetch(); }} /></div>

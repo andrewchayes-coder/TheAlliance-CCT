@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { useSearch } from 'wouter';
 import { AppLayout } from '@/components/brand-system';
 import { RequireAdmin } from '@/auth/guards';
@@ -15,9 +16,7 @@ function Body() {
   const tabs = [['compose', 'Compose'], ['sent', 'Sent and read receipts']] as const;
   return (
     <AppLayout role="admin">
-      <p className="alliance-label">Administration</p>
-      <h1 className="alliance-display mt-3">Messages</h1>
-      <p className="mt-2 max-w-2xl">Write to volunteers. Every message is previewed first, then lands in their portal inbox and optionally their email.</p>
+      <PageHeader eyebrow="Administration" title="Messages" description="Write to volunteers. Every message is previewed first, then lands in their portal inbox and optionally their email." />
       <div role="tablist" aria-label="Messages" className="mt-5 flex gap-2">
         {tabs.map(([k, l]) => (
           <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)} data-testid={`tab-${k}`}

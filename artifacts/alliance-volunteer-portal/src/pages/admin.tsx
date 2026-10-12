@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { useEffect, useState, type FormEvent } from 'react';
 import { appConfig } from '@workspace/shared/appConfig';
 import { formatPhone, normalizeVolunteerStatus } from '@workspace/shared/profileFields';
@@ -154,9 +155,7 @@ function TeamBody({ me }: { me: Me }) {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>
-      <h1 className="alliance-display">Team accounts</h1>
-      <p className="mb-6 mt-2 max-w-2xl">Invite admins and control who can sign in.</p>
+      <PageHeader back={<Link href="/admin" className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Admin home</Link>} title="Team accounts" description="Invite admins and control who can sign in." />
       <InviteCard />
       <TestAccountsCard />
       <section className="alliance-card" aria-labelledby="team-h">
@@ -310,8 +309,7 @@ function VolunteerOnboardingBody() {
   const p = d?.profile;
   return (
     <AppLayout role="admin">
-      <Link href="/admin/team" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>
-      <h1 className="alliance-display">Volunteer onboarding</h1>
+      <PageHeader back={<Link href="/admin/team" className="inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4"><ChevronLeft size={16} aria-hidden="true" />Team accounts</Link>} title="Volunteer onboarding" />
       {q.isPending ? <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}</div>
         : q.isError || !d ? <div className="mt-6"><Notice>We couldn’t open this volunteer’s onboarding details just now. Please try again. If it keeps happening, let <ContactLink /> know.</Notice><Button onClick={() => { void q.refetch(); }}>Try again</Button></div>
         : (

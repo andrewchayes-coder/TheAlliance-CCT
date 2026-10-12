@@ -1,4 +1,5 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
+import { PageHeader } from '@/components/page-header';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getGetNotificationLogQueryKey, getGetNotificationSummaryQueryKey, getGetReminderJobStatusQueryKey, useGetNotificationSummary } from '@workspace/api-client-react';
@@ -22,9 +23,7 @@ function Body() {
   };
   return (
     <>
-      <p className="alliance-label">Admin</p>
-      <h1 className="alliance-display">Email notifications</h1>
-      <p className="mt-1 max-w-xl text-sm">Monthly email volume, the provider connection, and every message the portal has sent or logged.</p>
+      <PageHeader eyebrow="Admin" title="Email notifications" description="Monthly email volume, the provider connection, and every message the portal has sent or logged." />
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-40 w-full" />)}</div>}
       {q.isError && <div className="mt-4"><Notice>{readError(q.error, SOMETHING_WENT_WRONG).message}</Notice><Button type="button" onClick={() => { void q.refetch(); }} data-testid="button-retry-summary">Try again</Button></div>}
       {s && (

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { useLocation } from 'wouter';
 import { PublicLayout, Button, StatusBadge } from '@/components/brand-system';
 import { RequireVerified } from '@/auth/guards';
@@ -27,13 +28,7 @@ function Landing({ me, mode }: { me: Me; mode: 'dashboard' }) {
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-14">
-        <p className="alliance-label">Your account</p>
-        <h1 className="alliance-display mt-3 text-navy">
-          Hello, {me.user.firstName}
-        </h1>
-        <p className="mt-3">
-          {`Thank you for helping local families find the support they need. ${p ? `Serving ${p.county} County.` : ''}`}
-        </p>
+        <PageHeader eyebrow="Your account" title={`Hello, ${me.user.firstName}`} description={`Thank you for helping local families find the support they need. ${p ? `Serving ${p.county} County.` : ''}`} />
         {err && <div className="mt-5"><Notice>{err}</Notice></div>}
         <ul className="mt-8 divide-y divide-gray rounded-2xl border border-gray" aria-label="Account checkpoints">
           {rows.map(r => (

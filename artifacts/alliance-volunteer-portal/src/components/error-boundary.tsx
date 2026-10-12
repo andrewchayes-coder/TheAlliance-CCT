@@ -1,4 +1,5 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
+import { PageHeader } from '@/components/page-header';
 import {
   Component,
   type ComponentType,
@@ -40,12 +41,7 @@ function DefaultFallback({ error, resetError }: ErrorFallbackProps) {
   return (
     <div className="flex min-h-[100dvh] w-full items-center justify-center bg-gray p-4" role="alert">
       <div className="w-full max-w-lg rounded-[14px] bg-white p-6 text-center shadow-[0_3px_14px_rgb(6_54_93/8%)] md:p-8">
-        <h1 className="alliance-display text-navy">
-          Something went wrong
-        </h1>
-        <p className="mt-3 text-navy">
-          {SOMETHING_WENT_WRONG}
-        </p>
+        <PageHeader title="Something went wrong" description={SOMETHING_WENT_WRONG} />
         {/* Dev only: messages can carry API responses and other internals. */}
         {import.meta.env.DEV ? (
           <pre className="mt-4 whitespace-pre-wrap break-words rounded-lg bg-gray p-3 text-left text-sm text-navy">

@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { TestBadge } from '@/components/test-badge';
@@ -182,9 +183,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
 
   return (
     <AppLayout role="admin">
-      <p className="alliance-label">Administration</p>
-      <h1 className="alliance-display mt-3">Volunteer roster</h1>
-      <p className="mt-2 max-w-2xl">Everyone in the program, with the contact details you need to reach them.</p>
+      <PageHeader eyebrow="Administration" title="Volunteer roster" description="Everyone in the program, with the contact details you need to reach them." />
 
       <section aria-label="Roster summary" className="mt-5">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by summary">

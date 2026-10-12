@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'wouter';
 import { isProfileComplete } from '@/lib/profile-complete';
@@ -248,9 +249,7 @@ function OnboardingForm({ me }: { me: Me }) {
   return (
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-2xl px-4 py-10 md:py-14">
-        <p className="alliance-label">Onboarding</p>
-        <h1 className="alliance-display mt-3 text-navy">Welcome, {me.user.firstName}</h1>
-        <p className="mt-3">Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to.</p>
+        <PageHeader eyebrow="Onboarding" title={`Welcome, ${me.user.firstName}`} description="Welcome to the Community Care Team. A few details help us support you and reach someone if we ever need to." />
         <div className="mt-5">{formErr && <Notice>{formErr}</Notice>}</div>
         <form noValidate onSubmit={e => { e.preventDefault(); void finish(); }} className="mt-4 grid gap-8" data-testid="form-onboarding">
           <fieldset disabled={finishing || outBusy} className="contents">
@@ -302,8 +301,7 @@ function AgreementBody() {
             </>
           ) : (
             <article>
-              <p className="alliance-label">{r.type === 'article' ? 'Article' : r.type === 'document' ? 'Document' : 'Link'}</p>
-              <h1 className="alliance-display mt-3" data-testid="text-agreement-title">{r.title}</h1>
+              <PageHeader eyebrow={r.type === 'article' ? 'Article' : r.type === 'document' ? 'Document' : 'Link'} title={r.title} titleTestId="text-agreement-title" />
               {r.body && <div className="mt-5 whitespace-pre-wrap break-words" data-testid="text-agreement-body">{r.body}</div>}
               {href && (
                 <a href={href} target="_blank" rel="noopener noreferrer" className="alliance-button alliance-button-primary mt-6" data-testid="link-agreement-open">

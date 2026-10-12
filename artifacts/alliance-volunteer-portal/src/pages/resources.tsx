@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { Link, useParams } from 'wouter';
 import { ExternalLink, Search } from 'lucide-react';
 import { getGetVolunteerResourcesQueryKey, useGetVolunteerResources, useGetResource, getGetResourceQueryKey, type VolunteerResource } from '@workspace/api-client-react';
@@ -71,12 +72,10 @@ function ArticleBody() {
   useSeo(q.data?.title ?? 'Article', q.data?.summary ?? 'A guide for Resource Coordinators.');
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
-      <Link href="/resources" className="inline-flex min-h-11 items-center text-sm font-bold underline">Back to Resources</Link>
+      <Link href="/resources" className="mb-2 inline-flex min-h-11 items-center text-sm font-bold underline">Back to Resources</Link>
       {q.isPending ? <LoadingBlock /> : q.isError || !q.data ? <ErrorBlock what="this article" onRetry={() => { void q.refetch(); }} /> : (
-        <article className="mt-4">
-          <p className="alliance-section-kicker">{q.data.category}</p>
-          <h1 className="font-display text-3xl font-bold md:text-4xl">{q.data.title}</h1>
-          {q.data.summary && <p className="mt-2 text-lg">{q.data.summary}</p>}
+        <article>
+          <PageHeader eyebrow={q.data.category} title={q.data.title} description={q.data.summary ? <p>{q.data.summary}</p> : undefined} />
           <MarkdownView body={q.data.body ?? ''} className="mt-6 text-[17px] leading-8" testId="article-body" />
         </article>
       )}

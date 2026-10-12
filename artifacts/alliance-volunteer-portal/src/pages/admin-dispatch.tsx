@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { formatPhone } from '@workspace/shared/profileFields';
 import { Link } from 'wouter';
 import { TestBadge } from '@/components/test-badge';
@@ -21,9 +22,8 @@ function Body() {
   const cards = d ? d.onShiftNow.filter(b => b.state !== 'blocked') : [];
   return (
     <AppLayout role="admin">
-      <div className="flex flex-wrap items-end justify-between gap-2" data-testid="view-admin-overview">
-        <div><p className="alliance-label">Coordinator dispatch</p><h1 className="alliance-display mt-2">Who to call</h1></div>
-        {d && <p className="text-sm text-navy-soft" data-testid="text-updated" aria-live="off">Updated {updatedLabel(d.updatedAt)}</p>}
+      <div className="mb-6 [&+*]:!mt-0" data-testid="view-admin-overview">
+        <PageHeader eyebrow="Coordinator dispatch" title="Who to call" actions={d ? <p className="text-sm text-navy-soft" data-testid="text-updated" aria-live="off">Updated {updatedLabel(d.updatedAt)}</p> : undefined} className="mb-0" />
       </div>
       {q.isPending ? (
         <div className="mt-6 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading dispatch</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>

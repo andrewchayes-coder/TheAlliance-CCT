@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetMeQueryKey, getGetVolunteerDashboardQueryKey, useUpdateVolunteerProfile, type Me,
@@ -112,9 +113,7 @@ function AccountOnly({ me, admin }: { me: Me; admin: boolean }) {
   return (
     <AppLayout role={admin ? 'admin' : 'volunteer'}>
       <div className="mx-auto max-w-3xl">
-        <p className="alliance-label">{admin ? 'Administration' : 'Your profile'}</p>
-        <h1 className="alliance-display mt-3">My Profile</h1>
-        <p className="mb-6 mt-2">Update how Alliance staff and families reach you, and keep your sign-in secure.</p>
+        <PageHeader eyebrow={admin ? 'Administration' : 'Your profile'} title="My Profile" description="Update how Alliance staff and families reach you, and keep your sign-in secure." />
         {!admin && (
           <div className="mb-6"><Notice kind="info">Your volunteer onboarding isn't finished yet. You can manage your account here, then <Link href="/onboarding" className="font-bold underline underline-offset-4" data-testid="link-finish-onboarding">finish onboarding</Link> to complete your volunteer profile.</Notice></div>
         )}

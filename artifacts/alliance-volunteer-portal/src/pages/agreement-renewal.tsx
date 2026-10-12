@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/page-header';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetMeQueryKey, getGetOnboardingAgreementsQueryKey, useAcknowledgeAgreement, useGetOnboardingAgreements } from '@workspace/api-client-react';
 import { AppLayout, Button, Card } from '@/components/brand-system';
@@ -30,9 +31,7 @@ function Body() {
   }
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 md:px-6">
-      <p className="alliance-section-kicker">Agreements</p>
-      <h1 className="font-display text-3xl font-bold">We’ve updated our agreements</h1>
-      <p className="mt-2 text-lg">Thank you for serving as a Resource Coordinator. Please read the latest version{q.data ? ` (${q.data.version})` : ''} and confirm. Your shifts stay as they are.</p>
+      <PageHeader eyebrow="Agreements" title="We’ve updated our agreements" description={<p>Thank you for serving as a Resource Coordinator. Please read the latest version{q.data ? ` (${q.data.version})` : ''} and confirm. Your shifts stay as they are.</p>} />
       <div className="mt-6 grid gap-4">
         {q.isPending ? <LoadingBlock /> : q.isError ? <ErrorBlock what="the agreements" onRetry={() => { void q.refetch(); }} /> : (
           <>

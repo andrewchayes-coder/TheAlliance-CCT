@@ -2,6 +2,7 @@ import { AccountEditor } from '@/components/account-editor';
 import { ContactLink } from '@/components/shift-cards';
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'wouter';
+import { PageHeader } from '@/components/page-header';
 import { TestBadge } from '@/components/test-badge';
 import { ChevronLeft } from 'lucide-react';
 import { getGetAdminVolunteerQueryKey, useGetAdminVolunteer, type VolunteerActivity } from '@workspace/api-client-react';
@@ -67,7 +68,7 @@ export function VolunteerDetail() {
 
   return (
     <AppLayout role="admin">
-      <Link href="/admin/volunteers" className="mb-3 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
+      <Link href="/admin/volunteers" className="mb-1 inline-flex min-h-11 items-center gap-1 text-sm font-bold text-blue underline underline-offset-4" data-testid="link-back-roster"><ChevronLeft size={16} aria-hidden="true" />Back to roster</Link>
       {q.isPending ? (
         <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
       ) : !d || !e || !p ? (
@@ -75,7 +76,7 @@ export function VolunteerDetail() {
       ) : (
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
-          <h1 className="alliance-display" data-testid="text-volunteer-name">{e.user.firstName} {e.user.lastName}<TestBadge test={e.user.isTestAccount} /></h1>
+          <PageHeader title={`${e.user.firstName} ${e.user.lastName}`} titleTestId="text-volunteer-name" titleSuffix={<TestBadge test={e.user.isTestAccount} />} className="mb-3" />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Pill map={STATUS} value={normalizeVolunteerStatus(p.status)} />
             {p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}

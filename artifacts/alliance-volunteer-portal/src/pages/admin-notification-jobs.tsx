@@ -1,4 +1,5 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
+import { PageHeader } from '@/components/page-header';
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -98,9 +99,7 @@ function Body() {
   const d = q.data;
   return (
     <>
-      <p className="alliance-label">Admin</p>
-      <h1 className="alliance-display">Reminder jobs</h1>
-      <p className="mt-1 max-w-xl text-sm">What the automated shift reminders did, and safe ways to check them.</p>
+      <PageHeader eyebrow="Admin" title="Reminder jobs" description="What the automated shift reminders did, and safe ways to check them." />
 
       {q.isLoading && <div className="mt-4 space-y-3" role="status" aria-busy="true"><span className="sr-only">Loading</span>{[0, 1, 2].map(i => <Skeleton key={i} className="h-28 w-full" />)}</div>}
       {q.isError && (

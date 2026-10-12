@@ -1,4 +1,5 @@
 import { ContactLink } from '@/components/shift-cards';
+import { PageHeader } from '@/components/page-header';
 import { useMemo, useState, useRef, type RefObject } from 'react';
 import { TestBadge } from '@/components/test-badge';
 import { Link, useLocation, useSearch } from 'wouter';
@@ -195,13 +196,10 @@ function Body() {
   return (
     <AppLayout role="admin">
       <div data-testid="view-admin-schedule">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div><p className="alliance-label">Coordinator</p><h1 className="alliance-display mt-2">Master schedule</h1></div>
-          <div className="flex flex-wrap items-center gap-3">
+        <PageHeader eyebrow="Coordinator" title="Master schedule" actions={<>
           <Button variant="secondary" onClick={() => setAdding(true)} data-testid="button-add-one-time"><Plus size={16} aria-hidden="true" className="mr-1" />Add a one-time shift</Button>
           <Link href="/admin/schedule/settings" data-testid="link-schedule-settings" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue underline underline-offset-4"><Settings size={16} aria-hidden="true" />Schedule settings</Link>
-          </div>
-        </div>
+        </>} />
         <div className="mt-4 flex flex-wrap items-center gap-2" data-testid="nav-week">
           <Button variant="secondary" onClick={() => go(addDays(weekStart, -7))} aria-label="Previous week" data-testid="button-prev-week"><ChevronLeft size={18} aria-hidden="true" /></Button>
           <Button variant="secondary" onClick={() => go(operatingWeekStart(week?.today ?? today))} disabled={thisWeek} data-testid="button-today">Today</Button>

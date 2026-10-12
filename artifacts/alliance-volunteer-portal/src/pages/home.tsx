@@ -1,12 +1,12 @@
 import { appConfig } from '@workspace/shared/appConfig';
+import { PageHeader } from '@/components/page-header';
 import { Link } from 'wouter';
 import { PublicLayout, StyleGuideLink, Button } from '@/components/brand-system';
 
 export default function Home() {
   return (
     <PublicLayout>
-      <p className="alliance-label">{appConfig.programName}</p>
-      <h1 className="alliance-display mt-4 text-navy" data-testid="text-portal-title">{appConfig.appName}</h1>
+      <PageHeader eyebrow={appConfig.programName} title={appConfig.appName} titleTestId="text-portal-title" className="[&+*]:!mt-0" />
       <p className="mt-5">A welcoming place for our Resource Coordinators in {appConfig.defaultCounty} County.</p>
       <p className="mt-4">Choose your weekly shift, stay connected with the team, and find guides to help neighbors connect with support.</p>
       <div className="mt-6 flex flex-wrap gap-3">

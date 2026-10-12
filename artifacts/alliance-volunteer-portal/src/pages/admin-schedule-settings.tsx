@@ -1,4 +1,5 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
+import { PageHeader } from '@/components/page-header';
 import { useState } from 'react';
 import { useGetScheduleSettings, useCopyMondaySlots, useLoadStandardGrid, type ScheduleSlot } from '@workspace/api-client-react';
 import { AppLayout, Button, StatusBadge } from '@/components/brand-system';
@@ -71,20 +72,13 @@ function Body() {
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="alliance-label">Admin</p>
-          <h1 className="alliance-display">Schedule settings</h1>
-          <p className="mt-1 max-w-xl text-sm">Weekly volunteer time slots and the dates the office is closed.</p>
-        </div>
-        <div className="flex w-full min-w-0 flex-wrap gap-2 sm:w-auto">
+      <PageHeader eyebrow="Admin" title="Schedule settings" description="Weekly volunteer time slots and the dates the office is closed." actions={<>
           <Button type="button" variant="secondary" className="h-auto min-h-11 w-full max-w-full whitespace-normal text-center sm:w-auto" onClick={() => setConfirmGrid(true)} data-testid="button-load-standard-grid">Load Community Care Team standard grid</Button>
           <Button type="button" variant="secondary" className="h-auto min-h-11 w-full max-w-full whitespace-normal sm:w-auto" onClick={() => setOneTime(true)} data-testid="button-add-one-time">Add a one-time shift</Button>
           <Button type="button" variant="secondary" onClick={doCopy} disabled={copy.isPending || !data} data-testid="button-copy-monday">{copy.isPending ? 'Copying...' : 'Copy Monday to all weekdays'}</Button>
           <Button type="button" onClick={() => setEditing({ slot: null, day: 1 })} disabled={!data} data-testid="button-add-slot">Add slot</Button>
-        </div>
-      </div>
-      <p className="mt-2 text-xs text-navy-soft">Copying only adds Monday slots that are missing on other days. It never changes or removes existing slots.</p>
+      </>} />
+      <p className="mb-2 text-xs text-navy-soft">Copying only adds Monday slots that are missing on other days. It never changes or removes existing slots.</p>
       <div className="mt-3">{result && <Notice kind="success">{result}</Notice>}</div>
       {copyErr && <div className="mt-3"><Notice>{copyErr}</Notice></div>}
 

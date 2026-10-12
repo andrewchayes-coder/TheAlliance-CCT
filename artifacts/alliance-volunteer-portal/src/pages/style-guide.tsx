@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { appConfig } from '@workspace/shared/appConfig';
 import { AppLayout, AdminSheetPreview, Button, Card, EmptyState, Input, PublicLayout, StatusBadge } from '@/components/brand-system';
 
@@ -50,10 +51,10 @@ export default function StyleGuide() {
     <PublicLayout contained={false}>
       <div className="mx-auto max-w-6xl px-5 py-10 md:px-8 md:py-16">
         <div className="mb-12 border-b border-gray pb-9">
-          <p className="alliance-section-kicker">Development only</p>
-          <h1 className="mt-2" data-testid="text-style-guide-title">{appConfig.programName} visual system</h1>
-          <p className="mt-4 max-w-2xl">A warm, hopeful, and respectful interface for neighbors serving neighbors in the Greater Sacramento Area.</p>
-          <p className="mt-3 text-[15px]">Balance: 60% navy, 25% white, 10% gray, 5% blue. Blue is for actions and labels, never large fills.</p>
+          <PageHeader eyebrow="Development only" title={`${appConfig.programName} visual system`} titleTestId="text-style-guide-title" description={<>
+            <p>A warm, hopeful, and respectful interface for neighbors serving neighbors in the Greater Sacramento Area.</p>
+            <p className="mt-3 text-[15px]">Balance: 60% navy, 25% white, 10% gray, 5% blue. Blue is for actions and labels, never large fills.</p>
+          </>} className="mb-0" />
         </div>
 
         <div className="space-y-14">

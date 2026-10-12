@@ -4,14 +4,15 @@ import { useLocation } from 'wouter';
 import { Input, PublicLayout } from '@/components/brand-system';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/brand-system';
+import { HEADER_DESCRIPTION, HEADER_EYEBROW, HEADER_TITLE } from '@/components/page-header';
 import { useAuth } from './auth-context';
 
 export function AuthHeading({ label, title, children }: { label: string; title: string; children?: ReactNode }) {
   return (
     <header className="mb-6">
-      <p className="alliance-label">{label}</p>
-      <h1 className="alliance-display mt-3 text-navy">{title}</h1>
-      {children && <p className="mt-3">{children}</p>}
+      <p className={HEADER_EYEBROW}>{label}</p>
+      <h1 className={`${HEADER_TITLE} text-navy`}>{title}</h1>
+      {children && <p className={HEADER_DESCRIPTION}>{children}</p>}
     </header>
   );
 }

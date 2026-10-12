@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
 import { operatingWeekStart, shiftStartVerb } from '@workspace/shared/calendar-display';
 import { formatPhone } from '@workspace/shared/profileFields';
 import { testAccounts, testPersonaLabel, testScheduleLabel } from '@workspace/shared/testAccounts';
@@ -8,6 +9,15 @@ import { resolve } from 'node:path';
 import { STANDARD_SHIFT_CAPACITY, standardGrid } from '@workspace/shared/standardGrid';
 
 describe('VIS-08 / ADM-37 presentation helpers', () => {
+  it('keeps primary page headings on the shared responsive header system', () => {
+    const output = execFileSync(process.execPath, [resolve('../alliance-volunteer-portal/scripts/check-headers.mjs')], { encoding: 'utf8' });
+    expect(output).toContain('Header consistency check passed');
+    const source = readFileSync(resolve('../alliance-volunteer-portal/src/components/page-header.tsx'), 'utf8');
+    expect(source).toContain('sm:items-start');
+    expect(source).toContain('flex-wrap');
+    expect(source).toContain('min-w-0 flex-1');
+    expect(source).toContain('sm:max-w-[55%]');
+  });
   it('ADM-04 uses the standard capacity for new slots and preserves existing slot capacity', () => {
     expect(STANDARD_SHIFT_CAPACITY).toBe(2);
     expect(standardGrid.every(slot => slot.capacity === STANDARD_SHIFT_CAPACITY)).toBe(true);
