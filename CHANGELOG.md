@@ -2,6 +2,15 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.1.5 — 2026-10-12
+
+### Changed
+- Reminder jobs page: plain-language scheduler status (cron-job.org), a warning when scheduled runs stop or fail, the last scheduled run shown separately from manual checks, clearer count labels and notes. No database or job-behavior changes.
+
+### Docs
+- docs/Alliance Persona Test Run.md updated (v1.1.4 tests, ADM-39, PRD-12).
+- QA-CHECKLIST.md synchronized with the updated master, including reminder-job health and guided volunteer review workflows.
+
 ## v1.1.4 — 2026-10-12
 
 ### Changed

@@ -94,6 +94,57 @@ async function request(path: string, method = 'GET', headers: Record<string, str
     ...(method !== 'GET' ? { body: JSON.stringify(data ?? {}) } : {}) });
 }
 describe('Reminder job persistence, safeguards and delivery', () => {
+  it('reports the newest scheduled run separately from newer manual runs', async () => {
+    const baseTime = Date.now() + 86400000;
+    const saved = [];
+    for (const [i, source] of ['external', 'cron', 'admin', 'command'].entries()) {
+      const [row] = await db.insert(reminderJobRunsTable).values({
+        source, status: 'completed', checkedAt: new Date(baseTime + i * 1000),
+        startedAt: new Date(baseTime + i * 1000), finishedAt: new Date(baseTime + i * 1000),
+      }).returning();
+      runs.push(row!.id); saved.push(row!);
+    }
+    try {
+      const status = await jobs.reminderJobStatus();
+      expect(status.lastRun?.id).toBe(saved[3]!.id);
+      expect(status.lastScheduledRun?.id).toBe(saved[1]!.id);
+      expect(status.lastScheduledRun?.source).toBe('cron');
+      expect(status.staleAfterMinutes).toBe(20);
+      await db.delete(reminderJobRunsTable).where(eq(reminderJobRunsTable.id, saved[1]!.id));
+      expect((await jobs.reminderJobStatus()).lastScheduledRun?.id).toBe(saved[0]!.id);
+    } finally {
+      await db.delete(reminderJobRunsTable).where(inArray(reminderJobRunsTable.id, saved.map(r => r.id)));
+    }
+  });
+  it.each([
+    [false, false, 'none'], [false, true, 'external'], [true, false, 'builtin'], [true, true, 'both'],
+  ] as const)('reports trigger mode with builtin=%s and external=%s', async (builtin, external, mode) => {
+    const previous = { run: process.env.RUN_JOBS, secret: process.env.JOBS_SECRET };
+    try {
+      process.env.RUN_JOBS = builtin ? 'true' : 'false';
+      process.env.JOBS_SECRET = external ? testSecret : '';
+      const status = await jobs.reminderJobStatus();
+      expect(status.triggerMode).toBe(mode);
+      expect(status.schedulerEnabled).toBe(builtin);
+      expect(status.externalTriggerConfigured).toBe(external);
+    } finally {
+      if (previous.run === undefined) delete process.env.RUN_JOBS; else process.env.RUN_JOBS = previous.run;
+      if (previous.secret === undefined) delete process.env.JOBS_SECRET; else process.env.JOBS_SECRET = previous.secret;
+    }
+  });
+  it('does not treat a short jobs secret as configured or enable the production timer', async () => {
+    const previous = { run: process.env.RUN_JOBS, secret: process.env.JOBS_SECRET, node: process.env.NODE_ENV };
+    try {
+      process.env.RUN_JOBS = 'true'; process.env.NODE_ENV = 'production'; process.env.JOBS_SECRET = 'short';
+      expect((await jobs.reminderJobStatus()).triggerMode).toBe('none');
+      process.env.JOBS_SECRET = testSecret;
+      expect((await jobs.reminderJobStatus()).triggerMode).toBe('external');
+    } finally {
+      for (const [key, value] of Object.entries({ RUN_JOBS: previous.run, JOBS_SECRET: previous.secret, NODE_ENV: previous.node })) {
+        if (value === undefined) delete process.env[key]; else process.env[key] = value;
+      }
+    }
+  });
   it('defaults automatic scheduling off and configures exactly one Pacific quarter-hour task when enabled', async () => {
     const cron = (await import('node-cron')).default;
     const schedule = vi.spyOn(cron, 'schedule').mockReturnValue({} as ReturnType<typeof cron.schedule>);

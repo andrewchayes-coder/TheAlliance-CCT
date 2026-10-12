@@ -12,6 +12,8 @@ import { automaticJobsEnabled, currentJobBudget, withJobBudget } from './job-bud
 import { isUncertainDelivery } from './delivery-state';
 
 export const REMINDER_JOB_LOCK = 91847312;
+const REMINDER_CRON = '*/15 * * * *';
+export const STALE_AFTER_MINUTES = 20;
 export const emptyCounts = () => ({ eligible: 0, sent: 0, logged: 0, failed: 0, skipped: 0, suppressed: 0, deferred: 0, uncertain: 0 });
 type Counts = ReturnType<typeof emptyCounts>;
 type Source = 'cron' | 'admin' | 'external' | 'command';
@@ -122,12 +124,19 @@ export async function runReminderCheck({ at = new Date(), source = 'admin' as So
 }
 export async function reminderJobStatus() {
   const [lastRun] = await db.select().from(reminderJobRunsTable).orderBy(desc(reminderJobRunsTable.startedAt)).limit(1);
+  const [lastScheduledRun] = await db.select().from(reminderJobRunsTable)
+    .where(inArray(reminderJobRunsTable.source, ['external', 'cron']))
+    .orderBy(desc(reminderJobRunsTable.startedAt)).limit(1);
   const totals = await db.select({ status: notificationLogTable.status, total: count() }).from(notificationLogTable)
     .where(and(eq(notificationLogTable.type, 'reminder'), gte(notificationLogTable.createdAt, new Date(Date.now() - 7 * 86400000)),
       sql`(${notificationLogTable.relatedId} ~ '^[0-9a-f-]{36}:[0-9]{4}-[0-9]{2}-[0-9]{2}:(24h|am)$' or ${notificationLogTable.relatedId} ~ '^custom:[0-9a-f-]{36}:[0-9a-f-]{36}:(24h|am)$')`))
     .groupBy(notificationLogTable.status);
-  return { lastRun: lastRun ? serialize(lastRun) : null, schedulerEnabled: automaticJobsEnabled(),
-    externalTriggerConfigured: (process.env.JOBS_SECRET?.length ?? 0) >= 32, timezone: TIME_ZONE, cron: '*/15 * * * *',
+  const schedulerEnabled = automaticJobsEnabled();
+  const externalTriggerConfigured = (process.env.JOBS_SECRET?.length ?? 0) >= 32;
+  const triggerMode = schedulerEnabled ? (externalTriggerConfigured ? 'both' : 'builtin') : (externalTriggerConfigured ? 'external' : 'none');
+  return { lastRun: lastRun ? serialize(lastRun) : null, lastScheduledRun: lastScheduledRun ? serialize(lastScheduledRun) : null,
+    triggerMode, staleAfterMinutes: STALE_AFTER_MINUTES, schedulerEnabled,
+    externalTriggerConfigured, timezone: TIME_ZONE, cron: REMINDER_CRON,
     reminderHoursBefore: appConfig.reminderHoursBefore, sameMorningReminder: appConfig.sameMorningReminder as boolean,
     sameMorningReminderHour: appConfig.sameMorningReminderHour,
     last7Days: { sent: Number(totals.find(t => t.status === 'sent')?.total ?? 0),

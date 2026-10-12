@@ -1594,12 +1594,18 @@ components:
             - { type: 'null' }
     ReminderJobStatus:
       type: object
-      required: [lastRun, schedulerEnabled, externalTriggerConfigured, timezone, cron, reminderHoursBefore, sameMorningReminder, sameMorningReminderHour, last7Days]
+      required: [lastRun, lastScheduledRun, triggerMode, staleAfterMinutes, schedulerEnabled, externalTriggerConfigured, timezone, cron, reminderHoursBefore, sameMorningReminder, sameMorningReminderHour, last7Days]
       properties:
         lastRun:
           anyOf:
             - { $ref: '#/components/schemas/ReminderJobRun' }
             - { type: 'null' }
+        lastScheduledRun:
+          anyOf:
+            - { $ref: '#/components/schemas/ReminderJobRun' }
+            - { type: 'null' }
+        triggerMode: { type: string, enum: [external, builtin, both, none] }
+        staleAfterMinutes: { type: integer }
         schedulerEnabled: { type: boolean }
         externalTriggerConfigured: { type: boolean }
         timezone: { type: string }

@@ -160,7 +160,7 @@ ALTER TABLE public.shift_assignments DROP CONSTRAINT IF EXISTS shift_assignments
    ```
    Both use the single email service and create notification rows. The reminder is a synthetic tomorrow 9–11 AM message to that administrator, not an assignment/reminder to volunteers. Confirm messages arrive and notification statuses are **sent**, not logged/failed.
    The legacy `/api/dev/email-test` route remains disabled in production. The two admin test-send routes above are available in production.
-10. `/admin/notifications/jobs`: check scheduler enabled, last-run status, and use the normal **Run reminder check now** action when appropriate. With no volunteers/assignments, no volunteer reminders should be produced. Confirm the enabled digest settings separately.
+10. `/admin/notifications/jobs`: check that the status notice reads **Scheduled runs are on time** and the **Scheduler** row reads **cron-job.org (outside service), every 15 minutes**. Use **Run reminder check now** when appropriate; this runs the reminder step only, not the coverage email. With no volunteers/assignments, no volunteer reminders should be produced. Confirm the enabled digest settings separately.
 11. Complete `QA-CHECKLIST.md` using isolated QA data outside production. Only begin real volunteer onboarding after the owner approves UAT.
 
 The deployment configuration does not publish automatically. Changing saved target/settings does not change the currently running deployment until a new publish.
@@ -170,6 +170,8 @@ The deployment configuration does not publish automatically. Changing saved targ
 ### Autoscale + cron-job.org
 
 Keep production `RUN_JOBS=false`. Both automatic reminder and coverage-digest timers are disabled in production, even if that flag accidentally becomes true. Development timers require `RUN_JOBS=true`.
+
+The Reminder jobs page warns when no scheduled run has happened in **20 minutes**, or when the most recent scheduled run failed. Manual checks do not reset this scheduled-run health notice. If no scheduled run has ever been recorded, the page warns **No scheduled run has been recorded yet**.
 
 Create one enabled cron-job.org job:
 

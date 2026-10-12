@@ -7,9 +7,13 @@
  */
 import type { ReminderDeliveryTotals } from './reminderDeliveryTotals';
 import type { ReminderJobRun } from './reminderJobRun';
+import type { ReminderJobStatusTriggerMode } from './reminderJobStatusTriggerMode';
 
 export interface ReminderJobStatus {
   lastRun: ReminderJobRun | null;
+  lastScheduledRun: ReminderJobRun | null;
+  triggerMode: ReminderJobStatusTriggerMode;
+  staleAfterMinutes: number;
   schedulerEnabled: boolean;
   externalTriggerConfigured: boolean;
   timezone: string;

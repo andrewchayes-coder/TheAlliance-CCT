@@ -135,6 +135,7 @@ export * from './reminderJobRun';
 export * from './reminderJobRunSource';
 export * from './reminderJobRunStatus';
 export * from './reminderJobStatus';
+export * from './reminderJobStatusTriggerMode';
 export * from './reminderRunCounts';
 export * from './reorderResources200';
 export * from './resetInput';

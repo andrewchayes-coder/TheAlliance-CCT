@@ -1178,6 +1178,27 @@ export const GetReminderJobStatusResponse = zod.object({
   "uncertain": zod.number().int().optional()
 })
 }),zod.null()]),
+  "lastScheduledRun": zod.union([zod.object({
+  "id": zod.string().uuid(),
+  "source": zod.enum(['cron', 'admin', 'external', 'command']),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "checkedAt": zod.coerce.date(),
+  "startedAt": zod.coerce.date(),
+  "finishedAt": zod.coerce.date().nullable(),
+  "error": zod.string().nullable(),
+  "counts": zod.object({
+  "eligible": zod.number().int(),
+  "sent": zod.number().int(),
+  "logged": zod.number().int(),
+  "failed": zod.number().int(),
+  "skipped": zod.number().int(),
+  "suppressed": zod.number().int(),
+  "deferred": zod.number().int().optional(),
+  "uncertain": zod.number().int().optional()
+})
+}),zod.null()]),
+  "triggerMode": zod.enum(['external', 'builtin', 'both', 'none']),
+  "staleAfterMinutes": zod.number().int(),
   "schedulerEnabled": zod.boolean(),
   "externalTriggerConfigured": zod.boolean(),
   "timezone": zod.string(),

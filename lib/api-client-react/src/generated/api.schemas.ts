@@ -213,6 +213,16 @@ export interface ReminderCheckResult {
   run: ReminderJobRun | null;
 }
 
+export type ReminderJobStatusTriggerMode = typeof ReminderJobStatusTriggerMode[keyof typeof ReminderJobStatusTriggerMode];
+
+
+export const ReminderJobStatusTriggerMode = {
+  external: 'external',
+  builtin: 'builtin',
+  both: 'both',
+  none: 'none',
+} as const;
+
 export interface ReminderDeliveryTotals {
   sent: number;
   logged: number;
@@ -221,6 +231,9 @@ export interface ReminderDeliveryTotals {
 
 export interface ReminderJobStatus {
   lastRun: ReminderJobRun | null;
+  lastScheduledRun: ReminderJobRun | null;
+  triggerMode: ReminderJobStatusTriggerMode;
+  staleAfterMinutes: number;
   schedulerEnabled: boolean;
   externalTriggerConfigured: boolean;
   timezone: string;

@@ -1,6 +1,6 @@
 # Community Care Team — QA checklist
 
-Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test Run](docs/Alliance%20Persona%20Test%20Run.md), preserved unchanged during this sync. **CHANGED:** All **131** Oct 12 master IDs have a primary test row and a coverage-table entry. Coverage is a mapping, not a claim that manual UAT or optional features have passed.
+Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test Run](docs/Alliance%20Persona%20Test%20Run.md), preserved unchanged during this sync. **CHANGED:** All **132** Oct 12 master IDs have a primary test row and a coverage-table entry. Coverage is a mapping, not a claim that manual UAT or optional features have passed.
 
 ## v1.1.0 workflow tags
 
@@ -8,6 +8,14 @@ Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test 
 - **CHANGED**: rewritten for current CCT branding, fixed-profile/status model, privacy, email identity or switch-only quick login; matching IDs added. Combined tags mean both.
 - Every primary row puts its master ID beside its steps. Retained extra checks below have no exact matching master ID and are disclosed separately.
 - Record tester, environment, date, Pass/Fail/Blocked and evidence beside each row when pasting into the tracker. **CHANGED:** An unaccepted master/app gap should be Blocked/Fail, not silently passed; SYS-08 explicitly tests the accepted tracking limit recorded below.
+
+## Reminder jobs clarity — v1.1.5
+
+| Test ID | Tag | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| ADM-39 | NEW | Reminder jobs explains the scheduler | In isolated development with RUN_JOBS off and no JOBS_SECRET, open Admin → Reminder jobs and click Run reminder check now. Optionally configure a 32+ character dummy JOBS_SECRET locally, restart, record one external run, then wait over 20 minutes without calling it. Restore every temporary setting afterwards. | Scheduler says Not scheduled (amber); top notice says reminders aren't scheduled. No Automatic scheduler / External trigger rows or autoscale note. Manual run source is Manual (Run reminder check now), plus Last scheduled run or No scheduled run yet. Tiles: Due, Sent, Logged (not delivered), Failed, Skipped, Test accounts (not sent), Carried to next run, Unconfirmed. Configured external scheduler shows cron-job.org. A previously recorded scheduled run over 20 minutes old shows the red stale warning; no recorded scheduled run shows the separate no-run warning. A failed scheduled run shows a red error with its time/error. On-time runs show green. Manual runs do not reset scheduled health. Built-in-only shows Built-in timer; both enabled shows the amber two-schedulers warning. Check at 375 px; all labels fit. |
+
+**Master clarification:** ADM-39's optional steps omit recording an initial scheduled run. Without one, the specified page rule correctly shows “No scheduled run has been recorded yet,” not the red stale warning. Record a development external run before waiting to test staleness. Do not alter production settings or the master document for this test.
 
 ## Test safety and setup
 
@@ -132,7 +140,7 @@ pnpm run typecheck
 |---|---|---|---|---|
 | ADM-18 | CHANGED | Roster defaults | Open /admin/volunteers. Toggle "Show test accounts". | Default contact/city/start/shifts/login columns; No shift amber. QA hidden by default; Show test accounts reveals four volunteer profiles (fifth persona is the admin on Team). Summary chips exclude QA either way. |
 | ADM-19 | CHANGED | Columns, sort, layout | Use the Columns picker to show DOB, full address, ZIP, emergency contact, county. Reload. Sort by several columns. Check desktop and mobile. | Picker choice survives reload. Sorting works on every column. Sticky header and first column on desktop; stacked cards on mobile. |
-| ADM-20 | CHANGED | Filters & chips | Combine filters (e.g. Active + No shift; city + profile incomplete). | Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention" (active with 0 shifts, incomplete profile &gt; 7 days, onboarding &gt; 30 days). No certification or background columns or filters. |
+| ADM-20 | CHANGED | Filters & chips | Use each Needs attention reason: Awaiting review, No shift, Profile incomplete for more than 7 days, Onboarding for more than 30 days. Combine Active + No shift and city + Awaiting review; export both CSVs with a reason selected. | Results are the correct intersection. Chips show Onboarding / Active / Inactive and Needs attention counts. Every onboarding volunteer immediately has Awaiting review alongside any other applicable reasons. Both CSVs use the same reason filter. No certification or background columns, filters or reasons. |
 | ADM-21 | CHANGED | CSV exports | Export the Roster CSV and Schedule CSV and open both in Google Sheets. | Dated filenames, open cleanly. Roster: status, start date, DOB, address, city, state, ZIP, emergency contact name/relationship/phone, county, shifts held ("Tue 10:00–12:00; …"); no certification, background, agreement or onboarding-answer columns. Schedule: one row per active assignment including one-time shifts, with upcoming skip dates. No test accounts in either. |
 
 ## Volunteer detail and status workflow
@@ -140,8 +148,8 @@ pnpm run typecheck
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
 | ONBR-04 | CHANGED | Activated by admin | Keep this signed in on device A. On device B, do ADM-22. Refresh device A. | Top card becomes "Choose your weekly shift", quick links appear, and the approval email ("You're approved! Choose your weekly shift") is logged as `suppressed`. |
-| ADM-22 | CHANGED | Activate a volunteer | Open Volunteer · Onboarding, ready to activate (show test accounts on). Move to Active (confirm). (Do this from device B during ONBR-04.) | Verified, complete profile with recorded onboarding completion becomes Active without disabled compliance gates; Pacific start date supplied if absent. Central-service approval mail suppressed for TEST. |
-| ADM-23 | CHANGED | Activation blocked when incomplete | Remove required profile fields, verification or onboardingCompletedAt on an isolated synthetic volunteer; try activation and inspect missing conditions. | Button/API block every missing condition, including full field values without recorded completion. No override bypass. |
+| ADM-22 | CHANGED | Activate a volunteer | Open Volunteer · Onboarding, ready to activate with test accounts shown. Read Volunteer review and approval; click Approve as Active → Confirm approval as Active. Use device B during ONBR-04. | Checklist says Ready for staff approval, every requirement Complete, and Pending: Staff approval as Active. Dialog says Approve as Active? and explains approval email is attempted after saving. No certification/background gates; absent start date defaults to today Pacific. Result explains TEST approval email wasn't sent and logs suppressed. Roster, overview and Needs attention refresh without reload; activity records approval. |
+| ADM-23 | CHANGED | Activation blocked when incomplete | Open Volunteer · Onboarding, new after resetting, before ONBN-03. Inspect the checklist and attempt approval through the API. | Waiting on volunteer requirements lists Onboarding completed and each empty profile field, who completes it, links to the right section, and Message volunteer about missing steps. Approve as Active isn't offered. API returns 422 with missing items listed; no override bypass. |
 | ADM-24 | CHANGED | Volunteer detail page | On any volunteer: change only start date inline and inspect Activity. Then save start date together with another profile field. Edit DOB, emergency contact, county and notes. | A start-date-only edit creates one "Start date changed" entry and no "Profile updated (start date)" duplicate. A mixed edit logs start date separately; Profile updated names only the other fields, never values. Profile card remains staff-only, county admin-only (default Placer), and notes autosave. No certification, background or agreement cards. |
 | ADM-25 | CHANGED | Inactivate releases shifts | Move Volunteer · Active to Inactive. Without reloading, inspect Current shifts, Standing shifts and dates, and the master schedule. Then Reset test accounts. | Confirm dialog lists the shifts being released. Assignments end today. Both shift lists clear immediately, with no stale Mark week off buttons, and the master week refreshes. A coverage-gap alert goes to real admins. The persona's dashboard shows the gentle inactive note. Reset restores it. |
 
@@ -208,8 +216,8 @@ pnpm run typecheck
 |---|---|---|---|---|
 | ACT-11 | CHANGED | Admin APIs blocked | From devtools, call several /api/admin/* routes. Visit /admin. | Every API returns 403. /admin redirects to /dashboard. |
 | ACT-12 | CHANGED | Privacy in responses | Inspect network responses on /dashboard, /shifts, /messages and /resources. | No other volunteer's name, email or phone. No adminNotes. No DOB, address or emergency contact for anyone except yourself. |
-| ACT-14 | CHANGED | Phone & tablet walk | Walk every volunteer screen at 375 px and 768 px. | No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed. |
-| ADM-34 | CHANGED | Phone & tablet walk | Walk every admin screen at 375 px and 768 px. | No horizontal scrolling. Tables become cards. On shift now is usable one-handed. |
+| ACT-14 | CHANGED | Phone & tablet walk | Walk every volunteer screen at 375 px and 768 px. | No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed. Every page uses the same page header (title, subtitle, actions); long titles and actions wrap cleanly at 375 px. |
+| ADM-34 | CHANGED | Phone & tablet walk | Walk every admin screen at 375 px and 768 px. | No horizontal scrolling. Tables become cards. On shift now is usable one-handed. Every admin page uses the same page header; actions wrap under the title on narrow screens. |
 
 ## Production readiness and operation
 
@@ -229,7 +237,7 @@ pnpm run typecheck
 | PRD-09 | CHANGED | All 5 personas | Sign in as each persona. | Admin → /admin. Active → next-shift card (or choose-shift if it has none). Active, no shift → choose-shift card. Onboarding, ready → dashboard checklist. Onboarding, new → /onboarding. |
 | PRD-10 | CHANGED | Reset after prod testing | If any persona took a shift, Team → Reset test accounts. Check the master schedule. | Prod Volunteer · Active starts with no shift after reset, and any capacity used in testing is freed. |
 | PRD-11 | CHANGED | Turn quick login off | When prod testing is done (and before the first pilot invites): set `QUICK_LOGIN_ENABLED=false`, republish, open /signin in a fresh window, and call GET /api/auth/quick-login/status. | No quick-login card. The status call returns 404. Normal sign-in still works. |
-| PRD-12 | CHANGED | External cron | Watch /admin/notifications/jobs for 30+ minutes. On a weekday after 7 AM, check the log for the digest. | cron-job.org POST every 15 minutes, X-Jobs-Secret header, JSON {}; production built-in scheduler disabled. Approximately 20-second budget, unsent catch-up, confirmed/suppressed dedupe and no uncertain resend. |
+| PRD-12 | CHANGED | External cron | Watch Admin → Reminder jobs for 30+ minutes; click Run reminder check now once. On a weekday after 7 AM, check Schedule settings → Last daily check and the notification log. | Green Scheduled runs are on time notice updates every 15 minutes with a time under 15 minutes old. Scheduler says cron-job.org (outside service), every 15 minutes in green; source is Scheduled (cron-job.org). Manual click shows Manual (Run reminder check now); Last scheduled run still shows the external run and health stays green. Weekday daily check runs after 7 AM and sends/logs the digest if gaps exist; No daily check yet over a weekend is expected. External POST uses X-Jobs-Secret and {}; production timer stays disabled. Budget, catch-up, dedupe and uncertain-delivery protections are unchanged. |
 | PRD-13 | CHANGED | Production lockdown | Restart logs; open /style-guide; add ?at= to admin home. | Startup secrets check passes. /style-guide is 404. ?at= is ignored. |
 | PRD-14 | NEW | Seed data purge | Separately authorized production operation only: after a real admin exists, run the Fix 1 pre-checks, numbered statements in order, and post-checks in the production Database tool. Inspect roster with test accounts off/on, master schedule, email log and /resources; quick-login as all 5 personas. Do not execute this purge during documentation sync. | Pre-checks show at least 1 active admin outside example.org, 19 users to delete and 5 qa-* users. Every statement succeeds. Post-checks show 0 non-test @example.org users, profiles, assignments, messages, resources and notification rows; 5 qa-* users remain and shift_slots are unchanged. Roster contains only test personas, schedule has no names, email log has no dummy rows, /resources is empty, and all 5 quick logins work. |
 
@@ -431,6 +439,7 @@ These earlier checklist checks go beyond an exact persona-plan case. They remain
 | ADM-36 | Fix 2 — production regression workflows |
 | ADM-37 | Fix 3 — UI and copy polish |
 | ADM-38 | Coordinator dispatch and master schedule |
+| ADM-39 | Reminder jobs clarity — v1.1.5 |
 | MIL-01 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-02 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-03 | Milestones — Optional: only if Prompt 27 / 28 is built |
