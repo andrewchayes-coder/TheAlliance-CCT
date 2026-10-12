@@ -97,7 +97,7 @@ function ProfileForm({ me }: { me: Me }) {
         <form noValidate onSubmit={e => { void submit(e); }} className="mt-4 grid gap-5" data-testid="form-profile">
           <div>{msg && <Notice kind={msg.kind}>{msg.text}</Notice>}</div>
           <fieldset disabled={busy} className="contents">
-            <ProfileFields values={values} errors={errors} email={me.user.email} showDob={false} onChange={setV} onBlur={onBlur} />
+            <ProfileFields values={values} errors={errors} email={me.user.email} emailEditableBelow showDob={false} onChange={setV} onBlur={onBlur} />
             {showQuestions && onboardingQuestions.map(q => <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={v => set(q.id, v)} />)}
             <Button type="submit" disabled={busy} data-testid="button-save-profile">{busy ? 'Saving' : 'Save profile'}</Button>
           </fieldset>

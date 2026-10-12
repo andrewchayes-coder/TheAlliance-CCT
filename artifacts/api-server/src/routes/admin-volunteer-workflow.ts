@@ -153,7 +153,8 @@ router.patch('/volunteers/:userId/tracking', async (req, res) => {
       if (changes.includes('startDate')) await tx.insert(activityLogTable).values({
         volunteerProfileId:profile.id,actorUserId:req.authUser!.id,action:'start_date_changed',details:{fields:['startDate']},
       });
-      await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'tracking_updated', details: { fields:changes } });
+      const trackingChanges = changes.filter(key => key !== 'startDate');
+      if (trackingChanges.length) await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id, actorUserId: req.authUser!.id, action: 'tracking_updated', details: { fields: trackingChanges } });
     });
     res.set('Cache-Control', 'no-store').json(await loadAdminVolunteerDetail(id));
   } catch (error) { errorResponse(error, res); }

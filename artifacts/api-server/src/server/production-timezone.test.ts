@@ -7,13 +7,14 @@ process.env.APP_ORIGIN ||= 'https://qa.example.invalid';
 const { declaredGuard } = await import('../auth/access-policy');
 
 describe('production exclusions and Pacific DST boundaries', () => {
-  it('refuses development clocks and test-mail APIs in production', () => {
+  it('refuses development clocks and dev email but permits admin-only test-send APIs in production', () => {
     const old = process.env.NODE_ENV;
     try {
       process.env.NODE_ENV = 'production';
       expect(() => developmentClock('2026-10-08T16:00:00Z')).toThrow(/development-only/);
-      for (const path of ['/dev/email-test', '/admin/notifications/test', '/admin/notifications/jobs/test'])
-        expect(declaredGuard('POST', path)).toBeUndefined();
+      expect(declaredGuard('POST', '/dev/email-test')).toBeUndefined();
+      for (const path of ['/admin/notifications/test', '/admin/notifications/jobs/test'])
+        expect(declaredGuard('POST', path)).toBe('admin');
       expect(declaredGuard('POST', '/admin/notifications/jobs/run')).toBe('admin');
       const viteSource = readFileSync('../alliance-volunteer-portal/src/App.tsx', 'utf8');
       expect(viteSource).toMatch(/import\.meta\.env\.DEV/);

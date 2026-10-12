@@ -20,8 +20,8 @@ export function maxBirthDate(): string {
 
 const legend = 'alliance-section-kicker mb-3';
 
-export function ProfileFields({ values, errors, email, showDob = true, dobReadOnly = false, onChange, onBlur }: {
-  values: ProfileValues; errors: ProfileErrors; email: string; showDob?: boolean; dobReadOnly?: boolean;
+export function ProfileFields({ values, errors, email, emailEditableBelow = false, showDob = true, dobReadOnly = false, onChange, onBlur }: {
+  values: ProfileValues; errors: ProfileErrors; email: string; emailEditableBelow?: boolean; showDob?: boolean; dobReadOnly?: boolean;
   onChange: (k: ProfileKey, v: string) => void; onBlur: (k: ProfileKey) => void;
 }) {
   const stateId = useId();
@@ -36,7 +36,7 @@ export function ProfileFields({ values, errors, email, showDob = true, dobReadOn
         <legend className={legend}>About you</legend>
         <Field label="First name" required autoComplete="given-name" maxLength={100} {...p('firstName')} data-testid="input-first-name" />
         <Field label="Last name" required autoComplete="family-name" maxLength={100} {...p('lastName')} data-testid="input-last-name" />
-        <Field className="sm:col-span-2" label="Email" type="email" value={email} readOnly aria-readonly="true" hint="To change your email, contact Alliance staff." data-testid="input-email" />
+        <Field className="sm:col-span-2" label="Email" type="email" value={email} readOnly aria-readonly="true" hint={emailEditableBelow ? 'To change your email, use Email address below.' : 'To change your email, contact Alliance staff.'} data-testid="input-email" />
         <Field className="sm:col-span-2" label="Mobile phone" type="tel" inputMode="tel" required autoComplete="tel" maxLength={20} {...p('phone')}
           hint="We use this only to coordinate your shifts." data-testid="input-phone" />
         {showDob && (

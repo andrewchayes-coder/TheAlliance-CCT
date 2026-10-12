@@ -32,7 +32,7 @@ function RunSummary({ r }: { r: ReminderCheckResult }) {
 }
 
 function TestSummary({ r }: { r: TestReminderResult }) {
-  const label = r.status === 'sent' ? 'Sent to your signed-in admin email.' : r.status === 'logged' ? 'Logged only (development copy). It was not delivered to an inbox.' : 'Failed to send.';
+  const label = r.status === 'sent' ? 'Sent to your signed-in admin email.' : r.status === 'logged' ? 'Logged only (development copy). It was not delivered to an inbox.' : r.status === 'suppressed' ? 'Not sent: emails to test accounts are suppressed.' : 'Failed to send.';
   return (
     <div data-testid="result-test">
       <Notice kind={r.ok && r.status !== 'failed' ? 'success' : 'error'}>
@@ -138,7 +138,7 @@ function Body() {
             <h2 className="alliance-display">Safe checks</h2>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
               <Button type="button" onClick={() => { void doRun(); }} disabled={busy} data-testid="button-run-check">Run reminder check now</Button>
-        {import.meta.env.DEV && <Button type="button" variant="secondary" onClick={() => { void doTest(); }} disabled={busy} data-testid="button-send-test">Send test reminder to me</Button>}
+              <Button type="button" variant="secondary" onClick={() => { void doTest(); }} disabled={busy} data-testid="button-send-test">Send test reminder to me</Button>
             </div>
             <p className="mt-2 text-xs text-navy-soft">The test goes only to the email of the admin signed in now. The address cannot be changed.{retrying ? ' Next click retries the previous test request.' : ''}</p>
             <div className="mt-3 break-words" aria-live="polite">

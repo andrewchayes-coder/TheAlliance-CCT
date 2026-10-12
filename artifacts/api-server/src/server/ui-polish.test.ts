@@ -5,8 +5,38 @@ import { testAccounts, testPersonaLabel, testScheduleLabel } from '@workspace/sh
 import { readFileSync } from 'node:fs';
 import { capacityHint, capacityError, volunteerCount } from '@workspace/shared/schedule-copy';
 import { resolve } from 'node:path';
+import { STANDARD_SHIFT_CAPACITY, standardGrid } from '@workspace/shared/standardGrid';
 
 describe('VIS-08 / ADM-37 presentation helpers', () => {
+  it('ADM-04 uses the standard capacity for new slots and preserves existing slot capacity', () => {
+    expect(STANDARD_SHIFT_CAPACITY).toBe(2);
+    expect(standardGrid.every(slot => slot.capacity === STANDARD_SHIFT_CAPACITY)).toBe(true);
+    const source = readFileSync(resolve('../alliance-volunteer-portal/src/components/schedule-settings/slot-dialog.tsx'), 'utf8');
+    expect(source).toContain("import { STANDARD_SHIFT_CAPACITY } from '@workspace/shared/standardGrid'");
+    expect(source).toContain('slot?.capacity ?? STANDARD_SHIFT_CAPACITY');
+  });
+  it('ADM-25 invalidates user-specific and general controls and the master week after status changes', () => {
+    const source = readFileSync(resolve('../alliance-volunteer-portal/src/components/volunteer-detail/status-panel.tsx'), 'utf8');
+    for (const key of ['getGetAdminScheduleControlsQueryKey({ userId })','getGetAdminScheduleControlsQueryKey()','getGetAdminScheduleWeekQueryKey()']) {
+      expect(source).toContain(`qc.invalidateQueries({ queryKey: ${key} })`);
+    }
+  });
+  it('ACT-10 points profile email edits to the self-service section without changing onboarding copy', () => {
+    const root = resolve('../alliance-volunteer-portal/src');
+    const fields = readFileSync(resolve(root,'components/profile-fields.tsx'), 'utf8');
+    expect(fields).toContain("emailEditableBelow = false");
+    expect(fields).toContain("To change your email, use Email address below.");
+    expect(fields).toContain("To change your email, contact Alliance staff.");
+    expect(readFileSync(resolve(root,'pages/volunteer-profile.tsx'),'utf8')).toContain('emailEditableBelow showDob');
+    expect(readFileSync(resolve(root,'pages/onboarding.tsx'),'utf8')).not.toContain('emailEditableBelow');
+  });
+  it('PRD-06 admin test-send buttons are not conditional on development mode', () => {
+    for (const path of ['components/notifications/usage-cards.tsx','pages/admin-notification-jobs.tsx']) {
+      const source = readFileSync(resolve('../alliance-volunteer-portal/src',path),'utf8');
+      expect(source).not.toContain('import.meta.env.DEV');
+      expect(source).toMatch(/Send test (email|reminder) to me/);
+    }
+  });
   it('VIS-08 uses a real JSON manifest asset, not the SPA fallback', () => {
     const root = resolve('../alliance-volunteer-portal');
     const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8'));

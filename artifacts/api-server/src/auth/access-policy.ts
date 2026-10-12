@@ -108,7 +108,7 @@ if (process.env.NODE_ENV === 'development') {
 
 export function declaredGuard(method: string, requestPath: string): Guard | undefined {
   const path = requestPath.replace(/\/+$/, '').toLowerCase() || '/';
-  if (process.env.NODE_ENV !== 'development' && ['/dev/email-test', '/admin/notifications/test', '/admin/notifications/jobs/test'].includes(path)) return undefined;
+  if (process.env.NODE_ENV !== 'development' && path === '/dev/email-test') return undefined;
   return declarations.find(route => route.method === (method === 'HEAD' ? 'GET' : method)
     && (typeof route.path === 'string' ? route.path === path : route.path.test(path)))?.guard;
 }

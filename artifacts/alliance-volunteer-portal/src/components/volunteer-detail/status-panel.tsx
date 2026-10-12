@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetAdminVolunteerQueryKey, getListVolunteerRosterQueryKey, useChangeVolunteerStatus,
+  getGetAdminScheduleControlsQueryKey, getGetAdminScheduleWeekQueryKey,
   type AdminAssignedShift, type AdminVolunteerDetail, type VolunteerStatusUpdate,
 } from '@workspace/api-client-react';
 import { Button } from '@/components/brand-system';
@@ -87,6 +88,9 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
         qc.setQueryData(getGetAdminVolunteerQueryKey(userId), r.detail);
         void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) });
         void qc.invalidateQueries({ queryKey: getListVolunteerRosterQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetAdminScheduleControlsQueryKey({ userId }) });
+        void qc.invalidateQueries({ queryKey: getGetAdminScheduleControlsQueryKey() });
+        void qc.invalidateQueries({ queryKey: getGetAdminScheduleWeekQueryKey() });
         const label = STATUS[snap.target][0];
         let text = `Status changed to ${label}.`; let kind: 'good' | 'warn' = 'good';
         if (snap.target === 'inactive') text += ` ${r.releasedAssignmentCount} ${r.releasedAssignmentCount === 1 ? 'shift' : 'shifts'} ended today.`;

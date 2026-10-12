@@ -6,6 +6,8 @@ import { createEmailService } from '../email';
 import { encryptEmailBody, decryptEmailBody } from './email-payload';
 import { pendingRecipients } from './delivery-history';
 
+const provider = vi.hoisted(() => ({ send: vi.fn(async (_message: { To: string }) => ({ MessageID: 'synthetic-provider-id', ErrorCode: 0, Message: 'OK' })) }));
+vi.mock('postmark', () => ({ ServerClient: class { sendEmail = provider.send; } }));
 vi.hoisted(() => { process.env.NODE_ENV = 'development'; process.env.APP_ORIGIN = 'https://portal.example.invalid';
   process.env.POSTMARK_SERVER_TOKEN = ''; process.env.EMAIL_FROM = ''; process.env.EMAIL_REPLY_TO = ''; });
 // Never generate threshold alerts for unrelated development administrators.
@@ -60,6 +62,52 @@ afterAll(async () => {
   await pool.end();
 });
 describe('notification monitoring and safe retry', () => {
+  it('PRD-06 production test sends require admin, target only that admin, and suppress QA email', async () => {
+    const previous = process.env.NODE_ENV;
+    const previousToken = process.env.POSTMARK_SERVER_TOKEN, previousFrom = process.env.EMAIL_FROM;
+    const [owner] = await db.select().from(usersTable).where(eq(usersTable.id, admin));
+    try {
+      process.env.NODE_ENV = 'production';
+      process.env.POSTMARK_SERVER_TOKEN = 'synthetic-production-test-token';
+      process.env.EMAIL_FROM = 'Community Care Team <qa@example.invalid>';
+      for (const path of ['/admin/notifications/test', '/admin/notifications/jobs/test']) {
+        const callsBefore = provider.send.mock.calls.length;
+        const requestId = randomUUID();
+        const common = { Origin: process.env.APP_ORIGIN!, 'Content-Type': 'application/json', 'X-CSRF-Token': csrf };
+        const post = (headers: Record<string,string>, body: unknown) => fetch(`${base}${path}`, {method:'POST',headers,body:JSON.stringify(body)});
+        expect((await post(common, {requestId})).status).toBe(401);
+        expect((await post({...common,Cookie:await cookie(volunteer)}, {requestId})).status).toBe(403);
+        const headers = {...common,Cookie:await cookie(admin)};
+        expect((await post({Cookie:headers.Cookie,'Content-Type':'application/json'}, {requestId})).status).toBe(403);
+        expect((await post(headers, {requestId,to:'outsider@example.invalid'})).status).toBe(400);
+        const sent = await post(headers, {requestId});
+        expect(sent.status).toBe(200);
+        expect(await sent.json()).toMatchObject({ok:true,status:'sent'});
+        expect(provider.send.mock.calls).toHaveLength(callsBefore + 1);
+        expect(provider.send.mock.calls.at(-1)![0].To).toBe(owner!.email);
+        const key = path.endsWith('/jobs/test') ? `test:${admin}:${requestId}` : `provider-test:${admin}:${requestId}`;
+        const logs = await db.select().from(notificationLogTable).where(eq(notificationLogTable.relatedId,key));
+        expect(logs).toHaveLength(1);
+        expect(logs[0]).toMatchObject({recipientUserId:admin,recipientEmail:owner!.email,status:'sent'});
+        await db.update(usersTable).set({isTestAccount:true}).where(eq(usersTable.id,admin));
+        const suppressedId = randomUUID();
+        const suppressed = await post(headers,{requestId:suppressedId});
+        expect(suppressed.status).toBe(200);
+        expect(await suppressed.json()).toMatchObject({ok:true,status:'suppressed'});
+        const suppressedKey = path.endsWith('/jobs/test') ? `test:${admin}:${suppressedId}` : `provider-test:${admin}:${suppressedId}`;
+        const blocked = await db.select().from(notificationLogTable).where(eq(notificationLogTable.relatedId,suppressedKey));
+        expect(blocked).toHaveLength(1);
+        expect(blocked[0]).toMatchObject({recipientUserId:admin,recipientEmail:owner!.email,status:'suppressed'});
+        expect(provider.send.mock.calls).toHaveLength(callsBefore + 1);
+        await db.update(usersTable).set({isTestAccount:false}).where(eq(usersTable.id,admin));
+      }
+    } finally {
+      process.env.NODE_ENV = previous;
+      process.env.POSTMARK_SERVER_TOKEN = previousToken;
+      process.env.EMAIL_FROM = previousFrom;
+      await db.update(usersTable).set({isTestAccount:owner!.isTestAccount}).where(eq(usersTable.id,admin));
+    }
+  });
   it('filters confirmed and uncertain admin recipients before a bounded digest batch', async () => {
     const key = `digest-history:${randomUUID()}`;
     await db.insert(notificationLogTable).values([

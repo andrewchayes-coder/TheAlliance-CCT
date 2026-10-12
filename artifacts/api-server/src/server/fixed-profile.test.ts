@@ -6,6 +6,8 @@ import { eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, activityLogTable, notificationLogTable } from '@workspace/db';
 import { profileCompletionSchema, profileDraftSchema, normalizeVolunteerStatus, formatPhone, pacificToday } from '@workspace/shared/profileFields';
 import { appConfig } from '@workspace/shared/appConfig';
+import type { Request, Response } from 'express';
+import { errorEnvelope } from '../middlewares/request-hardening';
 
 process.env.NODE_ENV = 'development';
 process.env.SESSION_SECRET ||= randomBytes(32).toString('hex');
@@ -16,7 +18,7 @@ vi.mock('../email', async importOriginal => ({
 const { default:app } = await import('../app');
 const { hashPassword, checkPassword } = await import('../auth/security');
 const { appOrigin } = await import('../auth/session');
-const { approvalRequirements } = await import('../admin-volunteer-detail');
+const { approvalRequirements, WorkflowError } = await import('../admin-volunteer-detail');
 const { rosterSnapshot, rosterCsv } = await import('../admin-roster');
 const { sendEmail } = await import('../email');
 let server:Server, base:string, volunteerId:string, otherId:string, adminId:string;
@@ -128,6 +130,12 @@ describe('fixed profile validation and compatibility',()=>{
       await db.update(volunteerProfilesTable).set({onboardingCompletedAt:before!.onboardingCompletedAt}).where(eq(volunteerProfilesTable.userId,volunteerId));
     }
   });
+  it('422 WorkflowError preserves its message and receives VALIDATION_FAILED', () => {
+    const error = new WorkflowError(422, "That date is before this volunteer's standing shift starts.");
+    const response = { statusCode: error.status, json: (body: unknown) => body } as unknown as Response;
+    errorEnvelope({} as Request, response, () => undefined);
+    expect(response.json({ error: error.message })).toEqual({ error: error.message, code: 'VALIDATION_FAILED' });
+  });
   it('activates after complete onboarding, sets start date, audits edits, and rejects legacy status writes',async()=>{
     let detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
     expect(detail.approvalRequirements.every((entry:{met:boolean})=>entry.met)).toBe(true);
@@ -141,6 +149,15 @@ describe('fixed profile validation and compatibility',()=>{
     expect((await own.request('/me')).data.profile.dateOfBirth).toBe('1991-01-01');
     const events=await db.select().from(activityLogTable).where(eq(activityLogTable.volunteerProfileId,detail.entry.profile.id));
     expect(events.filter(e=>e.action==='start_date_changed')).toHaveLength(2);
+    expect(events.filter(e=>e.action==='tracking_updated')).toHaveLength(1);
+    expect(events.find(e=>e.action==='tracking_updated')!.details).toEqual({fields:['dateOfBirth']});
+    const startOnly = await admin.request(`/admin/volunteers/${volunteerId}/tracking`, 'PATCH', {
+      expectedUpdatedAt:changed.data.entry.profile.updatedAt,startDate:'2026-02-01',
+    });
+    expect(startOnly.status).toBe(200);
+    const after = await db.select().from(activityLogTable).where(eq(activityLogTable.volunteerProfileId,detail.entry.profile.id));
+    expect(after.filter(e=>e.action==='start_date_changed')).toHaveLength(3);
+    expect(after.filter(e=>e.action==='tracking_updated')).toHaveLength(1);
     expect(events.some(e=>e.action==='status_changed')).toBe(true);
     expect(sendEmail).toHaveBeenCalled();
   });

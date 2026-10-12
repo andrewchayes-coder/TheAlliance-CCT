@@ -152,13 +152,14 @@ ALTER TABLE public.shift_assignments DROP CONSTRAINT IF EXISTS shift_assignments
 6. `/admin/resources`: upload and publish operational guides (PDF/DOCX, up to 15 MB). Training and paperwork are handled with staff outside the portal; no in-app compliance setup is required.
 7. Create and publish quick links for **Log in to Find Help** and **Open Phone Portal**, with their real HTTPS URLs (there are no seeded resources in production). Test both in a new tab and review the Community Care Team contact guidance.
 8. `/admin/notifications`: set the Postmark monthly limit (default 100); decide whether to enable the daily coverage digest in schedule settings.
-9. Test actual delivery **to the verified administrator only**, using the production-configured operator shell:
+9. Test actual delivery **to the signed-in verified administrator only**. In production, open **Admin → Notifications** and click **Send test email to me**. On **Reminder jobs**, click **Send test reminder to me**. Both admin-only actions keep the recipient fixed to your own account and require the normal session/CSRF protections. TEST accounts are suppressed, so use a normal admin to verify inbox delivery.
+   Alternatively, use the production-configured operator shell:
    ```sh
    NODE_ENV=production PRODUCTION_DATABASE_ACK=production npm run production-check -- email email@domain.org
    NODE_ENV=production PRODUCTION_DATABASE_ACK=production npm run production-check -- reminder email@domain.org
    ```
    Both use the single email service and create notification rows. The reminder is a synthetic tomorrow 9–11 AM message to that administrator, not an assignment/reminder to volunteers. Confirm messages arrive and notification statuses are **sent**, not logged/failed.
-   Development-only HTTP test-email/reminder routes stay disabled in production.
+   The legacy `/api/dev/email-test` route remains disabled in production. The two admin test-send routes above are available in production.
 10. `/admin/notifications/jobs`: check scheduler enabled, last-run status, and use the normal **Run reminder check now** action when appropriate. With no volunteers/assignments, no volunteer reminders should be produced. Confirm the enabled digest settings separately.
 11. Complete `QA-CHECKLIST.md` using isolated QA data outside production. Only begin real volunteer onboarding after the owner approves UAT.
 

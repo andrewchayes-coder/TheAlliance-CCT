@@ -311,8 +311,8 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
   **Expect:** Refused (401 or sent to sign-in). Not a public URL.
 
 - [ ] **ACT-10 · Profile edits** (P7, P22)  
-  **Do:** On /profile, edit phone, address and emergency contact.  
-  **Expect:** Changes save. Email, DOB, status and start date are read-only (start date filled in).
+  **Do (CHANGED):** On /profile, edit phone, address and emergency contact. Read the Email hint and find Email address below; compare onboarding's hint.
+  **Expect (CHANGED):** Changes save. The read-only Email field says "To change your email, use Email address below." Self-service changes require verification. Onboarding retains the staff-contact hint. DOB, status and start date remain read-only.
 
 - [ ] **ACT-11 · Admin APIs blocked** (P5)  
   **Do:** From devtools, call several /api/admin/* routes. Visit /admin.  
@@ -347,8 +347,8 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** On the seeded grid it creates 0 (all 40 exist). After deleting two, it recreates exactly those two. The third click creates none.
 
 - [ ] **ADM-04 · Grid editor** (P10)  
-  **Do:** Add a slot that overlaps another. Check the default end time. Try "Copy Monday to all weekdays" on a scratch setup.  
-  **Expect:** Overlap shows an "overlaps with …" note, not an error. End time defaults to start + 2 hours. Copy fills the weekdays.
+  **Do (CHANGED):** Open a new slot and check capacity and default end time. Edit an existing slot with a different capacity. Add an overlapping slot. Try "Copy Monday to all weekdays" on a scratch setup.
+  **Expect (CHANGED):** New slots default to capacity 2, matching the standard grid; existing capacities are preserved. Overlap shows an "overlaps with …" note, not an error. End time defaults to start + 2 hours. Copy fills the weekdays.
 
 - [ ] **ADM-05 · Capacity & deactivation guards** (P10)  
   **Do:** Lower a slot's capacity below its assigned count. Deactivate a slot that has volunteers.  
@@ -427,12 +427,12 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** Move to Active is disabled and lists exactly which fields are missing.
 
 - [ ] **ADM-24 · Volunteer detail page** (P9, P23)  
-  **Do:** On any volunteer: edit start date inline, edit DOB and emergency contact in the Profile card, change county, type admin notes.  
-  **Expect:** Profile card labeled "Visible to Alliance staff only" with tap-to-call emergency phone. County is admin-only (default Placer). Admin notes autosave. Activity log names the changed fields but never the values. No certification, background or agreement cards.
+  **Do (CHANGED):** On any volunteer: change only start date inline and inspect Activity; then save start date with another profile field. Edit DOB, emergency contact, county and notes.
+  **Expect (CHANGED):** Start-date-only edits create one "Start date changed" entry, without a duplicate Profile updated entry. Mixed edits log only other field names in Profile updated, never values. Profile card is staff-only, emergency phone is tap-to-call, county is admin-only (default Placer), and notes autosave. No certification, background or agreement cards.
 
 - [ ] **ADM-25 · Inactivate releases shifts** (P9, P13, P22)  
-  **Do:** Move Volunteer · Active to Inactive. Then Reset test accounts.  
-  **Expect:** Confirm dialog lists the shifts being released. Assignments end today. A coverage-gap alert goes to real admins. The persona's dashboard shows the gentle inactive note. Reset restores it.
+  **Do (CHANGED):** Move Volunteer · Active to Inactive. Without reloading, inspect Current shifts, Standing shifts and dates, and the master schedule. Then Reset test accounts.
+  **Expect (CHANGED):** Confirm dialog lists the shifts being released. Assignments end today; both lists clear immediately, with no stale Mark week off buttons, and the master week refreshes. A coverage-gap alert goes to real admins. The persona's dashboard shows the gentle inactive note. Reset restores it.
 
 - [ ] **ADM-26 · Invite admin** (P5)  
   **Do:** Team → Invite admin with an address you control. Open the invite link and set a password.  
@@ -539,8 +539,8 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
   **Expect:** First click creates 40 slots; the second creates none.
 
 - [ ] **PRD-06 · Live test email** (P25, P26)  
-  **Do:** With the Postmark token set, send a test email to yourself and look at the Postmark card.  
-  **Expect:** Arrives from The Alliance Community Care Team <cct@defendingthecause.org>, Reply-To Cindi, logo renders. Card shows token set. DKIM and Return-Path show Verified in Postmark.
+  **Do (CHANGED):** In production with Postmark configured, sign in as a normal verified admin. Open Admin → Notifications and click "Send test email to me"; on Reminder jobs click "Send test reminder to me". Repeat as TEST admin. Test anonymous/volunteer access and a recipient override.
+  **Expect (CHANGED):** Both buttons are visible and send only to the signed-in admin, logging sent. TEST sends log suppressed and deliver nothing. Anonymous/volunteer access and recipient overrides are rejected; CSRF is required. The configured CCT sender, logo and configured Reply-To or sender fallback render. Card shows token set; DKIM and Return-Path show Verified in Postmark.
 
 - [ ] **PRD-07 · Quick login on, no unlock** (QL-3, QL-5)  
   **Do:** With `QUICK_LOGIN_ENABLED=true` in Secrets (republished), open /signin in a fresh private window.  

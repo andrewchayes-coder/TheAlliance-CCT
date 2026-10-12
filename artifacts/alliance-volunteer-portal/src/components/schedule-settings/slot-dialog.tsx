@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { STANDARD_SHIFT_CAPACITY } from '@workspace/shared/standardGrid';
 import { capacityHint } from '@workspace/shared/schedule-copy';
 import { useUpdateScheduleSlot, useCreateScheduleSlot, type ScheduleSettings, type ScheduleSlot, type ScheduleSlotUpdate } from '@workspace/api-client-react';
 import { Button } from '@/components/brand-system';
@@ -26,7 +27,7 @@ export function SlotDialog({ slot, defaultDay, all, onClose, onDone, onRefresh }
   const [start, setStart] = useState(slot?.startTime ?? '09:00');
   const [end, setEnd] = useState(slot?.endTime ?? '11:00');
   const [endTouched, setEndTouched] = useState(!!slot);
-  const [cap, setCap] = useState(String(slot?.capacity ?? 1));
+  const [cap, setCap] = useState(String(slot?.capacity ?? STANDARD_SHIFT_CAPACITY));
   const [label, setLabel] = useState(slot?.label ?? '');
   const [active, setActive] = useState(slot?.isActive ?? true);
   const [cancelRet, setCancelRet] = useState(false);

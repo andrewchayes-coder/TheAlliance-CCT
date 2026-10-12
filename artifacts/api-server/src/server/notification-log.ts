@@ -146,6 +146,6 @@ export async function testProviderEmail(userId: string, requestId: string = rand
         'When Postmark is configured this email is delivered to you. Otherwise it is logged only; no email is delivered.'],
       cta: { label: 'Return to notification log', url: `${appOrigin}/admin/notifications` } }) });
   const [row] = await db.select({ status: notificationLogTable.status }).from(notificationLogTable)
-    .where(and(eq(notificationLogTable.relatedId, relatedId), eq(notificationLogTable.recipientUserId, user.id), inArray(notificationLogTable.status, ['sent', 'logged', 'failed'])));
+    .where(and(eq(notificationLogTable.relatedId, relatedId), eq(notificationLogTable.recipientUserId, user.id), inArray(notificationLogTable.status, ['sent', 'logged', 'failed', 'suppressed'])));
   return { ok: result.ok, skipped: result.skipped ?? false, status: row?.status ?? 'failed', error: result.error ?? null };
 }

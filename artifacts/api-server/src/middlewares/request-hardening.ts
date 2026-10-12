@@ -27,7 +27,7 @@ export const errorEnvelope: RequestHandler = (_req, res, next) => {
       body = { ...safe, error: typeof safe.error === 'string' ? safe.error : 'This request could not be completed.',
         code: typeof safe.code === 'string' ? safe.code :
           ({ 400: 'INVALID_INPUT', 401: 'SIGNIN_REQUIRED', 403: 'ACCESS_DENIED', 404: 'NOT_FOUND',
-            409: 'CONFLICT', 413: 'REQUEST_TOO_LARGE', 429: 'RATE_LIMITED' } as Record<number, string>)[res.statusCode] ?? 'INTERNAL_ERROR' };
+            409: 'CONFLICT', 413: 'REQUEST_TOO_LARGE', 422: 'VALIDATION_FAILED', 429: 'RATE_LIMITED' } as Record<number, string>)[res.statusCode] ?? 'INTERNAL_ERROR' };
     }
     return json(body);
   }) as typeof res.json;

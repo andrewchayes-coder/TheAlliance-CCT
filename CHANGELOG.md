@@ -2,6 +2,16 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.1.3 — 2026-10-11
+
+### Fixed
+- Missing error codes on 422 responses now use `VALIDATION_FAILED` and preserve the specific validation message.
+- Volunteer status changes refresh user-specific and general standing-shift controls and the master schedule, removing released shifts without a page reload.
+- Start-date edits create one `start_date_changed` activity entry; profile-update entries exclude start date and are omitted for start-date-only saves.
+- Volunteer Profile directs email changes to the self-service Email address section; onboarding retains its staff-contact wording.
+- New slot capacity defaults to the shared Community Care Team standard of two; existing capacities remain unchanged.
+- Admin test email and reminder buttons and their protected routes work in production, target only the signed-in administrator, and preserve TEST-account suppression with clear result copy.
+
 ## v1.1.2 — 2026-10-11
 
 ### Fixed

@@ -80,7 +80,7 @@ export function ProviderCard({ s, onDone }: { s: Summary; onDone: () => void }) 
       else { setRetrying(true); setErr(`${f.message} The result is uncertain. Retrying reuses the same request ID, so it will not send a duplicate.`); }
     } finally { lock.current = false; onDone(); }
   }
-  const msg = res ? (res.status === 'sent' ? 'Sent to your signed-in admin email.' : res.status === 'logged' ? 'Logged only. It was not delivered to an inbox.' : 'Failed to send.') : '';
+  const msg = res ? (res.status === 'sent' ? 'Sent to your signed-in admin email.' : res.status === 'logged' ? 'Logged only. It was not delivered to an inbox.' : res.status === 'suppressed' ? 'Not sent: emails to test accounts are suppressed.' : 'Failed to send.') : '';
   return (
     <Card className="p-4" data-testid="card-provider">
       <h2 className="alliance-display">Email provider</h2>
@@ -92,7 +92,7 @@ export function ProviderCard({ s, onDone }: { s: Summary; onDone: () => void }) 
         <div className="flex flex-wrap justify-between gap-2"><dt>Delivery</dt><dd><StatusBadge status={p.deliveryEnabled ? 'good' : 'neutral'}>{p.deliveryEnabled ? 'Enabled' : 'Log only'}</StatusBadge></dd></div>
       </dl>
       <p className="mt-3 text-sm">Before sending, the defendingthecause.org DKIM and Return-Path records must show Verified in Postmark.</p>
-      {import.meta.env.DEV && <Button className="mt-3" type="button" onClick={() => { void send(); }} disabled={test.isPending} data-testid="button-send-provider-test">{test.isPending ? 'Sending test' : 'Send test email to me'}</Button>}
+      <Button className="mt-3" type="button" onClick={() => { void send(); }} disabled={test.isPending} data-testid="button-send-provider-test">{test.isPending ? 'Sending test' : 'Send test email to me'}</Button>
       <p className="mt-2 text-xs text-navy-soft">Goes only to the signed-in admin's email. The address cannot be changed.{retrying ? ' Next click retries the previous request.' : ''}</p>
       <div aria-live="polite" className="mt-2 break-words">
         {res && <Notice kind={res.ok && res.status !== 'failed' ? 'success' : 'error'}>{res.skipped ? 'Skipped. ' : ''}{msg}{res.error ? ` ${res.error}` : ''}</Notice>}
