@@ -2,6 +2,20 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.1.4 — 2026-10-12
+
+### Changed
+- Onboarding volunteers appear immediately in roster Needs Attention as awaiting review. Volunteer detail provides a guided approval checklist with missing requirements, who completes each step, and links to the relevant sections; activation remains an explicit staff decision.
+- Guided activation uses clear Approve as Active actions, refreshes roster and overview data, and distinguishes saved approval from approval-email delivery failures.
+- Volunteer detail uses smaller, consistently top-aligned contact and date fields, with global CSS for safe email wrapping and accessible contact-link tap targets.
+- A shared page header and consistent page layouts align titles, subtitles, actions, spacing, and responsive wrapping across the portal, including public authentication screens.
+
+### Fixed
+- Preserved request validators after reconciliation, including optional profile draft fields and the updated Needs Attention filters shared by roster and CSV exports.
+
+### Docs
+- QA-CHECKLIST.md re-synced with the Oct 12 master test list; all 13 master/app disagreements resolved.
+
 ## v1.1.3 — 2026-10-11
 
 ### Fixed
@@ -11,9 +25,6 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 - Volunteer Profile directs email changes to the self-service Email address section; onboarding retains its staff-contact wording.
 - New slot capacity defaults to the shared Community Care Team standard of two; existing capacities remain unchanged.
 - Admin test email and reminder buttons and their protected routes work in production, target only the signed-in administrator, and preserve TEST-account suppression with clear result copy.
-
-### Docs
-- QA-CHECKLIST.md re-synced with the Oct 12 master test list; all 13 master/app disagreements resolved.
 
 ## v1.1.2 — 2026-10-11
 
