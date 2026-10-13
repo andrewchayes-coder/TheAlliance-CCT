@@ -4,7 +4,7 @@ Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every
 
 **What this tests:** the finished app after Prompt 26 and the v3–v5 fixes (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
 
-**Oct 12 update (v7, Reminder jobs page):** added ADM-39 and updated PRD-12 for Build Prompts v7 Fix 7 (v1.1.5): plain-language scheduler status, a warning when scheduled runs stop, and the last scheduled run shown separately from manual checks. This version goes up to `docs/` with v7 Step 1.
+**Oct 12 update (v7, Reminder jobs page):** added ADM-39 and updated PRD-12 for Build Prompts v7 Fix 7 (v1.1.5): plain-language scheduler status, a warning when scheduled runs stop, and the last scheduled run shown separately from manual checks. This version went up to `docs/` with v7 Step 1. Later Oct 12: v1.1.5 published; ADM-39 passed (Drew, dev) and PRD-12 passed in production (Claude); ADM-39's optional stale-warning step now records a scheduled run first (Replit's clarification).
 
 **Oct 12 update (v1.1.4):** ADM-20, ADM-22 and ADM-23 updated for the guided volunteer review (Awaiting review badge, approval checklist, Approve as Active); ACT-14 and ADM-34 now check the shared page header. Not yet in Replit's docs/ copy; it goes up with the next build prompt. Test IDs are unchanged, so SYS-18 still passes.
 
@@ -507,7 +507,7 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Expect:** The panel lists only dates on or after the start date (plus any stored future weeks off), with no "Mark week off" for earlier weeks. The API returns 422 ("That date is before this volunteer's standing shift starts."). The volunteer's own week-off action rejects out-of-period dates the same way. Reset test accounts afterwards.
 
 - [ ] **ADM-39 · Reminder jobs page explains the scheduler** (F7)  
-  **Do:** In dev with RUN_JOBS off and no JOBS_SECRET, open Admin → Reminder jobs. Click Run reminder check now. Optional: set a 32+ character JOBS_SECRET, restart, and wait 20+ minutes without calling the job (remove it afterwards).  
+  **Do:** In dev with RUN_JOBS off and no JOBS_SECRET, open Admin → Reminder jobs. Click Run reminder check now. Optional: set a 32+ character JOBS_SECRET, restart, record one scheduled run (POST /api/jobs/run with the X-Jobs-Secret header), then wait 20+ minutes without calling the job (remove the secret afterwards). Without a recorded scheduled run the page correctly shows "No scheduled run has been recorded yet." instead of the stale warning.  
   **Expect:** The Scheduler row says "Not scheduled" (amber) and the top notice says reminders aren't scheduled. No "Automatic scheduler" or "External trigger" rows and no autoscale note. After the manual check, Last run shows "Manual (Run reminder check now)" with a "Last scheduled run" line (or "No scheduled run yet"). Count tiles read Due, Sent, Logged (not delivered), Failed, Skipped, Test accounts (not sent), Carried to next run, Unconfirmed. With JOBS_SECRET set, the Scheduler row says cron-job.org, and after 20 minutes with no scheduled run the notice turns red ("No scheduled run in the last 20 minutes…").
 
 ## MIL — Admin · Prompt 27 (optional)
