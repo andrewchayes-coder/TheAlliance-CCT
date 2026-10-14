@@ -183,7 +183,7 @@ Create one enabled cron-job.org job:
 
 | Setting | Value |
 |---|---|
-| URL | `https://the-alliance-cct.replit.app/api/jobs/run` |
+| URL | `https://cct.defendingthecause.org/api/jobs/run` |
 | Method | `POST` |
 | Header | `X-Jobs-Secret`: the existing production `JOBS_SECRET` value, entered securely in cron-job.org |
 | Header | `Content-Type`: `application/json` |

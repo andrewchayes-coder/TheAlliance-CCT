@@ -10,6 +10,7 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 ### Docs
 - Docs: docs/Alliance Persona Test Run.md updated (v8).
 - QA-CHECKLIST.md synchronized with all 136 master IDs and Fix 8 workflows.
+- DEPLOY.md: updated the cron-job.org endpoint to `https://cct.defendingthecause.org/api/jobs/run`.
 
 ## v1.1.5 — 2026-10-12
 
