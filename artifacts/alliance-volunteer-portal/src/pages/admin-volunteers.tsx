@@ -106,7 +106,7 @@ function Loading() {
   );
 }
 
-const selectCls = 'alliance-input';
+const selectCls = 'alliance-input roster-select';
 
 function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: { adminId: string; onMessageSelected?: (userIds: string[], navigate?: (to: string) => void) => void }) {
   const [, nav] = useLocation();
@@ -294,10 +294,10 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
                   <caption className="sr-only">Volunteer roster</caption>
                   <thead>
                     <tr className="text-xs">
-                      <th scope="col" className="sticky left-0 top-0 z-30 w-10 border-b border-gray bg-white px-2 py-2"><input type="checkbox" className="h-5 w-5" aria-label="Select all volunteers on this page" checked={allOnPage} onChange={togglePage} data-testid="checkbox-page" /></th>
+                      <th scope="col" className="sticky left-0 top-0 z-40 w-16 min-w-16 max-w-16 border-b border-gray bg-white px-2 py-2"><input type="checkbox" className="h-5 w-5" aria-label="Select all volunteers on this page" checked={allOnPage} onChange={togglePage} data-testid="checkbox-page" /></th>
                       {visible.map(c => (
                         <th key={c.key} scope="col" aria-sort={ariaSort(c.key)}
-                          className={`sticky top-0 border-b border-gray bg-white px-3 py-1 ${c.key === 'name' ? 'left-10 z-30 shadow-[1px_0_0_0_rgb(0_0_0/0.08)]' : 'z-20'}`}>
+                          className={`sticky top-0 border-b border-gray bg-white px-3 py-1 ${c.key === 'name' ? 'left-16 z-30 shadow-[1px_0_0_0_rgb(0_0_0/0.08)]' : 'z-20'}`}>
                           <button type="button" onClick={() => sortOn(c.key)} className="inline-flex min-h-11 items-center gap-1 whitespace-nowrap font-bold focus-visible:outline-2 focus-visible:outline-blue" data-testid={`sort-${c.key}`}>
                             {c.label}
                             {sortBy === c.key ? (dir === 'asc' ? <ArrowUp size={14} aria-hidden="true" /> : <ArrowDown size={14} aria-hidden="true" />) : <ArrowUpDown size={14} aria-hidden="true" className="opacity-40" />}
@@ -309,9 +309,9 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
                   <tbody>
                     {rows.map(e => (
                       <tr key={e.user.id} className="group cursor-pointer" data-testid={`row-volunteer-${e.user.id}`} onClick={open(e.user.id)}>
-                        <td className="sticky left-0 z-10 border-b border-gray bg-white px-2 group-hover:bg-gray"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
+                        <td className="sticky left-0 z-10 w-16 min-w-16 max-w-16 border-b border-gray bg-white px-2 group-hover:bg-gray"><input type="checkbox" className="h-5 w-5" aria-label={`Select ${fullName(e)}`} checked={selected.has(e.user.id)} onChange={() => toggle(e.user.id)} data-testid={`checkbox-${e.user.id}`} /></td>
                         {visible.map((c, i) => (
-                          <td key={c.key} className={`border-b border-gray px-3 py-1 group-hover:bg-gray ${c.key === 'name' ? 'sticky left-10 z-10 bg-white shadow-[1px_0_0_0_rgb(0_0_0/0.08)]' : c.key === 'address' || c.key === 'emergencyContact' ? 'min-w-[16rem]' : ''}`}>
+                          <td key={c.key} className={`border-b border-gray px-3 py-1 group-hover:bg-gray ${c.key === 'name' ? 'sticky left-16 z-10 bg-white shadow-[1px_0_0_0_rgb(0_0_0/0.08)]' : c.key === 'address' || c.key === 'emergencyContact' ? 'min-w-[16rem]' : ''}`}>
                             <Cell k={c.key} e={e} />{i === 0 && <AttentionBadges entry={e} />}</td>
                         ))}
                       </tr>
