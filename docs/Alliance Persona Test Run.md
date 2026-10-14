@@ -1,8 +1,10 @@
 # Alliance Volunteer App — Persona Test Run (Prompts 1–28 + Oct 11 fixes)
 
-Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5), Build Prompts v2 (21–28) and Build Prompts v3 (Fix 1–3, Oct 11). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
+Hayes Strategy Group · Oct 10, 2026 · Updated Oct 13, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5), Build Prompts v2 (21–28) and Build Prompts v3 (Fix 1–3, Oct 11). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
 
 **What this tests:** the finished app after Prompt 26 and the v3–v5 fixes (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
+
+**Oct 13 update (v8, Tiffany's Oct 13 decisions):** Build Prompts v8 Fix 8 (v1.2.0): volunteers become Active automatically when they finish their profile (no staff approval gate), becoming Active always sets a start date (B17), an admin-only background check record (checkbox + date), a minimum age of 18, and the old .replit.app address forwarding to the official address. Added NEW-14, ADM-40, PRD-15 and PRD-16. Updated SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11, ONBN-03, ONBR-01, ONBR-02, ADM-20, ADM-21, ADM-22, ADM-23 and ADM-24, plus the ONBR persona description. This version goes up to `docs/` with v8 Step 3. Test count: 136.
 
 **Oct 12 update (v7, Reminder jobs page):** added ADM-39 and updated PRD-12 for Build Prompts v7 Fix 7 (v1.1.5): plain-language scheduler status, a warning when scheduled runs stop, and the last scheduled run shown separately from manual checks. This version went up to `docs/` with v7 Step 1. Later Oct 12: v1.1.5 published; ADM-39 passed (Drew, dev) and PRD-12 passed in production (Claude); ADM-39's optional stale-warning step now records a scheduled run first (Replit's clarification).
 
@@ -32,15 +34,15 @@ Hayes Strategy Group · Oct 10, 2026 · Updated Oct 12, 2026 · Built from every
 |---|---|---|---|---|
 | SYS | Developer / system | Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse, docs. | Dev | 18 |
 | VIS | Signed-out visitor | Private/incognito window, not signed in. | Dev | 8 |
-| NEW | New sign-up (real account) | A fresh account you create in dev with an email you control (plus-addressing works). Not a test account, because test accounts never receive email. With no Postmark token in dev, emails and links print to the console. Keep this account; ADM-27 deactivates it. | Dev | 13 |
+| NEW | New sign-up (real account) | A fresh account you create in dev with an email you control (plus-addressing works). Not a test account, because test accounts never receive email. With no Postmark token in dev, emails and links print to the console. Keep this account; ADM-27 deactivates it. | Dev | 14 |
 | ONBN | Volunteer · Onboarding, new | Quick-login persona. Verified, profile fields empty. | Dev | 4 |
-| ONBR | Volunteer · Onboarding, ready to activate | Quick-login persona. Profile complete, waiting for staff approval. | Dev | 4 |
+| ONBR | Volunteer · Onboarding, ready to activate | Quick-login persona. Profile complete but still Onboarding: since v1.2.0 this is the manual case (someone who finished before automatic activation, or was moved back to Onboarding by staff). | Dev | 4 |
 | ANS | Volunteer · Active, no shift | Quick-login persona. Approved, holds no standing shift. | Dev | 8 |
 | ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 15 |
-| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 39 |
+| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 40 |
 | MIL | Admin · Prompt 27 (optional) | Only if Prompt 27 (milestones) is approved and built. | Dev | 5 |
 | NTF | Admin · Prompt 28 (optional) | Only if Prompt 28 (admin shift-activity notifications) is approved and built. | Dev | 4 |
-| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 14 |
+| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 16 |
 
 ## SYS — Developer / system
 
@@ -58,9 +60,9 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
   **Do:** Open the route-guard test. Look for /api/auth/quick-login*, /qa and /qa/lock.  
   **Expect:** /api/auth/quick-login* is in the route list and tagged `public:quick-login`. /qa and /qa/lock no longer exist (QL-5). The test passes because the routes are tagged, not because it was loosened (no skip, no blanket allowlist).
 
-- [ ] **SYS-04 · Playwright smoke test** (P19, P26)  
+- [ ] **SYS-04 · Playwright smoke test** (P19, P26, F8)  
   **Do:** Run the Playwright smoke test.  
-  **Expect:** Passes end to end: sign-up → verify → complete profile → admin activates (no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it.
+  **Expect:** Passes end to end: sign-up → verify → complete profile → automatically Active (no admin activation step since v1.2.0; no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it → admin records Background check complete with a date and the roster's Background check filter finds the volunteer.
 
 - [ ] **SYS-05 · Leftover search** (P21, P26, QL-4)  
   **Do:** Search the app source, skipping dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`: `grep -rniE "02928F|027A77|lulo|montserrat|Resource Coordination Program" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db` then `grep -rnE "applicant|in_training" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db`.  
@@ -70,13 +72,13 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
   **Do:** Diff shared/schema.ts against the last published version.  
   **Expect:** Only additive changes: new nullable/defaulted columns, the 'onboarding' enum value, the new tables slot_blocks, custom_shifts, custom_shift_assignments, users.isTestAccount, the 'suppressed' status. No drops, renames, type conversions, or new pg enum types.
 
-- [ ] **SYS-07 · Config flags** (P6, P22, P25)  
+- [ ] **SYS-07 · Config flags** (P6, P22, P25, F8)  
   **Do:** Open shared/appConfig.ts and shared/onboardingQuestions.ts. Run `grep -rni cindi --exclude-dir=node_modules artifacts shared`.  
-  **Expect:** trackCertificationInApp, trackBackgroundCheckInApp and requireAgreementAcknowledgment are false. minimumAge is null. onboardingQuestions exports an empty array. Identity values match P21, and the volunteer-facing contact is the Community Care Team (cct@defendingthecause.org). The grep finds no volunteer-facing Cindi references.
+  **Expect:** trackCertificationInApp, trackBackgroundCheckInApp and requireAgreementAcknowledgment are false. trackBackgroundCheckAdminOnly and autoActivateOnProfileComplete are true, and minimumAge is 18 (v1.2.0). onboardingQuestions exports an empty array. Identity values match P21, and the volunteer-facing contact is the Community Care Team (cct@defendingthecause.org). The grep finds no volunteer-facing Cindi references.
 
-- [ ] **SYS-08 · Flags are reversible** (P22)  
-  **Do:** In dev only: set trackBackgroundCheckInApp to true, restart, and look at the roster and a volunteer detail page. Then set it back to false and restart.  
-  **Expect:** With true, the background-check card on the volunteer detail page and the background-check CSV column come back. The roster's background-check badge and filter do not come back: the new roster (Prompt 23) removed them. This is a known, accepted limit while tracking stays off (C8); if the Alliance turns tracking on, adding them back to the roster is a change order. With false, everything is gone again. (Revert before continuing.)
+- [ ] **SYS-08 · Flags are reversible** (P22, F8)  
+  **Do:** In dev only. (a) Set trackBackgroundCheckAdminOnly to false, restart, and look at a volunteer detail page, the roster filters and Columns picker, and the Roster CSV; set it back to true. (b) Set autoActivateOnProfileComplete to false, restart, and complete the profile as Volunteer · Onboarding, new; set it back to true and Reset test accounts. (c) Set minimumAge to null, restart, and try a date of birth 17 years ago; set it back to 18.  
+  **Expect:** (a) With false (and trackBackgroundCheckInApp false), the Background check card, filter, column and CSV columns are all gone; with true they're back. (b) With false, finishing the profile leaves the volunteer in Onboarding with the old welcome email ("Once you're approved…") and the onboarding checklist; with true, they're Active right away. (c) With null, the 17-year-old date is accepted; with 18 it's refused. trackBackgroundCheckInApp (the old volunteer-facing, approval-gating version) stays false; turning it on is a change order. (Revert everything before continuing.)
 
 - [ ] **SYS-09 · Email template (log mode)** (P3, P21, P25)  
   **Do:** With no POSTMARK_SERVER_TOKEN in dev, send a test email to a non-test address (dev test route or Admin → Notifications → Send test email).  
@@ -116,7 +118,7 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
 
 - [ ] **SYS-18 · QA-CHECKLIST.md in sync (Prompt 26b)** (P26)  
   **Do:** After the D0a re-upload (Build Prompts v6), run `diff <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' "docs/Alliance Persona Test Run.md" | sort -u) <(grep -oE '\b(SYS|VIS|NEW|ONBN|ONBR|ANS|ACT|ADM|MIL|NTF|PRD)-[0-9]{2}\b' QA-CHECKLIST.md | sort -u)` and read the "Master/app disagreements" section of QA-CHECKLIST.md.  
-  **Expect:** No diff output: every test ID is in QA-CHECKLIST.md. The disagreements section lists none still open (only the MIL/NTF note that those optional features aren't built). No applicant, in_training, certification, background-check or agreement steps remain. MIL/NTF items are marked optional.
+  **Expect:** No diff output: every test ID is in QA-CHECKLIST.md. The disagreements section lists none still open (only the MIL/NTF note that those optional features aren't built). No applicant, in_training, certification or agreement steps remain; the only background-check steps are the admin-only record (ADM-40, SYS-07, SYS-08). MIL/NTF items are marked optional.
 
 ## VIS — Signed-out visitor
 
@@ -194,13 +196,13 @@ _A fresh account you create in dev with an email you control (plus-addressing wo
   **Do:** Before finishing, go to /dashboard.  
   **Expect:** Redirected back to /onboarding.
 
-- [ ] **NEW-10 · Finish onboarding** (P6, P22)  
+- [ ] **NEW-10 · Finish onboarding** (P6, P22, F8)  
   **Do:** Complete every field and submit.  
-  **Expect:** Lands on /dashboard. Welcome email logged with "Here's what happens next: our team will reach out about training and the required paperwork. Once you're approved, you'll choose your weekly shift." Status is onboarding. Phones stored as digits only.
+  **Expect:** Lands on /dashboard with the "Choose your weekly shift" card ("You're all set. Pick the weekly shift that fits your life."). Status is Active right away with today's start date (v1.2.0: no staff approval step). One welcome email is logged: "Welcome to the Community Care Team: choose your weekly shift", with a "Choose your weekly shift" button to /shifts. Recent activity on the admin page shows the automatic status change. Phones stored as digits only.
 
-- [ ] **NEW-11 · Onboarding dashboard card** (P7, P22)  
-  **Do:** Look at the dashboard top card.  
-  **Expect:** Checklist: Account created ✓ · Profile complete ✓ · Training & paperwork (with Alliance staff) · Approval, with "We'll email you when you're ready to choose a shift." No quick-links row. No certification, background, or agreement text.
+- [ ] **NEW-11 · Dashboard after onboarding** (P7, P22, F8)  
+  **Do:** Look at the dashboard top card and the quick links.  
+  **Expect:** "Choose your weekly shift" card with a button to /shifts, and the Log in to Find Help / Open Phone Portal quick-link buttons. No onboarding checklist, and no certification, background, training-and-paperwork, approval or agreement text.
 
 - [ ] **NEW-12 · Password reset** (P4)  
   **Do:** Sign out → Forgot password → open the reset link → set a new password → sign in. Then open the same reset link again.  
@@ -209,6 +211,10 @@ _A fresh account you create in dev with an email you control (plus-addressing wo
 - [ ] **NEW-13 · Last login** (P4)  
   **Do:** Sign in, then check the roster as admin (ADM-18).  
   **Expect:** Last login shows this sign-in.
+
+- [ ] **NEW-14 · Minimum age 18** (F8)  
+  **Do:** On /onboarding (a fresh account, or Volunteer · Onboarding, new after a reset), enter a date of birth one day short of 18 years ago and try to finish. Send the same value to `PATCH /api/onboarding` from devtools. Then use a date exactly 18 years ago today. As admin, try to change a volunteer's DOB to one day short of 18 years ago.  
+  **Expect:** The form shows the hint "You must be 18 or older to serve as a Resource Coordinator." The under-18 date is refused in the form and by the API (400) with "Resource Coordinators must be 18 or older. If your date of birth is correct, please contact the Community Care Team at cct@defendingthecause.org." Exactly 18 today is accepted. The admin edit is refused with "Date of birth must be at least 18 years ago."
 
 ## ONBN — Volunteer · Onboarding, new
 
@@ -222,9 +228,9 @@ _Quick-login persona. Verified, profile fields empty._
   **Do:** With fields empty, visit /dashboard, /shifts, /messages, /resources and /profile.  
   **Expect:** Each redirects to /onboarding. (Failed in production on Oct 11 for /shifts, which showed "Your profile is awaiting approval" instead; fixed by v3 Fix 2.)
 
-- [ ] **ONBN-03 · Complete profile** (QL-1, P22)  
+- [ ] **ONBN-03 · Complete profile** (QL-1, P22, F8)  
   **Do:** Complete the profile.  
-  **Expect:** Lands on /dashboard with the onboarding checklist. The welcome email shows in Admin → Notifications as `suppressed` (and prints in the dev console).
+  **Expect:** Lands on /dashboard with the "Choose your weekly shift" card: the persona is Active right away (v1.2.0). The welcome email ("Welcome to the Community Care Team: choose your weekly shift") shows in Admin → Notifications as `suppressed` (and prints in the dev console). Reset test accounts afterwards.
 
 - [ ] **ONBN-04 · Reset restores persona** (QL-1)  
   **Do:** As admin, Team → Reset test accounts. Quick-login as this persona again.  
@@ -232,15 +238,15 @@ _Quick-login persona. Verified, profile fields empty._
 
 ## ONBR — Volunteer · Onboarding, ready to activate
 
-_Quick-login persona. Profile complete, waiting for staff approval._
+_Quick-login persona. Profile complete but still Onboarding: since v1.2.0 this is the manual case (someone who finished before automatic activation, or was moved back to Onboarding by staff)._
 
-- [ ] **ONBR-01 · Quick login** (QL-4, P22)  
+- [ ] **ONBR-01 · Quick login** (QL-4, P22, F8)  
   **Do:** Click "Volunteer · Onboarding, ready to activate".  
-  **Expect:** Lands on /dashboard (not /onboarding). Checklist shows Profile complete ✓ and waits on Training & paperwork and Approval.
+  **Expect:** Lands on /dashboard (not /onboarding). The card shows Account created ✓ and Profile complete ✓, then "Your profile is complete. The Community Care Team will turn on shift sign-up for you. Questions? Contact the Community Care Team at cct@defendingthecause.org." No Training & paperwork or Approval rows (v1.2.0).
 
-- [ ] **ONBR-02 · Can't sign up yet** (P7, P12)  
+- [ ] **ONBR-02 · Can't sign up yet** (P7, P12, F8)  
   **Do:** Open /shifts. Then POST to the shift sign-up API from devtools.  
-  **Expect:** /shifts explains why sign-up isn't open yet, with no sign-up buttons. No quick-links row on the dashboard. The API returns 403.
+  **Expect:** /shifts explains "Your account isn't active yet. The Community Care Team will turn on shift sign-up for you…", with no sign-up buttons. No quick-links row on the dashboard. The API returns 403.
 
 - [ ] **ONBR-03 · Profile page** (P22)  
   **Do:** Open /profile.  
@@ -430,25 +436,25 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Do:** Use the Columns picker to show DOB, full address, ZIP, emergency contact, county. Reload. Sort by several columns. Check desktop and mobile.  
   **Expect:** Picker choice survives reload. Sorting works on every column. Sticky header and first column on desktop; stacked cards on mobile.
 
-- [ ] **ADM-20 · Filters & chips** (P8, P23, v1.1.4)  
-  **Do:** Use the Needs attention filter with each reason (Awaiting review, No shift, Profile incomplete for more than 7 days, Onboarding for more than 30 days), then combine filters (e.g. Active + No shift; city + Awaiting review). Export the Roster and Schedule CSVs with a reason selected.  
-  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention". Every Onboarding volunteer shows an "Awaiting review" badge on the roster as soon as they sign up (v1.1.4), alongside any other reasons (active with 0 shifts, incomplete profile > 7 days in onboarding, onboarding > 30 days). The CSV exports use the same reason filter. No certification or background columns, filters or reasons.
+- [ ] **ADM-20 · Filters & chips** (P8, P23, v1.1.4, F8)  
+  **Do:** Use the Needs attention filter with each reason (Not active yet, No shift, Profile incomplete for more than 7 days, Onboarding for more than 30 days) and the Background check filter (Complete, Not recorded), then combine filters (e.g. Active + No shift; city + Not active yet; Active + Background check Not recorded). Export the Roster and Schedule CSVs with a reason and a background-check filter selected.  
+  **Expect:** Results are the correct intersection. Chips show Onboarding / Active / Inactive counts and "Needs attention". Every Onboarding volunteer shows a "Not active yet" badge (renamed from "Awaiting review" in v1.2.0), alongside any other reasons (active with 0 shifts, incomplete profile > 7 days in onboarding, onboarding > 30 days). The CSV exports use the same filters. No certification columns, filters or reasons, and no background-check Needs-attention reason.
 
-- [ ] **ADM-21 · CSV exports** (P8, P23, P24, QL-1)  
+- [ ] **ADM-21 · CSV exports** (P8, P23, P24, QL-1, F8)  
   **Do:** Export the Roster CSV and Schedule CSV and open both in Google Sheets.  
-  **Expect:** Dated filenames, open cleanly. Roster: status, start date, DOB, address, city, state, ZIP, emergency contact name/relationship/phone, county, shifts held ("Tue 10:00–12:00; …"); no certification, background, agreement or onboarding-answer columns. Schedule: one row per active assignment including one-time shifts, with upcoming skip dates. No test accounts in either.
+  **Expect:** Dated filenames, open cleanly. Roster: status, start date, DOB, address, city, state, ZIP, emergency contact name/relationship/phone, county, shifts held ("Tue 10:00–12:00; …"); "Background check complete" (Yes/No) and "Background check date" columns (v1.2.0); no certification, agreement or onboarding-answer columns. Schedule: one row per active assignment including one-time shifts, with upcoming skip dates. No test accounts in either.
 
-- [ ] **ADM-22 · Activate a volunteer** (QL-4, P9, P22, v1.1.4)  
-  **Do:** Open Volunteer · Onboarding, ready to activate (show test accounts on). Read the "Volunteer review and approval" checklist, then click Approve as Active → Confirm approval as Active. (Do this from device B during ONBR-04.)  
-  **Expect:** The checklist says "Ready for staff approval", shows every requirement as Complete and "Pending: Staff approval as Active". The dialog is titled "Approve as Active?" and says the approval email is attempted after saving. Activation works with no certification or background check. Start date is set to today. The result says the approval email wasn't sent (test-account delivery suppressed) and it's logged as suppressed. The roster, overview and Needs attention update without a reload. Activity log records the change.
+- [ ] **ADM-22 · Activate a volunteer by hand** (QL-4, P9, P22, v1.1.4, F8)  
+  **Do:** After Reset test accounts, open Volunteer · Onboarding, ready to activate (show test accounts on). Read the Activation panel, then click Approve as Active → Confirm approval as Active. (Do this from device B during ONBR-04.)  
+  **Expect:** The panel is headed "Activation", with the note "Volunteers become Active on their own when they finish their profile. Use Approve as Active only for someone who's still Onboarding with a complete profile." The checklist says "Ready to activate", shows every requirement as Complete and "Pending: Staff approval as Active". The dialog is titled "Approve as Active?" and says the approval email is attempted after saving. Activation works with no certification or background check. Start date is set to today, even though this test volunteer was approved before (B17, fixed in v1.2.0). The result says the approval email wasn't sent (test-account delivery suppressed) and it's logged as suppressed. The roster, overview and Needs attention update without a reload. Activity log records the change.
 
-- [ ] **ADM-23 · Activation blocked when incomplete** (P22, v1.1.4)  
+- [ ] **ADM-23 · Activation blocked when incomplete** (P22, v1.1.4, F8)  
   **Do:** Open Volunteer · Onboarding, new (after a reset, before ONBN-03).  
-  **Expect:** The checklist says "Waiting on volunteer requirements" and lists each missing item (Onboarding completed and each empty profile field) with who completes it and a link to the right section, plus "Message volunteer about missing steps". Approve as Active isn't offered. If approval is attempted through the API, it returns 422 with the missing items listed.
+  **Expect:** The Activation panel's checklist says "Waiting on volunteer requirements" and lists each missing item (Onboarding completed and each empty profile field) with who completes it and a link to the right section, plus "Message volunteer about missing steps". Approve as Active isn't offered. If approval is attempted through the API, it returns 422 with the missing items listed.
 
-- [ ] **ADM-24 · Volunteer detail page** (P9, P23)  
+- [ ] **ADM-24 · Volunteer detail page** (P9, P23, F8)  
   **Do:** On any volunteer: change only the start date inline and look at Recent activity; then save the start date together with another profile field. Edit DOB, emergency contact, county and admin notes.  
-  **Expect:** A start-date-only edit creates one "Start date changed" entry, with no duplicate "Profile updated" entry. Mixed edits list only the other field names in "Profile updated", never values. Profile card is staff-only with tap-to-call emergency phone; county is admin-only (default Placer); notes autosave. No certification, background or agreement cards.
+  **Expect:** A start-date-only edit creates one "Start date changed" entry, with no duplicate "Profile updated" entry. Mixed edits list only the other field names in "Profile updated", never values. Profile card is staff-only with tap-to-call emergency phone; county is admin-only (default Placer); notes autosave. No certification or agreement cards; the staff-only Background check card is tested in ADM-40.
 
 - [ ] **ADM-25 · Inactivate releases shifts** (P9, P13, P22)  
   **Do:** Move Volunteer · Active (with a shift) to Inactive. Without reloading, look at Current shifts, Standing shifts and dates, and the master schedule. Then Reset test accounts.  
@@ -509,6 +515,10 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 - [ ] **ADM-39 · Reminder jobs page explains the scheduler** (F7)  
   **Do:** In dev with RUN_JOBS off and no JOBS_SECRET, open Admin → Reminder jobs. Click Run reminder check now. Optional: set a 32+ character JOBS_SECRET, restart, record one scheduled run (POST /api/jobs/run with the X-Jobs-Secret header), then wait 20+ minutes without calling the job (remove the secret afterwards). Without a recorded scheduled run the page correctly shows "No scheduled run has been recorded yet." instead of the stale warning.  
   **Expect:** The Scheduler row says "Not scheduled" (amber) and the top notice says reminders aren't scheduled. No "Automatic scheduler" or "External trigger" rows and no autoscale note. After the manual check, Last run shows "Manual (Run reminder check now)" with a "Last scheduled run" line (or "No scheduled run yet"). Count tiles read Due, Sent, Logged (not delivered), Failed, Skipped, Test accounts (not sent), Carried to next run, Unconfirmed. With JOBS_SECRET set, the Scheduler row says cron-job.org, and after 20 minutes with no scheduled run the notice turns red ("No scheduled run in the last 20 minutes…").
+
+- [ ] **ADM-40 · Background check record (admin-only)** (F8)  
+  **Do:** Open Volunteer · Active. In the Background check card, tick "Background check complete" and try to save with no date, then with tomorrow's date, then with last Friday. Look at Recent activity. On the roster, filter Background check → Complete, then Not recorded; add the Background check column from Columns and sort by it. Export the Roster CSV. Quick-login as Volunteer · Active and look at Home and Profile. Back as admin, untick the box. Reset test accounts.  
+  **Expect:** Save is refused with no date and with a future date ("Enter the date the background check was completed (today or earlier)."); last Friday saves. Recent activity lists the changed field names only, never values. The Complete filter shows the volunteer and Not recorded doesn't (the reverse after unticking). The column shows "Complete · {date}" or "Not recorded" and sorts. The CSV has Background check complete = Yes and the date. The volunteer sees nothing about background checks. Unticking clears the date. It never blocks activation (ADM-22 works without it) and adds no Needs-attention reason. After the reset it's Not recorded.
 
 ## MIL — Admin · Prompt 27 (optional)
 
@@ -614,9 +624,17 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
   **Do:** After your real admin exists, run the Fix 1 pre-checks, the numbered statements in order, and the post-checks in the production Database tool. Then open the roster (test accounts on and off), master schedule, email log and /resources, and quick-login as all 5 personas.  
   **Expect:** The pre-check shows at least 1 active admin not on example.org; then 19 users to delete and 5 qa-* users. Every statement succeeds. The post-checks are 0 for non-test @example.org users, profiles, assignments, messages, resources and notification rows, with qa-* users = 5 and shift_slots unchanged. The roster only has the test personas, the schedule has no names, the email log has no dummy rows, /resources is empty, and quick login works.
 
+- [ ] **PRD-15 · v1.2.0 in production** (F8)  
+  **Do:** Publish Fix 8 and read the schema change list. Reset test accounts. As Volunteer · Onboarding, new, enter a date of birth 17 years ago (refused), then finish the profile with a valid one. As Admin, open that persona; then on Volunteer · Active record a background check with last Friday's date, check the roster's Background check filter, and untick it. Approve Volunteer · Onboarding, ready to activate. Reset test accounts.  
+  **Expect:** The publish lists no schema changes. The under-18 date is refused with the 18-or-older message. The new persona becomes Active right away with today's start date, and its welcome email ("Welcome to the Community Care Team: choose your weekly shift") is suppressed. The background check saves, filters and clears. The ready persona gets today's start date on approval. After the reset every persona is back to its default.
+
+- [ ] **PRD-16 · Official address** (A13i, F8)  
+  **Do:** After `APP_BASE_URL` is set to https://cct.defendingthecause.org, the republish and the cron-job.org URL change: open https://cct.defendingthecause.org, then https://the-alliance-cct.replit.app/signin. Quick-login as Admin on the new address and save a small change (add and remove a word in a test volunteer's admin notes). Signed in as yourself, Notifications → Send test email to me. Check cron-job.org and Admin → Reminder jobs. Reset test accounts.  
+  **Expect:** The new address loads with valid HTTPS. The old address lands on the same page at the new address. Sign-in and saves work there. The test email's logo and links use cct.defendingthecause.org. cron-job.org shows success on the new URL, and Reminder jobs shows "Scheduled runs are on time" within 15 minutes.
+
 ## Coverage by prompt
 
-Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3; F4 is v4; F7 is v7 (Reminder jobs page).
+Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3; F4 is v4; F7 is v7 (Reminder jobs page); F8 is v8 (Tiffany's Oct 13 decisions, v1.2.0).
 
 | Prompt | Tests |
 |---|---|
@@ -658,6 +676,7 @@ Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in 
 | F3 | VIS-08, ADM-37 |
 | F4 | VIS-08, ADM-37, ADM-38 |
 | F7 | ADM-39, PRD-12 |
+| F8 | SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11, NEW-14, ONBN-03, ONBR-01, ONBR-02, ADM-20, ADM-21, ADM-22, ADM-23, ADM-24, ADM-40, PRD-15, PRD-16 |
 
 ## Superseded v1 checks
 
@@ -668,6 +687,8 @@ Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in 
 | P6 | Edit a question in onboardingQuestions.ts and the form follows | P22 empties the questions; the section is hidden (SYS-07). Fixed profile fields tested in NEW-06 to NEW-10. |
 | P7 | Top card for applicant / in_training | P22 onboarding checklist (NEW-11, ONBR-01). |
 | P9 | Can't activate without a cleared background check | P22 removed the gate: activation needs only verified email + complete profile (ADM-22, ADM-23). |
+| P22 / v1.1.4 | Volunteers wait in Onboarding for staff approval; the welcome email says "Once you're approved…"; the dashboard shows Training & paperwork and Approval; roster badge "Awaiting review" | F8 (Oct 13): volunteers become Active automatically when they finish their profile (NEW-10, NEW-11, ONBN-03); Approve as Active stays for the manual case (ONBR-01, ADM-22); badge "Not active yet" (ADM-20). |
+| P22 | minimumAge null; no background-check tracking (C8) | F8: minimum age 18 (NEW-14); admin-only background check record, not a gate (ADM-40, SYS-07, SYS-08). |
 | P17 | Agreement version bump prompts re-acknowledgment | Off while requireAgreementAcknowledgment = false (ADM-31). |
 | P20 | Migrations run with drizzle-kit migrate | Oct 10 decision: schema reaches prod through Replit Publish (PRD-01 to PRD-03). |
 | P21 | Cindi (staffContactName/Email) is the volunteer-facing contact and default Reply-To | P25 made the Community Care Team (cct@defendingthecause.org) the volunteer contact and Reply-To; Cindi is staff-only (SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06). |
