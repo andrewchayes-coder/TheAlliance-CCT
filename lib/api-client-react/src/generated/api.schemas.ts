@@ -5,6 +5,127 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export type HoursInputSource = typeof HoursInputSource[keyof typeof HoursInputSource];
+
+
+export const HoursInputSource = {
+  standing: 'standing',
+  one_time: 'one_time',
+} as const;
+
+export interface HoursInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  date: string;
+  source: HoursInputSource;
+  shiftSlotId?: string;
+  customShiftId?: string;
+  /**
+     * @minimum 0.25
+     * @maximum 12
+     */
+  hours: number;
+  /** @maxLength 300 */
+  note?: string;
+}
+
+export type AdminHoursInputSource = typeof AdminHoursInputSource[keyof typeof AdminHoursInputSource];
+
+
+export const AdminHoursInputSource = {
+  standing: 'standing',
+  one_time: 'one_time',
+  other: 'other',
+} as const;
+
+export interface AdminHoursInput {
+  /** @pattern ^\d{4}-\d{2}-\d{2}$ */
+  date: string;
+  source: AdminHoursInputSource;
+  shiftSlotId?: string;
+  customShiftId?: string;
+  /**
+     * @minimum 0.25
+     * @maximum 12
+     */
+  hours: number;
+  /** @maxLength 300 */
+  note?: string;
+}
+
+export type HoursLoggedEnteredBy = typeof HoursLoggedEnteredBy[keyof typeof HoursLoggedEnteredBy];
+
+
+export const HoursLoggedEnteredBy = {
+  volunteer: 'volunteer',
+  staff: 'staff',
+} as const;
+
+export interface HoursLogged {
+  hours: number;
+  note: string | null;
+  enteredBy: HoursLoggedEnteredBy;
+  updatedAt: string;
+}
+
+export type HoursShiftSource = typeof HoursShiftSource[keyof typeof HoursShiftSource];
+
+
+export const HoursShiftSource = {
+  standing: 'standing',
+  one_time: 'one_time',
+} as const;
+
+export interface HoursShift {
+  date: string;
+  source: HoursShiftSource;
+  shiftSlotId: string | null;
+  customShiftId: string | null;
+  startTime: string;
+  endTime: string;
+  label: string | null;
+  defaultHours: number;
+  logged: HoursLogged | null;
+  editable: boolean;
+}
+
+export type HoursRowSource = typeof HoursRowSource[keyof typeof HoursRowSource];
+
+
+export const HoursRowSource = {
+  standing: 'standing',
+  one_time: 'one_time',
+  other: 'other',
+} as const;
+
+export interface HoursRow {
+  id: string;
+  date: string;
+  source: HoursRowSource;
+  shiftSlotId: string | null;
+  customShiftId: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  hours: number;
+  note: string | null;
+  enteredBy: string;
+  updatedAt: string;
+}
+
+export interface VolunteerHoursResponse {
+  windowDays: number;
+  monthTotal: number;
+  /** Own history exists even when all entries are outside the current window */
+  hasLoggedHours: boolean;
+  shifts: HoursShift[];
+}
+
+export interface AdminHoursResponse {
+  thisMonthTotal: number;
+  lastMonthTotal: number;
+  rows: HoursRow[];
+  unloggedShifts: HoursShift[];
+}
+
 export interface CustomAssignInput {
   userId: string;
   override: boolean;
@@ -1576,6 +1697,32 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type GetVolunteerHoursParams = {
+at?: string;
+};
+
+export type PutVolunteerHoursParams = {
+at?: string;
+};
+
+export type GetAdminVolunteerHoursParams = {
+at?: string;
+from?: string;
+to?: string;
+};
+
+export type AddAdminVolunteerHoursParams = {
+at?: string;
+};
+
+export type UpdateAdminVolunteerHoursParams = {
+at?: string;
+};
+
+export type DeleteAdminVolunteerHoursParams = {
+at?: string;
+};
 
 export type ChangeAccountPassword200 = {
   ok: boolean;

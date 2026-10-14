@@ -83,6 +83,14 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 - `trackBackgroundCheckAdminOnly: true`: staff-only completion checkbox/date, roster filter and optional column, and CSV completion/date columns. Never an activation or shift gate. The old `trackBackgroundCheckInApp` stays false.
 - `minimumAge: 18`: required for volunteer onboarding and staff DOB edits; the eighteenth birthday counts using Pacific dates.
 
+### Hour logging configuration (v1.3.0)
+
+- `hoursLogging: true` enables the volunteer and staff hours screens.
+- `hoursLogWindowDays: 14` includes today and the previous 13 Pacific calendar dates.
+- `hoursIncrement: 0.25` and `hoursMax: 12` match the table's quarter-hour / 12-hour checks.
+- Staff may enter older time, but never a future date; Other time requires a note.
+- Hour logging sends no emails and adds no scheduled jobs.
+
 ### Dedicated Postmark server and domain
 Use a separate Postmark server for this app and its `outbound` transactional stream. Add the `defendingthecause.org` sending domain in Postmark, install the exact DKIM and Return-Path DNS records provided there, and confirm both show **Verified** before sending. DNS verification and inbox delivery cannot be inferred from the token-configured indicator. Do not paste tokens into chat or documentation.
 
@@ -113,6 +121,12 @@ Optional Google OAuth credentials/callback configuration are separate from this 
 Postmark must have a verified sender/domain and the `outbound` message stream. Production does **not** log email bodies/verification links when provider configuration is incomplete; delivery fails and the failure is recorded.
 
 ## Database schema preparation
+
+v1.3.0 adds exactly one table: `volunteer_hours`, with restrictive foreign keys,
+text source/check constraints, quarter-hour bounds, two partial unique indexes
+and date/volunteer indexes. Publish creates it; no SQL is needed during setup.
+No existing tables, columns or enums change. The additive reference SQL is
+`lib/db/migrations/0006_volunteer_hours.sql`; it is not a startup migration.
 
 Review Publishing's proposed development-to-production schema diff before publishing. Decline data-copy/overwrite options. A Drizzle migration journal or baseline is **not required** for app startup or Replit-managed schema synchronization. The production Postmark settings still need secure configuration; saving deployment settings does not update the running release.
 

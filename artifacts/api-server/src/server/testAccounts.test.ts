@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
   messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable,
-  customShiftsTable, customShiftAssignmentsTable } from '@workspace/db';
+  customShiftsTable, customShiftAssignmentsTable, volunteerHoursTable } from '@workspace/db';
 import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
 import { retiredVolunteerStatuses } from '@workspace/shared/legacy-compatibility';
 import { createTestAccountService, isQuickLoginEnabled } from './testAccounts';
@@ -47,6 +47,7 @@ afterAll(async () => {
   ids = owned.map(u => u.id);
   const ps = await db.select({ id: volunteerProfilesTable.id }).from(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, ids));
   profiles = ps.map(p => p.id);
+  await db.delete(volunteerHoursTable).where(inArray(volunteerHoursTable.volunteerProfileId, profiles));
   await db.delete(messageRecipientsTable).where(inArray(messageRecipientsTable.recipientUserId, ids));
   await db.delete(messagesTable).where(inArray(messagesTable.senderUserId, ids));
   await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientEmail, [...personas.map(p => p.email), `${tag}-ordinary@example.invalid`]));
@@ -158,6 +159,11 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   const [custom] = await db.insert(customShiftsTable).values({date:'2030-01-15',startTime:'10:00',endTime:'12:00',
     capacity:2,openToVolunteers:true,createdByUserId:ids[0]!}).returning();
   const [ordinaryProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ordinary));
+  await db.insert(volunteerHoursTable).values([
+    { volunteerProfileId: active.profileId!, shiftDate: '2026-10-01', source: 'standing', shiftSlotId: slotId, hours: '2', enteredByUserId: active.userId },
+    { volunteerProfileId: active.profileId!, shiftDate: '2030-01-15', source: 'one_time', customShiftId: custom!.id, hours: '2', enteredByUserId: active.userId },
+    { volunteerProfileId: ordinaryProfile!.id, shiftDate: '2026-10-01', source: 'other', hours: '1', note: 'Fixture', enteredByUserId: ordinary },
+  ]);
   const seats = await db.insert(customShiftAssignmentsTable).values([active.profileId!,ordinaryProfile!.id].map(volunteerProfileId =>
     ({customShiftId:custom!.id,volunteerProfileId,createdByUserId:ids[0]!}))).returning();
   const csvRows = await customCsvRows(await rosterSnapshot(),new Date('2029-01-01T00:00:00Z'));
@@ -171,6 +177,8 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   await db.update(volunteerProfilesTable).set({ onboardingAnswers: { fixture: 'edited' }, adminNotes: 'Fixture note', availabilityNotes: 'Edited' })
     .where(eq(volunteerProfilesTable.id, active.profileId!));
   await service.reset(ids[0]!);
+  expect(await db.select().from(volunteerHoursTable).where(eq(volunteerHoursTable.volunteerProfileId, active.profileId!))).toHaveLength(0);
+  expect(await db.select().from(volunteerHoursTable).where(eq(volunteerHoursTable.volunteerProfileId, ordinaryProfile!.id))).toHaveLength(1);
   const savedSeats = await db.select().from(customShiftAssignmentsTable).where(eq(customShiftAssignmentsTable.customShiftId,custom!.id));
   expect(savedSeats.find(a=>a.id===seats[0]!.id)?.cancelledAt).toBeInstanceOf(Date);
   expect(savedSeats.find(a=>a.id===seats[1]!.id)?.cancelledAt).toBeNull();

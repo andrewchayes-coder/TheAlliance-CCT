@@ -39,7 +39,7 @@ export function TestAccountsCard() {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogContent>
         <AlertDialogHeader><AlertDialogTitle>Reset the five test accounts?</AlertDialogTitle>
-          <AlertDialogDescription>This clears their shifts, weeks off, inbox memberships, profile edits, and onboarding answers, and ends their sessions.
+          <AlertDialogDescription>This clears their shifts, logged hours, weeks off, inbox memberships, profile edits, and onboarding answers, and ends their sessions.
             No real accounts will be changed. In development, Active receives a weekly shift if a slot has room.</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter><AlertDialogCancel disabled={reset.isPending}>Keep test data</AlertDialogCancel>
           <Button type="button" onClick={restore} disabled={reset.isPending}>{reset.isPending ? 'Resetting…' : 'Reset test accounts'}</Button></AlertDialogFooter>

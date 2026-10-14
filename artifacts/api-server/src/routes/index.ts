@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import notificationsRouter from './notifications';
+import hoursRouter from './hours';
 import resourcesRouter from './resources';
 import healthRouter from "./health";
 import devEmailRouter from "./dev-email";
@@ -41,6 +42,7 @@ mount('', healthRouter);
 mount('/auth', authRouter);
 
 router.use(csrfGuard);
+mount('', hoursRouter);
 if (process.env.NODE_ENV === 'development') mount('', devEmailRouter);
 mount('', resourcesRouter);
 mount('', notificationsRouter);

@@ -17,6 +17,8 @@ import { ShiftDialogs, type Actions, type Dlg } from '@/components/shift-dialogs
 import { OneTimeTag } from '@/components/schedule-extras/one-time-tag';
 import { Button } from '@/components/brand-system';
 import { clock, calDate } from '@/components/volunteer-detail/format';
+import { PastShiftsSection } from '@/components/hours-sections';
+import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { slotTitle } from '@/lib/shift-utils';
 
 function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => void }) {
@@ -33,7 +35,7 @@ function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => vo
   );
 }
 
-function ShiftsBody() {
+function ShiftsBody({ onboarding }: { onboarding: boolean }) {
   const auth = useAuth();
   const qc = useQueryClient();
   const q = useGetVolunteerSchedule({
@@ -147,7 +149,8 @@ function ShiftsBody() {
           {dlg && <ShiftDialogs dlg={dlg} schedule={s} busy={busy} error={err} onClose={() => open(null)} act={act} />}
         </>
       )}
+      <PastShiftsSection enabled={!onboarding} />
     </VolunteerPage>
   );
 }
-export const ShiftsPage = volunteerRoute(() => <ShiftsBody />);
+export const ShiftsPage = volunteerRoute(me => <ShiftsBody onboarding={!me.profile || normalizeVolunteerStatus(me.profile.status) === 'onboarding'} />);

@@ -40,7 +40,7 @@ pnpm run typecheck
 | SYS-01 | NEW; CHANGED | Seed | In development only, run `npm run seed` twice; count `users` and `volunteer_profiles` separately after each run. Never seed production. | Both runs finish without errors or duplicates and have matching counts. The seed creates 1 admin and 18 dummy volunteers, excluding the 5 separately created QA users. Only onboarding / active / inactive statuses, none applicant or in_training. There are 40 Mon–Fri slots, 09–11 through 16–18 with hourly overlap and capacity 2. Users and volunteer profiles are different row counts. |
 | SYS-02 | CHANGED | Automated tests | Run `npm test`. | All pass, including scheduleService (DST weeks, full overlapping grid, two live overlapping shifts, skip date, closed date, blocked occurrence, custom shift in now/next and coverage, custom-shift reminder de-dupe, DST-week custom shift), the route-guard test, privacy tests (incl. DOB/address/emergency contact), the quick-login on/off tests (production is off unless `QUICK_LOGIN_ENABLED` is "true" in any case; no key or cookie tests remain; a persona mapped to a non-test user is refused), and ensureTestAccounts idempotency (5 test users after two runs). |
 | SYS-03 | CHANGED | Route-guard test | Inspect the registered-route guard test and quick-login endpoints. | Quick-login routes tagged public:quick-login, not exempted via a blanket allowlist. Retired testing entry-point routes no longer registered; normal session/CSRF tests remain. |
-| SYS-04 | CHANGED | Playwright smoke test (F8) | Run the isolated development Playwright smoke test. | Sign-up → verify → complete profile → automatically Active → picks Tue 10–12 → remaining blocks/one-time shift/reminder/message/read flow passes. Staff record a background-check date and find the volunteer with Complete filter. No manual activation step. |
+| SYS-04 | CHANGED | Playwright smoke test (F8, F10) | Run the isolated development Playwright smoke test. After the Tue 10–12 shift, use the dev clock to confirm 2 hours on Home, then inspect the volunteer's Hours card as staff. | Sign-up → verify → complete profile → automatically Active → picks Tue 10–12 → confirms 2 hours → staff sees the same entry → remaining blocks/one-time shift/reminder/message/read flow passes. No manual activation. Reports/CSV checks are deferred to Fix 11. |
 | SYS-05 | CHANGED | Leftover search | Search `artifacts/alliance-volunteer-portal`, `artifacts/api-server`, `shared` and `lib/db` for 02928F, 027A77, lulo, montserrat, Resource Coordination Program, applicant and in_training, using the master’s grep commands. Exclude dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`. | No obsolete colors, fonts or program name in screens or emails. applicant / in_training remain only in the retained database enum and read-time mapping in `shared/legacy-compatibility.ts`. Review and explain other deliberate compatibility hits, such as email aliases, rather than automatically failing them. No obsolete values in `shared/testAccounts.ts`, UI copy or emails. |
 | SYS-15 | CHANGED | Lighthouse | Run Lighthouse (mobile) accessibility on the volunteer dashboard, /onboarding, and admin home. | Each scores 95 or higher. |
 | SYS-16 | NEW; CHANGED | Docs | Review DEPLOY.md, this checklist, CHANGELOG.md and QA-TEST-ACCOUNTS.md; run the QL-5 retired-access audit, excluding the unchanged master under docs. | Current grid/blocks/custom shifts, Postmark DNS and configured identity documented; true/false quick-login switch, republish, reset and turn-off-before-invites guidance. v1.1.0 recorded; no retired-access identifiers in active files. |
@@ -207,7 +207,7 @@ pnpm run typecheck
 | ONBR-01 | CHANGED | Manual-case quick login (F8) | Click Volunteer · Onboarding, ready to activate. | Dashboard shows Account created ✓ and Profile complete ✓ only, with Community Care Team shift-signup guidance. No Training & paperwork or Approval rows. |
 | ACT-01 | CHANGED | Quick login & banner | After Reset test accounts, click "Volunteer · Active". Use Switch account in the banner, then Sign out. | Dashboard shows "Your next shift" for its one seeded shift. Switch account lists the other 4 personas and one click switches. Sign out returns to /signin. |
 | ADM-01 | CHANGED | Quick login (F9) | Click "Admin", then open the hamburger menu on a phone. | Lands on /admin with the TEST banner. The sheet lists all 10 current admin pages with every item reachable by scrolling; Resources is last. Reports / 11 items are deferred to Fix 11. See ADM-41. |
-| ADM-32 | CHANGED | Reset test accounts | Team → Test accounts card → Reset test accounts (confirm). | Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set). The reset is in the activity log. |
+| ADM-32 | CHANGED | Reset test accounts (F10) | Log hours for a QA persona and keep a separately owned non-test fixture entry. Team → Test accounts → Reset (confirm). | Still exactly 5 QA accounts. Their hours are deleted in the same reset transaction, before referenced schedule data; QA profile/shift/inbox defaults return and one-time claims are cancelled. Reset is audited and test sessions end. Non-test hours and all other real records are unchanged. |
 | ADM-33 | CHANGED | TEST badges on one-time claims | After ACT-06, look at the one-time shift on the master schedule, its side panel, and the roster. | The test persona has the gray TEST badge in all three places. |
 
 ## Security, privacy and mobile accessibility
@@ -223,7 +223,7 @@ pnpm run typecheck
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| SYS-06 | NEW; CHANGED | Schema is additive | Review existing schema/reference SQL under lib/db and the proposed Publish diff without applying it. | Only additive columns/default/status changes; no drop/rename/type conversion. Reference migrations never execute at boot. |
+| SYS-06 | CHANGED | Schema is additive (F10) | Diff shared/schema.ts against the last published version and review Publish's proposed diff. | Fix 10 adds exactly volunteer_hours: source is text with a CHECK, hours numeric(4,2) with quarter-hour bounds, restrictive FKs, two partial unique indexes and two query indexes. No existing table/column/enum changes or new pg enum type. Publish creates the table; reference SQL never runs at boot. |
 | SYS-13 | CHANGED | Production-mode lockdown | Use the isolated production-mode harness, with synthetic data and no live delivery, to check seed refusal, dev-route/time-override lockdown and production quick-login enable/disable. | Seed refuses production; development-only routes/overrides disabled. Quick login depends only on the production switch; normal protected-route guards remain. |
 | SYS-14 | NEW | Health route | GET /api/health. | Returns database and email-config status with no secret values. |
 | PRD-01 | NEW | Enum value before publish | Before publishing Prompt 22's schema, run `ALTER TYPE volunteer_status ADD VALUE IF NOT EXISTS 'onboarding';` in the production Database tool. | Runs without error. |
@@ -512,3 +512,38 @@ Fix 10 / Fix 11 tests in the v9 master are deliberately not added yet; no full t
 | PRD-14 | Production readiness and operation |
 | PRD-15 | F8 — Oct 13 decisions / v1.2.0 |
 | PRD-16 | F8 — Oct 13 decisions / v1.2.0 |
+| ACT-17 | F10 — Hour logging / v1.3.0 |
+| ACT-18 | F10 — Hour logging / v1.3.0 |
+| ADM-42 | F10 — Hour logging / v1.3.0 |
+
+## F10 — Hour logging / v1.3.0
+
+Development only for clock overrides and automated fixtures. The unchanged v9 master
+also contains Fix 11 Reports tests: these remain deferred. No full test-ID diff is
+claimed until Fix 11.
+
+Focused development verification (isolated schema, synthetic personas, no real mail):
+`NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts run smoke --hours-only`.
+The default full smoke retains signup and the new confirm-hours → staff-review step;
+focused mode does not replace or claim a passing signup test.
+
+| Test ID | Tag | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| ACT-17 | NEW | Confirm served hours | After a QA reset, quick-login as Volunteer · Active. Note a standing shift's date on My Shifts. Open Home with development `?at=` five minutes after it ends. Tap Confirm 2 hours, then open My Shifts → Past shifts. Repeat for an ended one-time claim. | Before the shift ends there is no hours card. Afterward, Home shows the warm intro and at most 3 unlogged shifts, with Confirm / Different hours and a See all past shifts link. Confirmation briefly shows Logged: 2 hours ✓, then removes that row/card. Past shifts shows the same numeric entry and Edit; the monthly total updates. One-time shifts use their own duration/label. No emails. Onboarding sees no hours; Inactive can log shifts served before inactivation. |
+| ACT-18 | NEW | Different hours, editing and limits | Edit the logged entry to 2.5 with a note. Try 0, 0.3 and 13. PUT hours for a future/not-ended shift, a slot not owned, a made-up slot and an occurrence 15 days old. On an unlogged row use Different hours to save 1.5, then 3. Test a 301-character note and a week-off/blocked/closed/cancelled occurrence. | Valid quarter-hours update the same row. Invalid amounts receive “Enter hours between 0.25 and 12, in quarter hours (for example 1.5).” Invalid shifts return 422 with the own-shifts/14-day contact message. Older shifts leave the window and cannot be edited by volunteers; the contact footer remains. No delete/Other-time action for volunteers. All data is own-only, with no staff names/adminNotes/other-volunteer counts. At 320px, inputs stay on screen and actions retain 44px targets. No email. |
+| ADM-42 | NEW | Staff Hours card | Open the volunteer's detail page as Admin. Inspect Hours between Shifts and Messages. Log an unlogged scheduled shift; add Other time for a past date, first with no note then with “Training” and 1 hour. Try a duplicate and future date; edit to 1.5, then Delete and confirm “Remove these hours?”. As a volunteer call all four admin hours methods. | Shows this/last Pacific month totals, 90-day history, Volunteer or staff name, notes, and amber Not logged rows. Other time requires “What was this time for?”. Duplicate is refused with the edit-existing message; future date is refused clearly. Edit/Delete persist, refresh totals and activity; audit details include date/source/hours/by and the admin actor. Volunteer receives 403 on every staff route. Staff can log older dates; volunteers can still edit staff-entered scheduled hours inside their window. |
+
+ACT-18 note: the Fix 10 API/UI specification limits the list to loggable shifts within
+the window. The master calls older entries “read-only”; they are absent from this
+volunteer list rather than a separate older-history view. Staff retain their history.
+
+### F10 coverage
+
+| Test ID | QA-CHECKLIST.md section |
+|---|---|
+| SYS-04 | Test preparation and automation — updated isolated smoke, including confirm → staff review |
+| SYS-06 | Production readiness and operation — exactly one additive table, Publish-managed |
+| ADM-32 | Admin entry and team — transactional QA hours reset, non-test rows unchanged |
+| ACT-17 | F10 — Confirm served hours |
+| ACT-18 | F10 — Different hours, editing and limits |
+| ADM-42 | F10 — Staff Hours card |

@@ -1,6 +1,6 @@
 import { getTableColumns, sql } from 'drizzle-orm';
 import {
-  boolean, check, date, index, integer, json, jsonb, pgEnum, pgTable,
+  boolean, check, date, index, integer, json, jsonb, numeric, pgEnum, pgTable,
   text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -346,6 +346,29 @@ export const insertResourceSchema = createInsertSchema(resourcesTable, {
   }
   if (value.isQuickLink && value.type !== 'link') context.addIssue({ code: 'custom', path: ['isQuickLink'], message: 'Only links can be quick links' });
 });
+export const volunteerHoursTable = pgTable('volunteer_hours', {
+  id: primaryKey(),
+  volunteerProfileId: uuid('volunteer_profile_id').notNull().references(() => volunteerProfilesTable.id, { onDelete: 'restrict' }),
+  shiftDate: date('shift_date', { mode: 'string' }).notNull(),
+  source: text('source').notNull(),
+  shiftSlotId: uuid('shift_slot_id').references(() => shiftSlotsTable.id, { onDelete: 'restrict' }),
+  customShiftId: uuid('custom_shift_id').references(() => customShiftsTable.id, { onDelete: 'restrict' }),
+  startTime: text('start_time'),
+  endTime: text('end_time'),
+  hours: numeric('hours', { precision: 4, scale: 2 }).notNull(),
+  note: text('note'),
+  enteredByUserId: uuid('entered_by_user_id').notNull().references(() => usersTable.id, { onDelete: 'restrict' }),
+  ...timestamps(),
+}, table => [
+  check('volunteer_hours_source_valid', sql`${table.source} in ('standing', 'one_time', 'other')`),
+  check('volunteer_hours_amount_valid', sql`${table.hours} > 0 and ${table.hours} <= 12 and ${table.hours} * 4 = floor(${table.hours} * 4)`),
+  check('volunteer_hours_reference_valid', sql`(${table.source} = 'standing' and ${table.shiftSlotId} is not null and ${table.customShiftId} is null) or (${table.source} = 'one_time' and ${table.customShiftId} is not null and ${table.shiftSlotId} is null) or (${table.source} = 'other' and ${table.shiftSlotId} is null and ${table.customShiftId} is null)`),
+  uniqueIndex('volunteer_hours_standing_unique').on(table.volunteerProfileId, table.shiftSlotId, table.shiftDate).where(sql`${table.shiftSlotId} is not null`),
+  uniqueIndex('volunteer_hours_one_time_unique').on(table.volunteerProfileId, table.customShiftId).where(sql`${table.customShiftId} is not null`),
+  index('volunteer_hours_date_idx').on(table.shiftDate),
+  index('volunteer_hours_volunteer_idx').on(table.volunteerProfileId, table.shiftDate),
+]);
+
 export const insertNotificationLogSchema = createInsertSchema(notificationLogTable, {
   recipientEmail: emailSchema,
   subject: z.string().trim().min(1),

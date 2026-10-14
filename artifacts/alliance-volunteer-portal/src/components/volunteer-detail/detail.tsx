@@ -19,6 +19,7 @@ import { MessageHistory } from '@/components/messages/sent-list';
 import { StatusPanel } from './status-panel';
 import { TrackingPanel } from './tracking-panel';
 import { ProfileCard, StartDateEditor } from './profile-editor';
+import { HoursCard } from './hours-card';
 import { NotesPanel } from './notes-panel';
 
 function Pill({ map, value }: { map: Record<string, [string, Badge]>; value: string }) {
@@ -43,7 +44,10 @@ function ActivityLine({ a }: { a: VolunteerActivity }) {
     if (!ch.length) return null;
     text = `Profile updated (${ch.map(c => (FIELD_LABEL[c] ?? c.replace(/([A-Z])/g, ' $1').toLowerCase())).join(', ')})`;
   } else if (a.action === 'start_date_changed') text = 'Start date changed';
-  else text = a.action.replace(/_/g, ' ');
+  else if (a.action === 'hours_logged' || a.action === 'hours_updated' || a.action === 'hours_deleted') {
+    const h = typeof det.hours === 'number' ? ` (${det.hours} h${typeof det.shiftDate === 'string' ? `, ${calDate(det.shiftDate)}` : ''})` : '';
+    text = `Hours ${a.action === 'hours_logged' ? 'logged' : a.action === 'hours_updated' ? 'updated' : 'removed'}${h}${det.by === 'volunteer' ? ' by volunteer' : ''}`;
+  } else text = a.action.replace(/_/g, ' ');
   return (
     <li className="py-2 text-sm" data-testid={`activity-${a.id}`}>
       <span className="font-bold">{text}</span>
@@ -138,6 +142,8 @@ export function VolunteerDetail() {
             )}
             <AdminScheduleControls userId={userId} />
           </section>
+
+          <HoursCard userId={userId} />
 
           <section className="alliance-card mt-6" aria-labelledby="v-msg">
             <h2 id="v-msg" className="alliance-display">Messages</h2>

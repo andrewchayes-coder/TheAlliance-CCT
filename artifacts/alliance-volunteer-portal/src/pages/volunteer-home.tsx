@@ -5,6 +5,7 @@ import { CheckCircle2, Circle, ExternalLink, Mail } from 'lucide-react';
 import { getGetVolunteerDashboardQueryKey, useGetVolunteerDashboard, type Me } from '@workspace/api-client-react';
 import { FETCH_CREDS } from '@/auth/auth-context';
 import { ErrorBlock, LoadingBlock, UpcomingShifts, useNow, volunteerRoute } from '@/components/volunteer-ui';
+import { HomeHoursCard } from '@/components/hours-sections';
 import { countdown, safeHttps, shiftWhen, shiftDate, timeRange } from '@/lib/pacific';
 
 import { appConfig, volunteerContactText } from '@workspace/shared/appConfig';
@@ -91,6 +92,7 @@ function Home({ me }: { me: Me }) {
         ) : (
           <>
             <Top />
+            <HomeHoursCard enabled={status !== 'onboarding'} />
             {m && (
               <section className="rounded-2xl bg-white p-5 shadow-sm" data-testid="card-unread-message">
                 <h2 className="alliance-section-kicker flex items-center gap-2"><Mail size={14} aria-hidden="true" />New message{d && d.unreadCount > 1 ? ` (${d.unreadCount} unread)` : ''}</h2>

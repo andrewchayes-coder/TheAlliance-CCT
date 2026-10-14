@@ -24,3 +24,4 @@
 - [Operating week defaults](operating-week-default.md) — weekend default/Today and overview coverage use the coming Monday; explicit weeks and live dispatch stay unchanged.
 - [Static manifest MIME](static-manifest-mime.md) — dev Vite header checks do not prove static-production behavior; use a JSON manifest and check the built asset.
 - [Merge verification](merge-verification.md) — rerun full workspace and affected API checks after automatic reconciliation, including files not reported as conflicts.
+- [OpenAPI parameter names](openapi-parameter-names.md) — Orval path schemas and query interfaces can collide; resolve exports in the handwritten Zod barrel.

@@ -8,6 +8,212 @@
 import * as zod from 'zod';
 
 
+export const GetVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional()
+})
+
+export const GetVolunteerHoursResponse = zod.object({
+  "windowDays": zod.number().int(),
+  "monthTotal": zod.number(),
+  "hasLoggedHours": zod.boolean().describe('Own history exists even when all entries are outside the current window'),
+  "shifts": zod.array(zod.object({
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "defaultHours": zod.number(),
+  "logged": zod.object({
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.enum(['volunteer', 'staff']),
+  "updatedAt": zod.string()
+}).nullable(),
+  "editable": zod.boolean()
+}))
+})
+
+
+export const PutVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional()
+})
+
+export const putVolunteerHoursBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const putVolunteerHoursBodyHoursMin = 0.25;
+export const putVolunteerHoursBodyHoursMax = 12;
+export const putVolunteerHoursBodyHoursMultipleOf = 0.25;
+
+export const putVolunteerHoursBodyNoteMax = 300;
+
+
+
+export const PutVolunteerHoursBody = zod.object({
+  "date": zod.string().regex(putVolunteerHoursBodyDateRegExp),
+  "source": zod.enum(['standing', 'one_time']),
+  "shiftSlotId": zod.string().uuid().optional(),
+  "customShiftId": zod.string().uuid().optional(),
+  "hours": zod.number().min(putVolunteerHoursBodyHoursMin).max(putVolunteerHoursBodyHoursMax).multipleOf(putVolunteerHoursBodyHoursMultipleOf),
+  "note": zod.string().max(putVolunteerHoursBodyNoteMax).optional()
+})
+
+export const PutVolunteerHoursResponse = zod.object({
+  "id": zod.string(),
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string().nullable(),
+  "endTime": zod.string().nullable(),
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const GetAdminVolunteerHoursParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const GetAdminVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional()
+})
+
+export const GetAdminVolunteerHoursResponse = zod.object({
+  "thisMonthTotal": zod.number(),
+  "lastMonthTotal": zod.number(),
+  "rows": zod.array(zod.object({
+  "id": zod.string(),
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string().nullable(),
+  "endTime": zod.string().nullable(),
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "unloggedShifts": zod.array(zod.object({
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "label": zod.string().nullable(),
+  "defaultHours": zod.number(),
+  "logged": zod.object({
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.enum(['volunteer', 'staff']),
+  "updatedAt": zod.string()
+}).nullable(),
+  "editable": zod.boolean()
+}))
+})
+
+
+export const AddAdminVolunteerHoursParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const AddAdminVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional()
+})
+
+export const addAdminVolunteerHoursBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const addAdminVolunteerHoursBodyHoursMin = 0.25;
+export const addAdminVolunteerHoursBodyHoursMax = 12;
+export const addAdminVolunteerHoursBodyHoursMultipleOf = 0.25;
+
+export const addAdminVolunteerHoursBodyNoteMax = 300;
+
+
+
+export const AddAdminVolunteerHoursBody = zod.object({
+  "date": zod.string().regex(addAdminVolunteerHoursBodyDateRegExp),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().uuid().optional(),
+  "customShiftId": zod.string().uuid().optional(),
+  "hours": zod.number().min(addAdminVolunteerHoursBodyHoursMin).max(addAdminVolunteerHoursBodyHoursMax).multipleOf(addAdminVolunteerHoursBodyHoursMultipleOf),
+  "note": zod.string().max(addAdminVolunteerHoursBodyNoteMax).optional()
+})
+
+export const AddAdminVolunteerHoursResponse = zod.object({
+  "id": zod.string(),
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string().nullable(),
+  "endTime": zod.string().nullable(),
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const UpdateAdminVolunteerHoursParams = zod.object({
+  "userId": zod.coerce.string().uuid(),
+  "id": zod.coerce.string().uuid()
+})
+
+export const UpdateAdminVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional()
+})
+
+export const updateAdminVolunteerHoursBodyDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+export const updateAdminVolunteerHoursBodyHoursMin = 0.25;
+export const updateAdminVolunteerHoursBodyHoursMax = 12;
+export const updateAdminVolunteerHoursBodyHoursMultipleOf = 0.25;
+
+export const updateAdminVolunteerHoursBodyNoteMax = 300;
+
+
+
+export const UpdateAdminVolunteerHoursBody = zod.object({
+  "date": zod.string().regex(updateAdminVolunteerHoursBodyDateRegExp),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().uuid().optional(),
+  "customShiftId": zod.string().uuid().optional(),
+  "hours": zod.number().min(updateAdminVolunteerHoursBodyHoursMin).max(updateAdminVolunteerHoursBodyHoursMax).multipleOf(updateAdminVolunteerHoursBodyHoursMultipleOf),
+  "note": zod.string().max(updateAdminVolunteerHoursBodyNoteMax).optional()
+})
+
+export const UpdateAdminVolunteerHoursResponse = zod.object({
+  "id": zod.string(),
+  "date": zod.string(),
+  "source": zod.enum(['standing', 'one_time', 'other']),
+  "shiftSlotId": zod.string().nullable(),
+  "customShiftId": zod.string().nullable(),
+  "startTime": zod.string().nullable(),
+  "endTime": zod.string().nullable(),
+  "hours": zod.number(),
+  "note": zod.string().nullable(),
+  "enteredBy": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+export const DeleteAdminVolunteerHoursParams = zod.object({
+  "userId": zod.coerce.string().uuid(),
+  "id": zod.coerce.string().uuid()
+})
+
+export const DeleteAdminVolunteerHoursQueryParams = zod.object({
+  "at": zod.coerce.string().optional()
+})
+
+export const DeleteAdminVolunteerHoursResponse = zod.void()
+
+
 export const GetAccountProfileResponse = zod.object({
   "user": zod.object({
   "id": zod.string().uuid(),

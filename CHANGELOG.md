@@ -2,6 +2,10 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.3.0 — 2026-10-14
+
+- Hour logging (Alliance UI review, Oct 14): after each shift, Resource Coordinators confirm their hours on Home or My Shifts (one tap for the scheduled 2 hours, or enter a different number) for up to 14 days; staff can view, add, correct and remove hours on a volunteer's page. New table volunteer_hours (additive).
+
 ## v1.2.1 — 2026-10-14
 
 ### Changed

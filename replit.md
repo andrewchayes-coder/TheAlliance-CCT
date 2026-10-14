@@ -95,6 +95,17 @@ Mobile-first volunteer management for The Alliance's Community Care Team.
 - Visible focus, real labels, keyboard-operable dialogs/grids, polite announcements and 44px targets are required. Test 375px and 768px without horizontal scrolling.
 - `/style-guide` and time-override/test-email routes are development-only. The public root is a restrained portal entry. Manifest/icons allow home-screen installation without private-data caching.
 
+## Hours model
+
+Hour logging uses one `volunteer_hours` row per volunteer per standing shift occurrence
+(slot + Pacific date), or per one-time shift claim. Staff may also enter `other` time,
+with a required note. Numeric hours are returned as numbers. Volunteers confirm or change
+their own ended shifts within 14 Pacific calendar days, today included, in quarter-hour
+increments from 0.25 to 12. Inactive volunteers can log shifts served before inactivation;
+onboarding volunteers see no hours UI. Staff can add, correct or remove any past entry.
+There is no clock-in/clock-out or hour-related email. Replit Publish creates this one
+additive table; no existing table/column/enum changes and no startup migrations.
+
 ## Release documentation
 
 QA-CHECKLIST.md is the workflow-based UAT tracker; docs/Alliance Persona Test Run.md is the unchanged master. Keep matching IDs, NEW/CHANGED tags, optional milestone/notification tests and a complete coverage table.

@@ -18,8 +18,9 @@ import AxeBuilder from '@axe-core/playwright';
 async function main() {
   // Focused re-check of changed profile/activation/staff-record UI; default remains the full smoke.
   const profileOnly = process.argv.includes('--profile-only');
+  const hoursOnly = process.argv.includes('--hours-only');
   if (process.argv.includes('--help')) {
-    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts run smoke');
+    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts [--profile-only|--hours-only]');
     return;
   }
   if (process.env.NODE_ENV !== 'development' || process.env.SMOKE_DATABASE_ENVIRONMENT !== 'development'
@@ -127,6 +128,146 @@ async function main() {
       }, { path, method, body });
       expect(result.ok, `${method} ${path}: ${result.status}`).toBe(true); return result.data;
     }
+    if (hoursOnly) {
+      const admin = await page();
+      await admin.goto(`${base}/signin`);
+      await admin.getByTestId('button-quick-admin').click();
+      await expect(admin).toHaveURL(/\/admin$/);
+      const adminMe = await call(admin, '/me');
+      expect(adminMe.user.role).toBe('admin');
+
+      const volunteer = await page();
+      await volunteer.goto(`${base}/signin`);
+      await volunteer.getByTestId('button-quick-vol-active').click();
+      await expect(volunteer).toHaveURL(/\/dashboard$/);
+      const volunteerMe = await call(volunteer, '/me');
+
+      const pacificToday = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+      const firstTuesday = new Date(`${pacificToday}T12:00:00Z`);
+      firstTuesday.setUTCDate(firstTuesday.getUTCDate() + ((2 - firstTuesday.getUTCDay() + 7) % 7 || 7));
+      const formatDate = (d: Date) => d.toISOString().slice(0, 10);
+      const startDate = formatDate(firstTuesday);
+      const secondTuesday = new Date(firstTuesday); secondTuesday.setUTCDate(secondTuesday.getUTCDate() + 7);
+      const secondDate = formatDate(secondTuesday);
+      const settings = await call(admin, '/admin/schedule/slots', 'POST', {
+        dayOfWeek: 2, startTime: '10:00', endTime: '12:00', capacity: 1, label: 'Isolated Fix10 hours', isActive: true,
+      });
+      const slot = settings.slots.find((s: { label: string }) => s.label === 'Isolated Fix10 hours');
+      expect(slot, 'isolated Tuesday slot was created').toBeTruthy();
+      await call(admin, '/admin/schedule/assignments', 'POST', {
+        userId: volunteerMe.user.id, slotId: slot.id, startDate, override: false,
+      });
+      const schedule = await call(volunteer, '/volunteer/schedule');
+      const assignment = schedule.assignments.find((s: { slotId: string }) => s.slotId === slot.id);
+      expect(assignment, 'Active persona has the isolated slot assignment').toBeTruthy();
+      const firstOccurrence = assignment.nextDates.find((d: { date: string }) => d.date === startDate);
+      const secondOccurrence = assignment.nextDates.find((d: { date: string }) => d.date === secondDate);
+      expect(firstOccurrence, 'first Tuesday occurrence is available').toBeTruthy();
+      expect(secondOccurrence, 'second Tuesday occurrence is available').toBeTruthy();
+      const hoursAt = new Date(new Date(secondOccurrence.endsAt).getTime() + 60_000).toISOString();
+      const firstKey = `${firstOccurrence.date}-${slot.id}`;
+      const secondKey = `${secondOccurrence.date}-${slot.id}`;
+      const home = `${base}/dashboard?at=${encodeURIComponent(hoursAt)}`;
+      const staffDetail = `${base}/admin/volunteers/${volunteerMe.user.id}?at=${encodeURIComponent(hoursAt)}`;
+
+      await volunteer.setViewportSize({ width: 320, height: 850 });
+      await volunteer.goto(home);
+      await expect(volunteer.getByTestId('card-log-hours')).toBeVisible();
+      const checkMobile = async (p: Page, label: string) => {
+        const sizes = await p.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth, body: document.body.scrollWidth }));
+        expect(sizes.document, `${label}: document has no horizontal overflow at 320px`).toBeLessThanOrEqual(320);
+        expect(sizes.body, `${label}: body has no horizontal overflow at 320px`).toBeLessThanOrEqual(320);
+      };
+      const checkActions = async (p: Page, selectors: string[], label: string) => {
+        for (const selector of selectors) {
+          await expect.poll(() => p.locator(selector).evaluate(el => el.getBoundingClientRect().height),
+            { message: `${label}: ${selector} target height after opening animation` }).toBeGreaterThanOrEqual(44);
+        }
+      };
+      await checkMobile(volunteer, 'Home hours');
+      await checkActions(volunteer, [`[data-testid="button-confirm-hours-${firstKey}"]`,
+        `[data-testid="button-different-hours-${secondKey}"]`], 'Home hours');
+      await volunteer.getByTestId(`button-confirm-hours-${firstKey}`).click();
+      await expect(volunteer.getByTestId(`text-hours-logged-${firstKey}`)).toContainText('2 hours');
+      await volunteer.getByTestId(`card-log-hours`).screenshot({ path: '/tmp/fix10-hours-home.png' });
+
+      await admin.setViewportSize({ width: 320, height: 850 });
+      await admin.goto(staffDetail);
+      await expect(admin.getByTestId('card-hours')).toContainText('2 hours');
+      await checkMobile(admin, 'Staff hours card');
+      const initialStaffHours = await call(admin, `/admin/volunteers/${volunteerMe.user.id}/hours?at=${encodeURIComponent(hoursAt)}`);
+      const initialShiftRow = initialStaffHours.rows.find((r: { date: string; shiftSlotId: string | null }) =>
+        r.date === firstOccurrence.date && r.shiftSlotId === slot.id);
+      expect(initialShiftRow, 'staff sees the first confirmed shift hours').toBeTruthy();
+      await checkActions(admin, ['[data-testid="button-add-hours"]',
+        `[data-testid="button-edit-hours-${initialShiftRow.id}"]`], 'Staff hours');
+
+      // Use Different hours for the second unlogged shift, then Edit the confirmed
+      // entry from My Shifts (the Home card only keeps its just-logged row briefly).
+      await volunteer.getByTestId(`button-different-hours-${secondKey}`).click();
+      await expect(volunteer.getByTestId(`input-hours-${secondKey}`)).toBeVisible();
+      await checkMobile(volunteer, 'Home Different-hours form');
+      await checkActions(volunteer, [`[data-testid="button-save-hours-${secondKey}"]`,
+        `[data-testid="button-cancel-hours-${secondKey}"]`], 'Home Different-hours form');
+      await volunteer.getByTestId(`input-hours-${secondKey}`).fill('1.5');
+      await volunteer.getByTestId(`input-hours-note-${secondKey}`).fill('Different hours for this shift.');
+      await volunteer.getByTestId(`button-save-hours-${secondKey}`).click();
+      await expect(volunteer.getByTestId(`text-hours-logged-${secondKey}`)).toContainText('1.5 hours');
+
+      await volunteer.goto(`${base}/shifts?at=${encodeURIComponent(hoursAt)}#past-shifts`);
+      await expect(volunteer.getByTestId('section-past-shifts')).toBeVisible();
+      await volunteer.getByTestId(`button-edit-hours-${firstKey}`).click();
+      await expect(volunteer.getByTestId(`input-hours-${firstKey}`)).toBeVisible();
+      await checkMobile(volunteer, 'My Shifts edit form');
+      await checkActions(volunteer, [`[data-testid="button-save-hours-${firstKey}"]`,
+        `[data-testid="button-cancel-hours-${firstKey}"]`], 'My Shifts edit form');
+      await volunteer.getByTestId(`hours-row-${firstKey}`).screenshot({ path: '/tmp/fix10-hours-volunteer-edit.png' });
+      await volunteer.getByTestId(`input-hours-${firstKey}`).fill('1.5');
+      await volunteer.getByTestId(`input-hours-note-${firstKey}`).fill('Corrected shift length from My Shifts.');
+      await volunteer.getByTestId(`button-save-hours-${firstKey}`).click();
+      await expect(volunteer.getByTestId(`text-hours-${firstKey}`)).toContainText('1.5 hours logged');
+      await volunteer.getByTestId(`button-edit-hours-${firstKey}`).click();
+      await volunteer.getByTestId(`input-hours-${firstKey}`).fill('2.5');
+      await volunteer.getByTestId(`button-save-hours-${firstKey}`).click();
+      await expect(volunteer.getByTestId(`text-hours-${firstKey}`)).toContainText('2.5 hours logged');
+
+      await admin.goto(staffDetail);
+      await expect(admin.getByTestId('card-hours')).toContainText('2.5 hours');
+      await admin.getByTestId('button-add-hours').click();
+      await expect(admin.getByTestId('dialog-hours')).toBeVisible();
+      const dateInput = admin.getByTestId('input-hours-date');
+      await expect(dateInput).toHaveAttribute('max', secondDate);
+      await dateInput.fill(secondDate);
+      await admin.getByTestId('radio-hours-other').check();
+      await expect(admin.getByTestId('input-hours-note')).toHaveAttribute('required', '');
+      await admin.getByTestId('input-hours-value').fill('1');
+      await admin.getByTestId('input-hours-note').fill('   ');
+      await admin.getByTestId('button-hours-save').click();
+      await expect(admin.getByTestId('error-hours')).toContainText('Add a note');
+      await admin.getByTestId('dialog-hours').screenshot({ path: '/tmp/fix10-hours-admin-form.png' });
+      await checkMobile(admin, 'Staff Other-time form');
+      await checkActions(admin, ['[data-testid="button-hours-save"]', '[data-testid="button-hours-cancel"]'], 'Staff Other-time form');
+      await admin.getByTestId('input-hours-note').fill('Volunteer appreciation call.');
+      await admin.getByTestId('button-hours-save').click();
+      await expect(admin.getByTestId('dialog-hours')).toHaveCount(0);
+      let entries = await call(admin, `/admin/volunteers/${volunteerMe.user.id}/hours?at=${encodeURIComponent(hoursAt)}`);
+      const other = entries.rows.find((r: { source: string; note: string | null }) => r.source === 'other' && r.note === 'Volunteer appreciation call.');
+      expect(other, 'Other time was recorded by staff').toBeTruthy();
+      await admin.getByTestId(`button-edit-hours-${other.id}`).click();
+      await admin.getByTestId('input-hours-value').fill('1.5');
+      await admin.getByTestId('input-hours-note').fill('Updated appreciation call.');
+      await admin.getByTestId('button-hours-save').click();
+      await expect(admin.getByTestId(`hours-${other.id}`)).toContainText('1.5 hours');
+      await expect(admin.getByTestId(`hours-${other.id}`)).toContainText('Updated appreciation call.');
+      await admin.getByTestId('card-hours').screenshot({ path: '/tmp/fix10-hours-admin-card.png' });
+      await admin.getByTestId(`button-delete-hours-${other.id}`).click();
+      await expect(admin.getByTestId('dialog-delete-hours')).toBeVisible();
+      await checkActions(admin, ['[data-testid="button-delete-hours-confirm"]', '[data-testid="button-delete-hours-cancel"]'], 'Delete confirmation');
+      await admin.getByTestId('button-delete-hours-confirm').click();
+      await expect(admin.getByTestId(`hours-${other.id}`)).toHaveCount(0);
+      console.log(`PASS: isolated Fix10 hours-only flow; Home confirm=2h, Home edit=1.5h+note, Different hours=1.5h+note, My Shifts edit=2.5h, staff Other-time validation/add/edit/delete, 320px overflow/action checks. Screenshots: /tmp/fix10-hours-home.png, /tmp/fix10-hours-volunteer-edit.png, /tmp/fix10-hours-admin-form.png, /tmp/fix10-hours-admin-card.png`);
+      return;
+    }
     if (!process.argv.includes('--quick-login-regression')) {
     const volunteer = await page();
     await volunteer.goto(`${base}/signup`);
@@ -187,6 +328,16 @@ async function main() {
     const schedule = await call(volunteer, '/volunteer/schedule');
     expect(schedule.assignments).toHaveLength(1);
     const assignment = schedule.assignments[0];
+    // F10: after this isolated Tuesday 10–12 occurrence, confirm the actual hours on Home.
+    const hoursAt = new Date(new Date(assignment.nextDates[0].endsAt).getTime() + 60_000).toISOString();
+    await volunteer.goto(`${base}/dashboard?at=${encodeURIComponent(hoursAt)}`);
+    await volunteer.getByTestId(`button-confirm-hours-${assignment.nextDates[0].date}-${slot.id}`).click();
+    await expect(volunteer.getByTestId('text-hours-this-month')).toContainText('2');
+    await admin.goto(`${base}/admin/volunteers/${me.user.id}?at=${encodeURIComponent(hoursAt)}`);
+    await expect(admin.getByTestId('card-hours')).toContainText('2 hours');
+    const loggedHours = await pool.query(`SELECT hours FROM ${qschema}.volunteer_hours WHERE volunteer_profile_id=$1 AND shift_slot_id=$2 AND shift_date=$3`,
+      [me.profile.id, slot.id, assignment.nextDates[0].date]);
+    expect(Number(loggedHours.rows[0]?.hours)).toBe(2);
     await volunteer.goto(`${base}/dashboard`);
     await expect(volunteer.getByTestId('card-next-shift')).toBeVisible();
     expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 active/shift dashboard contrast').toEqual([]);
