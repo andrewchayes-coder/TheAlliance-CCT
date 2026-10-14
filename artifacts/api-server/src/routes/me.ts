@@ -1,6 +1,6 @@
 import { Router, type IRouter } from 'express';
 import { eq } from 'drizzle-orm';
-import { db, volunteerProfilesTable, volunteerProfilePublicColumns, userPublicSchema } from '@workspace/db';
+import { db, volunteerProfilesTable, volunteerProfilePublicColumns, volunteerProfilePublicSchema, userPublicSchema } from '@workspace/db';
 import { GetMeResponse } from '@workspace/api-zod';
 import { agreementVersion } from '../server/agreements';
 import { testAccounts } from '@workspace/shared/testAccounts';
@@ -19,7 +19,7 @@ router.get('/me', async (req, res): Promise<void> => {
     agreementRequired: appConfig.requireAgreementAcknowledgment && !!profile?.onboardingCompletedAt &&
       (!profile.agreementAcknowledgedAt || profile.agreementVersion !== version),
     user: userPublicSchema.parse(user), role: user.role, verified: Boolean(user.emailVerifiedAt),
-    profile: profile ? { ...profile, status: normalizeVolunteerStatus(profile.status) } : null,
+    profile: profile ? volunteerProfilePublicSchema.parse(profile) : null,
   }));
 });
 export default router;

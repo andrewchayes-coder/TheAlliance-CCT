@@ -120,7 +120,8 @@ export function StatusPanel({ userId, detail, blockedReason }: { userId: string;
 
   return (
     <section className="alliance-card mt-6" aria-labelledby="v-status">
-      <h2 id="v-status" className="alliance-display">{cur === 'onboarding' ? 'Volunteer review and approval' : 'Program status'}</h2>
+      <h2 id="v-status" className="alliance-display">{cur === 'onboarding' ? 'Activation' : 'Program status'}</h2>
+      {cur === 'onboarding' && <p className="mt-2 text-sm">Volunteers become Active on their own when they finish their profile. Use Approve as Active only for someone who's still Onboarding with a complete profile.</p>}
       {cur === 'onboarding' && <ReviewChecklist detail={detail} userId={userId} />}
       {cur !== 'active' && missing.length === 0 && <Button className="mt-4" type="button" disabled={!!blockedReason || m.isPending} onClick={() => open('active')} data-testid="button-approve-active">Approve as Active</Button>}
       <ol className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="Volunteer status steps">

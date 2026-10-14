@@ -792,11 +792,11 @@ export interface PublicVolunteerProfile {
   certificationCompletedAt: string | null;
   /** @nullable */
   certificationExpiresAt: string | null;
-  backgroundCheckStatus: PublicVolunteerProfileBackgroundCheckStatus;
+  backgroundCheckStatus?: PublicVolunteerProfileBackgroundCheckStatus;
   /** @nullable */
-  backgroundCheckSubmittedAt: string | null;
+  backgroundCheckSubmittedAt?: string | null;
   /** @nullable */
-  backgroundCheckClearedAt: string | null;
+  backgroundCheckClearedAt?: string | null;
   /** @nullable */
   agreementAcknowledgedAt: string | null;
   /** @nullable */
@@ -1396,6 +1396,7 @@ export interface AuthSession {
   /** @nullable */
   role: AuthSessionRole;
   googleEnabled: boolean;
+  appOrigin: string;
   nextPath: string;
   resendAfterSeconds: number;
   notice?: string;
@@ -1736,6 +1737,7 @@ export const ListVolunteerRosterSortBy = {
   zip: 'zip',
   emergencyContact: 'emergencyContact',
   county: 'county',
+  backgroundCheck: 'backgroundCheck',
 } as const;
 
 export type ListVolunteerRosterSortDirection = typeof ListVolunteerRosterSortDirection[keyof typeof ListVolunteerRosterSortDirection];
@@ -1845,6 +1847,7 @@ export const ExportVolunteerRosterSortBy = {
   zip: 'zip',
   emergencyContact: 'emergencyContact',
   county: 'county',
+  backgroundCheck: 'backgroundCheck',
 } as const;
 
 export type ExportVolunteerRosterSortDirection = typeof ExportVolunteerRosterSortDirection[keyof typeof ExportVolunteerRosterSortDirection];

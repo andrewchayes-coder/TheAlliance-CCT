@@ -60,6 +60,7 @@ export function createTestAccountService(personas: readonly Persona[] = testAcco
             startDate:persona.status === 'active' ? today : null,
           } : {}),
           ...(reset || !existing ? { onboardingAnswers: {}, availabilityNotes: null, adminNotes: null } : {}),
+          ...(reset ? { backgroundCheckStatus: 'not_started' as const, backgroundCheckClearedAt: null } : {}),
           updatedAt: now };
         // Ordinary preparation must not undo saved onboarding, status or start date.
         // Only the explicit reset action restores the persona's starting state.

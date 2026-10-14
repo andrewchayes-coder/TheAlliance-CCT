@@ -1,6 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { db, resourcesTable, usersTable, volunteerProfilesTable, userPublicSchema, volunteerProfilePublicColumns, volunteerProfilePublicSchema } from '@workspace/db';
-import { appConfig } from '@workspace/shared/appConfig';
+import { appConfig, volunteerContactText } from '@workspace/shared/appConfig';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { onboardingQuestions, formatOnboardingAnswer } from '@workspace/shared/onboardingQuestions';
 import { createEmailTemplate } from './email-template';
@@ -43,7 +43,20 @@ export async function onboardingAccount(userId: string) {
   return { user: userPublicSchema.parse(user), role: user.role, verified: !!user.emailVerifiedAt, profile: profile ? volunteerProfilePublicSchema.parse(profile) : null };
 }
 
-export async function sendWelcome(user: User, profileId: string) {
+export async function sendWelcome(user: User, profileId: string, autoActivated = false) {
+  if (autoActivated) {
+    const subject = 'Welcome to the Community Care Team: choose your weekly shift';
+    const content = createEmailTemplate({
+      heading: subject, firstName: user.firstName,
+      paragraphs: [
+        "Thank you for joining The Alliance's Community Care Team as a Resource Coordinator. Your profile is complete and your account is ready.",
+        'Your next step is to choose a weekly shift that works for you. Shifts are two hours, Monday to Friday between 9 AM and 6 PM Pacific.',
+        `Questions? Reply to this email or contact ${volunteerContactText}.`,
+      ],
+      cta: { label: 'Choose your weekly shift', url: `${appOrigin}/shifts` },
+    });
+    return sendEmail({ type: 'welcome', to: user.email, toUserId: user.id, subject, relatedId: profileId, ...content });
+  }
   const content = createEmailTemplate({
     heading: 'Welcome to the Community Care Team',
     firstName: user.firstName,

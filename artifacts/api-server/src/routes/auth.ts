@@ -10,7 +10,7 @@ import {
 } from '@workspace/api-zod';
 import {
   csrfGuard, establishSession, endSession, sessionUser, googleEnabled, randomToken,
-  saveSession, inactiveMessage,
+  saveSession, inactiveMessage, appOrigin,
 } from '../auth/session';
 import {
   checkPassword, hashPassword, needsPasswordUpgrade, normalizePhone, validNewPassword,
@@ -54,6 +54,7 @@ router.get('/session', async (req, res): Promise<void> => {
     firstName: user?.firstName ?? null,
     role: user?.role ?? null,
     googleEnabled,
+    appOrigin,
     nextPath: user ? await accountPath(user) : '/signin',
     resendAfterSeconds: user ? await remainingCooldown('resend-minute', user.id, 60) : 0,
     ...(req.session.notice ? { notice: req.session.notice } : {}),

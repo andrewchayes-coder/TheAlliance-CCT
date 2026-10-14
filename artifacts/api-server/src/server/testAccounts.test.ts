@@ -153,6 +153,8 @@ it('suppresses QA mail with a configured provider, prints it in dev, deduplicate
 });
 it('resets only QA shifts, skips, inbox membership and profile changes, and logs the reset', async () => {
   const active = (await service.ensure()).find(p => p.key === 'vol-active')!;
+  await db.update(volunteerProfilesTable).set({ backgroundCheckStatus: 'cleared', backgroundCheckClearedAt: '2026-01-01' })
+    .where(eq(volunteerProfilesTable.id, active.profileId!));
   const [custom] = await db.insert(customShiftsTable).values({date:'2030-01-15',startTime:'10:00',endTime:'12:00',
     capacity:2,openToVolunteers:true,createdByUserId:ids[0]!}).returning();
   const [ordinaryProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ordinary));
@@ -177,11 +179,12 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   expect(await db.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.volunteerProfileId, active.profileId!))).toHaveLength(0);
   expect(await db.select().from(messageRecipientsTable).where(eq(messageRecipientsTable.recipientUserId, active.userId))).toHaveLength(0);
   const [profile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.id, active.profileId!));
-  expect(profile).toMatchObject({ status: 'active', onboardingAnswers: {}, adminNotes: null, availabilityNotes: null });
+  expect(profile).toMatchObject({ status: 'active', onboardingAnswers: {}, adminNotes: null, availabilityNotes: null,
+    backgroundCheckStatus: 'not_started', backgroundCheckClearedAt: null });
   expect(profile).toMatchObject(testProfileFields);
   const [ready] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ids[3]!));
   expect(ready).toMatchObject({...testProfileFields,status:'onboarding',
-    certificationStatus:'in_progress',backgroundCheckStatus:'pending',agreementVersion:'legacy-retained'});
+    certificationStatus:'in_progress',backgroundCheckStatus:'not_started',backgroundCheckClearedAt:null,agreementVersion:'legacy-retained'});
   const [fresh] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ids[4]!));
   expect(fresh).toMatchObject({status:'onboarding',onboardingCompletedAt:null,startDate:null});
   for (const field of Object.keys(testProfileFields)) expect(fresh?.[field as keyof typeof fresh]).toBeNull();

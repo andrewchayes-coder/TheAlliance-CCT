@@ -70,6 +70,12 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 | `RUN_JOBS` | Required literal `false` in production. Production automatic timers are disabled; cron-job.org invokes the external endpoint. Development may use `true` for timer testing. |
 | `DATABASE_URL` | Managed automatically by Replit; must point to the separate production DB at runtime. Do not set manually. |
 
+### Profile and staff-record configuration
+
+- `autoActivateOnProfileComplete: true`: a verified Onboarding volunteer becomes Active in the profile-completion transaction; one welcome email links to Shifts. Turning this off retains manual activation and the original welcome copy.
+- `trackBackgroundCheckAdminOnly: true`: staff-only completion checkbox/date, roster filter and optional column, and CSV completion/date columns. Never an activation or shift gate. The old `trackBackgroundCheckInApp` stays false.
+- `minimumAge: 18`: required for volunteer onboarding and staff DOB edits; the eighteenth birthday counts using Pacific dates.
+
 ### Dedicated Postmark server and domain
 Use a separate Postmark server for this app and its `outbound` transactional stream. Add the `defendingthecause.org` sending domain in Postmark, install the exact DKIM and Return-Path DNS records provided there, and confirm both show **Verified** before sending. DNS verification and inbox delivery cannot be inferred from the token-configured indicator. Do not paste tokens into chat or documentation.
 
@@ -200,7 +206,7 @@ The supplied `reminder-trigger` command remains available for an operator or a R
 ## Custom domain
 
 1. Publishing → Domains → connect your domain. Add the exact DNS records Replit provides at your DNS provider; don't guess A/CNAME values. Wait for DNS verification and TLS.
-2. Set production `APP_BASE_URL` to `https://your-domain` and update/remove legacy `APP_ORIGIN` so it matches. Update `JOBS_RUN_URL` in any external scheduler.
+2. Set production `APP_BASE_URL` to `https://your-domain` and update/remove legacy `APP_ORIGIN` so it matches. Update `JOBS_RUN_URL` in any external scheduler. `APP_BASE_URL` determines the official address; the production portal forwards visitors on the old `.replit.app` address to it, preserving the path, query and fragment before rendering. Development and server-side health checks are never redirected.
 3. Republish/restart with the new environment. Recheck sign-in/CSRF, invite/verification/reset email links, private downloads and scheduled triggers.
 4. If Google OAuth is enabled later, register the new exact HTTPS callback URL with the provider. Existing sessions on the old domain won't transfer to the new one.
 

@@ -394,9 +394,19 @@ export const volunteerProfilePublicColumns = {
   agreementAcknowledgedAt: profileColumns.agreementAcknowledgedAt, agreementVersion: profileColumns.agreementVersion,
   createdAt: profileColumns.createdAt, updatedAt: profileColumns.updatedAt,
 };
-export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true }).transform(profile => ({
-  ...profile, status: normalizeVolunteerStatus(profile.status),
-}));
+export const volunteerProfilePublicSchema = createSelectSchema(volunteerProfilesTable).omit({ adminNotes: true }).extend({
+  backgroundCheckStatus: z.enum(['not_started', 'pending', 'cleared', 'not_cleared']).optional(),
+  backgroundCheckSubmittedAt: z.string().nullable().optional(),
+  backgroundCheckClearedAt: z.string().nullable().optional(),
+}).transform(profile => {
+  const result = { ...profile, status: normalizeVolunteerStatus(profile.status) };
+  if (appConfig.trackBackgroundCheckAdminOnly) {
+    delete result.backgroundCheckStatus;
+    delete result.backgroundCheckSubmittedAt;
+    delete result.backgroundCheckClearedAt;
+  }
+  return result;
+});
 export const userPublicSchema = createSelectSchema(usersTable).omit({ passwordHash: true, googleSubject: true, sessionVersion: true, profilePhotoKey: true });
 export function toVolunteerProfilePublic(profile: VolunteerProfile) {
   return volunteerProfilePublicSchema.parse(profile);

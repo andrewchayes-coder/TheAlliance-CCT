@@ -7,7 +7,7 @@ import { FETCH_CREDS } from '@/auth/auth-context';
 import { ErrorBlock, LoadingBlock, UpcomingShifts, useNow, volunteerRoute } from '@/components/volunteer-ui';
 import { countdown, safeHttps, shiftWhen, shiftDate, timeRange } from '@/lib/pacific';
 
-import { appConfig } from '@workspace/shared/appConfig';
+import { appConfig, volunteerContactText } from '@workspace/shared/appConfig';
 import { isProfileComplete } from '@/lib/profile-complete';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 
@@ -41,12 +41,14 @@ function Home({ me }: { me: Me }) {
         <ul className="mt-2 divide-y divide-gray">
           <Row done label="Account created" value="Done" />
           <Row done={profileDone} label="Profile complete" value={profileDone ? 'Done' : 'Not finished'} />
-          <Row done={false} label="Training & paperwork" value="With Alliance staff" />
+          {!appConfig.autoActivateOnProfileComplete && <Row done={false} label="Training & paperwork" value="With Alliance staff" />}
           {appConfig.trackCertificationInApp && <Row done={p?.certificationStatus === 'complete'} label="Training certification" value={cert[p?.certificationStatus ?? 'not_started']} />}
-          {appConfig.trackBackgroundCheckInApp && <Row done={p?.backgroundCheckStatus === 'cleared'} label="Background check" value={bg[p?.backgroundCheckStatus ?? 'not_started']} />}
-          <Row done={false} label="Approval" value="Pending" />
+          {appConfig.trackBackgroundCheckInApp && !appConfig.trackBackgroundCheckAdminOnly && <Row done={p?.backgroundCheckStatus === 'cleared'} label="Background check" value={bg[p?.backgroundCheckStatus ?? 'not_started']} />}
+          {!appConfig.autoActivateOnProfileComplete && <Row done={false} label="Approval" value="Pending" />}
         </ul>
-        <p className="mt-3 font-bold">We'll email you when you're ready to choose a shift.</p>
+        <p className="mt-3 font-bold">{appConfig.autoActivateOnProfileComplete
+          ? `Your profile is complete. The Community Care Team will turn on shift sign-up for you. Questions? Contact ${volunteerContactText}.`
+          : "We'll email you when you're ready to choose a shift."}</p>
       </section>
     );
     if (status === 'inactive') return (
@@ -59,7 +61,9 @@ function Home({ me }: { me: Me }) {
     if (d.shiftCount === 0) return (
       <section className="rounded-2xl bg-navy p-6 text-white shadow-md" data-testid="card-choose-shift">
         <h2 className="alliance-display">Choose your weekly shift</h2>
-        <p className="mt-2">{d.schedulingOpen ? "You're approved. Pick the weekly shift that fits your life." : "You're approved. Open Shifts to see what's holding you back from booking."}</p>
+        <p className="mt-2">{appConfig.autoActivateOnProfileComplete
+          ? d.schedulingOpen ? "You're all set. Pick the weekly shift that fits your life." : "You're all set. Open Shifts to see what's holding you back from booking."
+          : d.schedulingOpen ? "You're approved. Pick the weekly shift that fits your life." : "You're approved. Open Shifts to see what's holding you back from booking."}</p>
         <Link href="/shifts" className="alliance-button alliance-button-primary mt-4" data-testid="link-choose-shift">Choose your weekly shift</Link>
       </section>
     );

@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { states } from '@workspace/shared/profileFields';
+import { appConfig } from '@workspace/shared/appConfig';
 import { Field } from '@/auth/auth-ui';
 
 export type ProfileKey =
@@ -41,7 +42,7 @@ export function ProfileFields({ values, errors, email, emailEditableBelow = fals
           hint="We use this only to coordinate your shifts." data-testid="input-phone" />
         {showDob && (
           <Field className="sm:col-span-2" label="Date of birth" type="date" required max={maxBirthDate()} readOnly={dobReadOnly} autoComplete="bday" {...p('dateOfBirth')}
-            hint={dobReadOnly ? 'Only Alliance staff can see this. Ask staff to change it.' : 'Only Alliance staff can see this.'} data-testid="input-dob" />
+            hint={`${dobReadOnly ? 'Only Alliance staff can see this. Ask staff to change it.' : 'Only Alliance staff can see this.'}${appConfig.minimumAge === null ? '' : ` You must be ${appConfig.minimumAge} or older to serve as a Resource Coordinator.`}`} data-testid="input-dob" />
         )}
       </fieldset>
       <fieldset className="grid gap-4 sm:grid-cols-6">

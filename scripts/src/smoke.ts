@@ -16,6 +16,8 @@ import AxeBuilder from '@axe-core/playwright';
  * No public token shortcut, API login, shared-user blast, or real email delivery.
  */
 async function main() {
+  // Focused re-check of changed profile/activation/staff-record UI; default remains the full smoke.
+  const profileOnly = process.argv.includes('--profile-only');
   if (process.argv.includes('--help')) {
     console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts run smoke');
     return;
@@ -138,7 +140,7 @@ async function main() {
     if (!token) throw new Error('Signup did not log its verification link.');
     await volunteer.goto(`${base}/verify?token=${token}`);
     await expect(volunteer).toHaveURL(/onboarding/);
-    await accessibility(volunteer, 'onboarding');
+    if (!profileOnly) await accessibility(volunteer, 'onboarding');
     for (const [id, value] of [['input-dob', testProfileFields.dateOfBirth], ['input-address', testProfileFields.addressLine1],
       ['input-city', testProfileFields.city], ['input-zip', testProfileFields.zip],
       ['input-ec-name', testProfileFields.emergencyContactName], ['input-ec-relationship', testProfileFields.emergencyContactRelationship],
@@ -148,17 +150,34 @@ async function main() {
     await volunteer.getByTestId('button-finish').click();
     await expect(volunteer).toHaveURL(/dashboard/);
     expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 onboarding dashboard contrast').toEqual([]);
-    await accessibility(volunteer, 'dashboard');
+    if (!profileOnly) await accessibility(volunteer, 'dashboard');
     const me = await call(volunteer, '/me');
     const admin = await page(); await admin.goto(`${base}/signin`);
     await admin.getByLabel(/^email/i).fill(adminEmail); await admin.getByLabel(/^password$/i).fill(password);
     await admin.getByRole('button', { name: /^sign in$/i }).click(); await expect(admin).toHaveURL(/\/admin$/);
-    await accessibility(admin, 'admin-home');
+    if (!profileOnly) await accessibility(admin, 'admin-home');
     const detail = await call(admin, `/admin/volunteers/${me.user.id}`);
-    await call(admin, `/admin/volunteers/${me.user.id}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+    expect(detail.entry.profile.status).toBe('active');
+    await admin.goto(`${base}/admin/volunteers/${me.user.id}`);
+    await expect(admin.getByTestId('card-background-check')).toBeVisible();
+    await admin.getByTestId('checkbox-background-complete').check();
+    await admin.getByTestId('input-background-date').fill(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }));
+    await admin.getByTestId('button-save-tracking').click();
+    await expect(admin.getByText('Saved.', { exact: true })).toBeVisible();
+    if (profileOnly) await admin.getByTestId('card-background-check').screenshot({ path: '/tmp/fix8-background-card.png' });
+    await admin.goto(`${base}/admin/volunteers`);
+    await admin.getByTestId('toggle-test-accounts').check();
+    await admin.getByTestId('filter-background-check').selectOption('cleared');
+    await admin.getByTestId('input-search').fill(email);
+    await expect(admin.getByTestId(`link-volunteer-${me.user.id}`).filter({ visible: true }).first()).toBeVisible();
     await volunteer.goto(`${base}/dashboard`);
     await expect(volunteer.getByTestId('card-choose-shift')).toBeVisible();
     expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 active/no-shift dashboard contrast').toEqual([]);
+    if (profileOnly) {
+      await volunteer.getByTestId('card-choose-shift').screenshot({ path: '/tmp/fix8-choose-shift-card.png' });
+      console.log('Fix 8 profile flow passed: automatically Active, staff background date saved, filtered roster match, Choose your weekly shift card.');
+      return;
+    }
     const settings = await call(admin, '/admin/schedule/slots', 'POST', { dayOfWeek: 2, startTime: '10:00', endTime: '12:00', capacity: 1, label: 'Isolated smoke shift', isActive: true });
     const slot = settings.slots.find((s: { label: string }) => s.label === 'Isolated smoke shift');
     await volunteer.goto(`${base}/shifts`);

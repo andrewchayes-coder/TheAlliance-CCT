@@ -81,7 +81,7 @@ function ProfileForm({ me }: { me: Me }) {
     ['Email', me.user.email], ['Volunteer status', label(status)],
     ['Date of birth', p?.dateOfBirth ? date(`${p.dateOfBirth}T12:00:00Z`) : null], ['Start date', p?.startDate ? date(`${p.startDate}T12:00:00Z`) : null],
     ...(appConfig.trackCertificationInApp ? [['Training certification', p ? label(p.certificationStatus) : null] as [string, string | null]] : []),
-    ...(appConfig.trackBackgroundCheckInApp ? [['Background check', p ? label(p.backgroundCheckStatus) : null] as [string, string | null]] : []),
+    ...(appConfig.trackBackgroundCheckInApp && !appConfig.trackBackgroundCheckAdminOnly ? [['Background check', p?.backgroundCheckStatus ? label(p.backgroundCheckStatus) : null] as [string, string | null]] : []),
     ...(appConfig.requireAgreementAcknowledgment ? [['Agreement', p?.agreementAcknowledgedAt ? `Acknowledged ${date(p.agreementAcknowledgedAt)}${p.agreementVersion ? ` (${p.agreementVersion})` : ''}` : 'Not yet acknowledged'] as [string, string | null]] : []),
   ];
   return (

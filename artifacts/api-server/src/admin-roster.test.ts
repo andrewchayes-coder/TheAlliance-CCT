@@ -219,7 +219,7 @@ test('tracking persists calendar days/nulls, rejects invalid dates/stale saves, 
   const request = await client(admin), path = `/admin/volunteers/${volunteers[1]}`;
   const before = (await request(path)).data;
   const fields = { certificationStatus: 'complete', certificationCompletedAt: today, certificationExpiresAt: addCalendarDays(today, 30),
-    backgroundCheckStatus: 'cleared', backgroundCheckSubmittedAt: addCalendarDays(today, -15), backgroundCheckClearedAt: today,
+    backgroundCheckStatus: 'cleared', backgroundCheckClearedAt: today,
     expectedUpdatedAt: before.entry.profile.updatedAt };
   assert.equal((await request(`${path}/tracking`, 'PATCH', { ...fields, certificationCompletedAt: '2026-02-30' })).status, 400);
   const saved = await request(`${path}/tracking`, 'PATCH', fields);

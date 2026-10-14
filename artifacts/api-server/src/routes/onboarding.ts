@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod/v4';
-import { db, usersTable, volunteerProfilesTable } from '@workspace/db';
+import { db, usersTable, volunteerProfilesTable, activityLogTable } from '@workspace/db';
 import { SaveOnboardingBody, SaveOnboardingResponse, GetVolunteerOnboardingResponse } from '@workspace/api-zod';
 import { buildOnboardingAnswersSchema, onboardingContactSchema, onboardingQuestions } from '@workspace/shared/onboardingQuestions';
 import { onboardingAccount, publishedAgreements, sendWelcome, exportOnboardingCsv } from '../onboarding';
 import { appConfig } from '@workspace/shared/appConfig';
-import { profileDraftSchema, profileCompletionSchema } from '@workspace/shared/profileFields';
+import { profileDraftSchema, profileCompletionSchema, normalizeVolunteerStatus, pacificToday } from '@workspace/shared/profileFields';
+import { approvalRequirements } from '../admin-volunteer-detail';
+import { logger } from '../lib/logger';
 
 const router = Router();
 router.get('/onboarding/agreements', async (_req, res) => {
@@ -40,7 +42,7 @@ router.patch('/onboarding', async (req, res): Promise<void> => {
     if (!profile) return { code: 'MISSING_PROFILE' } as const;
     const existingComplete = profileCompletionSchema.safeParse({ ...profile, firstName:user.firstName,lastName:user.lastName,phone:user.phone }).success;
     if (profile.onboardingCompletedAt && existingComplete) {
-      return parsed.data.complete ? { user, profile } : { code: 'ALREADY_COMPLETED' } as const;
+      return parsed.data.complete ? { user, profile, newlyCompleted: false, autoActivated: false } : { code: 'ALREADY_COMPLETED' } as const;
     }
     if (profile.onboardingCompletedAt && profile.dateOfBirth && parsed.data.dateOfBirth !== undefined &&
       parsed.data.dateOfBirth !== profile.dateOfBirth)
@@ -70,7 +72,26 @@ router.patch('/onboarding', async (req, res): Promise<void> => {
       ...(onboardingQuestions.length ? { onboardingAnswers: { ...profile.onboardingAnswers, ...answers.data } } : {}),
       ...(complete ? { onboardingCompletedAt: now, ...(agreement ? { agreementAcknowledgedAt: now, agreementVersion: agreement.version } : {}) } : {}),
     }).where(eq(volunteerProfilesTable.id, profile.id)).returning();
-    return { user: savedUser!, profile: savedProfile! };
+    const newlyCompleted = !!complete && !profile.onboardingCompletedAt;
+    const autoActivated = newlyCompleted && appConfig.autoActivateOnProfileComplete &&
+      normalizeVolunteerStatus(profile.status) === 'onboarding' &&
+      approvalRequirements(savedUser!, savedProfile!).every(check => check.met);
+    if (autoActivated) {
+      const firstStart = !savedProfile!.startDate;
+      const [activated] = await tx.update(volunteerProfilesTable).set({
+        status: 'active', ...(firstStart ? { startDate: pacificToday(now) } : {}),
+      }).where(eq(volunteerProfilesTable.id, profile.id)).returning();
+      await tx.insert(activityLogTable).values({
+        volunteerProfileId: profile.id, actorUserId: actor.id, action: 'status_changed',
+        details: { from: 'onboarding', to: 'active', reason: 'auto_profile_complete' },
+      });
+      if (firstStart) await tx.insert(activityLogTable).values({
+        volunteerProfileId: profile.id, actorUserId: actor.id, action: 'start_date_changed',
+        details: { fields: ['startDate'], reason: 'first_activation' },
+      });
+      return { user: savedUser!, profile: activated!, newlyCompleted, autoActivated };
+    }
+    return { user: savedUser!, profile: savedProfile!, newlyCompleted, autoActivated };
   });
   if ('code' in result) {
     if (result.code === 'VALIDATION') {
@@ -81,7 +102,10 @@ router.patch('/onboarding', async (req, res): Promise<void> => {
       .json({ error: result.code === 'ALREADY_COMPLETED' ? 'Your onboarding is already complete.' :
         result.code === 'DOB_LOCKED' ? 'Only Alliance staff can change your date of birth after onboarding.' : 'Your volunteer account is not available.', code: result.code }); return;
   }
-  if (parsed.data.complete) await sendWelcome(result.user, result.profile.id);
+  if (result.newlyCompleted && (!appConfig.autoActivateOnProfileComplete || result.autoActivated)) {
+    try { await sendWelcome(result.user, result.profile.id, result.autoActivated); }
+    catch (error) { logger.error({ err: error }, 'Profile completion committed; welcome email failed.'); }
+  }
   res.set('Cache-Control', 'no-store').json(SaveOnboardingResponse.parse(await onboardingAccount(actor.id)));
 });
 

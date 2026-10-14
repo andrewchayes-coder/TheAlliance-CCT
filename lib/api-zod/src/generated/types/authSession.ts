@@ -18,6 +18,7 @@ export interface AuthSession {
   /** @nullable */
   role: AuthSessionRole;
   googleEnabled: boolean;
+  appOrigin: string;
   nextPath: string;
   resendAfterSeconds: number;
   notice?: string;

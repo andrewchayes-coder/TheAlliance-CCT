@@ -8,13 +8,15 @@ import { Button, StatusBadge } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { readError, useAuth } from '@/auth/auth-context';
 import { BG, CERT, calDate, dateInput, daysUntil, flags } from './format';
+import { appConfig } from '@workspace/shared/appConfig';
+import { pacificToday } from '@workspace/shared/profileFields';
 
 type Draft = { cs: string; cc: string; ce: string; bs: string; bsub: string; bc: string };
 const fromServer = (d: AdminVolunteerDetail): Draft => {
   const p = d.entry.profile;
   return {
     cs: p.certificationStatus, cc: dateInput(p.certificationCompletedAt), ce: dateInput(p.certificationExpiresAt),
-    bs: p.backgroundCheckStatus, bsub: dateInput(p.backgroundCheckSubmittedAt), bc: dateInput(p.backgroundCheckClearedAt) };
+    bs: p.backgroundCheckStatus ?? 'not_started', bsub: dateInput(p.backgroundCheckSubmittedAt), bc: dateInput(p.backgroundCheckClearedAt) };
 };
 
 export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { userId: string; detail: AdminVolunteerDetail; blockedReason: string | null; onDirty: (d: boolean) => void }) {
@@ -42,9 +44,13 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
       data.certificationStatus = cur.cs as VolunteerTrackingUpdate['certificationStatus'];
       data.certificationCompletedAt = cur.cc || null; data.certificationExpiresAt = cur.ce || null;
     }
-    if (flags.bg) {
+    if (flags.bg || appConfig.trackBackgroundCheckAdminOnly) {
       data.backgroundCheckStatus = cur.bs as VolunteerTrackingUpdate['backgroundCheckStatus'];
-      data.backgroundCheckSubmittedAt = cur.bsub || null; data.backgroundCheckClearedAt = cur.bc || null;
+      if (!appConfig.trackBackgroundCheckAdminOnly) data.backgroundCheckSubmittedAt = cur.bsub || null;
+      data.backgroundCheckClearedAt = appConfig.trackBackgroundCheckAdminOnly && cur.bs !== 'cleared' ? null : cur.bc || null;
+      if (appConfig.trackBackgroundCheckAdminOnly && cur.bs === 'cleared' && (!cur.bc || cur.bc > pacificToday())) {
+        setErr({ conflict: false, msg: 'Enter the date the background check was completed (today or earlier).' }); return;
+      }
     }
     setErr(null);
     m.mutate({ userId, data }, {
@@ -65,11 +71,12 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
   };
   const discard = () => { setDraft(null); setErr(null); void qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) }); };
 
-  if (!flags.cert && !flags.bg) return null;
+  if (!flags.cert && !flags.bg && !appConfig.trackBackgroundCheckAdminOnly) return null;
   const sel = 'alliance-input mt-1 font-normal';
   return (
-    <section className="alliance-card mt-6" aria-labelledby="v-tracking">
-      <h2 id="v-tracking" className="alliance-display">Dates</h2>
+    <section className="alliance-card mt-6" aria-labelledby="v-tracking" data-testid={appConfig.trackBackgroundCheckAdminOnly ? 'card-background-check' : undefined}>
+      <h2 id="v-tracking" className="alliance-display">{appConfig.trackBackgroundCheckAdminOnly ? 'Background check' : 'Dates'}</h2>
+      {appConfig.trackBackgroundCheckAdminOnly && <p className="mt-2 text-sm">Recorded by staff for your records. Volunteers never see this, and it doesn't affect their status or shifts.</p>}
       <p className="mt-1 text-sm text-navy-soft">Only Alliance staff can see these.{flags.bg ? " Track status only. Don't upload or paste background check reports here." : ''}</p>
       <div className="mt-4 grid gap-6 md:grid-cols-2">
         {flags.cert && (
@@ -87,7 +94,18 @@ export function TrackingPanel({ userId, detail, blockedReason, onDirty }: { user
               : exp < 0 ? <StatusBadge status="blocked">Expired {calDate(cur.ce)}</StatusBadge> : null)}
           </fieldset>
         )}
-        {flags.bg && (
+        {appConfig.trackBackgroundCheckAdminOnly && <fieldset className="space-y-3">
+          <legend className="sr-only">Background check record</legend>
+          <label className="flex min-h-11 items-center gap-3 font-bold">
+            <input type="checkbox" className="h-5 w-5" checked={cur.bs === 'cleared'} data-testid="checkbox-background-complete"
+              onChange={e => { if (!draft) base.current = detail.entry.profile.updatedAt; setDraft({ ...cur, bs: e.target.checked ? 'cleared' : 'not_started', bc: e.target.checked ? cur.bc : '' }); setSaved(false); }} />
+            Background check complete
+          </label>
+          <label className="block text-sm font-bold" htmlFor="background-date">Date completed</label>
+          <input id="background-date" type="date" className={sel} value={cur.bc} required={cur.bs === 'cleared'}
+            disabled={cur.bs !== 'cleared'} max={pacificToday()} onChange={e => set('bc', e.target.value)} data-testid="input-background-date" />
+        </fieldset>}
+        {flags.bg && !appConfig.trackBackgroundCheckAdminOnly && (
           <fieldset className="space-y-3">
             <legend className="font-bold">Background check</legend>
             <label className="block text-sm font-bold">Status

@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { appConfig } from './appConfig';
+import { appConfig, volunteerContactText } from './appConfig';
 import { retiredVolunteerStatuses } from './legacy-compatibility';
 
 export const states = ['AL','AK','AZ','AR','CA','CO','CT','DE','DC','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'] as const;
@@ -30,7 +30,8 @@ export function pacificToday(now = new Date()) {
 export const calendarDateSchema = z.string().refine(value => /^\d{4}-\d{2}-\d{2}$/.test(value) &&
   Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0,10) === value, 'Enter a valid calendar date.');
 const dob = calendarDateSchema.refine(value => value < pacificToday(), 'Date of birth must be in the past.')
-  .refine(value => appConfig.minimumAge === null || value <= `${Number(pacificToday().slice(0,4))-appConfig.minimumAge}${pacificToday().slice(4)}`, 'The minimum age requirement has not been met.');
+  .refine(value => appConfig.minimumAge === null || value <= `${Number(pacificToday().slice(0,4))-appConfig.minimumAge}${pacificToday().slice(4)}`,
+    { error: () => `Resource Coordinators must be ${appConfig.minimumAge} or older. If your date of birth is correct, please contact ${volunteerContactText}.` });
 const text = (label: string, length = 200) => z.string().trim().min(1, `Enter ${label.toLowerCase()}.`).max(length);
 const phone = z.string().trim().regex(/^[\d\s()+.-]+$/, 'Enter a 10-digit phone number.')
   .transform(phoneDigits).refine(value => /^\d{10}$/.test(value), 'Enter a 10-digit phone number.');

@@ -104,6 +104,9 @@ afterAll(async()=>{
 // Staff tools use the existing admin permission; there is no separate persisted staff role.
 describe.each(['Admin','Staff'] as const)('%s signup-to-approval review workflow',persona=>{
   it('classifies signup before verification, enforces requirements, approves, reopens review and survives email failure',async()=>{
+    const auto = appConfig.autoActivateOnProfileComplete;
+    Object.assign(appConfig, { autoActivateOnProfileComplete: false });
+    try {
     const tag=randomUUID(),email=`review-${tag}@example.invalid`;
     rateIdentities.add(email);
     const actorUser=await db.insert(usersTable).values({firstName:persona,lastName:'Synthetic Staff',email:`actor-${tag}@example.invalid`,
@@ -163,9 +166,122 @@ describe.each(['Admin','Staff'] as const)('%s signup-to-approval review workflow
     const exceptional=await actor.request(`${path}/status`,'POST',{status:'active',expectedUpdatedAt:reopen.data.detail.entry.profile.updatedAt});
     expect(exceptional.status).toBe(200);expect(exceptional.data.emailDelivery.ok).toBe(false);
     expect((await actor.request(path)).data.entry.profile.status).toBe('active');
+    } finally { Object.assign(appConfig, { autoActivateOnProfileComplete: auto }); }
   },30000);
 });
 describe('fixed profile validation and compatibility',()=>{
+  it('auto-activates only the first completed onboarding, audits both changes and sends one shift welcome', async () => {
+    const previous = { ...appConfig };
+    try {
+      for (const mode of ['automatic', 'inactive', 'manual', 'email-failure'] as const) {
+        Object.assign(appConfig, { autoActivateOnProfileComplete: mode !== 'manual' });
+        const tag = randomUUID(), email = `activation-${tag}@example.invalid`;
+        const [user] = await db.insert(usersTable).values({ firstName: 'Synthetic', lastName: 'Activation', email,
+          phone: '9165550100', role: 'volunteer', passwordHash: await hashPassword(password), emailVerifiedAt: new Date() }).returning();
+        ids.push(user!.id);
+        const [profile] = await db.insert(volunteerProfilesTable).values({
+          userId: user!.id, status: mode === 'inactive' ? 'inactive' : 'onboarding',
+        }).returning();
+        const volunteer = await client(email);
+        const calls = vi.mocked(sendEmail).mock.calls.length;
+        if (mode === 'email-failure') vi.mocked(sendEmail).mockRejectedValueOnce(new Error('Synthetic delivery failure'));
+        const completed = await volunteer.request('/onboarding', 'PATCH', { ...complete, complete: true });
+        expect(completed.status).toBe(200);
+        const active = mode === 'automatic' || mode === 'email-failure';
+        expect(completed.data.profile.status).toBe(active ? 'active' : mode === 'inactive' ? 'inactive' : 'onboarding');
+        expect(completed.data.profile.startDate).toBe(active ? pacificToday() : null);
+        const events = await db.select().from(activityLogTable).where(eq(activityLogTable.volunteerProfileId, profile!.id));
+        expect(events).toHaveLength(active ? 2 : 0);
+        if (active) {
+          expect(events.every(event => event.actorUserId === user!.id)).toBe(true);
+          expect(events.find(event => event.action === 'status_changed')!.details)
+            .toEqual({ from: 'onboarding', to: 'active', reason: 'auto_profile_complete' });
+          expect(events.find(event => event.action === 'start_date_changed')!.details)
+            .toEqual({ fields: ['startDate'], reason: 'first_activation' });
+        }
+        expect(vi.mocked(sendEmail).mock.calls.length - calls).toBe(mode === 'inactive' ? 0 : 1);
+        if (mode !== 'inactive') {
+          const emailInput = vi.mocked(sendEmail).mock.calls.at(-1)![0];
+          expect(emailInput.subject).toBe(active ? 'Welcome to the Community Care Team: choose your weekly shift' : 'Welcome to the Community Care Team');
+          if (active) expect(emailInput.text).toContain(`${appOrigin}/shifts`);
+        }
+        const afterCalls = vi.mocked(sendEmail).mock.calls.length;
+        expect((await volunteer.request('/onboarding', 'PATCH', { ...complete, complete: true })).status).toBe(200);
+        expect(vi.mocked(sendEmail).mock.calls.length).toBe(afterCalls);
+        if (active) {
+          await db.update(volunteerProfilesTable).set({ status: 'onboarding' }).where(eq(volunteerProfilesTable.id, profile!.id));
+          expect((await volunteer.request('/onboarding', 'PATCH', { complete: true })).data.profile.status).toBe('onboarding');
+          expect(vi.mocked(sendEmail).mock.calls.length).toBe(afterCalls);
+          if (mode === 'automatic') {
+            const path = `/admin/volunteers/${user!.id}`;
+            await db.update(volunteerProfilesTable).set({ startDate: null }).where(eq(volunteerProfilesTable.id, profile!.id));
+            let detail = (await admin.request(path)).data;
+            const reactivated = await admin.request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+            expect(reactivated.status).toBe(200);
+            expect(reactivated.data.detail.entry.profile.startDate).toBe(pacificToday());
+            await db.update(volunteerProfilesTable).set({ status: 'onboarding', startDate: '2020-01-01' }).where(eq(volunteerProfilesTable.id, profile!.id));
+            detail = (await admin.request(path)).data;
+            const retained = await admin.request(`${path}/status`, 'POST', { status: 'active', expectedUpdatedAt: detail.entry.profile.updatedAt });
+            expect(retained.data.detail.entry.profile.startDate).toBe('2020-01-01');
+          }
+        }
+      }
+    } finally { Object.assign(appConfig, previous); }
+  }, 30000);
+  it('admin-only background check validates dates, clears records, filters both exports and stays private', async () => {
+    const path = `/admin/volunteers/${otherId}`, previous = { ...appConfig };
+    let detail = (await admin.request(path)).data;
+    const save = async (fields: Record<string, unknown>) => {
+      const result = await admin.request(`${path}/tracking`, 'PATCH', { expectedUpdatedAt: detail.entry.profile.updatedAt, ...fields });
+      if (result.status === 200) detail = result.data;
+      return result;
+    };
+    try {
+      for (const status of ['pending', 'not_cleared']) expect((await save({ backgroundCheckStatus: status })).status).toBe(400);
+      for (const date of [null, '2099-01-01', '2026-02-30']) {
+        const result = await save({ backgroundCheckStatus: 'cleared', backgroundCheckClearedAt: date });
+        expect(result.status).toBe(400);
+        expect(result.data.error).toBe('Enter the date the background check was completed (today or earlier).');
+      }
+      expect((await save({ backgroundCheckStatus: 'cleared', backgroundCheckClearedAt: pacificToday() })).status).toBe(200);
+      const query = `search=${encodeURIComponent(detail.entry.user.email)}&backgroundCheckStatus=cleared`;
+      expect((await admin.request(`/admin/volunteers?${query}`)).data.volunteers.map((row: any) => row.user.id)).toContain(otherId);
+      const csv = rosterCsv(await rosterSnapshot());
+      expect(csv).toContain('Background check complete'); expect(csv).toContain('Background check date');
+      const events = await db.select().from(activityLogTable).where(eq(activityLogTable.volunteerProfileId, detail.entry.profile.id));
+      expect(events.filter(event => event.action === 'tracking_updated').at(-1)!.details)
+        .toEqual({ fields: ['backgroundCheckStatus', 'backgroundCheckClearedAt'] });
+      for (const route of ['/me', '/volunteer/dashboard', '/volunteer/profile']) {
+        const response = await other.request(route, route === '/volunteer/profile' ? 'PATCH' : 'GET',
+          route === '/volunteer/profile' ? {} : undefined);
+        expect(response.status).toBe(200);
+        expect(JSON.stringify(response.data)).not.toMatch(/backgroundCheck|background_check/);
+      }
+      expect(detail.approvalRequirements.some((check: any) => check.key === 'background_cleared')).toBe(false);
+      detail = (await admin.request(path)).data;
+      expect((await save({ backgroundCheckStatus: 'not_started', backgroundCheckClearedAt: pacificToday() })).status).toBe(200);
+      expect(detail.entry.profile.backgroundCheckClearedAt).toBeNull();
+      expect((await admin.request(`/admin/volunteers?${query}`)).data.total).toBe(0);
+      expect((await admin.request(`/admin/volunteers?${query.replace('cleared', 'not_started')}`)).data.total).toBe(1);
+      Object.assign(appConfig, { trackBackgroundCheckAdminOnly: false, trackBackgroundCheckInApp: false });
+      expect((await save({ backgroundCheckStatus: 'not_started' })).status).toBe(400);
+    } finally { Object.assign(appConfig, previous); }
+  });
+  it('enforces age 18 in onboarding and staff edits with specific messages', async () => {
+    const today = pacificToday(), birthday = `${Number(today.slice(0, 4)) - 18}${today.slice(4)}`;
+    const short = new Date(`${birthday}T12:00:00Z`); short.setUTCDate(short.getUTCDate() + 1);
+    const tooYoung = short.toISOString().slice(0, 10);
+    const before = await own.request('/onboarding', 'PATCH', { dateOfBirth: tooYoung });
+    expect(before.status).toBe(400); expect(JSON.stringify(before.data)).toContain('18 or older');
+    expect((await own.request('/onboarding', 'PATCH', { dateOfBirth: birthday })).status).toBe(200);
+    let detail = (await admin.request(`/admin/volunteers/${otherId}`)).data;
+    expect((await admin.request(`/admin/volunteers/${otherId}/tracking`, 'PATCH',
+      { expectedUpdatedAt: detail.entry.profile.updatedAt, dateOfBirth: '2099-01-01' })).data.error).toBe('Date of birth must be in the past.');
+    expect((await admin.request(`/admin/volunteers/${otherId}/tracking`, 'PATCH',
+      { expectedUpdatedAt: detail.entry.profile.updatedAt, dateOfBirth: tooYoung })).data.error).toBe('Date of birth must be at least 18 years ago.');
+    expect((await admin.request(`/admin/volunteers/${otherId}/tracking`, 'PATCH',
+      { expectedUpdatedAt: detail.entry.profile.updatedAt, dateOfBirth: birthday })).status).toBe(200);
+  });
   it('normalizes stored legacy status values in the authenticated me endpoint',async()=>{
     const [before]=await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,volunteerId));
     try {
@@ -179,9 +295,13 @@ describe('fixed profile validation and compatibility',()=>{
       await db.update(volunteerProfilesTable).set({status:before!.status}).where(eq(volunteerProfilesTable.userId,volunteerId));
     }
   });
-  it('accepts newborns, rejects today/future and invalid calendar days, and formats digit phones',()=>{
-    const today=pacificToday(), yesterday=new Date(`${today}T12:00:00Z`);yesterday.setUTCDate(yesterday.getUTCDate()-1);
-    expect(profileCompletionSchema.safeParse({...complete,dateOfBirth:yesterday.toISOString().slice(0,10)}).success).toBe(true);
+  it('accepts exactly 18 today, rejects one day short/future/invalid days, and formats digit phones',()=>{
+    const today=pacificToday(), birthday=`${Number(today.slice(0,4))-18}${today.slice(4)}`;
+    const short=new Date(`${birthday}T12:00:00Z`);short.setUTCDate(short.getUTCDate()+1);
+    expect(profileCompletionSchema.safeParse({...complete,dateOfBirth:birthday}).success).toBe(true);
+    const tooYoung=profileCompletionSchema.safeParse({...complete,dateOfBirth:short.toISOString().slice(0,10)});
+    expect(tooYoung.success).toBe(false);
+    if (!tooYoung.success) expect(tooYoung.error.issues[0]!.message).toContain('18 or older');
     for(const dateOfBirth of [today,'2099-01-01','2025-02-30']) expect(profileCompletionSchema.safeParse({...complete,dateOfBirth}).success).toBe(false);
     expect(profileCompletionSchema.parse({...complete,phone:'(916) 555-0100'}).phone).toBe('9165550100');
     expect(formatPhone('9165550100')).toBe('(916) 555-0100');
@@ -203,13 +323,13 @@ describe('fixed profile validation and compatibility',()=>{
   it('refuses activation of a complete profile until onboarding completion is recorded',async()=>{
     const [before]=await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,volunteerId));
     try {
-      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:null}).where(eq(volunteerProfilesTable.userId,volunteerId));
+      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:null,status:'onboarding'}).where(eq(volunteerProfilesTable.userId,volunteerId));
       const detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
       const result=await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:'active',expectedUpdatedAt:detail.entry.profile.updatedAt});
       expect(result.status).toBe(422);
       expect(result.data.missing.map((entry:{key:string})=>entry.key)).toEqual(['onboarding_completed']);
     } finally {
-      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:before!.onboardingCompletedAt}).where(eq(volunteerProfilesTable.userId,volunteerId));
+      await db.update(volunteerProfilesTable).set({onboardingCompletedAt:before!.onboardingCompletedAt,status:before!.status}).where(eq(volunteerProfilesTable.userId,volunteerId));
     }
   });
   it('422 WorkflowError preserves its message and receives VALIDATION_FAILED', () => {
@@ -219,6 +339,7 @@ describe('fixed profile validation and compatibility',()=>{
     expect(response.json({ error: error.message })).toEqual({ error: error.message, code: 'VALIDATION_FAILED' });
   });
   it('activates after complete onboarding, sets start date, audits edits, and rejects legacy status writes',async()=>{
+    await db.update(volunteerProfilesTable).set({ status: 'onboarding' }).where(eq(volunteerProfilesTable.userId, volunteerId));
     let detail=(await admin.request(`/admin/volunteers/${volunteerId}`)).data;
     expect(detail.approvalRequirements.every((entry:{met:boolean})=>entry.met)).toBe(true);
     expect((await admin.request(`/admin/volunteers/${volunteerId}/status`,'POST',{status:retiredVolunteerStatuses[0],expectedUpdatedAt:detail.entry.profile.updatedAt})).status).toBe(400);
@@ -265,7 +386,7 @@ describe('fixed profile validation and compatibility',()=>{
     } finally {Object.assign(appConfig,previous);}
     const snapshot=await rosterSnapshot();
     const csv=rosterCsv(snapshot);
-    expect(csv).not.toContain('Certification');expect(csv).not.toContain('Background check');
+    expect(csv).not.toContain('Certification');expect(csv).toContain('Background check complete');
     expect(csv).not.toContain('Agreement');expect(csv).not.toContain('Onboarding answers');
     expect(csv).toContain('Date of birth');
   });

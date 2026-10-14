@@ -15,6 +15,7 @@ import { onAssignmentsReleased } from '../uncovered-shifts';
 import { logger } from '../lib/logger';
 import { lockSchedule } from '../server/scheduleMutations';
 import { normalizeVolunteerStatus, profileCompletionSchema, profileDraftSchema, calendarDateSchema } from '@workspace/shared/profileFields';
+import { appConfig } from '@workspace/shared/appConfig';
 
 const router = Router();
 function errorResponse(error: unknown, res: Response) {
@@ -53,12 +54,7 @@ router.post('/volunteers/:userId/status', async (req, res) => {
         if (released.length) await tx.update(shiftAssignmentsTable).set({ endDate: today, endedReason: 'admin_removed', updatedAt: new Date() })
           .where(inArray(shiftAssignmentsTable.id, actual));
       }
-      const [previousActivation] = input.status === 'active' && !profile.startDate
-        ? await tx.select({id:activityLogTable.id}).from(activityLogTable).where(and(
-          eq(activityLogTable.volunteerProfileId,profile.id),eq(activityLogTable.action,'status_changed'),
-          sql`${activityLogTable.details}->>'to' = 'active'`,
-        )).limit(1) : [];
-      const newStartDate = input.status === 'active' && !profile.startDate && !previousActivation ? today : undefined;
+      const newStartDate = input.status === 'active' && !profile.startDate ? today : undefined;
       await tx.update(volunteerProfilesTable).set({ status: input.status, ...(newStartDate ? { startDate:newStartDate } : {}), updatedAt: new Date() }).where(eq(volunteerProfilesTable.id, profile.id));
       if (newStartDate) await tx.insert(activityLogTable).values({ volunteerProfileId:profile.id,actorUserId:req.authUser!.id,
         action:'start_date_changed',details:{fields:['startDate'],reason:'first_activation'} });
@@ -125,6 +121,11 @@ router.patch('/volunteers/:userId/tracking', async (req, res) => {
     const checkedProfile = profileInput.safeParse(Object.fromEntries(Object.keys(profileInput.shape)
       .filter(key => Object.hasOwn(fields, key)).map(key => [key, fields[key as keyof typeof fields]])));
     if (!checkedProfile.success) {
+      if (fields.dateOfBirth != null) {
+        const dob = profileCompletionSchema.shape.dateOfBirth.safeParse(fields.dateOfBirth);
+        if (!dob.success) throw new WorkflowError(400, dob.error.issues[0]!.message.includes('or older')
+          ? `Date of birth must be at least ${appConfig.minimumAge} years ago.` : dob.error.issues[0]!.message);
+      }
       res.status(400).json({ error: 'Please check the profile fields.', fieldErrors: checkedProfile.error.flatten().fieldErrors, issues: checkedProfile.error.issues }); return;
     }
     Object.assign(fields, checkedProfile.data);
@@ -139,15 +140,27 @@ router.patch('/volunteers/:userId/tracking', async (req, res) => {
       if (!county.success) throw new WorkflowError(400, 'Enter a county before saving.');
       fields.county = county.data;
     }
-    if (fields.dateOfBirth != null && !profileCompletionSchema.shape.dateOfBirth.safeParse(fields.dateOfBirth).success)
-      throw new WorkflowError(400, 'Date of birth must be a valid date in the past.');
     if (fields.startDate != null && !calendarDateSchema.safeParse(fields.startDate).success)
       throw new WorkflowError(400, 'Enter a valid start date.');
-    [fields.certificationCompletedAt, fields.certificationExpiresAt, fields.backgroundCheckSubmittedAt, fields.backgroundCheckClearedAt]
+    [fields.certificationCompletedAt, fields.certificationExpiresAt, fields.backgroundCheckSubmittedAt,
+      ...(!appConfig.trackBackgroundCheckAdminOnly ? [fields.backgroundCheckClearedAt] : [])]
       .filter((value): value is string | null => value !== undefined).forEach(calendar);
     if (fields.certificationCompletedAt && fields.certificationExpiresAt && fields.certificationExpiresAt < fields.certificationCompletedAt)
       throw new WorkflowError(400, 'Certification expiry cannot be before completion.');
-    if (fields.backgroundCheckSubmittedAt && fields.backgroundCheckClearedAt && fields.backgroundCheckClearedAt < fields.backgroundCheckSubmittedAt)
+    const hasBackground = Object.keys(fields).some(key => key.startsWith('backgroundCheck'));
+    if (hasBackground && !appConfig.trackBackgroundCheckAdminOnly && !appConfig.trackBackgroundCheckInApp)
+      throw new WorkflowError(400, 'Background-check tracking is not enabled.');
+    if (hasBackground && appConfig.trackBackgroundCheckAdminOnly) {
+      if (fields.backgroundCheckSubmittedAt !== undefined)
+        throw new WorkflowError(400, 'Only completion and the date completed are recorded in this mode.');
+      if (!['not_started', 'cleared'].includes(fields.backgroundCheckStatus ?? ''))
+        throw new WorkflowError(400, 'Choose Complete or Not recorded.');
+      if (fields.backgroundCheckStatus === 'not_started') fields.backgroundCheckClearedAt = null;
+      else if (!fields.backgroundCheckClearedAt || !calendarDateSchema.safeParse(fields.backgroundCheckClearedAt).success ||
+        fields.backgroundCheckClearedAt > pacificDay(new Date()))
+        throw new WorkflowError(400, 'Enter the date the background check was completed (today or earlier).');
+    }
+    if (!appConfig.trackBackgroundCheckAdminOnly && fields.backgroundCheckSubmittedAt && fields.backgroundCheckClearedAt && fields.backgroundCheckClearedAt < fields.backgroundCheckSubmittedAt)
       throw new WorkflowError(400, 'Background-check clearance cannot be before submission.');
     await db.transaction(async tx => {
       const { profile } = await lockedVolunteer(tx, id);

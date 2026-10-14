@@ -4,7 +4,7 @@ import { before, after, test } from 'node:test';
 import { randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import { eq, inArray } from 'drizzle-orm';
-import { db, pool, usersTable, volunteerProfilesTable, resourcesTable, notificationLogTable, sessionsTable } from '@workspace/db';
+import { db, pool, usersTable, volunteerProfilesTable, resourcesTable, notificationLogTable, activityLogTable, sessionsTable } from '@workspace/db';
 import { onboardingQuestions, buildOnboardingAnswersSchema } from '@workspace/shared/onboardingQuestions';
 import { appConfig } from '@workspace/shared/appConfig';
 if (process.env.NODE_ENV && process.env.NODE_ENV !== 'development') throw new Error('Onboarding checks require the development database.');
@@ -64,6 +64,7 @@ after(async () => {
   if (resources.length) await db.delete(resourcesTable).where(inArray(resourcesTable.id, resources));
   if (users.length) {
     await db.delete(notificationLogTable).where(inArray(notificationLogTable.recipientUserId, users));
+    await db.delete(activityLogTable).where(inArray(activityLogTable.actorUserId, users));
     await db.delete(volunteerProfilesTable).where(inArray(volunteerProfilesTable.userId, users));
     await db.delete(usersTable).where(inArray(usersTable.id, users));
   }

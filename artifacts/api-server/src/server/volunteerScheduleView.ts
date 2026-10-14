@@ -8,7 +8,9 @@ export function bookingBlockers(profile: { status: string; agreementAcknowledged
   const reasons: string[] = [];
   if (profile.status !== 'active') reasons.push(profile.status === 'inactive'
     ? `Your Resource Coordinator status is inactive. Please contact ${volunteerContactText} if you would like to return.`
-    : "Your profile is awaiting approval. We'll email you when you're ready to choose a shift.");
+    : appConfig.autoActivateOnProfileComplete
+      ? `Your account isn't active yet. The Community Care Team will turn on shift sign-up for you. Questions? Contact ${volunteerContactText}.`
+      : "Your profile is awaiting approval. We'll email you when you're ready to choose a shift.");
   if (appConfig.requireAgreementAcknowledgment && !profile.agreementAcknowledgedAt) reasons.push('Please acknowledge the volunteer agreement in onboarding.');
   else if (appConfig.requireAgreementAcknowledgment && currentVersion && profile.agreementVersion !== currentVersion) reasons.push('Please acknowledge the updated volunteer agreements before using shifts.');
   return reasons;

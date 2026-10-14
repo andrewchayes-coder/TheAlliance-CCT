@@ -43,11 +43,11 @@ export interface PublicVolunteerProfile {
   certificationCompletedAt: string | null;
   /** @nullable */
   certificationExpiresAt: string | null;
-  backgroundCheckStatus: PublicVolunteerProfileBackgroundCheckStatus;
+  backgroundCheckStatus?: PublicVolunteerProfileBackgroundCheckStatus;
   /** @nullable */
-  backgroundCheckSubmittedAt: string | null;
+  backgroundCheckSubmittedAt?: string | null;
   /** @nullable */
-  backgroundCheckClearedAt: string | null;
+  backgroundCheckClearedAt?: string | null;
   /** @nullable */
   agreementAcknowledgedAt: Date | null;
   /** @nullable */

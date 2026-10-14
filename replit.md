@@ -7,9 +7,10 @@ Mobile-first volunteer management for The Alliance's Community Care Team.
 - The pilot is 12–15 volunteers in Placer County, growing to about 60 across five counties. Excellent phone usability is required. County choices are not a final service-area commitment.
 - Volunteers are Resource Coordinators helping local families find support. Use warm, specific, dignifying copy; staff UI may say volunteer.
 - The app writes only **onboarding / active / inactive**. Historical database statuses normalize to onboarding when read; their enum values and historical columns remain intact.
-- Onboarding is a fixed profile: names, ten-digit mobile, DOB, home address, emergency contact name/relationship/phone. DOB must be a valid date before today in Pacific time; there is no age cutoff.
-- County is staff-managed, defaults to Placer, and is not asked of volunteers. Start date is staff-editable and defaults to Pacific today on first activation.
-- Activation requires verified email, recorded onboarding completion and every required profile field. No compliance override is provided. Questionnaire configuration is empty; certification/background/agreement flags are false. Training and paperwork are handled with staff outside this app.
+- Onboarding is a fixed profile: names, ten-digit mobile, DOB, home address, emergency contact name/relationship/phone. Resource Coordinators must be at least 18; the 18th birthday is accepted using Pacific calendar dates.
+- County is staff-managed, defaults to Placer, and is not asked of volunteers. Start date is staff-editable; every transition to Active fills a missing start date with Pacific today, including reactivation.
+- Completing a new profile automatically activates an Onboarding volunteer when email verification and all profile requirements are met, with one shift-signup welcome email. Re-submission and inactive volunteers never auto-activate. Staff can still change status manually. Questionnaire configuration is empty; certification, volunteer-facing background-check and agreement gates remain off.
+- Background checks are recorded only by staff using the existing cleared/not_started status and cleared date. This optional record is never returned to volunteers, is not an activation/shift requirement, and adds no Needs-attention reason.
 - Google OAuth is prepared but unavailable until configured; email/password works independently.
 
 ## Structure and runtime

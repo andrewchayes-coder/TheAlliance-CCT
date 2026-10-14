@@ -871,7 +871,7 @@ paths:
         - { name: city, in: query, schema: { type: string } }
         - { name: shiftPresence, in: query, schema: { type: string, enum: [has_shift, no_shift] } }
         - { name: profileIncomplete, in: query, schema: { type: string, enum: ['true', 'false'] } }
-        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county] } }
+        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county, backgroundCheck] } }
         - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
@@ -961,7 +961,7 @@ paths:
         - { name: city, in: query, schema: { type: string } }
         - { name: shiftPresence, in: query, schema: { type: string, enum: [has_shift, no_shift] } }
         - { name: profileIncomplete, in: query, schema: { type: string, enum: ['true', 'false'] } }
-        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county] } }
+        - { name: sortBy, in: query, schema: { type: string, enum: [name, status, phone, email, city, startDate, shiftCount, lastLoginAt, dateOfBirth, address, zip, emergencyContact, county, backgroundCheck] } }
         - { name: sortDirection, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: certificationStatus, in: query, schema: { type: string, enum: [not_started, in_progress, complete] } }
         - { name: backgroundCheckStatus, in: query, schema: { type: string, enum: [not_started, pending, cleared, not_cleared] } }
@@ -2398,7 +2398,7 @@ components:
         message: { type: string }
     AuthSession:
       type: object
-      required: [csrfToken, authenticated, verified, email, firstName, role, googleEnabled, nextPath, resendAfterSeconds]
+      required: [csrfToken, authenticated, verified, email, firstName, role, googleEnabled, appOrigin, nextPath, resendAfterSeconds]
       properties:
         csrfToken: { type: string }
         authenticated: { type: boolean }
@@ -2407,6 +2407,7 @@ components:
         firstName: { type: [string, "null"] }
         role: { type: [string, "null"], enum: [admin, volunteer, null] }
         googleEnabled: { type: boolean }
+        appOrigin: { type: string }
         nextPath: { type: string }
         resendAfterSeconds: { type: integer }
         notice: { type: string }
@@ -2517,7 +2518,7 @@ components:
         updatedAt: { type: string, format: date-time }
     PublicVolunteerProfile:
       type: object
-      required: [id, userId, dateOfBirth, addressLine1, city, state, zip, emergencyContactName, emergencyContactRelationship, emergencyContactPhone, startDate, county, status, onboardingAnswers, onboardingCompletedAt, availabilityNotes, certificationStatus, certificationCompletedAt, certificationExpiresAt, backgroundCheckStatus, backgroundCheckSubmittedAt, backgroundCheckClearedAt, agreementAcknowledgedAt, agreementVersion, createdAt, updatedAt]
+      required: [id, userId, dateOfBirth, addressLine1, city, state, zip, emergencyContactName, emergencyContactRelationship, emergencyContactPhone, startDate, county, status, onboardingAnswers, onboardingCompletedAt, availabilityNotes, certificationStatus, certificationCompletedAt, certificationExpiresAt, agreementAcknowledgedAt, agreementVersion, createdAt, updatedAt]
       properties:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }

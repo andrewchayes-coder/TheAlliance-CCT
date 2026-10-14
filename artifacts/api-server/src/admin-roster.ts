@@ -68,7 +68,7 @@ export type RosterFilters = {
   needsAttention?: 'any' | AttentionReason;
   showTestAccounts?: 'true' | 'false';
   city?: string; shiftPresence?: 'has_shift' | 'no_shift'; profileIncomplete?: 'true' | 'false';
-  sortBy?: 'name' | 'status' | 'phone' | 'email' | 'city' | 'startDate' | 'shiftCount' | 'lastLoginAt' | 'dateOfBirth' | 'address' | 'zip' | 'emergencyContact' | 'county';
+  sortBy?: 'name' | 'status' | 'phone' | 'email' | 'city' | 'startDate' | 'shiftCount' | 'lastLoginAt' | 'dateOfBirth' | 'address' | 'zip' | 'emergencyContact' | 'county' | 'backgroundCheck';
   sortDirection?: 'asc' | 'desc';
 };
 export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
@@ -84,7 +84,10 @@ export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
     const incomplete = !profile.onboardingCompletedAt || missingProfileFields(user,profile).length > 0;
     if (filters.profileIncomplete && incomplete !== (filters.profileIncomplete === 'true')) return false;
     if (appConfig.trackCertificationInApp && filters.certificationStatus && profile.certificationStatus !== filters.certificationStatus) return false;
-    if (appConfig.trackBackgroundCheckInApp && filters.backgroundCheckStatus && profile.backgroundCheckStatus !== filters.backgroundCheckStatus) return false;
+    if ((appConfig.trackBackgroundCheckInApp || appConfig.trackBackgroundCheckAdminOnly) && filters.backgroundCheckStatus) {
+      if (appConfig.trackBackgroundCheckAdminOnly && filters.backgroundCheckStatus === 'not_started' ? profile.backgroundCheckStatus === 'cleared' :
+        profile.backgroundCheckStatus !== filters.backgroundCheckStatus) return false;
+    }
     if (filters.needsAttention && (filters.needsAttention === 'any' ? !attention.length : !attention.includes(filters.needsAttention))) return false;
     if (!search) return true;
     return [`${user.firstName} ${user.lastName}`, `${user.lastName} ${user.firstName}`, user.email, user.phone ?? '']
@@ -105,6 +108,7 @@ export function sortRoster(people: RosterPerson[], filters: RosterFilters) {
       case 'status':return normalizeVolunteerStatus(profile.status);
       case 'shiftCount':return shiftCount;
       case 'lastLoginAt':return user.lastLoginAt?.getTime() ?? null;
+      case 'backgroundCheck':return profile.backgroundCheckStatus === 'cleared' ? `1 ${profile.backgroundCheckClearedAt ?? ''}` : '0';
       case 'address':return [profile.addressLine1,profile.city,profile.state,profile.zip].filter(Boolean).join(', ') || null;
       case 'emergencyContact':return [profile.emergencyContactName,profile.emergencyContactRelationship,profile.emergencyContactPhone].filter(Boolean).join(' ') || null;
       default:return profile[key] ?? null;
@@ -142,7 +146,7 @@ export function rosterCsv(people: RosterPerson[]) {
   // plus individual columns driven by the current question configuration.
   const fields = (Object.keys(getTableColumns(volunteerProfilesTable)) as Array<keyof Profile>).filter(key =>
     (!key.startsWith('certification') || appConfig.trackCertificationInApp) &&
-    (!key.startsWith('backgroundCheck') || appConfig.trackBackgroundCheckInApp) &&
+    (!key.startsWith('backgroundCheck') || (appConfig.trackBackgroundCheckInApp && !appConfig.trackBackgroundCheckAdminOnly)) &&
     (!key.startsWith('agreement') || appConfig.requireAgreementAcknowledgment) &&
     (key !== 'onboardingAnswers' || onboardingQuestions.length > 0));
   const labels: Partial<Record<keyof Profile, string>> = {
@@ -154,13 +158,16 @@ export function rosterCsv(people: RosterPerson[]) {
   const profileLabel = (key: keyof Profile) => labels[key] ??
     (key.charAt(0).toUpperCase() + key.slice(1).replace(/[A-Z]/g, letter => ` ${letter.toLowerCase()}`));
   const headers = ['First name', 'Last name', 'Email', 'Phone', 'Email verified at', 'Last login', 'Account active',
-    ...fields.map(profileLabel), ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
+    ...fields.map(profileLabel), ...(appConfig.trackBackgroundCheckAdminOnly ? ['Background check complete', 'Background check date'] : []),
+    ...onboardingQuestions.map(q => `Answer: ${q.label} (${q.id})`), 'Shifts held'];
   return csv(headers, people.filter(p => !p.user.isTestAccount).map(person => [person.user.firstName, person.user.lastName, person.user.email, person.user.phone,
     person.user.emailVerifiedAt?.toISOString(), person.user.lastLoginAt?.toISOString(), person.user.isActive,
     ...fields.map(key => {
       const value = person.profile[key];
       return value instanceof Date ? value.toISOString() : typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
-    }), ...onboardingQuestions.map(q => formatOnboardingAnswer(person.profile.onboardingAnswers[q.id])), heldShiftsText(person)]));
+    }), ...(appConfig.trackBackgroundCheckAdminOnly ? [person.profile.backgroundCheckStatus === 'cleared' ? 'Yes' : 'No',
+      person.profile.backgroundCheckStatus === 'cleared' ? person.profile.backgroundCheckClearedAt ?? '' : ''] : []),
+    ...onboardingQuestions.map(q => formatOnboardingAnswer(person.profile.onboardingAnswers[q.id])), heldShiftsText(person)]));
 }
 export async function customCsvRows(people:RosterPerson[],now=new Date()) {
   const real=people.filter(p=>!p.user.isTestAccount);

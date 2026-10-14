@@ -2,6 +2,15 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.2.0 — 2026-10-14
+
+### Changed
+- Volunteers become Active automatically when they finish their profile (Alliance decision, Oct 13): one welcome email with a link to choose a shift; staff can still set status by hand. Becoming Active always sets a start date if there isn't one (fixes the re-approved test volunteer case). Admin-only background check record (checkbox + date) with a roster filter, optional column and CSV columns; never shown to volunteers and not required for anything. Minimum age 18. Visitors on the old .replit.app address are sent to the official address. No database changes.
+
+### Docs
+- Docs: docs/Alliance Persona Test Run.md updated (v8).
+- QA-CHECKLIST.md synchronized with all 136 master IDs and Fix 8 workflows.
+
 ## v1.1.5 — 2026-10-12
 
 ### Changed

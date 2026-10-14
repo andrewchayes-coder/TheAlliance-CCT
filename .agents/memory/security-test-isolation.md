@@ -19,3 +19,9 @@ Paginated integration-test assertions must narrow queries to their owned fixture
 **Why:** the development database can simultaneously contain browser fixtures and other test runs; a global sorted first-page assertion can fail even when filtering and sorting are correct.
 
 **How to apply:** use a fixture email or namespace in integration queries; verify global sorting and counting with pure projections or controlled snapshots rather than assuming the shared database is otherwise empty.
+
+Verify temporary schema removal explicitly after browser smoke runs, including successful focused runs.
+
+**Why:** a successful focused browser process was observed with its isolated fixture schema still present; a passing UI assertion or exit code alone does not prove cleanup.
+
+**How to apply:** check that the exact run-owned schema is absent before reporting cleanup complete. If needed, remove only that verified synthetic development scope, never unrelated schemas.

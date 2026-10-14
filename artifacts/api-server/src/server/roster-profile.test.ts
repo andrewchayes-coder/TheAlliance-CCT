@@ -69,3 +69,15 @@ it('filters city, county, standing shifts and actual required fields even with l
   expect(filterRoster([a,b],{city:'Auburn',county:'Placer',shiftPresence:'no_shift',profileIncomplete:'false'}).map(p=>p.user.id)).toEqual(['a']);
   expect(filterRoster([a,b],{shiftPresence:'has_shift',profileIncomplete:'true'}).map(p=>p.user.id)).toEqual(['b']);
 });
+
+it('combines the staff-only background filter and sorts the optional record column without attention changes',()=>{
+  const recorded=person('recorded',{backgroundCheckStatus:'cleared',backgroundCheckClearedAt:'2026-02-01'});
+  const empty=person('empty',{backgroundCheckStatus:'not_started',backgroundCheckClearedAt:null});
+  const legacy=person('legacy',{backgroundCheckStatus:'pending',backgroundCheckClearedAt:null});
+  expect(filterRoster([recorded,empty,legacy],{backgroundCheckStatus:'cleared',city:'Auburn'})).toEqual([recorded]);
+  expect(filterRoster([recorded,empty,legacy],{backgroundCheckStatus:'not_started'})).toEqual([empty,legacy]);
+  expect(sortRoster([recorded,empty],{sortBy:'backgroundCheck'})).toEqual([empty,recorded]);
+  expect(sortRoster([recorded,empty],{sortBy:'backgroundCheck',sortDirection:'desc'})).toEqual([recorded,empty]);
+  expect(attentionReasons(recorded.profile,0,'2026-03-16',recorded.user))
+    .toEqual(attentionReasons(empty.profile,0,'2026-03-16',empty.user));
+});

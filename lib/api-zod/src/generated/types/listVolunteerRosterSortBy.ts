@@ -23,4 +23,5 @@ export const ListVolunteerRosterSortBy = {
   zip: 'zip',
   emergencyContact: 'emergencyContact',
   county: 'county',
+  backgroundCheck: 'backgroundCheck',
 } as const;

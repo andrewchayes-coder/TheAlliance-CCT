@@ -40,6 +40,8 @@ const COLS: { key: SortKey; label: string; def: boolean }[] = [
   { key: 'shiftCount', label: 'Shifts', def: true }, { key: 'lastLoginAt', label: 'Last login', def: true },
   { key: 'dateOfBirth', label: 'Date of birth', def: false }, { key: 'address', label: 'Full address', def: false }, { key: 'zip', label: 'ZIP', def: false },
   { key: 'emergencyContact', label: 'Emergency contact', def: false }, { key: 'county', label: 'County', def: false },
+  ...((appConfig.trackBackgroundCheckAdminOnly || appConfig.trackBackgroundCheckInApp)
+    ? [{ key: 'backgroundCheck' as const, label: 'Background check', def: false }] : []),
 ];
 const COL_KEYS = COLS.map(c => c.key) as [SortKey, ...SortKey[]];
 const colsSchema = z.array(z.enum(COL_KEYS));
@@ -73,6 +75,8 @@ function AttentionBadges({ entry }: { entry: VolunteerRosterEntry }) {
 function Cell({ k, e }: { k: SortKey; e: VolunteerRosterEntry }) {
   const p = e.profile;
   switch (k) {
+    case 'backgroundCheck': return p.backgroundCheckStatus === 'cleared'
+      ? <>Complete{p.backgroundCheckClearedAt ? ` · ${calDate(p.backgroundCheckClearedAt)}` : ''}</> : <>Not recorded</>;
     case 'name': return <Link href={`/admin/volunteers/${e.user.id}`} className={`inline-flex min-h-11 items-center ${linkCls}`} data-testid={`link-volunteer-${e.user.id}`}>{fullName(e)}<TestBadge test={e.user.isTestAccount} /></Link>;
     case 'status': { const [l, kind] = STATUS[normalizeVolunteerStatus(p.status)] ?? [p.status, 'neutral' as Badge]; return <StatusBadge status={kind}>{l}</StatusBadge>; }
     case 'phone': return e.user.phone ? <a href={`tel:${e.user.phone}`} className={`inline-flex min-h-11 items-center whitespace-nowrap ${linkCls}`} data-testid={`link-phone-${e.user.id}`}>{formatPhone(e.user.phone) || e.user.phone}</a> : <Dash />;
@@ -110,6 +114,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [county, setCounty] = useState('');
+  const [background, setBackground] = useState('');
   const [city, setCity] = useState('');
   const [presence, setPresence] = useState('');
   const [incomplete, setIncomplete] = useState('');
@@ -128,12 +133,13 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
     return () => clearTimeout(t);
   }, [text]);
 
-  const filterKey = [search, status, county, city, presence, incomplete, attn, showTests, sortBy, dir].join('|');
+  const filterKey = [search, status, county, city, presence, incomplete, attn, background, showTests, sortBy, dir].join('|');
   useEffect(() => { setOffset(0); setSelected(new Set()); }, [filterKey]);
 
   const filters = {
     ...(search ? { search } : {}), ...(status ? { status } : {}), ...(county ? { county } : {}), ...(city ? { city } : {}),
     ...(presence ? { shiftPresence: presence } : {}), ...(incomplete ? { profileIncomplete: incomplete } : {}), ...(attn ? { needsAttention: attn } : {}),
+    ...(background ? { backgroundCheckStatus: background } : {}),
   };
   const sort = sortBy ? { sortBy, sortDirection: dir } : {};
   const params = { ...filters, ...sort, ...(showTests ? { showTestAccounts: 'true' } : {}), limit: PAGE, offset } as ListVolunteerRosterParams;
@@ -152,14 +158,14 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
 
   const qs = new URLSearchParams({ ...filters, ...sort } as Record<string, string>).toString();
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k]) => k === 'search' || k === 'status' || k === 'county' || k === 'needsAttention')) as Record<string, string>).toString();
+  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k]) => k === 'search' || k === 'status' || k === 'county' || k === 'needsAttention' || k === 'backgroundCheckStatus')) as Record<string, string>).toString();
   const csv = (name: string) => name === 'schedule' ? `${base}/api/admin/volunteers/schedule.csv${schedQs ? `?${schedQs}` : ''}` : `${base}/api/admin/volunteers/${name}.csv${qs ? `?${qs}` : ''}`;
 
   const pageIds = rows.map(r => r.user.id);
   const allOnPage = pageIds.length > 0 && pageIds.every(id => selected.has(id));
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const togglePage = () => setSelected(s => { const n = new Set(s); pageIds.forEach(id => allOnPage ? n.delete(id) : n.add(id)); return n; });
-  const reset = () => { setText(''); setSearch(''); setStatus(''); setCounty(''); setCity(''); setPresence(''); setIncomplete(''); setAttn(''); };
+  const reset = () => { setText(''); setSearch(''); setStatus(''); setCounty(''); setCity(''); setPresence(''); setIncomplete(''); setAttn(''); setBackground(''); };
 
   const visible = COLS.filter(c => cols.includes(c.key));
   const nameShown = cols.includes('name');
@@ -234,13 +240,17 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
             <select className={`${selectCls} mt-1 font-normal`} value={attn} onChange={e => setAttn(e.target.value)} data-testid="filter-attention">
               <option value="">Everyone</option>{Object.entries(ATTN).filter(([key]) => attnVisible(key)).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select></label>
+          {(appConfig.trackBackgroundCheckAdminOnly || appConfig.trackBackgroundCheckInApp) && <label className="text-sm font-bold">Background check
+            <select className={`${selectCls} mt-1 font-normal`} value={background} onChange={e => setBackground(e.target.value)} data-testid="filter-background-check">
+              <option value="">Any</option><option value="cleared">Complete</option><option value="not_started">Not recorded</option>
+            </select></label>}
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           <a href={csv('roster')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-roster-csv">
             <Download size={16} aria-hidden="true" />Download roster CSV</a>
           <a href={csv('schedule')} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-schedule-csv">
             <Download size={16} aria-hidden="true" />Download schedule CSV</a>
-          <span className="text-navy-soft">The roster CSV includes every volunteer matching your filters and sort, not just this page. The schedule CSV applies only search, status, county and needs attention; city, shift, profile and sort choices are not applied.</span>
+          <span className="text-navy-soft">The roster CSV includes every volunteer matching your filters and sort, not just this page. The schedule CSV applies search, status, county, needs attention and background check; city, shift, profile and sort choices are not applied.</span>
           <p className="w-full text-navy-soft">Roster exports include personal information and internal admin notes. Share only with authorized staff.</p>
           {hasFilters && <Button type="button" variant="secondary" onClick={reset} data-testid="button-reset-filters">Clear filters</Button>}
         </div>
