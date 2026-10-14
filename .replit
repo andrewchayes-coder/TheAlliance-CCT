@@ -27,7 +27,7 @@ channel = "stable-25_05"
 [userenv.production]
 APP_ORIGIN = "https://cct.defendingthecause.org"
 RUN_JOBS = "false"
-JOBS_RUN_URL = "https://the-alliance-cct.replit.app/api/jobs/run"
+JOBS_RUN_URL = "https://cct.defendingthecause.org/api/jobs/run"
 APP_BASE_URL = "https://cct.defendingthecause.org"
 
 [userenv.development]
