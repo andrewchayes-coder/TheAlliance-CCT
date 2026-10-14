@@ -18,8 +18,12 @@ Assets are bundled in `artifacts/alliance-volunteer-portal/public/brand/`, not d
 | `public/logo-stacked.png` | `/brand/logo-stacked.png` |
 | `public/logo-mark.png` | `/brand/logo-mark.png` |
 | `public/favicon-32.png` | `/brand/favicon-32.png` |
-| `public/apple-touch-icon.png` | `/brand/apple-touch-icon.png` |
-| `public/icon-192.png` | `/brand/icon-192.png` |
-| `public/icon-512.png` | `/brand/icon-512.png` |
+| Generated from `logo-stacked.png` | `/brand/apple-touch-icon.png` (180×180) |
+| Generated from `logo-stacked.png` | `/brand/icon-192.png` (192×192) |
+| Generated from `logo-stacked.png` | `/brand/icon-512.png` (512×512) |
+| Generated from `logo-stacked.png` | `/brand/icon-512-maskable.png` (512×512) |
+
+Home-screen icons use the trimmed stacked CCT logo centered on opaque white: 80% width for ordinary icons,
+64% for the maskable safe zone. The favicon and mobile-header mark stay unchanged.
 
 The bucket also contains `public/CCT Logo1.png` and `public/CCT Logo2.png`; these additional files are not used at runtime. The already-named horizontal and stacked PNGs were visually checked before copying. Use white behind the navy artwork.

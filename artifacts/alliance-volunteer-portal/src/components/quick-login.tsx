@@ -62,7 +62,6 @@ export function TestAccountBanner() {
   const status = useStatus(ok && !!user?.isTestAccount);
   const { pending, error, go } = useSwitcher();
   const [out, setOut] = useState(false);
-  const [outError, setOutError] = useState<string | null>(null);
   if (!ok || !user?.isTestAccount) return null;
   const personas = status?.personas ?? [];
   const current = personas.find(p => p.key === persona);
@@ -70,20 +69,14 @@ export function TestAccountBanner() {
   const label = persona ? personaLabel(persona, current?.label ?? fallback) : fallback;
   const others = personas.filter(p => p.key !== persona);
   async function signout() {
-    setOut(true); setOutError(null);
-    try {
-      await auth.signout();
-      window.location.assign(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/signin`);
-    } catch (e) {
-      setOutError(readError(e, "We couldn't sign you out. Please try again.").message);
-      setOut(false);
-    }
+    setOut(true);
+    await auth.signoutAndRedirect();
   }
   return (
     <div className="bg-amber-100 text-amber-950" data-testid="banner-test-account">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5 text-sm md:px-6">
         <p className="min-w-0 basis-full sm:flex-1 sm:basis-auto" role="status">You're signed in as a TEST account ({label}). Emails to this account are not sent.</p>
-        {(error || outError) && <span role="alert" className="font-semibold">{error || outError}</span>}
+        {error && <span role="alert" className="font-semibold">{error}</span>}
         {others.length > 0 && (
           <details className="relative" onKeyDown={e => { if (e.key === 'Escape') { e.currentTarget.open = false; e.currentTarget.querySelector<HTMLElement>('summary')?.focus(); } }}>
             <summary className="flex min-h-11 cursor-pointer list-none items-center font-bold underline underline-offset-4" data-testid="button-switch-account">Switch account</summary>

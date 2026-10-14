@@ -53,7 +53,7 @@ pnpm run typecheck
 | SYS-17 | CHANGED | Static brand files | List `artifacts/alliance-volunteer-portal/public/brand/` and inspect the response headers on `/brand/logo-horizontal.png`. | `logo-horizontal.png`, `logo-stacked.png`, `logo-mark.png`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png` and `icon-512.png` are present and served as static files with long Cache-Control headers, not from Object Storage. |
 | VIS-01 | NEW | Style guide | Open /style-guide in dev. | Shows navy / Alliance Blue / gray / white only, Open Sans in sentence case (no forced uppercase), buttons, inputs, badges ("good" = blue), both logos, and an email preview. No blue text on gray. Works at 375 px. |
 | VIS-02 | CHANGED | Sign-in page brand | Open /signin at 375 px and on desktop. | No navy band. Stacked logo centered (max 240 px) above the card. Mission line in 15 px navy under the card. Gray inputs with a blue focus ring. Primary button blue, hover navy. |
-| VIS-04 | CHANGED | Favicon & manifest | Check the browser tab, the web manifest, and Add to Home Screen on a phone. | Favicon is the circle mark. Manifest name "Community Care Team Volunteer Portal", short_name "CCT Portal", theme #06365D, background #FFFFFF, 192/512 icons. Home-screen icon uses apple-touch-icon. |
+| VIS-04 | CHANGED | Favicon & home-screen icon (F9) | Check the browser tab and /manifest.json. On a phone, remove any earlier portal icon, then Add to Home Screen. | Home-screen icon is the CCT stacked logo on opaque white. Ordinary 192/512 icons and the separate 512 maskable icon use ?v=2; Apple uses the 180px touch icon. Browser favicon and mobile-header mark remain the circle mark. Manifest name, short_name and colors unchanged. |
 
 ## Public access and authentication
 
@@ -206,7 +206,7 @@ pnpm run typecheck
 | ONBN-04 | CHANGED | Reset restores persona | As admin, Team → Reset test accounts. Quick-login as this persona again. | Profile fields are empty again and it lands on /onboarding. |
 | ONBR-01 | CHANGED | Manual-case quick login (F8) | Click Volunteer · Onboarding, ready to activate. | Dashboard shows Account created ✓ and Profile complete ✓ only, with Community Care Team shift-signup guidance. No Training & paperwork or Approval rows. |
 | ACT-01 | CHANGED | Quick login & banner | After Reset test accounts, click "Volunteer · Active". Use Switch account in the banner, then Sign out. | Dashboard shows "Your next shift" for its one seeded shift. Switch account lists the other 4 personas and one click switches. Sign out returns to /signin. |
-| ADM-01 | CHANGED | Quick login | Click "Admin". | Lands on /admin with the TEST banner. Mobile nav uses a hamburger sheet. |
+| ADM-01 | CHANGED | Quick login (F9) | Click "Admin", then open the hamburger menu on a phone. | Lands on /admin with the TEST banner. The sheet lists all 10 current admin pages with every item reachable by scrolling; Resources is last. Reports / 11 items are deferred to Fix 11. See ADM-41. |
 | ADM-32 | CHANGED | Reset test accounts | Team → Test accounts card → Reset test accounts (confirm). | Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set). The reset is in the activity log. |
 | ADM-33 | CHANGED | TEST badges on one-time claims | After ACT-06, look at the one-time shift on the master schedule, its side panel, and the roster. | The test persona has the gray TEST badge in all three places. |
 
@@ -351,6 +351,25 @@ The CHANGED workflows above cover SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11
 
 **CHANGED — superseded historical notes:** The Oct 12 disagreement table above is retained as history only. Its SYS-08 C8 roster limitation, manual-approval copy, and no-age-cutoff references are superseded by F8. Current workflows above and the Oct 13 v8 master govern acceptance.
 
+## F9 — Oct 14 phone menu, home-screen icon and sign-out / v1.2.1
+
+Development automation: `pnpm --filter @workspace/scripts exec tsx src/phone-menu-check.ts`.
+
+| Test ID | Tag | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| ADM-41 | NEW | Phone admin navigation | At 320×568, 375×667, 390×844 and 768×1024, sign in as test Admin, open ☰, scroll the nav and tap Resources. Reopen, traverse the links with Tab, close with Escape or the close button. | Header stays fixed; nav scrolls within the visible screen. All 10 current links are reachable with 44px tap targets and bottom safe-area padding. Resources opens; the page behind does not scroll; focus returns to the menu trigger when closed. Reports / 11 items are deferred to Fix 11. |
+| ACT-16 | NEW | Official sign-out | In a private window on the official address, quick-login as Volunteer · Active, open the round user menu and Sign out. Press Back, then open /dashboard. Repeat as Admin and using the test-account banner. In development simulate a failed sign-out request. | User menu closes. Whole React Query cache clears and replace navigation lands on the official /signin, including on network/403 failure. After successful sign-out, Back and /dashboard return to /signin without cached signed-in content. A failed request does not claim the server session ended. |
+
+### F9 coverage
+
+| Test IDs | Checklist section |
+|---|---|
+| VIS-04 | CCT brand and program identity (F9) |
+| ADM-01 | Quick login and synthetic QA accounts (F9) |
+| ACT-16, ADM-41 | F9 — phone menu, home-screen icon and sign-out |
+
+Fix 10 / Fix 11 tests in the v9 master are deliberately not added yet; no full test-ID diff is run for this release.
+
 ## Coverage table — test ID → QA-CHECKLIST.md section
 
 | Test ID | Checklist section |
@@ -426,6 +445,7 @@ The CHANGED workflows above cover SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11
 | ACT-13 | Reminders and coverage alerts |
 | ACT-14 | Security, privacy and mobile accessibility |
 | ACT-15 | Fix 2 — production regression workflows |
+| ACT-16 | F9 — phone menu, home-screen icon and sign-out |
 | ADM-01 | Quick login and synthetic QA accounts |
 | ADM-02 | Coordinator dispatch and master schedule |
 | ADM-03 | CCT grid, blocked dates and one-time shifts |
@@ -466,6 +486,7 @@ The CHANGED workflows above cover SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11
 | ADM-38 | Coordinator dispatch and master schedule |
 | ADM-39 | Reminder jobs clarity — v1.1.5 |
 | ADM-40 | F8 — Oct 13 decisions / v1.2.0 |
+| ADM-41 | F9 — phone menu, home-screen icon and sign-out |
 | MIL-01 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-02 | Milestones — Optional: only if Prompt 27 / 28 is built |
 | MIL-03 | Milestones — Optional: only if Prompt 27 / 28 is built |

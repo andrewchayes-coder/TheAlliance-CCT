@@ -51,7 +51,8 @@ describe('VIS-08 / ADM-37 presentation helpers', () => {
     const root = resolve('../alliance-volunteer-portal');
     const manifest = JSON.parse(readFileSync(resolve(root, 'public/manifest.json'), 'utf8'));
     expect(manifest.name).toBe('Community Care Team Volunteer Portal');
-    expect(manifest.icons).toHaveLength(2);
+    expect(manifest.icons).toHaveLength(3);
+    expect(manifest.icons.some((icon: { purpose: string }) => icon.purpose === 'maskable')).toBe(true);
     const html = readFileSync(resolve(root, 'index.html'), 'utf8');
     expect(html).toContain('<link rel="manifest" href="%BASE_URL%manifest.json"');
     expect(html).not.toContain('manifest.webmanifest');

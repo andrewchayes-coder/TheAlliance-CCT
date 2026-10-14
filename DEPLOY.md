@@ -1,5 +1,12 @@
 # Community Care Team Volunteer Portal — production deployment
 
+## Web app / home-screen icon
+
+The home-screen icon is the Community Care Team stacked logo, centered on opaque white.
+The manifest includes ordinary 192px and 512px icons and a separate 512px maskable Android icon;
+Apple uses the 180px touch icon. The browser-tab favicon and mobile-header mark remain the circle mark.
+People who added the portal to their home screen earlier need to remove and re-add it to see the new icon.
+
 ## If dummy data ever appears in production
 
 Pause cron-job.org and follow [the seed-data cleanup runbook](docs/ops/2026-10-11-purge-seed-data.md).

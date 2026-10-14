@@ -378,6 +378,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not(:disab
 button:not(:disabled):not(.absolute) { min-width: 44px; }
 input[type='checkbox'], input[type='radio'] { box-sizing: border-box; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; flex-shrink: 0; }
 select { font-size: 17px; }
+.admin-menu-sheet > button { top: max(12px, env(safe-area-inset-top)); }
 /* Keep roster dropdown arrows inset, with separate space for the selected text. */
 .roster-select {
   appearance: none;

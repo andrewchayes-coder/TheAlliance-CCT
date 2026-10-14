@@ -2,7 +2,7 @@ import { VOLUNTEER_CONTACT_EMAIL, VOLUNTEER_CONTACT_NAME } from '@/lib/contact';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'wouter';
 import { PublicLayout, Button } from '@/components/brand-system';
-import { AuthHeading, Field, Notice, PasswordField, PublicAuthGate, SubmitButton } from '@/auth/auth-ui';
+import { AuthHeading, AuthLoading, Field, Notice, PasswordField, SessionFailed, SubmitButton } from '@/auth/auth-ui';
 import { QuickLoginCard } from '@/components/quick-login';
 import { readError, useAuth } from '@/auth/auth-context';
 
@@ -71,4 +71,11 @@ function Form() {
   );
 }
 
-export default function Signin() { return <PublicAuthGate><Form /></PublicAuthGate>; }
+export default function Signin() {
+  const auth = useAuth();
+  if (auth.sessionLoading) return <AuthLoading />;
+  if (!auth.session && auth.sessionError) return <SessionFailed />;
+  // This public page is also the explicit landing after an unsuccessful sign-out.
+  // Server authentication and all protected-page guards stay unchanged.
+  return <Form />;
+}

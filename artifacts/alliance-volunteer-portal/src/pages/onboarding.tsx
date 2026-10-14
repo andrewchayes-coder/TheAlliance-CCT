@@ -240,7 +240,7 @@ function OnboardingForm({ me }: { me: Me }) {
   async function out() {
     setOutBusy(true);
     await queue.current.catch(() => undefined);
-    try { await auth.signout(); nav('/'); } catch (e) { setFormErr(readError(e).message); setOutBusy(false); }
+    await auth.signoutAndRedirect();
   }
 
   const statusText = saveState === 'saving' ? 'Saving your progress…' : saveState === 'saved' ? 'Progress saved' : saveState === 'error' ? "Couldn't save yet. We'll try again when you move to the next field." : 'Your progress saves as you go.';

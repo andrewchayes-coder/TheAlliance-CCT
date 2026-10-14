@@ -1,4 +1,5 @@
 import { SOMETHING_WENT_WRONG } from '@/lib/contact';
+import { signoutAndRedirect } from '@/lib/signout';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -101,11 +102,16 @@ function useAuthValue() {
     resend: () => resendM.mutateAsync(undefined),
     signout: async () => {
       try { await signoutM.mutateAsync(undefined); } finally {
-        qc.removeQueries({ queryKey: getGetMeQueryKey() });
-        qc.removeQueries({ queryKey: getListTeamUsersQueryKey().slice(0, 1) });
-        await refresh();
+        qc.clear();
       }
     },
+    signoutAndRedirect: () => signoutAndRedirect({
+      request: () => signoutM.mutateAsync(undefined),
+      clear: () => qc.clear(),
+      replace: target => window.location.replace(target),
+      appOrigin: q.data?.appOrigin,
+      baseUrl: import.meta.env.BASE_URL,
+    }),
   };
 
   return {

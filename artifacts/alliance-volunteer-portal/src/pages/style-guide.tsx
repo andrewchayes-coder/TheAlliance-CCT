@@ -131,7 +131,7 @@ export default function StyleGuide() {
             <SectionHeading number="05" title="Logos" note="Navy on transparent. Use on white only." />
             <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
               <div className="alliance-card"><p className="mb-3 text-[15px] font-bold">logo-horizontal.png · app header (40px tall)</p><img src={`${base}brand/logo-horizontal.png`} alt="The Alliance Community Care Team, horizontal" className="h-10 w-auto" /><p className="mb-3 mt-6 text-[15px] font-bold">logo-mark.png · mobile header (36px)</p><img src={`${base}brand/logo-mark.png`} alt="Community Care Team mark" className="h-9 w-auto" /></div>
-              <div className="alliance-card"><p className="mb-3 text-[15px] font-bold">logo-stacked.png · public pages (max 240px)</p><img src={`${base}brand/logo-stacked.png`} alt="The Alliance Community Care Team, stacked" className="h-auto w-full max-w-[240px]" /></div>
+              <div className="alliance-card"><p className="mb-3 text-[15px] font-bold">logo-stacked.png · public pages (max 240px) and home-screen icons on white</p><img src={`${base}brand/logo-stacked.png`} alt="The Alliance Community Care Team, stacked" className="h-auto w-full max-w-[240px]" /></div>
             </div>
           </section>
 

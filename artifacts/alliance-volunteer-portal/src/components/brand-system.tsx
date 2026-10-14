@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Home, CalendarDays, UserRound, Menu, HeartHandshake, MessageSquare, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/auth/auth-context';
@@ -89,23 +89,24 @@ function AdminMenu({ alwaysVisible = false, live = false, role = 'admin' }: { al
           <Menu size={22} aria-hidden="true" />
         </button>
       </SheetTrigger>
-      <SheetContent className="bg-white text-navy">
-        <SheetHeader><SheetTitle className="alliance-display text-navy">Admin navigation</SheetTitle></SheetHeader>
+      <SheetContent className="admin-menu-sheet flex h-full max-h-[100dvh] flex-col bg-white text-navy supports-[height:100dvh]:h-[100dvh] pt-[max(24px,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)]">
+        <SheetHeader className="shrink-0 pr-8"><SheetTitle className="alliance-display text-navy">Admin navigation</SheetTitle></SheetHeader>
         {live ? (
-          <nav aria-label="Admin navigation" className="mt-6 space-y-3">
+          <nav aria-label="Admin navigation" data-testid="admin-menu-nav" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-[max(16px,env(safe-area-inset-bottom))]">
             {adminItems.map(({ label, href }) => href ? (
               <SheetClose asChild key={label}>
                 <Link href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
-                  className={`block min-h-11 rounded-lg px-4 py-3 font-bold focus-visible:outline-2 focus-visible:outline-blue ${adminActive(location, href) ? 'bg-navy text-white' : 'bg-gray'}`}>{label}</Link>
+                  data-testid={`admin-menu-link-${label.toLowerCase().replace(/\s+/g, '-')}`}
+                  className={`block min-h-11 rounded-lg px-4 py-2.5 font-bold focus-visible:outline-2 focus-visible:outline-blue ${adminActive(location, href) ? 'bg-navy text-white' : 'bg-gray'}`}>{label}</Link>
               </SheetClose>
             ) : (
-              <div key={label} aria-disabled="true" className="flex items-center justify-between rounded-lg bg-gray px-4 py-3 ">{label}<span className="text-xs">Coming later</span></div>
+              <div key={label} aria-disabled="true" className="flex min-h-11 items-center justify-between rounded-lg bg-gray px-4 py-2.5">{label}<span className="text-xs">Coming later</span></div>
             ))}
           </nav>
         ) : (<>
           <p className="mt-3 text-sm">Layout preview only. Portal features are not built yet.</p>
-          <nav aria-label="Admin navigation preview" className="mt-6 space-y-3">
-            {adminNav.map(label => <div key={label} className="rounded-lg bg-gray px-4 py-3">{label}</div>)}
+          <nav aria-label="Admin navigation preview" className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-[max(16px,env(safe-area-inset-bottom))]">
+            {adminNav.map(label => <div key={label} className="min-h-11 rounded-lg bg-gray px-4 py-2.5">{label}</div>)}
           </nav>
         </>)}
       </SheetContent>
@@ -119,7 +120,7 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
   const auth = useAuth();
   const [location] = useLocation();
   const [busy, setBusy] = useState(false);
-  const [menuError, setMenuError] = useState<string | null>(null);
+  const userMenu = useRef<HTMLDetailsElement>(null);
   const live = !preview;
   const liveVolunteer = live && role === 'volunteer' && auth.session?.authenticated === true && auth.session.role === 'volunteer';
   const ctx = useGetMessageContext({ query: { queryKey: getGetMessageContextQueryKey(), enabled: liveVolunteer, staleTime: 30_000, refetchInterval: 45_000, retry: false }, request: FETCH_CREDS });
@@ -129,14 +130,8 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
   const isActive = (href: string) => location === href || location.startsWith(`${href}/`);
   async function out() {
     setBusy(true);
-    setMenuError(null);
-    try {
-      await auth.signout();
-      window.location.assign(import.meta.env.BASE_URL);
-    } catch {
-      setMenuError("We couldn't sign you out. Please try again.");
-      setBusy(false);
-    }
+    userMenu.current?.removeAttribute('open');
+    await auth.signoutAndRedirect();
   }
   return (
     <div className={`relative bg-gray text-navy ${preview ? 'min-h-[320px] overflow-hidden rounded-2xl' : 'min-h-[100dvh]'}`} data-testid={`app-layout-${role}`}>
@@ -159,13 +154,12 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
           </nav>
           <div className="flex items-center gap-2">
             {role === 'admin' && <AdminMenu live={live} role={role} />}
-            <details className="relative text-navy" data-testid="menu-user">
+            <details ref={userMenu} className="relative text-navy" data-testid="menu-user">
               <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border-[1.5px] border-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue" aria-label={live ? 'Open user menu' : 'Open user menu preview'} data-testid="button-user-menu"><UserRound size={20} aria-hidden="true" /></summary>
               <div className="absolute right-0 z-20 mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-xl bg-white p-2 text-sm text-navy shadow-lg">
                 {live ? (
                   <>
                     <p className="truncate px-3 py-2 text-sm text-navy-soft">{auth.session?.email ?? 'Signed in'}</p>
-                    {menuError && <p role="alert" className="px-3 py-2 text-sm">{menuError}</p>}
                     <Link href="/profile" data-testid="link-menu-profile" className="flex min-h-11 items-center rounded-lg px-3 font-bold hover:bg-gray">My profile</Link>
                     <button type="button" onClick={() => { void out(); }} disabled={busy} data-testid="button-signout" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-bold hover:bg-gray disabled:opacity-50">{busy ? 'Signing out' : 'Sign out'}</button>
                   </>

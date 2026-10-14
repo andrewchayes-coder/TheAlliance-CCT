@@ -2,6 +2,11 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.2.1 — 2026-10-14
+
+### Changed
+- Admin menu scrolls on phones so every item is reachable (Alliance UI review, Oct 14). Home-screen icon is now the Community Care Team logo (re-add the portal to your home screen to see it). Signing out always ends on the official sign-in page. No database changes.
+
 ## v1.2.0 — 2026-10-14
 
 ### Changed

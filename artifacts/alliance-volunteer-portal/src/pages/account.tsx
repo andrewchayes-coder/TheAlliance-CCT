@@ -18,7 +18,7 @@ function Landing({ me, mode }: { me: Me; mode: 'dashboard' }) {
   const p = me.profile;
   async function out() {
     setBusy(true); setErr(null);
-    try { await auth.signout(); nav('/'); } catch (e) { setErr(readError(e).message); setBusy(false); }
+    await auth.signoutAndRedirect();
   }
   const rows: { name: string; value: string; good: boolean }[] = [
     { name: 'Email verified', value: fmt(me.user.emailVerifiedAt) ?? 'Verified', good: true },

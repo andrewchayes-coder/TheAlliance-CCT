@@ -17,7 +17,7 @@ function Redirect({ to }: { to: string }) {
 
 /** Admins are sent to /admin from volunteer pages; with area="admin", volunteers are sent to /dashboard. */
 export function RequireVerified({ children, area = 'volunteer', allowIncomplete = false }: { children: (me: Me) => ReactNode; area?: 'volunteer' | 'admin' | 'account'; allowIncomplete?: boolean }) {
-  const { session, sessionLoading, sessionError, refresh, signout } = useAuth();
+  const { session, sessionLoading, sessionError, refresh, signoutAndRedirect } = useAuth();
   const [path, nav] = useLocation();
   const ok = !!session?.authenticated && session.verified;
   const me = useGetMe({
@@ -59,7 +59,7 @@ export function RequireVerified({ children, area = 'volunteer', allowIncomplete 
         <AuthHeading label="Account check" title="We couldn't confirm your account">
           Please sign in again to continue.
         </AuthHeading>
-        <Button onClick={() => { void signout().then(() => nav('/signin')).catch(() => nav('/signin')); }}>Sign in again</Button>
+        <Button onClick={() => { void signoutAndRedirect(); }}>Sign in again</Button>
       </PublicLayout>
     );
   }

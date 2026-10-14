@@ -30,3 +30,9 @@ shared across identities, so invalidation alone is not sufficient protection.
 **How to apply:** Keep authenticated API requests explicitly uncached and clear
 the previous account's cached data before completing a switch. Verify the
 finished identity and CSRF state, not merely the unchanged dashboard URL.
+
+A failed sign-out may leave the server session authenticated. Its public sign-in destination must not automatically send that session back to the dashboard.
+
+**Why:** browser verification of an intercepted 403 showed a brief sign-in page followed by a return to the admin dashboard despite cache clearing and replace navigation.
+
+**How to apply:** preserve the explicit public sign-in landing without changing server authentication or protected-page guards. Never claim a failed sign-out terminated the server session.

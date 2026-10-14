@@ -1,8 +1,10 @@
 # Alliance Volunteer App — Persona Test Run (Prompts 1–28 + Oct 11 fixes)
 
-Hayes Strategy Group · Oct 10, 2026 · Updated Oct 13, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5), Build Prompts v2 (21–28) and Build Prompts v3 (Fix 1–3, Oct 11). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
+Hayes Strategy Group · Oct 10, 2026 · Updated Oct 14, 2026 · Built from every **Check** line in Build Prompts v1 (1–20), the Quick Login addendum (QL-1 to QL-5), Build Prompts v2 (21–28) and Build Prompts v3 (Fix 1–3, Oct 11). Same rows are in `Alliance Persona Test Run.xlsx` for the UAT Google Sheet.
 
 **What this tests:** the finished app after Prompt 26 and the v3–v5 fixes (plus 27–28 if built). Where a later prompt changed an earlier Check, the test is written for the final behavior. The changed checks are listed under *Superseded v1 checks* at the end.
+
+**Oct 14 update (v9, Oct 14 UI review with Tiffany):** Build Prompts v9: Fix 9 (v1.2.1) makes the admin menu scroll on phones, switches the home-screen icon to the Community Care Team stacked logo, and makes sign-out always land on the official sign-in page; Fix 10 (v1.3.0) adds hour logging after each shift (new table volunteer_hours); Fix 11 (v1.4.0) adds Admin → Reports (hours per Resource Coordinator and team hours per month, with CSVs). Added ACT-16, ACT-17, ACT-18, ADM-41, ADM-42, ADM-43, ADM-44, PRD-17 and PRD-18. Updated VIS-04, ADM-01, SYS-04, SYS-06, ADM-32 and ADM-34. Password minimum confirmed at 8 characters (no change). This version goes up to `docs/` with v9 Step 2. Test count: 145.
 
 **Oct 13 update (v8, Tiffany's Oct 13 decisions):** Build Prompts v8 Fix 8 (v1.2.0): volunteers become Active automatically when they finish their profile (no staff approval gate), becoming Active always sets a start date (B17), an admin-only background check record (checkbox + date), a minimum age of 18, and the old .replit.app address forwarding to the official address. Added NEW-14, ADM-40, PRD-15 and PRD-16. Updated SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11, ONBN-03, ONBR-01, ONBR-02, ADM-20, ADM-21, ADM-22, ADM-23 and ADM-24, plus the ONBR persona description. This version goes up to `docs/` with v8 Step 3. Test count: 136.
 
@@ -38,11 +40,11 @@ Hayes Strategy Group · Oct 10, 2026 · Updated Oct 13, 2026 · Built from every
 | ONBN | Volunteer · Onboarding, new | Quick-login persona. Verified, profile fields empty. | Dev | 4 |
 | ONBR | Volunteer · Onboarding, ready to activate | Quick-login persona. Profile complete but still Onboarding: since v1.2.0 this is the manual case (someone who finished before automatic activation, or was moved back to Onboarding by staff). | Dev | 4 |
 | ANS | Volunteer · Active, no shift | Quick-login persona. Approved, holds no standing shift. | Dev | 8 |
-| ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 15 |
-| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 40 |
+| ACT | Volunteer · Active | Quick-login persona. In dev, starts with one standing shift after Reset test accounts. | Dev | 18 |
+| ADM | Admin | Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org). | Dev | 44 |
 | MIL | Admin · Prompt 27 (optional) | Only if Prompt 27 (milestones) is approved and built. | Dev | 5 |
 | NTF | Admin · Prompt 28 (optional) | Only if Prompt 28 (admin shift-activity notifications) is approved and built. | Dev | 4 |
-| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 16 |
+| PRD | Production | After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` (no unlock link since QL-5). | Prod | 18 |
 
 ## SYS — Developer / system
 
@@ -60,17 +62,17 @@ _Replit shell + dev URL. No sign-in. Tests, seed, grep, config, jobs, Lighthouse
   **Do:** Open the route-guard test. Look for /api/auth/quick-login*, /qa and /qa/lock.  
   **Expect:** /api/auth/quick-login* is in the route list and tagged `public:quick-login`. /qa and /qa/lock no longer exist (QL-5). The test passes because the routes are tagged, not because it was loosened (no skip, no blanket allowlist).
 
-- [ ] **SYS-04 · Playwright smoke test** (P19, P26, F8)  
+- [ ] **SYS-04 · Playwright smoke test** (P19, P26, F8, F10, F11)  
   **Do:** Run the Playwright smoke test.  
-  **Expect:** Passes end to end: sign-up → verify → complete profile → automatically Active (no admin activation step since v1.2.0; no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it → admin records Background check complete with a date and the roster's Background check filter finds the volunteer.
+  **Expect:** Passes end to end: sign-up → verify → complete profile → automatically Active (no admin activation step since v1.2.0; no certification/background) → volunteer picks Tue 10–12 → admin blocks next Tue 10–12 (volunteer emailed, no reminder) → admin creates an open one-time shift → volunteer claims it → reminder logs → admin sends a message → volunteer reads it → admin records Background check complete with a date and the roster's Background check filter finds the volunteer → after the volunteer's shift has passed (dev clock), the volunteer taps "Confirm 2 hours" on Home → the admin sees 2 hours on the volunteer's page and in Reports for that month (v1.3.0–v1.4.0).
 
 - [ ] **SYS-05 · Leftover search** (P21, P26, QL-4)  
   **Do:** Search the app source, skipping dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`: `grep -rniE "02928F|027A77|lulo|montserrat|Resource Coordination Program" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db` then `grep -rnE "applicant|in_training" --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=migrations artifacts/alliance-volunteer-portal artifacts/api-server shared lib/db`.  
   **Expect:** No old colors, fonts or program name in any screen or email. applicant / in_training appear only in the database enum definition (lib/db, those values must stay) and the read-time mapping that treats them as onboarding (shared/legacy-compatibility.ts). Any other hit (for example a deliberate email alias kept for compatibility) is reviewed and explained, not an automatic fail. Nothing in shared/testAccounts.ts, UI copy or emails.
 
-- [ ] **SYS-06 · Schema is additive** (P22, P23, P24, QL-1, QL-4)  
+- [ ] **SYS-06 · Schema is additive** (P22, P23, P24, QL-1, QL-4, F10)  
   **Do:** Diff shared/schema.ts against the last published version.  
-  **Expect:** Only additive changes: new nullable/defaulted columns, the 'onboarding' enum value, the new tables slot_blocks, custom_shifts, custom_shift_assignments, users.isTestAccount, the 'suppressed' status. No drops, renames, type conversions, or new pg enum types.
+  **Expect:** Only additive changes: new nullable/defaulted columns, the 'onboarding' enum value, the new tables slot_blocks, custom_shifts, custom_shift_assignments and volunteer_hours (v1.3.0: source as text with a CHECK, not a new enum), users.isTestAccount, the 'suppressed' status. No drops, renames, type conversions, or new pg enum types.
 
 - [ ] **SYS-07 · Config flags** (P6, P22, P25, F8)  
   **Do:** Open shared/appConfig.ts and shared/onboardingQuestions.ts. Run `grep -rni cindi --exclude-dir=node_modules artifacts shared`.  
@@ -136,9 +138,9 @@ _Private/incognito window, not signed in._
   **Do:** Look below the sign-in card in dev.  
   **Expect:** Amber dashed "Quick login — testing" card (sentence case, per the CCT brand) with 5 buttons: Admin, Volunteer · Active, Volunteer · Active, no shift, Volunteer · Onboarding, ready to activate, Volunteer · Onboarding, new. One column at 375 px, 44 px tall. No button mentions training, certification, or applicant.
 
-- [ ] **VIS-04 · Favicon & manifest** (P18, P21)  
-  **Do:** Check the browser tab, the web manifest, and Add to Home Screen on a phone.  
-  **Expect:** Favicon is the circle mark. Manifest name "Community Care Team Volunteer Portal", short_name "CCT Portal", theme #06365D, background #FFFFFF, 192/512 icons. Home-screen icon uses apple-touch-icon.
+- [ ] **VIS-04 · Favicon & home-screen icon** (P18, P21, F9)  
+  **Do:** Check the browser tab and /manifest.json. On a phone, remove any earlier portal icon, then Add to Home Screen.  
+  **Expect:** Favicon is still the circle mark. Manifest name "Community Care Team Volunteer Portal", short_name "CCT Portal", theme #06365D, background #FFFFFF, icons icon-192.png and icon-512.png (purpose any) plus icon-512-maskable.png (purpose maskable), each with ?v=2. The home-screen icon (apple-touch-icon) is the Community Care Team stacked logo (The Alliance script with "COMMUNITY CARE TEAM" in blue) on white, not the circle mark (v1.2.1).
 
 - [ ] **VIS-05 · Signed-out redirects** (P5)  
   **Do:** Visit /dashboard, /shifts and /admin. Call GET /api/me and GET /api/admin/volunteers.  
@@ -356,13 +358,26 @@ _Quick-login persona. In dev, starts with one standing shift after Reset test ac
   **Do:** View the dashboard as Volunteer · Active, no shift (choose-shift card) and as Volunteer · Active with a shift (next-shift card), at 375 px and desktop. Run the axe contrast check.  
   **Expect:** The "Choose your weekly shift" heading and the next-shift date line are white on navy and clearly readable. No contrast failures. (Both were navy on navy in production on Oct 11.)
 
+
+- [ ] **ACT-16 · Sign out on the official address** (F9)  
+  **Do:** Close every portal tab and clear site data for cct.defendingthecause.org and the old .replit.app address (or use a private window). Quick-login as Volunteer · Active on the official address, open the round user menu → Sign out. Press Back, then open /dashboard. Repeat as Admin. (In dev, use the dev URL.)  
+  **Expect:** Sign-out lands on /signin of the official address (v1.2.1: replace navigation, React Query cache cleared). Back and /dashboard both end on /signin; no signed-in page flashes. The user menu closes. (Tiffany's Oct 14 issue: sign-out flashed and returned to the dashboard, most likely from a tab still open on the old address.)
+
+- [ ] **ACT-17 · Log hours after a shift** (F10)  
+  **Do:** After Reset test accounts, quick-login as Volunteer · Active. Note its standing shift's first date on My Shifts, then open /dashboard with ?at= set 5 minutes after that shift ends (dev only). Tap "Confirm 2 hours". Then open My Shifts → Past shifts.  
+  **Expect:** Before the shift ends there's no "Log your hours" card. After, Home shows "Log your hours" with "Thanks for your shift! Confirm the hours you served." and the shift ("Mon, Oct 19 · 9:00 AM–11:00 AM"). Confirm 2 hours saves it ("Logged: 2 hours ✓"), the card disappears, and "Your hours this month: 2" shows. Past shifts lists it as "2 hours logged" with Edit. Recent activity on the admin page shows "hours logged". Onboarding personas never see hours.
+
+- [ ] **ACT-18 · Changing hours and the limits** (F10)  
+  **Do:** On Past shifts, Edit the logged shift to 2.5 with a note. Try 0, 0.3 and 13. From devtools, PUT /api/volunteer/hours for a shift that hasn't ended, for another slot the persona doesn't hold, and for this shift with ?at= 15 days after it. Use "Different hours" on a new unlogged shift (move ?at= a week on) and enter 1.5.  
+  **Expect:** 2.5 with the note saves and updates the same entry. 0, 0.3 and 13 are refused with "Enter hours between 0.25 and 12, in quarter hours (for example 1.5)." The API refuses (422) the future shift, the other slot and the 15-day-old shift ("You can only log hours for your own shifts from the last 14 days…"). After 14 days the shift is read-only with the note "You can log or change hours for 14 days after a shift. For older shifts, contact the Community Care Team at cct@defendingthecause.org." 1.5 saves. No email is sent for any of this.
+
 ## ADM — Admin
 
 _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so those checks read the notification log for the seeded dev admin (admin@example.org)._
 
-- [ ] **ADM-01 · Quick login** (QL-3, P5)  
-  **Do:** Click "Admin".  
-  **Expect:** Lands on /admin with the TEST banner. Mobile nav uses a hamburger sheet.
+- [ ] **ADM-01 · Quick login** (QL-3, P5, F9, F11)  
+  **Do:** Click "Admin". On a phone-width screen, open the ☰ menu.  
+  **Expect:** Lands on /admin with the TEST banner. Mobile nav uses a hamburger sheet listing every admin page, including Reports after Volunteers (11 items since v1.4.0); see ADM-41 for scrolling.
 
 - [ ] **ADM-02 · On shift now / Up next** (P11, P24)  
   **Do:** On admin home, use ?at= in dev: a Tuesday at 10:30 AM, a time during hours with an empty slot, and 8:00 PM.  
@@ -484,17 +499,17 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
   **Do:** If an agreement-version bump option shows, bump it. Sign in as Volunteer · Active.  
   **Expect:** No re-acknowledgment prompt for volunteers while requireAgreementAcknowledgment is false.
 
-- [ ] **ADM-32 · Reset test accounts** (QL-1, P26)  
+- [ ] **ADM-32 · Reset test accounts** (QL-1, P26, F10)  
   **Do:** Team → Test accounts card → Reset test accounts (confirm).  
-  **Expect:** Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set). The reset is in the activity log. All test sessions are signed out, including the admin doing the reset. Real (non-test) records are untouched.
+  **Expect:** Card lists 5 personas with last login. After reset: Volunteer · Active has one seeded shift (dev), others are back to defaults, their message rows are cleared, their one-time claims are cancelled (cancelledAt set), and their logged hours are deleted (v1.3.0). The reset is in the activity log. All test sessions are signed out, including the admin doing the reset. Real (non-test) records are untouched.
 
 - [ ] **ADM-33 · TEST badges on one-time claims** (QL-1, P26)  
   **Do:** After ACT-06, look at the one-time shift on the master schedule, its side panel, and the roster.  
   **Expect:** The test persona has the gray TEST badge in all three places.
 
-- [ ] **ADM-34 · Phone & tablet walk** (P18)  
+- [ ] **ADM-34 · Phone & tablet walk** (P18, F11)  
   **Do:** Walk every admin screen at 375 px and 768 px.  
-  **Expect:** No horizontal scrolling. Tables become cards. On shift now is usable one-handed. Every admin page uses the same page header, with actions wrapping under the title on narrow screens (v1.1.4).
+  **Expect:** No horizontal scrolling. Tables become cards. On shift now is usable one-handed. Every admin page uses the same page header, with actions wrapping under the title on narrow screens (v1.1.4). Reports (v1.4.0) shows its tiles stacked and the hours table as cards at 375 px. On desktop at 1280 px the admin top bar fits on one line (My Profile moves to the user menu only).
 
 - [ ] **ADM-35 · Switch account across roles** (QL-3, F2)  
   **Do:** From the test-account banner, switch volunteer → Admin, Admin → volunteer, volunteer → volunteer, and onboarding-new → Admin. Start each switch from a different page (e.g. /profile, /admin/team).  
@@ -519,6 +534,23 @@ _Quick-login Test Admin. Alerts and digests are never sent to the test admin, so
 - [ ] **ADM-40 · Background check record (admin-only)** (F8)  
   **Do:** Open Volunteer · Active. In the Background check card, tick "Background check complete" and try to save with no date, then with tomorrow's date, then with last Friday. Look at Recent activity. On the roster, filter Background check → Complete, then Not recorded; add the Background check column from Columns and sort by it. Export the Roster CSV. Quick-login as Volunteer · Active and look at Home and Profile. Back as admin, untick the box. Reset test accounts.  
   **Expect:** Save is refused with no date and with a future date ("Enter the date the background check was completed (today or earlier)."); last Friday saves. Recent activity lists the changed field names only, never values. The Complete filter shows the volunteer and Not recorded doesn't (the reverse after unticking). The column shows "Complete · {date}" or "Not recorded" and sorts. The CSV has Background check complete = Yes and the date. The volunteer sees nothing about background checks. Unticking clears the date. It never blocks activation (ADM-22 works without it) and adds no Needs-attention reason. After the reset it's Not recorded.
+
+
+- [ ] **ADM-41 · Admin menu on a phone** (F9, F11)  
+  **Do:** On a real phone (and in the dev preview at 320×568 and 375×667), quick-login as Admin and open ☰. Scroll the menu and tap the last item (Resources). Open it again, press Escape (desktop) or the close button.  
+  **Expect:** The sheet fills the visible screen and the item list scrolls on its own (the page behind doesn't move). Every item can be reached and tapped, including Resources, which the iPhone home indicator doesn't cover; 11 items since v1.4.0 (Reports after Volunteers). Tap targets are at least 44 px. Closing works and focus returns to the ☰ button. (Tiffany's Oct 14 issue: on her phone the menu didn't scroll and cut off Resources.)
+
+- [ ] **ADM-42 · Hours on a volunteer's page** (F10)  
+  **Do:** After ACT-17/ACT-18, open Volunteer · Active as Admin → Hours card. Add hours: a past date with no shift → Other time, 1 hour, note "Training"; then the persona's logged shift again (duplicate); then a future date. Edit the Other entry to 1.5, then Delete it. Look at Recent activity. As a volunteer, call GET /api/admin/volunteers/{id}/hours from devtools.  
+  **Expect:** The card shows "This month: {N} hours · Last month: {N} hours" and the last 90 days: the volunteer's entry ("Volunteer"), unlogged past shifts as amber "Not logged" with Log hours. Other time needs a note; it saves as entered by your admin name. The duplicate is refused ("Hours are already logged for that shift…") and the future date is refused ("Hours can't be logged for a future date."). Edit and Delete (with "Remove these hours?") work. Recent activity lists hours logged / updated / deleted with the hours. The volunteer gets 403.
+
+- [ ] **ADM-43 · Reports: monthly hours** (F11)  
+  **Do:** After ACT-17, open Admin → Reports. Turn Show test accounts on, then off. Use Previous / Next. Open /admin/reports with ?at= a week after the logged shift so the next shift has ended unlogged. Click "Message volunteers with unlogged shifts" (don't send). Click a name.  
+  **Expect:** Title "Volunteer hours" with the month (current month by default; Next disabled on it). With test accounts on: Team hours 2 (or the logged total), Resource Coordinators who logged hours 1, Shifts logged 1, and the persona's row (hours, shifts logged, other time, not logged, last logged) with a totals row; off: the test persona disappears and the tiles count real volunteers only. Shifts not logged yet shows 1 in amber with the button, which opens the composer with exactly that volunteer selected. "Team hours by month" lists 12 months with bars. The name opens the volunteer's page. An empty month says "No hours have been logged for {Month YYYY} yet." Volunteers get 403 on /api/admin/reports/*.
+
+- [ ] **ADM-44 · Reports: CSV exports** (F11)  
+  **Do:** On Reports (test accounts on), download "hours by volunteer" and "all hour entries", and open both in Google Sheets. Repeat with test accounts off.  
+  **Expect:** Files named alliance-hours-by-volunteer-YYYY-MM.csv and alliance-hour-entries-YYYY-MM.csv open cleanly. By volunteer: Volunteer, Email, Status, Hours logged, Shifts logged, Other time entries, Shifts not logged, Last logged, plus a Team total row matching the page. Entries: Date, Volunteer, Shift ("Mon 09:00–11:00", a one-time label or "Other time"), Hours, Entered by, Note, Last changed. With test accounts off, no test persona rows.
 
 ## MIL — Admin · Prompt 27 (optional)
 
@@ -632,9 +664,18 @@ _After the Prompt 26 publish. Quick login is on when `QUICK_LOGIN_ENABLED=true` 
   **Do:** After `APP_BASE_URL` is set to https://cct.defendingthecause.org, the republish and the cron-job.org URL change: open https://cct.defendingthecause.org, then https://the-alliance-cct.replit.app/signin. Quick-login as Admin on the new address and save a small change (add and remove a word in a test volunteer's admin notes). Signed in as yourself, Notifications → Send test email to me. Check cron-job.org and Admin → Reminder jobs. Reset test accounts.  
   **Expect:** The new address loads with valid HTTPS. The old address lands on the same page at the new address. Sign-in and saves work there. The test email's logo and links use cct.defendingthecause.org. cron-job.org shows success on the new URL, and Reminder jobs shows "Scheduled runs are on time" within 15 minutes.
 
+
+- [ ] **PRD-17 · v1.2.1 on a real phone** (F9)  
+  **Do:** After the v9 publish, on your phone open https://cct.defendingthecause.org, quick-login as Admin and open ☰; tap the last item. Remove any earlier portal icon from the home screen and add it again. Sign out from the user menu.  
+  **Expect:** Every admin menu item is reachable (ADM-41). The new home-screen icon is the Community Care Team stacked logo (VIS-04). Sign-out lands on /signin (ACT-16).
+
+- [ ] **PRD-18 · v1.3.0–v1.4.0 in production** (F10, F11)  
+  **Do:** Publish and read the schema change list. In the production Database tool, one statement at a time: `SELECT count(*) FROM volunteer_hours;` and `SELECT conname FROM pg_constraint WHERE conrelid = 'volunteer_hours'::regclass ORDER BY conname;`. As Admin, on Volunteer · Active → Hours → Add hours: the last weekday, Other time, 2 hours, note "Production check"; edit it to 1.5. Open Reports with Show test accounts on and off; download both CSVs. Reset test accounts.  
+  **Expect:** The publish lists exactly one new table, volunteer_hours, and nothing dropped, renamed or changed. The count is 0; the constraint list shows the primary key, the foreign keys and the CHECKs for source, hours and the source/shift pairing (if a CHECK is missing, the app still validates; record it). The entry saves and edits. Reports shows 1.5 team hours with test accounts on and 0 with them off; the CSVs match. After the reset the persona's hours are gone. Volunteer-side logging (ACT-17) is checked in production once the first real pilot shifts end.
+
 ## Coverage by prompt
 
-Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3; F4 is v4; F7 is v7 (Reminder jobs page); F8 is v8 (Tiffany's Oct 13 decisions, v1.2.0).
+Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in Build Prompts v3; F4 is v4; F7 is v7 (Reminder jobs page); F8 is v8 (Tiffany's Oct 13 decisions, v1.2.0); F9–F11 are v9 (Oct 14 UI review: phone menu, icon and sign-out v1.2.1; hour logging v1.3.0; Reports v1.4.0).
 
 | Prompt | Tests |
 |---|---|
@@ -677,6 +718,9 @@ Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in 
 | F4 | VIS-08, ADM-37, ADM-38 |
 | F7 | ADM-39, PRD-12 |
 | F8 | SYS-04, SYS-07, SYS-08, SYS-18, NEW-10, NEW-11, NEW-14, ONBN-03, ONBR-01, ONBR-02, ADM-20, ADM-21, ADM-22, ADM-23, ADM-24, ADM-40, PRD-15, PRD-16 |
+| F9 | VIS-04, ADM-01, ACT-16, ADM-41, PRD-17 |
+| F10 | SYS-04, SYS-06, ADM-32, ACT-17, ACT-18, ADM-42, PRD-18 |
+| F11 | SYS-04, ADM-01, ADM-34, ADM-41, ADM-43, ADM-44, PRD-18 |
 
 ## Superseded v1 checks
 
@@ -689,6 +733,7 @@ Every prompt's Check maps to at least one test. F1–F3 are the Oct 11 fixes in 
 | P9 | Can't activate without a cleared background check | P22 removed the gate: activation needs only verified email + complete profile (ADM-22, ADM-23). |
 | P22 / v1.1.4 | Volunteers wait in Onboarding for staff approval; the welcome email says "Once you're approved…"; the dashboard shows Training & paperwork and Approval; roster badge "Awaiting review" | F8 (Oct 13): volunteers become Active automatically when they finish their profile (NEW-10, NEW-11, ONBN-03); Approve as Active stays for the manual case (ONBR-01, ADM-22); badge "Not active yet" (ADM-20). |
 | P22 | minimumAge null; no background-check tracking (C8) | F8: minimum age 18 (NEW-14); admin-only background check record, not a gate (ADM-40, SYS-07, SYS-08). |
+| P18 / P21 | Home-screen icon is the circle mark (apple-touch-icon) | F9 (Oct 14): the Community Care Team stacked logo on white; favicon stays the circle mark (VIS-04, PRD-17). |
 | P17 | Agreement version bump prompts re-acknowledgment | Off while requireAgreementAcknowledgment = false (ADM-31). |
 | P20 | Migrations run with drizzle-kit migrate | Oct 10 decision: schema reaches prod through Replit Publish (PRD-01 to PRD-03). |
 | P21 | Cindi (staffContactName/Email) is the volunteer-facing contact and default Reply-To | P25 made the Community Care Team (cct@defendingthecause.org) the volunteer contact and Reply-To; Cindi is staff-only (SYS-07, SYS-09, SYS-10, ANS-05, ACT-04, ACT-07, PRD-06). |
