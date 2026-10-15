@@ -5,6 +5,41 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface HoursReportTotals {
+  teamHours: number;
+  volunteersWithHours: number;
+  shiftsLogged: number;
+  otherEntries: number;
+  shiftsNotLogged: number;
+}
+
+export interface HoursReportVolunteer {
+  userId: string;
+  name: string;
+  status: string;
+  isTestAccount: boolean;
+  hours: number;
+  shiftsLogged: number;
+  otherEntries: number;
+  shiftsNotLogged: number;
+  /** @nullable */
+  lastLoggedDate: string | null;
+}
+
+export interface HoursReportTrend {
+  month: string;
+  teamHours: number;
+  volunteersWithHours: number;
+}
+
+export interface HoursReport {
+  month: string;
+  currentMonth: string;
+  totals: HoursReportTotals;
+  volunteers: HoursReportVolunteer[];
+  trend: HoursReportTrend[];
+}
+
 export type HoursInputSource = typeof HoursInputSource[keyof typeof HoursInputSource];
 
 
@@ -1697,6 +1732,33 @@ export interface DevEmailCheckError {
  * Authentication operation completed
  */
 export type AuthSuccessResponse = AuthResult;
+
+export type GetAdminHoursReportParams = {
+/**
+ * @pattern ^\d{4}-\d{2}$
+ */
+month?: string;
+includeTest?: boolean;
+at?: string;
+};
+
+export type DownloadAdminHoursReportParams = {
+/**
+ * @pattern ^\d{4}-\d{2}$
+ */
+month?: string;
+includeTest?: boolean;
+at?: string;
+};
+
+export type DownloadAdminHourEntriesParams = {
+/**
+ * @pattern ^\d{4}-\d{2}$
+ */
+month?: string;
+includeTest?: boolean;
+at?: string;
+};
 
 export type GetVolunteerHoursParams = {
 at?: string;

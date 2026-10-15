@@ -4,7 +4,7 @@ import { formatPhone } from '@workspace/shared/profileFields';
 import { Link } from 'wouter';
 import { TestBadge } from '@/components/test-badge';
 import { AlertTriangle, CalendarDays, ChevronRight, ClipboardList, Mail, Phone, RefreshCw, Users } from 'lucide-react';
-import { getGetAdminOverviewQueryKey, useGetAdminOverview, type CoordinatorBlock } from '@workspace/api-client-react';
+import { getGetAdminHoursReportQueryKey, getGetAdminOverviewQueryKey, useGetAdminHoursReport, useGetAdminOverview, type CoordinatorBlock } from '@workspace/api-client-react';
 import { AppLayout, Button } from '@/components/brand-system';
 import { Notice } from '@/auth/auth-ui';
 import { RequireAdmin } from '@/auth/guards';
@@ -18,6 +18,9 @@ const H = ({ children, id }: { children: string; id: string }) => <h2 id={id} cl
 
 function Body() {
   const q = useGetAdminOverview({ query: { queryKey: getGetAdminOverviewQueryKey(), ...POLL }, request: FETCH_CREDS });
+  const rp = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('at') ?? undefined : undefined;
+  const rparams = rp ? { at: rp } : undefined;
+  const rep = useGetAdminHoursReport(rparams, { query: { queryKey: getGetAdminHoursReportQueryKey(rparams), staleTime: 30_000, refetchOnWindowFocus: 'always', retry: false }, request: FETCH_CREDS });
   const d = q.data;
   const cards = d ? d.onShiftNow.filter(b => b.state !== 'blocked') : [];
   return (
@@ -89,6 +92,7 @@ function Body() {
             <Link href={`/admin/schedule?weekStart=${d.weekStart}`} data-testid="link-under-covered" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.underCoveredShifts}</span><span className="text-sm">Under-covered shifts</span></Link>
             <Link href="/admin/volunteers?needsAttention=any" data-testid="link-needs-attention" className="alliance-card hover:shadow-md"><span className="alliance-display block text-[28px]">{d.needsAttention}</span><span className="text-sm">Volunteers need attention</span><span className="mt-1 block text-xs text-navy-soft">Includes new registrations awaiting review</span></Link>
           </div>
+          {rep.data && <p className="mt-3 text-sm"><Link href="/admin/reports" data-testid="link-team-hours" className="font-bold text-navy underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue">Team hours this month: {Math.round(rep.data.totals.teamHours * 100) / 100}</Link></p>}
         </section>
         <section aria-labelledby="act" className="mt-8" data-testid="section-activity">
           <H id="act">Recent activity</H>

@@ -8,6 +8,68 @@
 import * as zod from 'zod';
 
 
+export const getAdminHoursReportQueryMonthRegExp = new RegExp('^\\d{4}-\\d{2}$');
+export const getAdminHoursReportQueryIncludeTestDefault = false;
+
+export const GetAdminHoursReportQueryParams = zod.object({
+  "month": zod.coerce.string().regex(getAdminHoursReportQueryMonthRegExp).optional(),
+  "includeTest": zod.coerce.boolean().default(getAdminHoursReportQueryIncludeTestDefault),
+  "at": zod.coerce.string().optional()
+})
+
+export const GetAdminHoursReportResponse = zod.object({
+  "month": zod.string(),
+  "currentMonth": zod.string(),
+  "totals": zod.object({
+  "teamHours": zod.number(),
+  "volunteersWithHours": zod.number().int(),
+  "shiftsLogged": zod.number().int(),
+  "otherEntries": zod.number().int(),
+  "shiftsNotLogged": zod.number().int()
+}),
+  "volunteers": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "isTestAccount": zod.boolean(),
+  "hours": zod.number(),
+  "shiftsLogged": zod.number().int(),
+  "otherEntries": zod.number().int(),
+  "shiftsNotLogged": zod.number().int(),
+  "lastLoggedDate": zod.string().nullable()
+})),
+  "trend": zod.array(zod.object({
+  "month": zod.string(),
+  "teamHours": zod.number(),
+  "volunteersWithHours": zod.number().int()
+}))
+})
+
+
+export const downloadAdminHoursReportQueryMonthRegExp = new RegExp('^\\d{4}-\\d{2}$');
+export const downloadAdminHoursReportQueryIncludeTestDefault = false;
+
+export const DownloadAdminHoursReportQueryParams = zod.object({
+  "month": zod.coerce.string().regex(downloadAdminHoursReportQueryMonthRegExp).optional(),
+  "includeTest": zod.coerce.boolean().default(downloadAdminHoursReportQueryIncludeTestDefault),
+  "at": zod.coerce.string().optional()
+})
+
+export const DownloadAdminHoursReportResponse = zod.unknown()
+
+
+export const downloadAdminHourEntriesQueryMonthRegExp = new RegExp('^\\d{4}-\\d{2}$');
+export const downloadAdminHourEntriesQueryIncludeTestDefault = false;
+
+export const DownloadAdminHourEntriesQueryParams = zod.object({
+  "month": zod.coerce.string().regex(downloadAdminHourEntriesQueryMonthRegExp).optional(),
+  "includeTest": zod.coerce.boolean().default(downloadAdminHourEntriesQueryIncludeTestDefault),
+  "at": zod.coerce.string().optional()
+})
+
+export const DownloadAdminHourEntriesResponse = zod.unknown()
+
+
 export const GetVolunteerHoursQueryParams = zod.object({
   "at": zod.coerce.string().optional()
 })

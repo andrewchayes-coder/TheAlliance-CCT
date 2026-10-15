@@ -52,10 +52,13 @@ import type {
   DeleteResource200,
   DevEmailCheck,
   DevEmailCheckError,
+  DownloadAdminHourEntriesParams,
+  DownloadAdminHoursReportParams,
   EmailInput,
   ExportVolunteerRosterParams,
   ExportVolunteerScheduleParams,
   FindMessageVolunteersParams,
+  GetAdminHoursReportParams,
   GetAdminScheduleControlsParams,
   GetAdminScheduleWeek400,
   GetAdminScheduleWeekParams,
@@ -65,6 +68,7 @@ import type {
   GetVolunteerHoursParams,
   HealthStatus,
   HoursInput,
+  HoursReport,
   HoursRow,
   ListAdminMessagesParams,
   ListTeamUsersParams,
@@ -160,6 +164,240 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetAdminHoursReportUrl = (params?: GetAdminHoursReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/hours?${stringifiedParams}` : `/api/admin/reports/hours`
+}
+
+export const getAdminHoursReport = async (params?: GetAdminHoursReportParams, options?: Parameters<typeof customFetch>[1]): Promise<HoursReport> => {
+
+  return customFetch<HoursReport>(getGetAdminHoursReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminHoursReportQueryKey = (params?: GetAdminHoursReportParams,) => {
+    return [
+    `/api/admin/reports/hours`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminHoursReportQueryOptions = <TData = Awaited<ReturnType<typeof getAdminHoursReport>>, TError = ErrorType<void>>(params?: GetAdminHoursReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminHoursReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminHoursReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminHoursReport>>> = ({ signal }) => getAdminHoursReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminHoursReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminHoursReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminHoursReport>>>
+export type GetAdminHoursReportQueryError = ErrorType<void>
+
+
+
+export function useGetAdminHoursReport<TData = Awaited<ReturnType<typeof getAdminHoursReport>>, TError = ErrorType<void>>(
+ params?: GetAdminHoursReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminHoursReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminHoursReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadAdminHoursReportUrl = (params?: DownloadAdminHoursReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/hours.csv?${stringifiedParams}` : `/api/admin/reports/hours.csv`
+}
+
+export const downloadAdminHoursReport = async (params?: DownloadAdminHoursReportParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getDownloadAdminHoursReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminHoursReportQueryKey = (params?: DownloadAdminHoursReportParams,) => {
+    return [
+    `/api/admin/reports/hours.csv`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadAdminHoursReportQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminHoursReport>>, TError = ErrorType<void>>(params?: DownloadAdminHoursReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminHoursReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminHoursReport>>> = ({ signal }) => downloadAdminHoursReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminHoursReportQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminHoursReport>>>
+export type DownloadAdminHoursReportQueryError = ErrorType<void>
+
+
+
+export function useDownloadAdminHoursReport<TData = Awaited<ReturnType<typeof downloadAdminHoursReport>>, TError = ErrorType<void>>(
+ params?: DownloadAdminHoursReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminHoursReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadAdminHourEntriesUrl = (params?: DownloadAdminHourEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/hour-entries.csv?${stringifiedParams}` : `/api/admin/reports/hour-entries.csv`
+}
+
+export const downloadAdminHourEntries = async (params?: DownloadAdminHourEntriesParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getDownloadAdminHourEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminHourEntriesQueryKey = (params?: DownloadAdminHourEntriesParams,) => {
+    return [
+    `/api/admin/reports/hour-entries.csv`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadAdminHourEntriesQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminHourEntries>>, TError = ErrorType<void>>(params?: DownloadAdminHourEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminHourEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminHourEntries>>> = ({ signal }) => downloadAdminHourEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminHourEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminHourEntries>>>
+export type DownloadAdminHourEntriesQueryError = ErrorType<void>
+
+
+
+export function useDownloadAdminHourEntries<TData = Awaited<ReturnType<typeof downloadAdminHourEntries>>, TError = ErrorType<void>>(
+ params?: DownloadAdminHourEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminHourEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetVolunteerHoursUrl = (params?: GetVolunteerHoursParams,) => {
   const normalizedParams = new URLSearchParams();

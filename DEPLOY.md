@@ -83,6 +83,18 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 - `trackBackgroundCheckAdminOnly: true`: staff-only completion checkbox/date, roster filter and optional column, and CSV completion/date columns. Never an activation or shift gate. The old `trackBackgroundCheckInApp` stays false.
 - `minimumAge: 18`: required for volunteer onboarding and staff DOB edits; the eighteenth birthday counts using Pacific dates.
 
+### Reports (v1.4.0)
+
+Admins open **Reports** in the navigation (`/admin/reports`). Monthly totals come
+from `volunteer_hours.shift_date`, grouped by the America/Los_Angeles calendar
+month, including inactive volunteers and staff-added Other time. Unlogged shifts
+use the same ended/assigned schedule rules as hour logging, without its 14-day
+volunteer editing window; weeks off, closed dates, blocks and cancelled claims
+are excluded. The 12-month trend ends with the selected month. Future months
+are refused. Both CSV exports use the selected month and test-account toggle.
+Test accounts are excluded by default; **Show test accounts** includes them.
+This release is read-only reporting: no schema changes, migration, seed or new emails.
+
 ### Hour logging configuration (v1.3.0)
 
 - `hoursLogging: true` enables the volunteer and staff hours screens.

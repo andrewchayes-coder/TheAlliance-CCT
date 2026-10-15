@@ -4,6 +4,7 @@ import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, expect, type Browser, type Page } from '@playwright/test';
+import { checkReports } from './reports-smoke';
 import bcrypt from 'bcrypt';
 import { testProfileFields } from '@workspace/shared/testAccounts';
 import lighthouse from 'lighthouse';
@@ -190,6 +191,7 @@ async function main() {
       await volunteer.getByTestId(`button-confirm-hours-${firstKey}`).click();
       await expect(volunteer.getByTestId(`text-hours-logged-${firstKey}`)).toContainText('2 hours');
       await volunteer.getByTestId(`card-log-hours`).screenshot({ path: '/tmp/fix10-hours-home.png' });
+      await checkReports(admin, base, volunteerMe.user.id, firstOccurrence.date, hoursAt, true);
 
       await admin.setViewportSize({ width: 320, height: 850 });
       await admin.goto(staffDetail);
@@ -338,6 +340,7 @@ async function main() {
     const loggedHours = await pool.query(`SELECT hours FROM ${qschema}.volunteer_hours WHERE volunteer_profile_id=$1 AND shift_slot_id=$2 AND shift_date=$3`,
       [me.profile.id, slot.id, assignment.nextDates[0].date]);
     expect(Number(loggedHours.rows[0]?.hours)).toBe(2);
+    await checkReports(admin, base, me.user.id, assignment.nextDates[0].date, hoursAt, me.user.isTestAccount);
     await volunteer.goto(`${base}/dashboard`);
     await expect(volunteer.getByTestId('card-next-shift')).toBeVisible();
     expect((await new AxeBuilder({ page: volunteer }).withRules(['color-contrast']).analyze()).violations, 'ACT-15 active/shift dashboard contrast').toEqual([]);

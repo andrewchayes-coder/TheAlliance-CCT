@@ -40,7 +40,7 @@ pnpm run typecheck
 | SYS-01 | NEW; CHANGED | Seed | In development only, run `npm run seed` twice; count `users` and `volunteer_profiles` separately after each run. Never seed production. | Both runs finish without errors or duplicates and have matching counts. The seed creates 1 admin and 18 dummy volunteers, excluding the 5 separately created QA users. Only onboarding / active / inactive statuses, none applicant or in_training. There are 40 Mon–Fri slots, 09–11 through 16–18 with hourly overlap and capacity 2. Users and volunteer profiles are different row counts. |
 | SYS-02 | CHANGED | Automated tests | Run `npm test`. | All pass, including scheduleService (DST weeks, full overlapping grid, two live overlapping shifts, skip date, closed date, blocked occurrence, custom shift in now/next and coverage, custom-shift reminder de-dupe, DST-week custom shift), the route-guard test, privacy tests (incl. DOB/address/emergency contact), the quick-login on/off tests (production is off unless `QUICK_LOGIN_ENABLED` is "true" in any case; no key or cookie tests remain; a persona mapped to a non-test user is refused), and ensureTestAccounts idempotency (5 test users after two runs). |
 | SYS-03 | CHANGED | Route-guard test | Inspect the registered-route guard test and quick-login endpoints. | Quick-login routes tagged public:quick-login, not exempted via a blanket allowlist. Retired testing entry-point routes no longer registered; normal session/CSRF tests remain. |
-| SYS-04 | CHANGED | Playwright smoke test (F8, F10) | Run the isolated development Playwright smoke test. After the Tue 10–12 shift, use the dev clock to confirm 2 hours on Home, then inspect the volunteer's Hours card as staff. | Sign-up → verify → complete profile → automatically Active → picks Tue 10–12 → confirms 2 hours → staff sees the same entry → remaining blocks/one-time shift/reminder/message/read flow passes. No manual activation. Reports/CSV checks are deferred to Fix 11. |
+| SYS-04 | CHANGED | Playwright smoke test (F8, F10, F11) | Run the isolated development Playwright smoke test. After the Tue 10–12 shift, use the dev clock to confirm 2 hours on Home, then inspect the volunteer's Hours card and Reports as staff. | Sign-up → verify → complete profile → automatically Active → picks Tue 10–12 → confirms 2 hours → staff sees the same entry and Team hours 2 in Reports (test toggle on for QA users) → remaining blocks/one-time shift/reminder/message/read flow passes. No manual activation. |
 | SYS-05 | CHANGED | Leftover search | Search `artifacts/alliance-volunteer-portal`, `artifacts/api-server`, `shared` and `lib/db` for 02928F, 027A77, lulo, montserrat, Resource Coordination Program, applicant and in_training, using the master’s grep commands. Exclude dependencies, build output, migrations, `docs/` and the separate `artifacts/mockup-sandbox`. | No obsolete colors, fonts or program name in screens or emails. applicant / in_training remain only in the retained database enum and read-time mapping in `shared/legacy-compatibility.ts`. Review and explain other deliberate compatibility hits, such as email aliases, rather than automatically failing them. No obsolete values in `shared/testAccounts.ts`, UI copy or emails. |
 | SYS-15 | CHANGED | Lighthouse | Run Lighthouse (mobile) accessibility on the volunteer dashboard, /onboarding, and admin home. | Each scores 95 or higher. |
 | SYS-16 | NEW; CHANGED | Docs | Review DEPLOY.md, this checklist, CHANGELOG.md and QA-TEST-ACCOUNTS.md; run the QL-5 retired-access audit, excluding the unchanged master under docs. | Current grid/blocks/custom shifts, Postmark DNS and configured identity documented; true/false quick-login switch, republish, reset and turn-off-before-invites guidance. v1.1.0 recorded; no retired-access identifiers in active files. |
@@ -206,7 +206,7 @@ pnpm run typecheck
 | ONBN-04 | CHANGED | Reset restores persona | As admin, Team → Reset test accounts. Quick-login as this persona again. | Profile fields are empty again and it lands on /onboarding. |
 | ONBR-01 | CHANGED | Manual-case quick login (F8) | Click Volunteer · Onboarding, ready to activate. | Dashboard shows Account created ✓ and Profile complete ✓ only, with Community Care Team shift-signup guidance. No Training & paperwork or Approval rows. |
 | ACT-01 | CHANGED | Quick login & banner | After Reset test accounts, click "Volunteer · Active". Use Switch account in the banner, then Sign out. | Dashboard shows "Your next shift" for its one seeded shift. Switch account lists the other 4 personas and one click switches. Sign out returns to /signin. |
-| ADM-01 | CHANGED | Quick login (F9) | Click "Admin", then open the hamburger menu on a phone. | Lands on /admin with the TEST banner. The sheet lists all 10 current admin pages with every item reachable by scrolling; Resources is last. Reports / 11 items are deferred to Fix 11. See ADM-41. |
+| ADM-01 | CHANGED | Quick login (F9, F11) | Click "Admin", then open the hamburger menu on a phone. | Lands on /admin with the TEST banner. The sheet lists all 11 current admin pages, including Reports after Volunteers and My Profile, with every item reachable by scrolling; Resources is last. See ADM-41. |
 | ADM-32 | CHANGED | Reset test accounts (F10) | Log hours for a QA persona and keep a separately owned non-test fixture entry. Team → Test accounts → Reset (confirm). | Still exactly 5 QA accounts. Their hours are deleted in the same reset transaction, before referenced schedule data; QA profile/shift/inbox defaults return and one-time claims are cancelled. Reset is audited and test sessions end. Non-test hours and all other real records are unchanged. |
 | ADM-33 | CHANGED | TEST badges on one-time claims | After ACT-06, look at the one-time shift on the master schedule, its side panel, and the roster. | The test persona has the gray TEST badge in all three places. |
 
@@ -217,7 +217,7 @@ pnpm run typecheck
 | ACT-11 | CHANGED | Admin APIs blocked | From devtools, call several /api/admin/* routes. Visit /admin. | Every API returns 403. /admin redirects to /dashboard. |
 | ACT-12 | CHANGED | Privacy in responses | Inspect network responses on /dashboard, /shifts, /messages and /resources. | No other volunteer's name, email or phone. No adminNotes. No DOB, address or emergency contact for anyone except yourself. |
 | ACT-14 | CHANGED | Phone & tablet walk | Walk every volunteer screen at 375 px and 768 px. | No horizontal scrolling. Tap targets at least 44 px. Dashboard usable one-handed. Every page uses the same page header (title, subtitle, actions); long titles and actions wrap cleanly at 375 px. |
-| ADM-34 | CHANGED | Phone & tablet walk | Walk every admin screen at 375 px and 768 px. | No horizontal scrolling. Tables become cards. On shift now is usable one-handed. Every admin page uses the same page header; actions wrap under the title on narrow screens. |
+| ADM-34 | CHANGED | Phone & tablet walk (F11) | Walk every admin screen at 375 px and 768 px, including Reports. Check desktop navigation at 1280, 1440 and 1920 px. | No horizontal scrolling. Tables become cards; Reports tiles stack and volunteer hours become cards at 375 px. On shift now is usable one-handed. Every admin page uses the same page header; actions wrap under the title on narrow screens. Desktop admin navigation fits on one line; My Profile is available in the user menu instead of a duplicate top-bar link, and remains in the phone sheet. |
 
 ## Production readiness and operation
 
@@ -357,7 +357,7 @@ Development automation: `pnpm --filter @workspace/scripts exec tsx src/phone-men
 
 | Test ID | Tag | Workflow | Steps | Expected result |
 |---|---|---|---|---|
-| ADM-41 | NEW | Phone admin navigation | At 320×568, 375×667, 390×844 and 768×1024, sign in as test Admin, open ☰, scroll the nav and tap Resources. Reopen, traverse the links with Tab, close with Escape or the close button. | Header stays fixed; nav scrolls within the visible screen. All 10 current links are reachable with 44px tap targets and bottom safe-area padding. Resources opens; the page behind does not scroll; focus returns to the menu trigger when closed. Reports / 11 items are deferred to Fix 11. |
+| ADM-41 | NEW CHANGED | Phone admin navigation (F9, F11) | At 320×568, 375×667, 390×844 and 768×1024, sign in as test Admin, open ☰, scroll the nav and tap Resources. Reopen, traverse the links with Tab, close with Escape or the close button. | Header stays fixed; nav scrolls within the visible screen. All 11 links, including Reports after Volunteers and My Profile, are reachable with 44px tap targets and bottom safe-area padding. Resources opens; the page behind does not scroll; focus returns to the menu trigger when closed. |
 | ACT-16 | NEW | Official sign-out | In a private window on the official address, quick-login as Volunteer · Active, open the round user menu and Sign out. Press Back, then open /dashboard. Repeat as Admin and using the test-account banner. In development simulate a failed sign-out request. | User menu closes. Whole React Query cache clears and replace navigation lands on the official /signin, including on network/403 failure. After successful sign-out, Back and /dashboard return to /signin without cached signed-in content. A failed request does not claim the server session ended. |
 
 ### F9 coverage
@@ -518,9 +518,8 @@ Fix 10 / Fix 11 tests in the v9 master are deliberately not added yet; no full t
 
 ## F10 — Hour logging / v1.3.0
 
-Development only for clock overrides and automated fixtures. The unchanged v9 master
-also contains Fix 11 Reports tests: these remain deferred. No full test-ID diff is
-claimed until Fix 11.
+Development only for clock overrides and automated fixtures. Fix 11 Reports
+workflows and the complete master test-ID comparison are covered below.
 
 Focused development verification (isolated schema, synthetic personas, no real mail):
 `NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts run smoke --hours-only`.
@@ -547,3 +546,41 @@ volunteer list rather than a separate older-history view. Staff retain their his
 | ACT-17 | F10 — Confirm served hours |
 | ACT-18 | F10 — Different hours, editing and limits |
 | ADM-42 | F10 — Staff Hours card |
+
+## F11 — Reports / v1.4.0
+
+Read-only reports; no schema changes or new emails. Use isolated fixtures in
+development. Production checks below are manual release checks, not permission
+for the development test runner to access production.
+
+| Test ID | Change | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| ADM-43 | NEW | Monthly hours by Resource Coordinator | After ACT-17, open Admin → Reports. Turn Show test accounts on, then off. Use Previous / Next. In development, open Reports with `?at=` a week after the logged shift so another assigned shift has ended. Click Message volunteers with unlogged shifts (do not send). Return and click a name. | Header says Volunteer hours, current Pacific month selected, Next disabled on current month. Test toggle includes/excludes QA users consistently in all totals, rows, trend and exports; included QA names have TEST badges. Team hours 2 (or actual total), one coordinator, one logged shift and a matching totals row. Unlogged ended shifts are amber; message composer contains exactly those volunteers, without prefilled text. Name opens their detail page. Twelve months and proportional blue-on-gray bars appear. Empty month says “No hours have been logged for {Month YYYY} yet.” Every column sorts, default name ascending. Inactive volunteers and staff Other time count. Fractions show up to two decimals without trailing zeros. Volunteers receive 403; signed-out requests receive 401 on all three reports endpoints. |
+| ADM-44 | NEW | Reports CSV exports | On Reports, turn test accounts on; download hours by volunteer and all hour entries, and open in Google Sheets. Repeat with tests off and another month. Include fixture names/notes beginning with `=`, `+`, `-`, `@` and embedded quotes/newlines. | Dated filenames alliance-hours-by-volunteer-YYYY-MM.csv and alliance-hour-entries-YYYY-MM.csv. By volunteer columns: Volunteer, Email, Status, Hours logged, Shifts logged, Other time entries, Shifts not logged, Last logged; final Team total agrees with the page. Entry columns: Date, Volunteer, Shift, Hours, Entered by, Note, Last changed; date then name order. Standing time, one-time label or Other time; Volunteer or staff name; Pacific change time. UTF-8 BOM and safe formula/quote escaping. No test entries when toggle is off. |
+| ADM-34 | CHANGED | Reports responsive layout and navigation | Open Reports at 375 and 768 px. Inspect admin desktop navigation at 1280, 1440 and 1920 px; open the phone sheet and user menu. | No horizontal page scrolling. Tiles stack; volunteer table becomes cards on phones. Reports appears immediately after Volunteers. All 11 phone items remain reachable, including My Profile. Desktop fits one line and omits duplicate My Profile, still available in the round user menu. |
+| SYS-04 | CHANGED | Smoke: confirmed hours → Reports | Run the isolated Playwright smoke. After 2 hours are logged, open Reports as admin for that shift month, enabling tests if the volunteer is a QA user. | Team hours is 2, the volunteer row shows 2 hours and one shift, and both CSVs agree. |
+
+### F9 production phone check
+
+| Test ID | Change | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| PRD-17 | NEW | v1.2.1 on a real phone (F9) | After publishing, open https://cct.defendingthecause.org on a phone; quick-login as Admin, open the menu and tap its last item. Remove any earlier home-screen icon and add it again. Sign out from the user menu. | Every admin menu item is reachable (including the 11-item Reports navigation). Home-screen icon is the CCT stacked logo. Sign-out lands on /signin. |
+
+### F10 and F11 production release check
+
+| Test ID | Change | Workflow | Steps | Expected result |
+|---|---|---|---|---|
+| PRD-18 | NEW | Hour logging and Reports in production (F10, F11) | Review Publish's schema changes. For a first Fix 10 deployment, inspect volunteer_hours count and constraint names with separate read-only SQL statements as described in the master plan. As Admin, add Other time for Volunteer · Active on the last weekday: 2 hours, note “Production check”; edit to 1.5. Open Reports with test accounts on/off and download both CSVs. Reset QA test accounts. | Fix 10 introduces only volunteer_hours; Fix 11 introduces no database changes. A newly created table starts empty and has PK, FKs and the source, amount and source/shift-pairing CHECKs. On an already-used deployment, existing legitimate rows remain untouched; do not expect a zero count. QA entry saves and edits. Reports/CSVs show 1.5 with tests on and exclude it with tests off (other real hours still count). Reset removes QA hours, never real data. Check ACT-17 after the first real pilot shift ends. |
+
+### F11 coverage
+
+| Test ID | QA-CHECKLIST.md section |
+|---|---|
+| SYS-04 | F11 — Smoke: confirmed hours → Reports |
+| ADM-01 | Admin entry and team — 11-item phone navigation |
+| ADM-34 | F11 — Reports responsive layout and navigation |
+| ADM-41 | F9 — Scrollable phone menu, now including Reports |
+| ADM-43 | F11 — Monthly hours by Resource Coordinator |
+| ADM-44 | F11 — Reports CSV exports |
+| PRD-17 | F9 production phone check |
+| PRD-18 | F10 and F11 production release check |

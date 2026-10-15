@@ -26,3 +26,9 @@ Home-screen support is manifest-based, without a generic offline service worker.
 **Why:** The portal's authenticated documents and personal data must not become available from an unconditional cache after access is removed.
 
 **How to apply:** If offline support is explicitly requested later, design account-scoped caching and logout/access-revocation handling first.
+
+Check narrow data tables for readable headings, not only horizontal overflow.
+
+**Why:** A table can pass the no-overflow check while inherited arbitrary word wrapping and large label typography compress its headings into one letter per line. The initial mobile hours trend had this failure.
+
+**How to apply:** Inspect the rendered table on a phone. Give compact numeric tables appropriately sized headings and intentional word boundaries; put decorative bars inside a flexible column instead of reserving a competing fixed-width column.

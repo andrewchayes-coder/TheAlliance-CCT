@@ -20,7 +20,9 @@ try {
     await trigger.click();
     const nav = page.getByTestId('admin-menu-nav');
     await expect(nav).toBeVisible();
-    await expect(nav.locator('a')).toHaveCount(10);
+    await expect(nav.locator('a')).toHaveCount(11);
+    await expect(nav.getByTestId('admin-menu-link-reports')).toHaveAttribute('href', '/admin/reports');
+    await expect(nav.getByTestId('admin-menu-link-my-profile')).toBeAttached();
     const dimensions = await nav.evaluate(el => ({
       overflow: getComputedStyle(el).overflowY,
       minTapHeight: Math.min(...Array.from(el.querySelectorAll('a'), a => a.getBoundingClientRect().height)),
@@ -42,5 +44,20 @@ try {
     await expect(nav).toBeHidden();
     await expect(trigger).toBeFocused();
     console.log(`PASS admin menu ${width}×${height}: Resources, 44px targets, body lock, focus and Escape.`);
+  }
+  for (const width of [1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    const nav = page.locator('header nav[aria-label="Admin navigation"]');
+    await expect(nav).toBeVisible();
+    await expect(nav.locator('a')).toHaveCount(10);
+    await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'My Profile', exact: true })).toHaveCount(0);
+    const bounds = await nav.locator('a').evaluateAll(links => links.map(el => {
+      const r = el.getBoundingClientRect(); return { top: r.top, right: r.right };
+    }));
+    expect(new Set(bounds.map(r => r.top)).size).toBe(1);
+    expect(Math.max(...bounds.map(r => r.right))).toBeLessThanOrEqual(width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    console.log(`PASS desktop admin nav ${width}px: Reports, single line, no My Profile duplicate or overflow.`);
   }
 } finally { await browser.close(); }

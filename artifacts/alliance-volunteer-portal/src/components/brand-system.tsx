@@ -73,8 +73,8 @@ const volunteerNav = [
   { label: 'Profile', href: '/profile', icon: UserRound },
 ];
 const adminNav = ['Overview', 'Volunteers', 'Master schedule', 'Messages', 'Resources'];
-const adminItems: { label: string; href?: string }[] = [
-  { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Team', href: '/admin/team' }, { label: 'My Profile', href: '/profile' },
+const adminItems: { label: string; href?: string; mobileOnly?: boolean }[] = [
+  { label: 'Overview', href: '/admin' }, { label: 'Volunteers', href: '/admin/volunteers' }, { label: 'Reports', href: '/admin/reports' }, { label: 'Team', href: '/admin/team' }, { label: 'My Profile', href: '/profile', mobileOnly: true },
   { label: 'Master schedule', href: '/admin/schedule' }, { label: 'Schedule settings', href: '/admin/schedule/settings' }, { label: 'Messages', href: '/admin/messages' }, { label: 'Notifications', href: '/admin/notifications' }, { label: 'Reminder jobs', href: '/admin/notifications/jobs' }, { label: 'Resources', href: '/admin/resources' },
 ];
 const adminActive = (loc: string, href: string) => href === '/admin' || href === '/admin/schedule' || href === '/admin/notifications' ? loc === href : loc === href || loc.startsWith(`${href}/`);
@@ -141,9 +141,9 @@ export function AppLayout({ children, role = 'volunteer', preview = false }: {
           <BrandMark />
           <nav className={`hidden shrink-0 items-center whitespace-nowrap text-sm text-navy ${role === 'admin' ? 'gap-0 xl:flex' : 'gap-1 lg:flex'}`} aria-label={live && role === 'volunteer' ? 'Volunteer navigation' : live ? 'Admin navigation' : `${role} navigation preview`}>
             {role === 'admin' && live
-              ? adminItems.map(({ label, href }) => href ? (
+              ? adminItems.filter(i => !i.mobileOnly).map(({ label, href }) => href ? (
                 <Link key={label} href={href} aria-current={adminActive(location, href) ? 'page' : undefined}
-                  className={`inline-flex min-h-11 items-center rounded-lg px-2 py-2 font-semibold hover:bg-gray focus-visible:outline-2 focus-visible:outline-blue ${adminActive(location, href) ? 'text-blue underline decoration-blue decoration-2 underline-offset-8' : ''}`}>{label}</Link>
+                  className={`inline-flex min-h-11 items-center rounded-lg px-1.5 py-2 font-semibold hover:bg-gray focus-visible:outline-2 focus-visible:outline-blue ${adminActive(location, href) ? 'text-blue underline decoration-blue decoration-2 underline-offset-8' : ''}`}>{label}</Link>
               ) : <span key={label} aria-disabled="true" title="Coming later" className="hidden px-3 xl:inline">{label} <span className="text-xs">soon</span></span>)
               : role === 'admin' || !live
               ? (role === 'admin' ? adminNav : volunteerNav.map(i => i.label)).map(label => <span key={label} className="px-3">{label}</span>)

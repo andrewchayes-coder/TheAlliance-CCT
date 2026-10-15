@@ -11,6 +11,57 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /admin/reports/hours:
+    get:
+      operationId: getAdminHoursReport
+      tags: [reports]
+      parameters:
+        - {name: month, in: query, schema: {type: string, pattern: '^\d{4}-\d{2}$'}}
+        - {name: includeTest, in: query, schema: {type: boolean, default: false}}
+        - {name: at, in: query, schema: {type: string}}
+      responses:
+        '200':
+          description: Pacific monthly hours and twelve-month trend
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/HoursReport'}
+        '400': {description: Invalid or future month}
+        '401': {description: Sign in required}
+        '403': {description: Admin required}
+  /admin/reports/hours.csv:
+    get:
+      operationId: downloadAdminHoursReport
+      tags: [reports]
+      parameters:
+        - {name: month, in: query, schema: {type: string, pattern: '^\d{4}-\d{2}$'}}
+        - {name: includeTest, in: query, schema: {type: boolean, default: false}}
+        - {name: at, in: query, schema: {type: string}}
+      responses:
+        '200':
+          description: Hours by volunteer CSV
+          content:
+            text/csv:
+              schema: {type: string}
+        '400': {description: Invalid or future month}
+        '401': {description: Sign in required}
+        '403': {description: Admin required}
+  /admin/reports/hour-entries.csv:
+    get:
+      operationId: downloadAdminHourEntries
+      tags: [reports]
+      parameters:
+        - {name: month, in: query, schema: {type: string, pattern: '^\d{4}-\d{2}$'}}
+        - {name: includeTest, in: query, schema: {type: boolean, default: false}}
+        - {name: at, in: query, schema: {type: string}}
+      responses:
+        '200':
+          description: Individual hours entries CSV
+          content:
+            text/csv:
+              schema: {type: string}
+        '400': {description: Invalid or future month}
+        '401': {description: Sign in required}
+        '403': {description: Admin required}
   /volunteer/hours:
     get:
       operationId: getVolunteerHours
@@ -1499,6 +1550,48 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    HoursReportTotals:
+      type: object
+      required: [teamHours, volunteersWithHours, shiftsLogged, otherEntries, shiftsNotLogged]
+      properties:
+        teamHours: {type: number}
+        volunteersWithHours: {type: integer}
+        shiftsLogged: {type: integer}
+        otherEntries: {type: integer}
+        shiftsNotLogged: {type: integer}
+    HoursReportVolunteer:
+      type: object
+      required: [userId, name, status, isTestAccount, hours, shiftsLogged, otherEntries, shiftsNotLogged, lastLoggedDate]
+      properties:
+        userId: {type: string}
+        name: {type: string}
+        status: {type: string}
+        isTestAccount: {type: boolean}
+        hours: {type: number}
+        shiftsLogged: {type: integer}
+        otherEntries: {type: integer}
+        shiftsNotLogged: {type: integer}
+        lastLoggedDate: {type: [string, 'null']}
+    HoursReportTrend:
+      type: object
+      required: [month, teamHours, volunteersWithHours]
+      properties:
+        month: {type: string}
+        teamHours: {type: number}
+        volunteersWithHours: {type: integer}
+    HoursReport:
+      type: object
+      required: [month, currentMonth, totals, volunteers, trend]
+      properties:
+        month: {type: string}
+        currentMonth: {type: string}
+        totals: {$ref: '#/components/schemas/HoursReportTotals'}
+        volunteers:
+          type: array
+          items: {$ref: '#/components/schemas/HoursReportVolunteer'}
+        trend:
+          type: array
+          items: {$ref: '#/components/schemas/HoursReportTrend'}
     HoursInput:
       type: object
       additionalProperties: false
