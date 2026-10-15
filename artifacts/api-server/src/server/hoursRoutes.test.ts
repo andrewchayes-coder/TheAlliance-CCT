@@ -107,8 +107,13 @@ it('staff add scheduled and Other hours, refuse missing notes/future/duplicates,
   expect((await call(admin, 'PATCH', `${path}/${created.body.id}`, { ...scheduled, hours: 3 })).body.hours).toBe(3);
   expect((await call(admin, 'GET', path)).body.rows.some((r: { id: string }) => r.id === otherTime.body.id)).toBe(true);
   expect((await call(admin, 'DELETE', `${path}/${otherTime.body.id}`)).status).toBe(204);
+  // Query immediately after the response: the activity must already be committed.
+  const removed = await db.select().from(activity).where(and(eq(activity.volunteerProfileId, profile), eq(activity.action, 'hours_deleted')));
+  expect(removed).toHaveLength(1);
+  expect(removed[0]!.details).toMatchObject({ by: 'staff', hours: 2 });
+  expect(await db.select().from(hours).where(eq(hours.id, otherTime.body.id))).toHaveLength(0);
   expect((await call(admin, 'DELETE', `${path}/${otherTime.body.id}`)).status).toBe(404);
-  expect((await db.select().from(activity).where(and(eq(activity.volunteerProfileId, profile), eq(activity.action, 'hours_deleted'))))[0]!.details).toMatchObject({ by: 'staff', hours: 2 });
+  expect(await db.select().from(activity).where(and(eq(activity.volunteerProfileId, profile), eq(activity.action, 'hours_deleted')))).toHaveLength(1);
 });
 it('volunteers get 403 on every admin hours route and cannot delete any hours', async () => {
   const path = `/admin/volunteers/${volunteer}/hours`;

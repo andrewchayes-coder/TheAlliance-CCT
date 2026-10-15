@@ -2,6 +2,10 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## v1.4.1 — 2026-10-15
+
+- Volunteers who can't book yet no longer see greyed-out Claim buttons on one-time shifts; Recent activity updates right away after staff remove hours. No database changes.
+
 ## v1.4.0 — 2026-10-15
 
 - Reports (Alliance UI review, Oct 14): Admin → Reports shows hours per Resource Coordinator and total team hours for any month, shifts not logged yet (with a button to message those volunteers), a 12-month trend, and two CSV exports. No database changes.

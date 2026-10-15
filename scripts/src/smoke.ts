@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, expect, type Browser, type Page } from '@playwright/test';
 import { checkReports } from './reports-smoke';
+import { checkClaimButtons } from './claim-buttons-smoke';
 import bcrypt from 'bcrypt';
 import { testProfileFields } from '@workspace/shared/testAccounts';
 import lighthouse from 'lighthouse';
@@ -148,6 +149,7 @@ async function main() {
       firstTuesday.setUTCDate(firstTuesday.getUTCDate() + ((2 - firstTuesday.getUTCDay() + 7) % 7 || 7));
       const formatDate = (d: Date) => d.toISOString().slice(0, 10);
       const startDate = formatDate(firstTuesday);
+      await checkClaimButtons(admin, await page(), volunteer, base, startDate);
       const secondTuesday = new Date(firstTuesday); secondTuesday.setUTCDate(secondTuesday.getUTCDate() + 7);
       const secondDate = formatDate(secondTuesday);
       const settings = await call(admin, '/admin/schedule/slots', 'POST', {
@@ -266,7 +268,10 @@ async function main() {
       await expect(admin.getByTestId('dialog-delete-hours')).toBeVisible();
       await checkActions(admin, ['[data-testid="button-delete-hours-confirm"]', '[data-testid="button-delete-hours-cancel"]'], 'Delete confirmation');
       await admin.getByTestId('button-delete-hours-confirm').click();
+      await expect(admin.getByTestId('dialog-delete-hours')).toHaveCount(0);
       await expect(admin.getByTestId(`hours-${other.id}`)).toHaveCount(0);
+      await expect(admin.locator('[data-testid^="activity-"]').filter({ hasText: 'Hours removed (1.5 h' })).toHaveCount(1);
+      console.log('PASS F12: removing staff Other time updates Recent activity without reloading.');
       console.log(`PASS: isolated Fix10 hours-only flow; Home confirm=2h, Home edit=1.5h+note, Different hours=1.5h+note, My Shifts edit=2.5h, staff Other-time validation/add/edit/delete, 320px overflow/action checks. Screenshots: /tmp/fix10-hours-home.png, /tmp/fix10-hours-volunteer-edit.png, /tmp/fix10-hours-admin-form.png, /tmp/fix10-hours-admin-card.png`);
       return;
     }

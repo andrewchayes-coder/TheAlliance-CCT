@@ -149,6 +149,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
           {(s.customShifts?.length ?? 0) > 0 && (
             <section aria-labelledby="one-time-h" data-testid="section-one-time-shifts">
               <h2 id="one-time-h" className="alliance-section-kicker mb-3">One-time shifts</h2>
+              {!s.canBook && <p className="mb-3 text-sm" data-testid="text-one-time-not-active">You can claim one-time shifts once your account is active.</p>}
               {customErr && <Notice>{customErr}</Notice>}
               <ul className="grid gap-2">
                 {s.customShifts!.map(c => (
@@ -160,8 +161,8 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
                       {c.ownAssignmentId ? (c.canCancel
                         ? <Button type="button" variant="secondary" disabled={customBusy === c.id} onClick={() => runCustom(c.id, () => cancelOwn.mutateAsync({ customShiftId: c.id }))} data-testid={`button-cancel-custom-${c.id}`}>{customBusy === c.id ? 'Cancelling...' : 'Cancel my spot'}</Button>
                         : <p className="text-sm" data-testid={`text-contact-custom-${c.id}`}>This shift is less than 24 hours away. To cancel, contact <ContactLink email={s.contactEmail} />.</p>)
-                        : c.openToVolunteers && c.openSpots > 0 && (
-                          <Button type="button" disabled={!s.canBook || customBusy === c.id} onClick={() => runCustom(c.id, () => claim.mutateAsync({ customShiftId: c.id }))} data-testid={`button-claim-custom-${c.id}`}>{customBusy === c.id ? 'Claiming...' : 'Claim this shift'}</Button>)}
+                        : s.canBook && c.openToVolunteers && c.openSpots > 0 && (
+                          <Button type="button" disabled={customBusy === c.id} onClick={() => runCustom(c.id, () => claim.mutateAsync({ customShiftId: c.id }))} data-testid={`button-claim-custom-${c.id}`}>{customBusy === c.id ? 'Claiming...' : 'Claim this shift'}</Button>)}
                     </div>
                   </li>
                 ))}

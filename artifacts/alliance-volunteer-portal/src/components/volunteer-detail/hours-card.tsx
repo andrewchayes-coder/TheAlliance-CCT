@@ -167,8 +167,11 @@ export function HoursCard({ userId }: { userId: string }) {
       await Promise.all([
         qc.invalidateQueries({ predicate: k => typeof k.queryKey[0] === 'string' && (k.queryKey[0] as string).startsWith(`/api/admin/volunteers/${userId}/hours`) }),
         qc.invalidateQueries({ predicate: k => k.queryKey[0] === '/api/volunteer/hours' }),
-        qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId) }),
+        qc.invalidateQueries({ queryKey: getGetAdminVolunteerQueryKey(userId), refetchType: 'none' }),
+        qc.invalidateQueries({ predicate: k => k.queryKey[0] === '/api/admin/overview' || k.queryKey[0] === '/api/admin/reports/hours' }),
       ]);
+      // Finish the detail fetch (including Recent activity) before dismissing.
+      await qc.refetchQueries({ queryKey: getGetAdminVolunteerQueryKey(userId), type: 'active' }, { cancelRefetch: true, throwOnError: true });
       toast({ title: 'Hours removed' }); setRm(null);
     } catch (e) {
       const f = readError(e, "We couldn't remove those hours. Please try again.");
