@@ -6,6 +6,7 @@
   "scripts": {
     "regression": "tsx src/regression.ts",
     "smoke": "tsx ./src/smoke.ts",
+    "test:shift-discovery": "tsx ./src/change-shift-discovery.ts",
     "seed": "tsx ./src/seed.ts",
     "verify-seed": "tsx ./src/verify-seed.ts",
     "hello": "tsx ./src/hello.ts",

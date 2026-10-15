@@ -5,6 +5,7 @@
 - [Onboarding scope](onboarding-question-scope.md) — finalized as a fixed profile; extra questions empty and compliance handled outside the app, with legacy data retained.
 - [New-tab links](new-tab-links.md) — use native anchors for documents; this router intercepts clicks even with target=_blank.
 - [Animated screenshots](animated-screenshot-verification.md) — wait for drawer/dialog animations to settle before treating clipped screenshots as layout bugs.
+- [Modal focus handoffs](modal-focus-handoffs.md) — explicit section navigation must coordinate dialog close-time focus; ordinary cancellation still returns to the opener.
 - [Drizzle check constraints](drizzle-check-constraints.md) — a successful push may leave an existing named CHECK unchanged; verify the live definition.
 - [Workspace package installs](workspace-package-installs.md) — recover the install helper's root guard with a scoped pnpm add, not a disabled safety check.
 - [Coordinator dispatch](coordinator-dispatch.md) — admin home is the phone-first Find Help dispatch tool; stale schedules must never appear live.

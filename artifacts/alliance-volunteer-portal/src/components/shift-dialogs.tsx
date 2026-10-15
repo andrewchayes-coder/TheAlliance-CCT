@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { VolunteerAvailableSlot, VolunteerSchedule, VolunteerStandingShift } from '@workspace/api-client-react';
 import { Notice } from '@/auth/auth-ui';
 import { ShiftModal } from '@/components/shift-modal';
@@ -23,6 +23,7 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
   dlg: Dlg; schedule: VolunteerSchedule; busy: boolean; error: string | null; onClose: () => void; act: Actions;
 }) {
   const [date, setDate] = useState(() => ('slot' in dlg ? ymd(dlg.slot.startDates[0] ?? '') : dlg.kind === 'skip' ? (dlg.a.nextDates.find(d => d.canSkip)?.date ?? '') : ''));
+  const changingFromDrop = useRef(false);
   const cancel = <button type="button" className="alliance-button alliance-button-secondary" onClick={onClose} disabled={busy} data-testid="button-dialog-cancel">Cancel</button>;
   const err = error && <Notice>{error}</Notice>;
   const email = schedule.contactEmail;
@@ -31,9 +32,10 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
     const a = dlg.a;
     if (schedule.assignments.length <= schedule.minShifts) return (
       <ShiftModal title="You need at least one shift" onClose={onClose}
+        restoreFocusTo={() => changingFromDrop.current ? document.getElementById('week-h') : null}
         description={`Resource Coordinators keep at least ${schedule.minShifts} weekly ${schedule.minShifts === 1 ? 'shift' : 'shifts'}. You can swap this one for a different time instead.`}
         footer={<>{cancel}<button type="button" className="alliance-button alliance-button-primary" data-testid="button-dialog-change"
-          onClick={() => { onClose(); act.startChange(a); }}>Change this shift</button></>}>
+          onClick={() => { changingFromDrop.current = true; onClose(); act.startChange(a); }}>Change this shift</button></>}>
         <p className="text-sm">If you need to step back entirely, please contact <ContactLink />.</p>
       </ShiftModal>
     );

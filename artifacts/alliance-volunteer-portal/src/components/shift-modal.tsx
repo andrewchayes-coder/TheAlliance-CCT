@@ -2,8 +2,9 @@ import { useRef, type ReactNode } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /** Mounted only while open: captures the opener on first render and restores focus on close. */
-export function ShiftModal({ title, description, children, footer, onClose, busy }: {
+export function ShiftModal({ title, description, children, footer, onClose, busy, restoreFocusTo }: {
   title: string; description?: string; children?: ReactNode; footer: ReactNode; onClose: () => void; busy?: boolean;
+  restoreFocusTo?: () => HTMLElement | null;
 }) {
   const opener = useRef<HTMLElement | null>(document.activeElement as HTMLElement | null);
   return (
@@ -11,6 +12,9 @@ export function ShiftModal({ title, description, children, footer, onClose, busy
       <DialogContent data-testid="dialog-shift" className="bg-white text-navy"
         onCloseAutoFocus={e => {
           e.preventDefault();
+          // A drop-to-change handoff must not return focus to the old card and undo the jump.
+          const destination = restoreFocusTo?.();
+          if (destination?.isConnected) { destination.focus({ preventScroll: true }); return; }
           const el = opener.current;
           (el && el.isConnected ? el : document.getElementById('shifts-heading'))?.focus();
         }}>

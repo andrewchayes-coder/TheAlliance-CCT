@@ -3,13 +3,15 @@ import type { VolunteerShiftDate, VolunteerStandingShift } from '@workspace/api-
 import { dateLabel, slotTitle, ymd } from '@/lib/shift-utils';
 import { pacificToday } from '@workspace/shared/profileFields';
 import { shiftStartVerb } from '@workspace/shared/calendar-display';
+import { ArrowDown } from 'lucide-react';
 
 export function ContactLink({ children }: { email?: string | null; children?: string }) {
   return <a href={`mailto:${VOLUNTEER_CONTACT_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${VOLUNTEER_CONTACT_NAME} (${VOLUNTEER_CONTACT_EMAIL})`}</a>;
 }
 
-export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, onSkip, onUndo }: {
+export function ShiftCards({ assignments, contactEmail, busy, changingId, onJumpToChoices, onChange, onDrop, onSkip, onUndo }: {
   assignments: VolunteerStandingShift[]; contactEmail: string | null; busy: boolean;
+  changingId?: string; onJumpToChoices?: () => void;
   onChange: (a: VolunteerStandingShift) => void; onDrop: (a: VolunteerStandingShift) => void;
   onSkip: (a: VolunteerStandingShift) => void; onUndo: (a: VolunteerStandingShift, d: VolunteerShiftDate) => void;
 }) {
@@ -49,9 +51,20 @@ export function ShiftCards({ assignments, contactEmail, busy, onChange, onDrop, 
             )}
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" disabled={busy || !canTake} onClick={() => onSkip(a)} className="alliance-button alliance-button-secondary" data-testid={`button-skip-${a.id}`}>Take a week off</button>
-              <button type="button" disabled={busy} onClick={() => onChange(a)} className="alliance-button alliance-button-secondary" data-testid={`button-change-${a.id}`}>Change shift</button>
-              <button type="button" disabled={busy} onClick={() => onDrop(a)} className="alliance-button alliance-button-secondary" data-testid={`button-drop-${a.id}`}>Drop shift</button>
+              <button id={`change-shift-${a.id}`} type="button" disabled={busy} onClick={() => onChange(a)}
+                aria-controls="replacement-shifts" aria-describedby={changingId === a.id ? `change-cue-${a.id}` : undefined}
+                className="alliance-button alliance-button-secondary" data-testid={`button-change-${a.id}`}>Change shift</button>
+              <button id={`drop-shift-${a.id}`} type="button" disabled={busy} onClick={() => onDrop(a)} className="alliance-button alliance-button-secondary" data-testid={`button-drop-${a.id}`}>Drop shift</button>
             </div>
+            {changingId === a.id && (
+              <p id={`change-cue-${a.id}`} className="mt-3 border-t border-gray pt-2" data-testid={`cue-change-${a.id}`}>
+                <button type="button" onClick={onJumpToChoices} aria-controls="replacement-shifts"
+                  className="inline-flex min-h-11 items-center gap-2 text-left font-bold text-blue underline underline-offset-4"
+                  data-testid={`button-jump-to-shifts-${a.id}`}>
+                  Choose your new shift below <ArrowDown size={18} className="shrink-0" aria-hidden="true" />
+                </button>
+              </p>
+            )}
           </li>
         );
       })}

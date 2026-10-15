@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
 import { CheckCircle2 } from 'lucide-react';
@@ -64,6 +64,38 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const s = q.data;
+  const choicesHeading = useRef<HTMLHeadingElement>(null);
+  const changeOrigin = useRef<HTMLElement | null>(null);
+  const [changeRequest, setChangeRequest] = useState(0);
+
+  function showReplacementChoices() {
+    const heading = choicesHeading.current;
+    if (!heading) return;
+    heading.focus({ preventScroll: true });
+    heading.scrollIntoView({
+      block: 'start',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    });
+  }
+
+  function startChange(a: VolunteerStandingShift, origin: 'change' | 'drop' = 'change') {
+    changeOrigin.current = document.getElementById(`${origin}-shift-${a.id}`);
+    setErr(null);
+    setChanging(a);
+    setChangeRequest(n => n + 1);
+  }
+
+  // Only deliberate Change actions move the viewport, never background schedule refreshes.
+  useLayoutEffect(() => {
+    if (changeRequest > 0) showReplacementChoices();
+  }, [changeRequest]);
+
+  function cancelChange() {
+    setChanging(null);
+    setErr(null);
+    const origin = changeOrigin.current;
+    (origin?.isConnected ? origin : document.getElementById('mine-h'))?.focus();
+  }
 
   async function run(fn: () => Promise<VolunteerShiftResult>) {
     setBusy(true); setErr(null);
@@ -85,7 +117,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
     change: (assignmentId, slotId, startDate) => { void run(() => change.mutateAsync({ assignmentId, data: { slotId, startDate } })); },
     drop: assignmentId => { void run(() => drop.mutateAsync({ assignmentId })); },
     skip: (assignmentId, date) => { void run(() => skip.mutateAsync({ assignmentId, data: { date } })); },
-    startChange: a => { setErr(null); setChanging(a); },
+    startChange: a => startChange(a, 'drop'),
   };
   const open = (d: Dlg | null) => { setErr(null); setDlg(d); };
 
@@ -104,12 +136,13 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
             </div>
           )}
           <section aria-labelledby="mine-h">
-            <h2 id="mine-h" className="alliance-section-kicker mb-3">Your standing shifts ({s.assignments.length} of {s.maxShifts})</h2>
+            <h2 id="mine-h" tabIndex={-1} className="alliance-section-kicker mb-3">Your standing shifts ({s.assignments.length} of {s.maxShifts})</h2>
             {s.assignments.length === 0 ? (
               <EmptyState title="No shifts yet" description={s.canBook ? 'Choose a weekly time to start helping local families find their way to support.' : 'Your shifts will show here once you can book.'} />
             ) : (
               <ShiftCards assignments={s.assignments} contactEmail={s.contactEmail} busy={busy}
-                onChange={a => { setChanging(a); }} onDrop={a => open({ kind: 'drop', a })} onSkip={a => open({ kind: 'skip', a })}
+                changingId={changing?.id} onJumpToChoices={showReplacementChoices}
+                onChange={a => startChange(a)} onDrop={a => open({ kind: 'drop', a })} onSkip={a => open({ kind: 'skip', a })}
                 onUndo={(a, d) => { if (d.skipId) { const skipId = d.skipId; void run(() => undo.mutateAsync({ assignmentId: a.id, skipId })); } }} />
             )}
           </section>
@@ -135,12 +168,14 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
               </ul>
             </section>
           )}
-          <section aria-labelledby="week-h">
-            <h2 id="week-h" className="alliance-section-kicker mb-3">{changing ? 'Pick a new shift' : 'Weekly schedule, Monday to Friday'}</h2>
+          <section id="replacement-shifts" aria-labelledby="week-h">
+            <h2 id="week-h" ref={choicesHeading} tabIndex={-1}
+              className="alliance-section-kicker mb-3 scroll-mt-6 rounded focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue"
+              aria-describedby={changing ? 'change-shift-context' : undefined}>{changing ? 'Pick a new shift' : 'Weekly schedule, Monday to Friday'}</h2>
             {changing && (
               <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl bg-[var(--alliance-amber)] px-4 py-3 text-[var(--alliance-amber-ink)]" data-testid="banner-change-mode">
-                <span className="text-sm font-bold">Changing {slotTitle(changing)}. Choose an open shift.</span>
-                <button type="button" className="ml-auto min-h-11 font-bold underline" onClick={() => setChanging(null)} data-testid="button-cancel-change">Cancel change</button>
+                <span id="change-shift-context" role="status" className="text-sm font-bold">Changing {slotTitle(changing)}. Choose an open shift.</span>
+                <button type="button" className="ml-auto min-h-11 font-bold underline" onClick={cancelChange} data-testid="button-cancel-change">Cancel change</button>
               </div>
             )}
             <ShiftGrid schedule={s} changing={changing} disabled={!s.canBook || busy}
