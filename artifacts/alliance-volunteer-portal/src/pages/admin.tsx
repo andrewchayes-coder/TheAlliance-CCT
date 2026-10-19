@@ -1,5 +1,6 @@
 import { ContactLink } from '@/components/shift-cards';
 import { PageHeader } from '@/components/page-header';
+import { ArchiveAccount } from '@/components/archive-account';
 import { useEffect, useState, type FormEvent } from 'react';
 import { appConfig } from '@workspace/shared/appConfig';
 import { formatPhone, normalizeVolunteerStatus } from '@workspace/shared/profileFields';
@@ -121,6 +122,7 @@ function ConfirmStatus({ target, selfId, onClose }: { target: { user: PublicUser
 function TeamBody({ me }: { me: Me }) {
   const auth = useAuth();
   const [role, setRole] = useState<'admin' | 'volunteer'>('admin');
+  const [archive, setArchive] = useState<'current' | 'archived' | 'all'>('current');
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [offset, setOffset] = useState(0);
@@ -134,7 +136,7 @@ function TeamBody({ me }: { me: Me }) {
     return () => clearTimeout(t);
   }, [text]);
 
-  const params: ListTeamUsersParams = { role, limit: PAGE, offset, ...(q ? { q } : {}) };
+  const params: ListTeamUsersParams = { role, archive, limit: PAGE, offset, ...(q ? { q } : {}) };
   const list = useListTeamUsers(params, {
     query: { queryKey: getListTeamUsersQueryKey(params), staleTime: FRESH_MS, retry: false, placeholderData: keepPreviousData },
     request: FETCH_CREDS,
@@ -168,6 +170,11 @@ function TeamBody({ me }: { me: Me }) {
                 className={`min-h-11 rounded-md text-sm font-bold capitalize ${role === r ? 'bg-white shadow-sm' : ''}`}>{r}s</button>
             ))}
           </div>
+          <label className="block"><span className="alliance-label">Accounts</span>
+            <select className="alliance-input mt-1" value={archive} onChange={e => { setArchive(e.target.value as typeof archive); setOffset(0); }} data-testid="filter-team-archive">
+              <option value="current">Not archived</option><option value="archived">Archived</option><option value="all">All accounts</option>
+            </select>
+          </label>
           <div className="relative lg:w-80">
             <Search size={18} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
             <input type="search" aria-label="Search by name or email" placeholder="Search name or email" maxLength={100}
@@ -195,7 +202,7 @@ function TeamBody({ me }: { me: Me }) {
                 return (
                   <li key={u.id} className="flex flex-col gap-3 py-4 lg:flex-row lg:flex-wrap lg:items-center" data-testid={`row-user-${u.id}`}>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold">{u.firstName} {u.lastName}<TestBadge test={u.isTestAccount} />{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
+                      <p className="font-bold">{u.firstName} {u.lastName}<TestBadge test={u.isTestAccount} />{u.archivedAt && <span className="ml-2 text-sm font-normal">Archived</span>}{self && <span className="ml-2 text-sm font-normal">(you)</span>}</p>
                       <p className="break-all text-sm">{u.email}</p>
                       <p className="mt-1 text-xs text-navy-soft">
                         {u.lastLoginAt ? `Last sign-in ${fmtDate(u.lastLoginAt)}` : 'Never signed in'} · Added {fmtDate(u.createdAt)}
@@ -213,12 +220,13 @@ function TeamBody({ me }: { me: Me }) {
                           {resending === u.id ? 'Sending' : 'Resend invitation'}
                         </Button>
                       )}
-                      <Button type="button" variant="secondary" disabled={self}
+                      <Button type="button" variant="secondary" disabled={self || !!u.archivedAt}
                         title={self ? 'You cannot change your own status' : undefined}
                         aria-label={`${u.isActive ? 'Deactivate' : 'Reactivate'} ${u.firstName} ${u.lastName}${self ? ' (unavailable: this is you)' : ''}`}
                         onClick={() => setTarget({ user: u, next: !u.isActive })} data-testid={`button-status-${u.id}`}>
                         {u.isActive ? 'Deactivate' : 'Reactivate'}
                       </Button>
+                      <ArchiveAccount user={u} self={self} />
                     </div>
                     {editing === u.id && u.role === 'admin' && !self && <div className="w-full lg:basis-full"><AccountEditor key={u.id} userId={u.id} managed /></div>}
                   </li>

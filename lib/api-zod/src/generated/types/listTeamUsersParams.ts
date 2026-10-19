@@ -5,9 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ListTeamUsersArchive } from './listTeamUsersArchive';
 import type { ListTeamUsersRole } from './listTeamUsersRole';
 
 export type ListTeamUsersParams = {
+archive?: ListTeamUsersArchive;
 role: ListTeamUsersRole;
 /**
  * @maxLength 100

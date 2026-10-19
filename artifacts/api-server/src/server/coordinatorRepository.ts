@@ -1,4 +1,4 @@
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql, isNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { db, usersTable, volunteerProfilesTable, activityLogTable } from '@workspace/db';
 import { readScheduleData } from './scheduleRepository';
@@ -13,7 +13,7 @@ export async function coordinatorSnapshot(weekStart?: string, now = new Date()) 
       email: usersTable.email, phone: usersTable.phone, accountActive: usersTable.isActive, isTestAccount: usersTable.isTestAccount, profileId: volunteerProfilesTable.id,
       profile: volunteerProfilesTable })
       .from(volunteerProfilesTable).innerJoin(usersTable, eq(usersTable.id, volunteerProfilesTable.userId))
-      .where(eq(usersTable.role, 'volunteer'));
+      .where(and(eq(usersTable.role, 'volunteer'), isNull(usersTable.archivedAt)));
     const onboardingEvents = await tx.selectDistinctOn([activityLogTable.volunteerProfileId],{
       profileId:activityLogTable.volunteerProfileId,createdAt:activityLogTable.createdAt,
     }).from(activityLogTable).where(and(eq(activityLogTable.action,'status_changed'),

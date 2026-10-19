@@ -83,6 +83,21 @@ The API fails loudly with **key names only** if configuration is missing/invalid
 - `trackBackgroundCheckAdminOnly: true`: staff-only completion checkbox/date, roster filter and optional column, and CSV completion/date columns. Never an activation or shift gate. The old `trackBackgroundCheckInApp` stays false.
 - `minimumAge: 18`: required for volunteer onboarding and staff DOB edits; the eighteenth birthday counts using Pacific dates.
 
+### Account archiving
+
+Publish applies the additive nullable `users.archived_at` field from development;
+`lib/db/migrations/0007_account_archiving.sql` is a reference only. Do not run it at
+startup or copy development account data to production.
+
+Admins use **Archive account** on a volunteer's detail page or **Team**. Archiving
+keeps the account, hours, messages and audit history; it disables sign-in, ends
+sessions and releases future shifts through the existing deactivation workflow.
+The default account lists and roster exports exclude archived accounts. Choose
+**Accounts → Archived** to find and restore them. Restoration restores visibility
+only; reactivate sign-in separately in Team. Released shifts are never recreated.
+Reports retain historical hours. Built-in QA personas cannot be archived; use
+their existing reset tool. There is no permanent-delete action.
+
 ### Reports (v1.4.0)
 
 Admins open **Reports** in the navigation (`/admin/reports`). Monthly totals come

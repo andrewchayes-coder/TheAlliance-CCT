@@ -103,24 +103,37 @@ export function assertDeactivationAllowed(actorId: string, target: User, activeA
   }
 }
 
-export async function setAccountActive(actor: AdminActor, userId: string, isActive: boolean) {
+export async function setAccountActive(actor: AdminActor, userId: string, isActive: boolean, archived?: boolean) {
   let event: ReleasedAssignments | undefined;
   const result = await db.transaction(async tx => {
     await lockSchedule(tx);
     const admins = await lockActiveAdmins(tx, actor);
     const [target] = await tx.select().from(usersTable).where(eq(usersTable.id, userId)).for('update');
     if (!target) throw new AdminActionError(404, 'USER_NOT_FOUND', 'This account could not be found.');
+    if (archived !== undefined && target.isTestAccount)
+      throw new AdminActionError(409, 'TEST_ACCOUNT', 'Built-in test accounts cannot be archived. Use Reset test accounts instead.');
+    if (archived === false && !target.archivedAt) return target;
+    if (isActive && target.archivedAt)
+      throw new AdminActionError(409, 'ACCOUNT_ARCHIVED', 'Restore this account before reactivating sign-in.');
     if (!isActive) assertDeactivationAllowed(actor.id, target,
       admins.filter(u => !u.isTestAccount).length + (!target.isTestAccount && target.role === 'admin' && target.isActive && target.emailVerifiedAt
         && !admins.some(admin => admin.id === target.id) ? 1 : 0));
-    if (target.isActive === isActive) return target;
+    if (target.isActive === isActive && (archived === undefined || !!target.archivedAt === archived)) return target;
     const [updated] = await tx.update(usersTable).set({
       isActive, updatedAt: new Date(), sessionVersion: sql`${usersTable.sessionVersion} + 1`,
+      ...(archived === undefined ? {} : { archivedAt: archived ? new Date() : null }),
     }).where(eq(usersTable.id, userId)).returning();
     await tx.delete(sessionsTable).where(sql`${sessionsTable.sess}->>'userId' = ${userId}`);
+    if (archived !== undefined && !!target.archivedAt !== archived && target.role === 'volunteer') {
+      const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId)).for('update');
+      if (profile) await tx.insert(activityLogTable).values({ volunteerProfileId: profile.id,
+        actorUserId: actor.id, action: archived ? 'account_archived' : 'account_restored', details: {} });
+    }
     if (!isActive) {
       await tx.update(authTokensTable).set({ usedAt: new Date() })
         .where(and(eq(authTokensTable.userId, userId), isNull(authTokensTable.usedAt)));
+    }
+    if (!isActive && target.isActive) {
       if (target.role === 'volunteer') {
         const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId)).for('update');
         if (profile) {
@@ -141,5 +154,7 @@ export async function setAccountActive(actor: AdminActor, userId: string, isActi
   });
   if (event) try { await onAssignmentsReleased(event); }
   catch (err) { logger.error({ err }, 'Coverage alert failed after account deactivation.'); }
+  if (archived !== undefined) logger.info({ audit: true, actorUserId: actor.id, targetUserId: userId,
+    action: archived ? 'account_archived' : 'account_restored' }, 'Account archive state saved');
   return result;
 }

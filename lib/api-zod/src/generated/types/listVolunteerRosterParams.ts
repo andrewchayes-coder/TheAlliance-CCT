@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ListVolunteerRosterArchive } from './listVolunteerRosterArchive';
 import type { ListVolunteerRosterBackgroundCheckStatus } from './listVolunteerRosterBackgroundCheckStatus';
 import type { ListVolunteerRosterCertificationStatus } from './listVolunteerRosterCertificationStatus';
 import type { ListVolunteerRosterNeedsAttention } from './listVolunteerRosterNeedsAttention';
@@ -16,6 +17,7 @@ import type { ListVolunteerRosterSortDirection } from './listVolunteerRosterSort
 import type { ListVolunteerRosterStatus } from './listVolunteerRosterStatus';
 
 export type ListVolunteerRosterParams = {
+archive?: ListVolunteerRosterArchive;
 /**
  * @maxLength 200
  */

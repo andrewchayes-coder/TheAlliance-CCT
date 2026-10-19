@@ -33,7 +33,7 @@ async function recipients(client: typeof db | Tx, draft?: Draft, query?: { q?: s
   const q = query?.q?.replace(/[\\%_]/g, '\\$&');
   const rows = await client.select(selection).from(usersTable)
     .innerJoin(volunteerProfilesTable, eq(volunteerProfilesTable.userId, usersTable.id))
-    .where(and(eq(usersTable.role, 'volunteer'), ids ? inArray(usersTable.id, ids) : undefined,
+    .where(and(eq(usersTable.role, 'volunteer'), isNull(usersTable.archivedAt), ids ? inArray(usersTable.id, ids) : undefined,
       draft?.audience === 'active' || draft?.audience === 'all' ? eq(usersTable.isTestAccount, false) : undefined,
       draft?.audience === 'active' ? and(eq(usersTable.isActive, true), eq(volunteerProfilesTable.status, 'active')) : undefined,
       q ? ilike(sql`${usersTable.firstName} || ' ' || ${usersTable.lastName} || ' ' || ${usersTable.email}`, `%${q}%`) : undefined))

@@ -64,6 +64,7 @@ export async function rosterSnapshot(now = new Date()) {
 }
 export type RosterPerson = Awaited<ReturnType<typeof rosterSnapshot>>[number];
 export type RosterFilters = {
+  archive?: 'current' | 'archived' | 'all';
   search?: string; status?: string; county?: string; certificationStatus?: string; backgroundCheckStatus?: string;
   needsAttention?: 'any' | AttentionReason;
   showTestAccounts?: 'true' | 'false';
@@ -75,6 +76,7 @@ export function filterRoster(people: RosterPerson[], filters: RosterFilters) {
   const search = filters.search?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
   const phoneSearch = search && /^[+\d()\s.-]+$/.test(search) ? search.replace(/\D/g, '') : '';
   return people.filter(({ user, profile, attention, shiftCount }) => {
+    if (filters.archive !== 'all' && !!user.archivedAt !== (filters.archive === 'archived')) return false;
     if (user.isTestAccount && filters.showTestAccounts !== 'true') return false;
     if (filters.status && normalizeVolunteerStatus(profile.status) !== filters.status) return false;
     if (filters.county && profile.county !== filters.county) return false;
@@ -129,7 +131,7 @@ export function rosterEntry(person: RosterPerson) {
 export function rosterSummary(people: RosterPerson[]) {
   const counts = { onboarding: 0, active: 0, inactive: 0, needsAttention: 0 };
   for (const person of people) {
-    if (person.user.isTestAccount) continue;
+    if (person.user.isTestAccount || person.user.archivedAt) continue;
     counts[normalizeVolunteerStatus(person.profile.status)]++;
     if (person.attention.length) counts.needsAttention++;
   }

@@ -39,6 +39,7 @@ export const usersTable = pgTable('users', {
   role: userRole('role').notNull().default('volunteer'),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   isActive: boolean('is_active').notNull().default(true),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
   isTestAccount: boolean('is_test_account').notNull().default(false),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   googleSubject: text('google_subject'),

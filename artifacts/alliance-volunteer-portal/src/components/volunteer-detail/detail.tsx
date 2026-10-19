@@ -1,4 +1,5 @@
 import { AccountEditor } from '@/components/account-editor';
+import { ArchiveAccount } from '@/components/archive-account';
 import { ContactLink } from '@/components/shift-cards';
 import { useState, type ReactNode } from 'react';
 import { Link, useParams } from 'wouter';
@@ -81,6 +82,10 @@ export function VolunteerDetail() {
         <>
           {q.isError && <div className="mt-2"><Notice kind="info">Couldn't refresh. Showing the last loaded details.</Notice></div>}
           <PageHeader title={`${e.user.firstName} ${e.user.lastName}`} titleTestId="text-volunteer-name" titleSuffix={<TestBadge test={e.user.isTestAccount} />} className="mb-3" />
+          <div className="my-3 flex flex-wrap items-center gap-3">
+            {e.user.archivedAt && <Notice kind="info">Archived account. Hours and history are preserved. Restore it before reactivating sign-in.</Notice>}
+            <ArchiveAccount user={e.user} />
+          </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Pill map={STATUS} value={normalizeVolunteerStatus(p.status)} />
             {p.county && <StatusBadge status="neutral">{p.county} County</StatusBadge>}

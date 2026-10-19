@@ -1003,6 +1003,7 @@ paths:
     get:
       operationId: listVolunteerRoster
       parameters:
+        - { name: archive, in: query, schema: { type: string, enum: [current, archived, all], default: current } }
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
         - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
@@ -1093,6 +1094,7 @@ paths:
     get:
       operationId: exportVolunteerRoster
       parameters:
+        - { name: archive, in: query, schema: { type: string, enum: [current, archived, all], default: current } }
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
         - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
@@ -1114,6 +1116,7 @@ paths:
     get:
       operationId: exportVolunteerSchedule
       parameters:
+        - { name: archive, in: query, schema: { type: string, enum: [current, archived, all], default: current } }
         - { name: search, in: query, schema: { type: string, maxLength: 200 } }
         - { name: status, in: query, schema: { type: string, enum: [onboarding, active, inactive] } }
         - { name: county, in: query, schema: { type: string } }
@@ -1473,6 +1476,7 @@ paths:
       operationId: listTeamUsers
       summary: Admin-only account directory
       parameters:
+        - { name: archive, in: query, schema: { type: string, enum: [current, archived, all], default: current } }
         - name: role
           in: query
           required: true
@@ -1530,6 +1534,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicUser"
+  /admin/users/{userId}/archive:
+    patch:
+      operationId: setUserArchived
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [archived]
+              properties:
+                archived: { type: boolean }
+      responses:
+        "200":
+          description: Archived or restored account; restoration leaves sign-in disabled.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicUser" }
+        "409": { description: "Self, last administrator or built-in test account cannot be archived." }
   /me:
     get:
       operationId: getMe
@@ -2773,6 +2799,7 @@ components:
         role: { type: string, enum: [admin, volunteer] }
         emailVerifiedAt: { type: [string, "null"], format: date-time }
         isActive: { type: boolean }
+        archivedAt: { type: [string, "null"], format: date-time }
         isTestAccount: { type: boolean }
         lastLoginAt: { type: [string, "null"], format: date-time }
         createdAt: { type: string, format: date-time }

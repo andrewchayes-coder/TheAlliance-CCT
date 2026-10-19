@@ -2,6 +2,10 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## Unreleased
+
+- Admins can archive and restore accounts from volunteer details and Team. Archived accounts are hidden from normal lists and new message audiences; hours, messages and history remain available. Archiving disables sign-in, ends sessions and releases future shifts. Restoring does not reactivate sign-in or restore shifts. Self, last-active-admin and built-in QA account protections apply. Additive `users.archived_at` field; no permanent account deletion.
+
 ## v1.4.1 — 2026-10-15
 
 - Volunteers who can't book yet no longer see greyed-out Claim buttons on one-time shifts; Recent activity updates right away after staff remove hours. No database changes.

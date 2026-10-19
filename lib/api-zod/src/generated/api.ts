@@ -286,6 +286,7 @@ export const GetAccountProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -323,6 +324,7 @@ export const UpdateAccountProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -357,6 +359,7 @@ export const RequestAccountEmailChangeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -380,6 +383,7 @@ export const CancelAccountEmailChangeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -428,6 +432,7 @@ export const UploadAccountPhotoResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -451,6 +456,7 @@ export const RemoveAccountPhotoResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -485,6 +491,7 @@ export const GetManagedAccountProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -526,6 +533,7 @@ export const UpdateManagedAccountProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -564,6 +572,7 @@ export const RequestManagedAccountEmailChangeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -591,6 +600,7 @@ export const CancelManagedAccountEmailChangeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -622,6 +632,7 @@ export const UploadManagedAccountPhotoResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -649,6 +660,7 @@ export const RemoveManagedAccountPhotoResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2436,6 +2448,7 @@ export const DeleteScheduleClosedDateResponse = zod.object({
 })
 
 
+export const listVolunteerRosterQueryArchiveDefault = `current`;
 export const listVolunteerRosterQuerySearchMax = 200;
 
 export const listVolunteerRosterQueryLimitDefault = 25;
@@ -2447,6 +2460,7 @@ export const listVolunteerRosterQueryOffsetMin = 0;
 
 
 export const ListVolunteerRosterQueryParams = zod.object({
+  "archive": zod.enum(['current', 'archived', 'all']).default(listVolunteerRosterQueryArchiveDefault),
   "search": zod.coerce.string().max(listVolunteerRosterQuerySearchMax).optional(),
   "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
@@ -2474,6 +2488,7 @@ export const ListVolunteerRosterResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2539,6 +2554,7 @@ export const GetAdminVolunteerResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2634,6 +2650,7 @@ export const ChangeVolunteerStatusResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2768,6 +2785,7 @@ export const UpdateVolunteerTrackingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2865,6 +2883,7 @@ export const UpdateVolunteerNotesResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -2938,11 +2957,13 @@ export const UpdateVolunteerNotesResponse = zod.object({
 })
 
 
+export const exportVolunteerRosterQueryArchiveDefault = `current`;
 export const exportVolunteerRosterQuerySearchMax = 200;
 
 
 
 export const ExportVolunteerRosterQueryParams = zod.object({
+  "archive": zod.enum(['current', 'archived', 'all']).default(exportVolunteerRosterQueryArchiveDefault),
   "search": zod.coerce.string().max(exportVolunteerRosterQuerySearchMax).optional(),
   "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
@@ -2959,11 +2980,13 @@ export const ExportVolunteerRosterQueryParams = zod.object({
 export const ExportVolunteerRosterResponse = zod.unknown()
 
 
+export const exportVolunteerScheduleQueryArchiveDefault = `current`;
 export const exportVolunteerScheduleQuerySearchMax = 200;
 
 
 
 export const ExportVolunteerScheduleQueryParams = zod.object({
+  "archive": zod.enum(['current', 'archived', 'all']).default(exportVolunteerScheduleQueryArchiveDefault),
   "search": zod.coerce.string().max(exportVolunteerScheduleQuerySearchMax).optional(),
   "status": zod.enum(['onboarding', 'active', 'inactive']).optional(),
   "county": zod.coerce.string().optional(),
@@ -3051,6 +3074,7 @@ export const UpdateVolunteerProfileResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -3185,6 +3209,7 @@ export const SaveOnboardingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -3273,6 +3298,7 @@ export const GetVolunteerOnboardingResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -3573,6 +3599,7 @@ export const ResetTestAccountsResponse = zod.object({
 /**
  * @summary Admin-only account directory
  */
+export const listTeamUsersQueryArchiveDefault = `current`;
 export const listTeamUsersQueryQMax = 100;
 
 export const listTeamUsersQueryLimitDefault = 25;
@@ -3584,6 +3611,7 @@ export const listTeamUsersQueryOffsetMin = 0;
 
 
 export const ListTeamUsersQueryParams = zod.object({
+  "archive": zod.enum(['current', 'archived', 'all']).default(listTeamUsersQueryArchiveDefault),
   "role": zod.enum(['admin', 'volunteer']),
   "q": zod.coerce.string().max(listTeamUsersQueryQMax).optional(),
   "limit": zod.coerce.number().int().min(1).max(listTeamUsersQueryLimitMax).default(listTeamUsersQueryLimitDefault),
@@ -3600,6 +3628,7 @@ export const ListTeamUsersResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -3650,6 +3679,32 @@ export const SetUserActiveStatusResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
+  "isTestAccount": zod.boolean().optional(),
+  "lastLoginAt": zod.coerce.date().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+export const SetUserArchivedParams = zod.object({
+  "userId": zod.coerce.string().uuid()
+})
+
+export const SetUserArchivedBody = zod.object({
+  "archived": zod.boolean()
+})
+
+export const SetUserArchivedResponse = zod.object({
+  "id": zod.string().uuid(),
+  "email": zod.string().email(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullable(),
+  "role": zod.enum(['admin', 'volunteer']),
+  "emailVerifiedAt": zod.coerce.date().nullable(),
+  "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),
@@ -3670,6 +3725,7 @@ export const GetMeResponse = zod.object({
   "role": zod.enum(['admin', 'volunteer']),
   "emailVerifiedAt": zod.coerce.date().nullable(),
   "isActive": zod.boolean(),
+  "archivedAt": zod.coerce.date().nullish(),
   "isTestAccount": zod.boolean().optional(),
   "lastLoginAt": zod.coerce.date().nullable(),
   "createdAt": zod.coerce.date(),

@@ -1,0 +1,42 @@
+import { expect, type Page } from '@playwright/test';
+
+export async function checkArchiveAccounts(page: Page, base: string, userId: string) {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(`${base}/admin/volunteers/${userId}`);
+  await expect(page.getByTestId('card-hours')).toContainText('1.5 hours');
+  await page.getByTestId(`button-archive-${userId}`).click();
+  await expect(page.getByTestId('dialog-archive-account')).toContainText('Nothing is permanently deleted.');
+  await page.getByTestId('button-confirm-archive').click();
+  await expect(page.getByTestId('dialog-archive-account')).toHaveCount(0);
+  await expect(page.getByText('Archived account. Hours and history are preserved. Restore it before reactivating sign-in.')).toBeVisible();
+  await expect(page.getByTestId(`button-archive-${userId}`)).toHaveText('Restore account');
+  await expect(page.getByTestId('card-hours')).toContainText('1.5 hours');
+  await page.screenshot({ path: '/tmp/archive-volunteer-375.png', fullPage: true });
+  await page.goto(`${base}/admin/volunteers`);
+  await page.getByTestId('input-search').fill('Archive Browser');
+  await expect(page.getByRole('link', { name: 'Archive Browser', exact: true })).toHaveCount(0);
+  await page.getByTestId('filter-roster-archive').selectOption('archived');
+  await expect(page.getByRole('link', { name: 'Archive Browser', exact: true }).first()).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${base}/admin/team`);
+  await page.getByRole('button', { name: 'volunteers', exact: true }).click();
+  await page.getByTestId('input-search').fill('Archive');
+  await expect(page.getByTestId(`row-user-${userId}`)).toHaveCount(0);
+  await page.getByTestId('filter-team-archive').selectOption('archived');
+  await expect(page.getByTestId(`row-user-${userId}`)).toBeVisible();
+  await expect(page.getByTestId(`button-status-${userId}`)).toBeDisabled();
+  await page.getByTestId(`button-archive-${userId}`).click();
+  await expect(page.getByTestId('dialog-archive-account')).toContainText('Sign-in stays disabled');
+  await page.getByTestId('button-confirm-archive').click();
+  await expect(page.getByTestId(`row-user-${userId}`)).toHaveCount(0);
+  await page.getByTestId('filter-team-archive').selectOption('current');
+  await expect(page.getByTestId(`row-user-${userId}`)).toBeVisible();
+  await expect(page.getByTestId(`button-status-${userId}`)).toHaveText('Reactivate');
+  await expect(page.getByTestId(`button-status-${userId}`)).toBeEnabled();
+  await page.goto(`${base}/admin/volunteers/${userId}`);
+  await expect(page.getByTestId('card-hours')).toContainText('1.5 hours');
+  await expect(page.locator('[data-testid^="activity-"]').filter({ hasText: 'account archived' })).toHaveCount(1);
+  await expect(page.locator('[data-testid^="activity-"]').filter({ hasText: 'account restored' })).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  console.log('PASS archive accounts: real isolated staff UI archives at 375px, hides from roster/team, filters reveal, restores at1280px without reactivating, hours/history preserved.');
+}

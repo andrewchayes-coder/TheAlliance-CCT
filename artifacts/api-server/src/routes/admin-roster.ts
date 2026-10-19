@@ -14,7 +14,7 @@ router.get('/volunteers', async (req, res): Promise<void> => {
   const { limit = 25, offset = 0, ...filters } = parsed.data;
   const people = await rosterSnapshot();
   const matched = sortRoster(filterRoster(people, filters),filters);
-  const selectable = people.filter(person=>!person.user.isTestAccount || filters.showTestAccounts === 'true');
+  const selectable = filterRoster(people, { archive: filters.archive, showTestAccounts: filters.showTestAccounts });
   res.set('Cache-Control', 'no-store').json(ListVolunteerRosterResponse.parse({
     volunteers: matched.slice(offset, offset + limit).map(rosterEntry),
     total: matched.length, limit, offset, summary: rosterSummary(people),

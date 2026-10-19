@@ -6,6 +6,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, expect, type Browser, type Page } from '@playwright/test';
 import { checkReports } from './reports-smoke';
 import { checkClaimButtons } from './claim-buttons-smoke';
+import { checkArchiveAccounts } from './archive-accounts-smoke';
 import bcrypt from 'bcrypt';
 import { testProfileFields } from '@workspace/shared/testAccounts';
 import lighthouse from 'lighthouse';
@@ -21,8 +22,9 @@ async function main() {
   // Focused re-check of changed profile/activation/staff-record UI; default remains the full smoke.
   const profileOnly = process.argv.includes('--profile-only');
   const hoursOnly = process.argv.includes('--hours-only');
+  const archiveOnly = process.argv.includes('--archive-only');
   if (process.argv.includes('--help')) {
-    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts [--profile-only|--hours-only]');
+    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts [--profile-only|--hours-only|--archive-only]');
     return;
   }
   if (process.env.NODE_ENV !== 'development' || process.env.SMOKE_DATABASE_ENVIRONMENT !== 'development'
@@ -130,13 +132,25 @@ async function main() {
       }, { path, method, body });
       expect(result.ok, `${method} ${path}: ${result.status}`).toBe(true); return result.data;
     }
-    if (hoursOnly) {
+    if (hoursOnly || archiveOnly) {
       const admin = await page();
       await admin.goto(`${base}/signin`);
       await admin.getByTestId('button-quick-admin').click();
       await expect(admin).toHaveURL(/\/admin$/);
       const adminMe = await call(admin, '/me');
       expect(adminMe.user.role).toBe('admin');
+      if (archiveOnly) {
+        const fixture = await pool.query<{ id: string }>(`INSERT INTO ${qschema}.users
+          (email,password_hash,first_name,last_name,role,email_verified_at,is_active)
+          VALUES ($1,'fixture-only','Archive','Browser','volunteer',now(),false) RETURNING id`,
+        [`archive-${randomBytes(8).toString('hex')}@example.invalid`]);
+        const userId = fixture.rows[0]!.id;
+        await pool.query(`INSERT INTO ${qschema}.volunteer_profiles (user_id,status) VALUES ($1,'inactive')`, [userId]);
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+        await call(admin, `/admin/volunteers/${userId}/hours`, 'POST', { date: today, source: 'other', hours: 1.5, note: 'Archive preservation check.' });
+        await checkArchiveAccounts(admin, base, userId);
+        return;
+      }
 
       const volunteer = await page();
       await volunteer.goto(`${base}/signin`);

@@ -878,6 +878,8 @@ export interface PublicUser {
   /** @nullable */
   emailVerifiedAt: string | null;
   isActive: boolean;
+  /** @nullable */
+  archivedAt?: string | null;
   isTestAccount?: boolean;
   /** @nullable */
   lastLoginAt: string | null;
@@ -1878,6 +1880,7 @@ export type GetAdminScheduleWeek400 = {
 };
 
 export type ListVolunteerRosterParams = {
+archive?: ListVolunteerRosterArchive;
 /**
  * @maxLength 200
  */
@@ -1903,6 +1906,15 @@ limit?: number;
  */
 offset?: number;
 };
+
+export type ListVolunteerRosterArchive = typeof ListVolunteerRosterArchive[keyof typeof ListVolunteerRosterArchive];
+
+
+export const ListVolunteerRosterArchive = {
+  current: 'current',
+  archived: 'archived',
+  all: 'all',
+} as const;
 
 export type ListVolunteerRosterStatus = typeof ListVolunteerRosterStatus[keyof typeof ListVolunteerRosterStatus];
 
@@ -1998,6 +2010,7 @@ export const ListVolunteerRosterShowTestAccounts = {
 } as const;
 
 export type ExportVolunteerRosterParams = {
+archive?: ExportVolunteerRosterArchive;
 /**
  * @maxLength 200
  */
@@ -2013,6 +2026,15 @@ certificationStatus?: ExportVolunteerRosterCertificationStatus;
 backgroundCheckStatus?: ExportVolunteerRosterBackgroundCheckStatus;
 needsAttention?: ExportVolunteerRosterNeedsAttention;
 };
+
+export type ExportVolunteerRosterArchive = typeof ExportVolunteerRosterArchive[keyof typeof ExportVolunteerRosterArchive];
+
+
+export const ExportVolunteerRosterArchive = {
+  current: 'current',
+  archived: 'archived',
+  all: 'all',
+} as const;
 
 export type ExportVolunteerRosterStatus = typeof ExportVolunteerRosterStatus[keyof typeof ExportVolunteerRosterStatus];
 
@@ -2100,6 +2122,7 @@ export const ExportVolunteerRosterNeedsAttention = {
 } as const;
 
 export type ExportVolunteerScheduleParams = {
+archive?: ExportVolunteerScheduleArchive;
 /**
  * @maxLength 200
  */
@@ -2110,6 +2133,15 @@ certificationStatus?: ExportVolunteerScheduleCertificationStatus;
 backgroundCheckStatus?: ExportVolunteerScheduleBackgroundCheckStatus;
 needsAttention?: ExportVolunteerScheduleNeedsAttention;
 };
+
+export type ExportVolunteerScheduleArchive = typeof ExportVolunteerScheduleArchive[keyof typeof ExportVolunteerScheduleArchive];
+
+
+export const ExportVolunteerScheduleArchive = {
+  current: 'current',
+  archived: 'archived',
+  all: 'all',
+} as const;
 
 export type ExportVolunteerScheduleStatus = typeof ExportVolunteerScheduleStatus[keyof typeof ExportVolunteerScheduleStatus];
 
@@ -2153,6 +2185,7 @@ export const ExportVolunteerScheduleNeedsAttention = {
 } as const;
 
 export type ListTeamUsersParams = {
+archive?: ListTeamUsersArchive;
 role: ListTeamUsersRole;
 /**
  * @maxLength 100
@@ -2169,6 +2202,15 @@ limit?: number;
 offset?: number;
 };
 
+export type ListTeamUsersArchive = typeof ListTeamUsersArchive[keyof typeof ListTeamUsersArchive];
+
+
+export const ListTeamUsersArchive = {
+  current: 'current',
+  archived: 'archived',
+  all: 'all',
+} as const;
+
 export type ListTeamUsersRole = typeof ListTeamUsersRole[keyof typeof ListTeamUsersRole];
 
 
@@ -2176,4 +2218,8 @@ export const ListTeamUsersRole = {
   admin: 'admin',
   volunteer: 'volunteer',
 } as const;
+
+export type SetUserArchivedBody = {
+  archived: boolean;
+};
 

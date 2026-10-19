@@ -5,12 +5,14 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ExportVolunteerScheduleArchive } from './exportVolunteerScheduleArchive';
 import type { ExportVolunteerScheduleBackgroundCheckStatus } from './exportVolunteerScheduleBackgroundCheckStatus';
 import type { ExportVolunteerScheduleCertificationStatus } from './exportVolunteerScheduleCertificationStatus';
 import type { ExportVolunteerScheduleNeedsAttention } from './exportVolunteerScheduleNeedsAttention';
 import type { ExportVolunteerScheduleStatus } from './exportVolunteerScheduleStatus';
 
 export type ExportVolunteerScheduleParams = {
+archive?: ExportVolunteerScheduleArchive;
 /**
  * @maxLength 200
  */

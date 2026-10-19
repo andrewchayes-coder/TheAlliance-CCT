@@ -113,6 +113,7 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [archive, setArchive] = useState<'current' | 'archived' | 'all'>('current');
   const [county, setCounty] = useState('');
   const [background, setBackground] = useState('');
   const [city, setCity] = useState('');
@@ -133,10 +134,11 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
     return () => clearTimeout(t);
   }, [text]);
 
-  const filterKey = [search, status, county, city, presence, incomplete, attn, background, showTests, sortBy, dir].join('|');
+  const filterKey = [search, status, archive, county, city, presence, incomplete, attn, background, showTests, sortBy, dir].join('|');
   useEffect(() => { setOffset(0); setSelected(new Set()); }, [filterKey]);
 
   const filters = {
+    archive,
     ...(search ? { search } : {}), ...(status ? { status } : {}), ...(county ? { county } : {}), ...(city ? { city } : {}),
     ...(presence ? { shiftPresence: presence } : {}), ...(incomplete ? { profileIncomplete: incomplete } : {}), ...(attn ? { needsAttention: attn } : {}),
     ...(background ? { backgroundCheckStatus: background } : {}),
@@ -154,18 +156,18 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
   const total = data?.total ?? 0;
   const rows = data?.volunteers ?? [];
   const sum = data?.summary;
-  const hasFilters = Object.keys(filters).length > 0;
+  const hasFilters = Object.keys(filters).some(k => k !== 'archive') || archive !== 'current';
 
   const qs = new URLSearchParams({ ...filters, ...sort } as Record<string, string>).toString();
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k]) => k === 'search' || k === 'status' || k === 'county' || k === 'needsAttention' || k === 'backgroundCheckStatus')) as Record<string, string>).toString();
+  const schedQs = new URLSearchParams(Object.fromEntries(Object.entries(filters).filter(([k]) => k === 'archive' || k === 'search' || k === 'status' || k === 'county' || k === 'needsAttention' || k === 'backgroundCheckStatus')) as Record<string, string>).toString();
   const csv = (name: string) => name === 'schedule' ? `${base}/api/admin/volunteers/schedule.csv${schedQs ? `?${schedQs}` : ''}` : `${base}/api/admin/volunteers/${name}.csv${qs ? `?${qs}` : ''}`;
 
   const pageIds = rows.map(r => r.user.id);
   const allOnPage = pageIds.length > 0 && pageIds.every(id => selected.has(id));
   const toggle = (id: string) => setSelected(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const togglePage = () => setSelected(s => { const n = new Set(s); pageIds.forEach(id => allOnPage ? n.delete(id) : n.add(id)); return n; });
-  const reset = () => { setText(''); setSearch(''); setStatus(''); setCounty(''); setCity(''); setPresence(''); setIncomplete(''); setAttn(''); setBackground(''); };
+  const reset = () => { setText(''); setSearch(''); setStatus(''); setArchive('current'); setCounty(''); setCity(''); setPresence(''); setIncomplete(''); setAttn(''); setBackground(''); };
 
   const visible = COLS.filter(c => cols.includes(c.key));
   const nameShown = cols.includes('name');
@@ -215,6 +217,10 @@ function RosterBody({ adminId, onMessageSelected = defaultOnMessageSelected }: {
             className="alliance-input pl-10" value={text} onChange={e => setText(e.target.value)} data-testid="input-search" />
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <label className="text-sm font-bold">Accounts
+            <select className={`${selectCls} mt-1 font-normal`} value={archive} onChange={e => setArchive(e.target.value as typeof archive)} data-testid="filter-roster-archive">
+              <option value="current">Not archived</option><option value="archived">Archived</option><option value="all">All accounts</option>
+            </select></label>
           <label className="text-sm font-bold">Status
             <select className={`${selectCls} mt-1 font-normal`} value={status} onChange={e => setStatus(e.target.value)} data-testid="filter-status">
               <option value="">All statuses</option>

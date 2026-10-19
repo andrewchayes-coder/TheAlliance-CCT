@@ -1,5 +1,18 @@
 # Community Care Team — QA checklist
 
+## Account archiving — admin cleanup
+
+| Workflow | Steps | Expected |
+|---|---|---|
+| Archive a volunteer | Use a separately owned non-QA test account. Add Other time, note the Reports total, then open its volunteer detail and choose Archive account. Read the confirmation and confirm. | Account is marked Archived; hours, profile, messages and activity remain. Sign-in is disabled, existing sessions end, tokens are revoked, and future standing/one-time shifts are released through the existing deactivation flow. Repeating archive adds no second archive activity or release. |
+| Default lists and filters | Reload Volunteers and Team, search for the archived account, then choose Accounts → Archived and All accounts. Check roster CSV and message recipient search. Repeat at 375 px and desktop. | Hidden by default without reapplying a filter; Archived/All accounts expose it. Default roster CSV and new message audiences exclude it. Reports still include its recorded hours. Dialogs and filters work without horizontal overflow. |
+| Restore without reactivation | From Archived in Team or volunteer detail, choose Restore account and confirm. | Returns to normal lists, but sign-in stays disabled. Prior shifts do not reappear. Hours and activity are unchanged; account restored is audited. Team allows a separate explicit Reactivate action afterward. |
+| Protected accounts and permissions | Try archiving yourself, a built-in QA persona, the last active non-QA admin, and calling the archive route as a volunteer or without a session. Try invalid/extra input fields. | Self, last-active-admin and QA protections are enforced on the server. Volunteers get 403; unauthenticated callers get 401; invalid input is refused. An archived account cannot be reactivated without restoration. |
+
+Automated checks: `npm test` includes the archive route/retention/access tests.
+Development-only browser check: `NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts --archive-only`.
+These new workflows are not assigned master-plan IDs; the master persona document is unchanged.
+
 Workflow steps for the Google Sheet UAT tracker. Master: [Alliance Persona Test Run](docs/Alliance%20Persona%20Test%20Run.md), preserved unchanged during this sync. **CHANGED:** All **136** v8 master IDs have a primary test row and a coverage-table entry. Coverage is a mapping, not a claim that manual UAT or optional features have passed.
 
 ## v1.1.0 workflow tags
