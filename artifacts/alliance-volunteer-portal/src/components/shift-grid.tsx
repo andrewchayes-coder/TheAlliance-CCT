@@ -13,8 +13,8 @@ const hint: Partial<Record<SlotState, string>> = {
   overlap: 'Overlaps one of your shifts', max: 'You are at the weekly shift limit', closed: 'No start dates open',
 };
 
-export function ShiftGrid({ schedule, changing, disabled, onPick }: {
-  schedule: VolunteerSchedule; changing: VolunteerStandingShift | null; disabled: boolean; onPick: (s: VolunteerAvailableSlot) => void;
+export function ShiftGrid({ schedule, changing, disabled, onPick, once = false }: {
+  schedule: VolunteerSchedule; changing: VolunteerStandingShift | null; disabled: boolean; onPick: (s: VolunteerAvailableSlot) => void; once?: boolean;
 }) {
   const [day, setDay] = useState<number>(WEEKDAYS[0]);
   return (
@@ -34,18 +34,19 @@ export function ShiftGrid({ schedule, changing, disabled, onPick }: {
             <ul className="grid gap-2">
               {slots.length === 0 && <li className="rounded-xl border border-dashed border-navy/40 px-3 py-3 text-sm text-navy-soft">No shifts this day</li>}
               {slots.map(s => {
-                const st = slotState(s, schedule, changing);
+                const openSpots = once ? Math.max(0, ...(s.oneTimeDates ?? []).map(d => d.openSpots)) : s.openSpots;
+                const st = once ? ((s.oneTimeDates?.length ?? 0) > 0 ? 'open' : 'closed') : slotState(s, schedule, changing);
                 const can = st === 'open' && !disabled;
                 const own = st === 'own';
                 return (
                   <li key={s.id}>
                     <button type="button" disabled={!can} onClick={() => onPick(s)} data-testid={`slot-${s.id}`}
-                      aria-label={`${DAYS[d]} ${timeRange(s.startTime, s.endTime)}${s.label ? `, ${s.label}` : ''}: ${badge(st, s.openSpots)}${hint[st] ? `. ${hint[st]}` : ''}`}
+                      aria-label={`${DAYS[d]} ${timeRange(s.startTime, s.endTime)}${s.label ? `, ${s.label}` : ''}: ${badge(st, openSpots)}${hint[st] ? `. ${hint[st]}` : ''}`}
                       className={`flex min-h-16 w-full flex-col items-start rounded-xl px-3 py-2.5 text-left shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-blue ${
                         own ? 'bg-navy text-white' : can ? 'bg-white hover:bg-white/70' : 'bg-white/60 text-navy-soft'} disabled:cursor-not-allowed`}>
                       <span className="font-bold">{timeRange(s.startTime, s.endTime)}</span>
                       {s.label && <span className="text-sm">{s.label}</span>}
-                      <span className={`mt-1 text-[14px] font-bold ${can ? 'text-blue' : ''}`}>{badge(st, s.openSpots)}</span>
+                      <span className={`mt-1 text-[14px] font-bold ${can ? 'text-blue' : ''}`}>{once && can ? 'Choose an available date' : badge(st, openSpots)}</span>
                       {hint[st] && <span className="text-sm">{hint[st]}</span>}
                     </button>
                   </li>

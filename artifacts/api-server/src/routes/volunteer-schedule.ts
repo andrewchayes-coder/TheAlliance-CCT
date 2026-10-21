@@ -18,7 +18,8 @@ router.use(async (req, res, next) => {
   }
   next();
 });
-const booking = z.object({ slotId: z.string().uuid(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict();
+const booking = z.object({ slotId: z.string().uuid(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  recurrence: z.enum(['weekly', 'once']).optional() }).strict();
 const skip = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict();
 router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 router.get('/schedule', async (req, res) => {

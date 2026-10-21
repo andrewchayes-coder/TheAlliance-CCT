@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { VolunteerAvailableSlotOneTimeDatesItem } from './volunteerAvailableSlotOneTimeDatesItem';
 
 export interface VolunteerAvailableSlot {
   id: string;
@@ -19,4 +20,5 @@ export interface VolunteerAvailableSlot {
   /** @nullable */
   ownAssignmentId: string | null;
   startDates: string[];
+  oneTimeDates?: VolunteerAvailableSlotOneTimeDatesItem[];
 }

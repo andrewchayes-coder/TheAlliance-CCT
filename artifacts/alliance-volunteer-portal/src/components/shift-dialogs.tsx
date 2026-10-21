@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
+import { ShiftFrequency } from './shift-frequency';
 import type { VolunteerAvailableSlot, VolunteerSchedule, VolunteerStandingShift } from '@workspace/api-client-react';
 import { Notice } from '@/auth/auth-ui';
 import { ShiftModal } from '@/components/shift-modal';
@@ -12,25 +14,32 @@ export type Dlg =
   | { kind: 'skip'; a: VolunteerStandingShift };
 
 export type Actions = {
-  book: (slotId: string, startDate: string) => void;
+  book: (slotId: string, startDate: string, recurrence: 'weekly' | 'once') => void;
   change: (id: string, slotId: string, startDate: string) => void;
   drop: (id: string) => void;
   skip: (id: string, date: string) => void;
   startChange: (a: VolunteerStandingShift) => void;
 };
 
-export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
+export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act, once = false, onFrequencyChange }: {
   dlg: Dlg; schedule: VolunteerSchedule; busy: boolean; error: string | null; onClose: () => void; act: Actions;
+  once?: boolean; onFrequencyChange?: (once: boolean) => void;
 }) {
   const [date, setDate] = useState(() => ('slot' in dlg ? ymd(dlg.slot.startDates[0] ?? '') : dlg.kind === 'skip' ? (dlg.a.nextDates.find(d => d.canSkip)?.date ?? '') : ''));
   const changingFromDrop = useRef(false);
   const cancel = <button type="button" className="alliance-button alliance-button-secondary" onClick={onClose} disabled={busy} data-testid="button-dialog-cancel">Cancel</button>;
   const err = error && <Notice>{error}</Notice>;
   const email = schedule.contactEmail;
+  const single = dlg.kind === 'book' && once;
+  const dateOptions = 'slot' in dlg ? (single ? (dlg.slot.oneTimeDates ?? []).map(d => d.date) : dlg.slot.startDates) : [];
+  const optionsKey = dateOptions.join(',');
+  useEffect(() => {
+    if ('slot' in dlg) setDate(current => dateOptions.includes(current) ? current : dateOptions[0] ?? '');
+  }, [optionsKey, single]);
 
   if (dlg.kind === 'drop') {
     const a = dlg.a;
-    if (schedule.assignments.length <= schedule.minShifts) return (
+    if (!isOneTimeShift(a) && schedule.assignments.filter(a => !isOneTimeShift(a)).length <= schedule.minShifts) return (
       <ShiftModal title="You need at least one shift" onClose={onClose}
         restoreFocusTo={() => changingFromDrop.current ? document.getElementById('week-h') : null}
         description={`Resource Coordinators keep at least ${schedule.minShifts} weekly ${schedule.minShifts === 1 ? 'shift' : 'shifts'}. You can swap this one for a different time instead.`}
@@ -40,8 +49,8 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
       </ShiftModal>
     );
     return (
-      <ShiftModal title="Drop this shift?" busy={busy} onClose={onClose} description={`${slotTitle(a)} will be removed from your schedule and the spot opens to others.`}
-        footer={<>{cancel}<button type="button" disabled={busy} className="alliance-button alliance-button-primary" data-testid="button-confirm-drop" onClick={() => act.drop(a.id)}>{busy ? 'Dropping' : 'Drop shift'}</button></>}>
+      <ShiftModal title={isOneTimeShift(a) ? 'Cancel this one-time shift?' : 'Drop this shift?'} busy={busy} onClose={onClose} description={`${slotTitle(a)}${isOneTimeShift(a) ? ` on ${dateLabel(a.startDate)}` : ''} will be removed from your schedule and the spot opens to others.`}
+        footer={<>{cancel}<button type="button" disabled={busy} className="alliance-button alliance-button-primary" data-testid="button-confirm-drop" onClick={() => act.drop(a.id)}>{busy ? 'Saving' : isOneTimeShift(a) ? 'Cancel one-time shift' : 'Drop shift'}</button></>}>
         {err}
       </ShiftModal>
     );
@@ -68,16 +77,18 @@ export function ShiftDialogs({ dlg, schedule, busy, error, onClose, act }: {
   const slot = dlg.slot;
   return (
     <ShiftModal title={changing ? 'Move to this shift?' : 'Book this shift'} busy={busy} onClose={onClose}
-      description={`${slotTitle(slot)}${slot.label ? `, ${slot.label}` : ''}. It repeats every week.`}
+      description={`${slotTitle(slot)}${slot.label ? `, ${slot.label}` : ''}. ${single ? 'One date only. It does not repeat.' : 'It repeats every week.'}`}
       footer={<>{cancel}<button type="button" disabled={busy || !date} className="alliance-button alliance-button-primary" data-testid="button-confirm-shift"
-        onClick={() => (changing ? act.change(dlg.from.id, slot.id, ymd(date)) : act.book(slot.id, ymd(date)))}>{busy ? 'Saving' : changing ? 'Confirm change' : 'Confirm shift'}</button></>}>
+        onClick={() => (changing ? act.change(dlg.from.id, slot.id, ymd(date)) : act.book(slot.id, ymd(date), single ? 'once' : 'weekly'))}>{busy ? 'Saving' : changing ? 'Confirm change' : 'Confirm shift'}</button></>}>
       {err}
+      {!changing && onFrequencyChange && <ShiftFrequency once={once} onChange={onFrequencyChange} disabled={busy} />}
       {changing && <p className="text-sm">Your current {slotTitle(dlg.from)} shift is released when this one is confirmed.</p>}
-      <label className="grid gap-1 text-sm font-bold" htmlFor="start-date">Starting
+      <label className="grid gap-1 text-sm font-bold" htmlFor="start-date">{single ? 'Shift date' : 'Starting'}
         <select id="start-date" value={date} onChange={e => setDate(e.target.value)} disabled={busy} data-testid="select-start-date" className="alliance-input font-normal">
-          {slot.startDates.map(d => <option key={d} value={ymd(d)}>{dateLabel(d)}</option>)}
+          {dateOptions.map(d => <option key={d} value={ymd(d)}>{dateLabel(d)}{single ? ` · ${slot.oneTimeDates?.find(o => o.date === d)?.openSpots} spot(s) open` : ''}</option>)}
         </select>
       </label>
+      {!dateOptions.length && <p role="status">No dates are available for this choice. Try another shift or frequency.</p>}
     </ShiftModal>
   );
 }

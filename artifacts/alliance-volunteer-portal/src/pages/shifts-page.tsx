@@ -20,6 +20,8 @@ import { clock, calDate } from '@/components/volunteer-detail/format';
 import { PastShiftsSection } from '@/components/hours-sections';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
 import { slotTitle } from '@/lib/shift-utils';
+import { ShiftFrequency } from '@/components/shift-frequency';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 
 function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => void }) {
   return (
@@ -59,6 +61,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
     }).finally(() => setCustomBusy(null));
   };
   const [dlg, setDlg] = useState<Dlg | null>(null);
+  const [once, setOnce] = useState(false);
   const [changing, setChanging] = useState<VolunteerStandingShift | null>(null);
   const [done, setDone] = useState<VolunteerShiftResult | null>(null);
   const [busy, setBusy] = useState(false);
@@ -113,7 +116,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
     } finally { setBusy(false); }
   }
   const act: Actions = {
-    book: (slotId, startDate) => { void run(() => book.mutateAsync({ data: { slotId, startDate } })); },
+    book: (slotId, startDate, recurrence) => { void run(() => book.mutateAsync({ data: { slotId, startDate, recurrence } })); },
     change: (assignmentId, slotId, startDate) => { void run(() => change.mutateAsync({ assignmentId, data: { slotId, startDate } })); },
     drop: assignmentId => { void run(() => drop.mutateAsync({ assignmentId })); },
     skip: (assignmentId, date) => { void run(() => skip.mutateAsync({ assignmentId, data: { date } })); },
@@ -122,7 +125,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
   const open = (d: Dlg | null) => { setErr(null); setDlg(d); };
 
   return (
-    <VolunteerPage kicker="My shifts" title="Your weekly shifts">
+    <VolunteerPage kicker="My shifts" title="Your shifts">
       <span id="shifts-heading" tabIndex={-1} className="sr-only">Shifts</span>
       {done ? <Confirmation r={done} onBack={() => setDone(null)} /> : q.isPending ? <LoadingBlock /> : !s ? <ErrorBlock what="your shifts" onRetry={() => { void q.refetch(); }} /> : (
         <>
@@ -136,7 +139,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
             </div>
           )}
           <section aria-labelledby="mine-h">
-            <h2 id="mine-h" tabIndex={-1} className="alliance-section-kicker mb-3">Your standing shifts ({s.assignments.length} of {s.maxShifts})</h2>
+            <h2 id="mine-h" tabIndex={-1} className="alliance-section-kicker mb-3">Your shifts ({s.assignments.filter(a => !isOneTimeShift(a)).length} of {s.maxShifts} weekly)</h2>
             {s.assignments.length === 0 ? (
               <EmptyState title="No shifts yet" description={s.canBook ? 'Choose a weekly time to start helping local families find their way to support.' : 'Your shifts will show here once you can book.'} />
             ) : (
@@ -179,10 +182,12 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
                 <button type="button" className="ml-auto min-h-11 font-bold underline" onClick={cancelChange} data-testid="button-cancel-change">Cancel change</button>
               </div>
             )}
-            <ShiftGrid schedule={s} changing={changing} disabled={!s.canBook || busy}
+            {!changing && <ShiftFrequency once={once} onChange={setOnce} disabled={busy || !s.canBook} />}
+            <ShiftGrid schedule={s} changing={changing} disabled={!s.canBook || busy} once={!changing && once}
               onPick={slot => open(changing ? { kind: 'change', from: changing, slot } : { kind: 'book', slot })} />
           </section>
-          {dlg && <ShiftDialogs dlg={dlg} schedule={s} busy={busy} error={err} onClose={() => open(null)} act={act} />}
+          {dlg && <ShiftDialogs dlg={dlg} schedule={s} busy={busy} error={err} onClose={() => open(null)} act={act}
+            once={once} onFrequencyChange={value => { setOnce(value); setErr(null); }} />}
         </>
       )}
       <PastShiftsSection enabled={!onboarding} />

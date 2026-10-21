@@ -1,5 +1,6 @@
 import type { VolunteerAvailableSlot, VolunteerSchedule, VolunteerStandingShift } from '@workspace/api-client-react';
 import { shiftDate, timeRange } from '@/lib/pacific';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 
 export const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const WEEKDAYS = [1, 2, 3, 4, 5];
@@ -19,8 +20,8 @@ export function slotState(slot: VolunteerAvailableSlot, sch: VolunteerSchedule, 
   if (slot.ownAssignmentId) return changing && slot.ownAssignmentId === changing.id ? 'own' : 'own';
   if (slot.openSpots <= 0) return 'full';
   if (slot.startDates.length === 0) return 'closed';
-  const others = sch.assignments.filter(a => a.id !== changing?.id);
+  const others = sch.assignments.filter(a => a.id !== changing?.id && !isOneTimeShift(a));
   if (others.some(a => overlaps(a, slot))) return 'overlap';
-  if (!changing && sch.assignments.length >= sch.maxShifts) return 'max';
+  if (!changing && others.length >= sch.maxShifts) return 'max';
   return 'open';
 }

@@ -570,6 +570,11 @@ export type AdminScheduleControlsAssignmentsItem = {
   dates: AdminScheduleControlsAssignmentsItemDatesItem[];
 };
 
+export type VolunteerAvailableSlotOneTimeDatesItem = {
+  date: string;
+  openSpots: number;
+};
+
 export interface VolunteerAvailableSlot {
   id: string;
   dayOfWeek: number;
@@ -583,6 +588,7 @@ export interface VolunteerAvailableSlot {
   /** @nullable */
   ownAssignmentId: string | null;
   startDates: string[];
+  oneTimeDates?: VolunteerAvailableSlotOneTimeDatesItem[];
 }
 
 export interface AdminScheduleControls {
@@ -591,10 +597,19 @@ export interface AdminScheduleControls {
   assignments: AdminScheduleControlsAssignmentsItem[];
 }
 
+export type VolunteerBookingInputRecurrence = typeof VolunteerBookingInputRecurrence[keyof typeof VolunteerBookingInputRecurrence];
+
+
+export const VolunteerBookingInputRecurrence = {
+  weekly: 'weekly',
+  once: 'once',
+} as const;
+
 export interface VolunteerBookingInput {
   slotId: string;
   /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
   startDate?: string;
+  recurrence?: VolunteerBookingInputRecurrence;
 }
 
 export interface VolunteerSkipInput {

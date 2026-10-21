@@ -5,9 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { VolunteerBookingInputRecurrence } from './volunteerBookingInputRecurrence';
 
 export interface VolunteerBookingInput {
   slotId: string;
   /** @pattern ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ */
   startDate?: string;
+  recurrence?: VolunteerBookingInputRecurrence;
 }

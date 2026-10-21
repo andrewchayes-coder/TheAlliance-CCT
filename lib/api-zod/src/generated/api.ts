@@ -1019,7 +1019,11 @@ export const ClaimCustomShiftResponse = zod.object({
   "heldCount": zod.number().int(),
   "openSpots": zod.number().int(),
   "ownAssignmentId": zod.string().nullable(),
-  "startDates": zod.array(zod.string())
+  "startDates": zod.array(zod.string()),
+  "oneTimeDates": zod.array(zod.object({
+  "date": zod.string(),
+  "openSpots": zod.number().int()
+})).optional()
 })),
   "assignments": zod.array(zod.object({
   "id": zod.string(),
@@ -1094,7 +1098,11 @@ export const CancelOwnCustomShiftResponse = zod.object({
   "heldCount": zod.number().int(),
   "openSpots": zod.number().int(),
   "ownAssignmentId": zod.string().nullable(),
-  "startDates": zod.array(zod.string())
+  "startDates": zod.array(zod.string()),
+  "oneTimeDates": zod.array(zod.object({
+  "date": zod.string(),
+  "openSpots": zod.number().int()
+})).optional()
 })),
   "assignments": zod.array(zod.object({
   "id": zod.string(),
@@ -1733,7 +1741,11 @@ export const GetAdminScheduleControlsResponse = zod.object({
   "heldCount": zod.number().int(),
   "openSpots": zod.number().int(),
   "ownAssignmentId": zod.string().nullable(),
-  "startDates": zod.array(zod.string())
+  "startDates": zod.array(zod.string()),
+  "oneTimeDates": zod.array(zod.object({
+  "date": zod.string(),
+  "openSpots": zod.number().int()
+})).optional()
 })),
   "assignments": zod.array(zod.object({
   "id": zod.string(),
@@ -1860,7 +1872,11 @@ export const GetVolunteerScheduleResponse = zod.object({
   "heldCount": zod.number().int(),
   "openSpots": zod.number().int(),
   "ownAssignmentId": zod.string().nullable(),
-  "startDates": zod.array(zod.string())
+  "startDates": zod.array(zod.string()),
+  "oneTimeDates": zod.array(zod.object({
+  "date": zod.string(),
+  "openSpots": zod.number().int()
+})).optional()
 })),
   "assignments": zod.array(zod.object({
   "id": zod.string(),
@@ -1912,7 +1928,8 @@ export const bookVolunteerShiftBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-9]
 
 export const BookVolunteerShiftBody = zod.object({
   "slotId": zod.string(),
-  "startDate": zod.string().regex(bookVolunteerShiftBodyStartDateRegExp).optional()
+  "startDate": zod.string().regex(bookVolunteerShiftBodyStartDateRegExp).optional(),
+  "recurrence": zod.enum(['weekly', 'once']).optional()
 })
 
 export const BookVolunteerShiftResponse = zod.object({
@@ -1931,7 +1948,8 @@ export const changeVolunteerShiftBodyStartDateRegExp = new RegExp('^[0-9]{4}-[0-
 
 export const ChangeVolunteerShiftBody = zod.object({
   "slotId": zod.string(),
-  "startDate": zod.string().regex(changeVolunteerShiftBodyStartDateRegExp).optional()
+  "startDate": zod.string().regex(changeVolunteerShiftBodyStartDateRegExp).optional(),
+  "recurrence": zod.enum(['weekly', 'once']).optional()
 })
 
 export const ChangeVolunteerShiftResponse = zod.object({

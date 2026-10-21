@@ -4,6 +4,7 @@ import { dateLabel, slotTitle, ymd } from '@/lib/shift-utils';
 import { pacificToday } from '@workspace/shared/profileFields';
 import { shiftStartVerb } from '@workspace/shared/calendar-display';
 import { ArrowDown } from 'lucide-react';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 
 export function ContactLink({ children }: { email?: string | null; children?: string }) {
   return <a href={`mailto:${VOLUNTEER_CONTACT_EMAIL}`} className="font-bold text-blue underline-offset-4 hover:underline" data-testid="link-contact-alliance">{children ?? `${VOLUNTEER_CONTACT_NAME} (${VOLUNTEER_CONTACT_EMAIL})`}</a>;
@@ -26,7 +27,7 @@ export function ShiftCards({ assignments, contactEmail, busy, changingId, onJump
         const canTake = next.some(d => d.canSkip);
         return (
           <li key={a.id} className="rounded-2xl bg-white p-5 shadow-sm" data-testid={`card-shift-${a.id}`}>
-            <p className="alliance-section-kicker">Every {slotTitle(a).split(',')[0]}</p>
+            <p className="alliance-section-kicker">{isOneTimeShift(a) ? 'One-time shift' : `Every ${slotTitle(a).split(',')[0]}`}</p>
             <h3 className="alliance-display mt-1">{slotTitle(a).split(', ')[1]}</h3>
             {a.label && <p className="text-sm text-navy-soft">{a.label}</p>}
             <p className="mt-1 text-xs text-navy-soft">{shiftStartVerb(ymd(a.startDate), pacificToday())} {dateLabel(a.startDate)}</p>
@@ -46,15 +47,15 @@ export function ShiftCards({ assignments, contactEmail, busy, changingId, onJump
             </ul>
             {tooLate && (
               <p className="mt-2 text-sm" data-testid={`text-late-${a.id}`}>
-                A shift within 24 hours can't be skipped online. Please contact <ContactLink />.
+                A shift within 24 hours can't be {isOneTimeShift(a) ? 'cancelled' : 'skipped'} online. Please contact <ContactLink />.
               </p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" disabled={busy || !canTake} onClick={() => onSkip(a)} className="alliance-button alliance-button-secondary" data-testid={`button-skip-${a.id}`}>Take a week off</button>
-              <button id={`change-shift-${a.id}`} type="button" disabled={busy} onClick={() => onChange(a)}
+              {!isOneTimeShift(a) && <button type="button" disabled={busy || !canTake} onClick={() => onSkip(a)} className="alliance-button alliance-button-secondary" data-testid={`button-skip-${a.id}`}>Take a week off</button>}
+              {!isOneTimeShift(a) && <button id={`change-shift-${a.id}`} type="button" disabled={busy} onClick={() => onChange(a)}
                 aria-controls="replacement-shifts" aria-describedby={changingId === a.id ? `change-cue-${a.id}` : undefined}
-                className="alliance-button alliance-button-secondary" data-testid={`button-change-${a.id}`}>Change shift</button>
-              <button id={`drop-shift-${a.id}`} type="button" disabled={busy} onClick={() => onDrop(a)} className="alliance-button alliance-button-secondary" data-testid={`button-drop-${a.id}`}>Drop shift</button>
+                className="alliance-button alliance-button-secondary" data-testid={`button-change-${a.id}`}>Change shift</button>}
+              <button id={`drop-shift-${a.id}`} type="button" disabled={busy || (isOneTimeShift(a) && !canTake)} onClick={() => onDrop(a)} className="alliance-button alliance-button-secondary" data-testid={`button-drop-${a.id}`}>{isOneTimeShift(a) ? 'Cancel one-time shift' : 'Drop shift'}</button>
             </div>
             {changingId === a.id && (
               <p id={`change-cue-${a.id}`} className="mt-3 border-t border-gray pt-2" data-testid={`cue-change-${a.id}`}>

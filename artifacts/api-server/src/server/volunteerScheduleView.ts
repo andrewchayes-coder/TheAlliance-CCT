@@ -1,4 +1,5 @@
 import { appConfig } from '@workspace/shared/appConfig';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 import { volunteerContactText } from '@workspace/shared/appConfig';
 import { createScheduleService, assignmentIsHeld, slotIsActive, pacificDay, addCalendarDays, slotInstant,
   type ScheduleData, type ScheduleSlot } from './scheduleService';
@@ -34,6 +35,7 @@ export function volunteerScheduleView(data: BookingData, profileId: string | und
   profile: Parameters<typeof bookingBlockers>[0], contactEmail: string | null, now = new Date(), currentVersion?: string) {
   const today = pacificDay(now), held = heldAssignments(data, now), own = held.filter(a => a.volunteerProfileId === profileId);
   const blockedReasons = bookingBlockers(profile, currentVersion);
+  const availableOccurrences = createScheduleService(data).getOccurrences(today, addCalendarDays(today, 28));
   const ownSlotIds = new Set(own.map(a => a.shiftSlotId));
   const ownData = { ...data, slots: data.slots.filter(s => ownSlotIds.has(s.id)), assignments: own };
   const occurrences = own.length ? createScheduleService({ ...ownData, skips: [] }).getOccurrences(today, addCalendarDays(today, 365)) : [];
@@ -57,10 +59,17 @@ export function volunteerScheduleView(data: BookingData, profileId: string | und
       }).sort((a,b)=>a.date.localeCompare(b.date)||a.startTime.localeCompare(b.startTime)),
     slots: data.slots.filter(s => slotIsActive(s, today)).sort((a, b) =>
       a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime) || a.id.localeCompare(b.id)).map(s => {
-        const heldCount = new Set(held.filter(a => a.shiftSlotId === s.id).map(a => a.volunteerProfileId)).size;
+        const heldCount = new Set(held.filter(a => a.shiftSlotId === s.id && !isOneTimeShift(a)).map(a => a.volunteerProfileId)).size;
+        const oneTimeDates = availableOccurrences.filter(o => o.slot.id === s.id && o.startsAt > now)
+          .filter(o => !availableOccurrences.some(other => other.date === o.date &&
+            other.slot.startTime < s.endTime && s.startTime < other.slot.endTime &&
+            other.assignedVolunteers.some(v => v.volunteerProfileId === profileId)))
+          .map(o => ({ date: o.date, openSpots: Math.max(0, s.capacity - o.assignedVolunteers.length) }))
+          .filter(o => o.openSpots > 0);
         return { id: s.id, dayOfWeek: s.dayOfWeek, startTime: s.startTime, endTime: s.endTime,
           label: s.label ?? null, capacity: s.capacity, heldCount, openSpots: Math.max(0, s.capacity - heldCount),
-          ownAssignmentId: own.find(a => a.shiftSlotId === s.id)?.id ?? null, startDates: startDates(data, s, now) };
+          ownAssignmentId: own.find(a => a.shiftSlotId === s.id && !isOneTimeShift(a))?.id ?? null,
+          startDates: startDates(data, s, now), oneTimeDates };
       }),
     assignments: own.map(a => {
       const s = data.slots.find(s => s.id === a.shiftSlotId)!, dates = datesFor(a.id);

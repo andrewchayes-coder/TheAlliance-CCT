@@ -1,5 +1,16 @@
 # Community Care Team — QA checklist
 
+## NEW — Recurring and one-time shift sign-up
+
+| Workflow | Steps and expected result |
+| --- | --- |
+| Weekly default | As an active volunteer, open My Shifts. Recurring weekly is selected. Book an open slot and verify the confirmation, recurring My Shifts card and next weekly dates. |
+| One-time booking | Select One time on the grid or in the booking dialog. Choose an available date; confirm the date-specific open-spot count. Save, reload and verify a One-time shift card with exactly that date. The confirmation email must say it does not repeat. |
+| Capacity and conflicts | Book with two weekly shifts already held; a non-overlapping one-time date remains allowed. A full, closed, blocked, past or overlapping date must not be bookable. Other volunteers' names must never be shown. Simultaneous claims must not overfill the last spot. |
+| Cancel | Cancel a one-time booking more than 24 hours ahead, even with no other shifts held. Within 24 hours, show the staff contact instead. Weekly minimum-shift rules remain unchanged. |
+| Week off coverage | Take a week off from a weekly shift. Another volunteer books that date once. Undoing the week off must refuse if it would exceed capacity. |
+| Staff and history | Verify the one-time reservation appears on only its booked date in the master schedule, dashboard, reminders and subsequent hour-logging flow, including a DST week. |
+
 ## Account archiving — admin cleanup
 
 | Workflow | Steps | Expected |

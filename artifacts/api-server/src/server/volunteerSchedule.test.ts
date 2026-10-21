@@ -186,3 +186,70 @@ describe('Volunteer standing schedule transactions', () => {
     expect(log).toHaveLength(1); expect(log[0]!.status).toBe('logged');
   });
 });
+
+describe('One-time sign-up on the regular grid', () => {
+  let c: Client, other: Client, slotId: string, date: string, assignmentId: string;
+  beforeAll(async () => {
+    c = await client(await person('volunteer'));
+    other = await client(await person('volunteer'));
+    for (const day of [1, 3, 5]) {
+      const [slot] = await db.insert(shiftSlotsTable).values({
+        dayOfWeek: day, startTime: '12:00', endTime: '13:00', capacity: 1, label: tag,
+      }).returning();
+      slots.push(slot!.id);
+      if (day === 5) slotId = slot!.id;
+      else expect((await post(c, '/volunteer/assignments', { slotId: slot!.id })).status).toBe(200);
+    }
+    date = addCalendarDays(await first(c, slotId), 7);
+  });
+  it('books exactly one occurrence even at the two-weekly-shift limit, with honest confirmation and privacy', async () => {
+    const answer = await post(c, '/volunteer/assignments', { slotId, startDate: date, recurrence: 'once' });
+    expect(answer.status).toBe(200);
+    assignmentId = answer.data.assignmentId;
+    expect(answer.data.message).toContain('one shift');
+    const [saved] = await db.select().from(shiftAssignmentsTable).where(eq(shiftAssignmentsTable.id, assignmentId));
+    expect(saved!.startDate).toBe(date); expect(saved!.endDate).toBe(date);
+    const schedule = await view(c);
+    expect(schedule.assignments.find((a: any) => a.id === assignmentId).nextDates.map((d: any) => d.date)).toEqual([date]);
+    const dashboard = (await c('/volunteer/dashboard')).data;
+    expect(dashboard.upcomingShifts.filter((a: any) => a.assignmentId === assignmentId).every((a: any) => a.date === date)).toBe(true);
+    const slot = schedule.slots.find((s: any) => s.id === slotId);
+    expect(slot.openSpots).toBe(1); // Does not occupy a standing seat in every week.
+    expect(slot.oneTimeDates.some((d: any) => d.date === date)).toBe(false);
+    expect(JSON.stringify(schedule)).not.toContain('Private-');
+  });
+  it('rejects duplicate/overlapping reservations and full dates, but leaves other dates open', async () => {
+    expect((await post(c, '/volunteer/assignments', { slotId, startDate: date, recurrence: 'once' })).status).toBe(422);
+    expect((await post(other, '/volunteer/assignments', { slotId, startDate: date, recurrence: 'once' })).status).toBe(409);
+    expect((await post(other, '/volunteer/assignments', { slotId })).status).toBe(409); // Weekly would overfill the booked date.
+    const otherDate = addCalendarDays(date, 7);
+    expect((await post(other, '/volunteer/assignments', { slotId, startDate: otherDate, recurrence: 'once' })).status).toBe(200);
+    expect((await post(c, path(assignmentId, 'change'), { slotId: slots[0] })).status).toBe(422);
+    expect((await post(c, path(assignmentId, 'skips'), { date })).status).toBe(422);
+    expect((await post(c, '/volunteer/assignments', { slotId, startDate: date, recurrence: 'monthly' })).status).toBe(400);
+  });
+  it('allows cancellation without the weekly minimum and allows safe rebooking of the same date', async () => {
+    expect((await post(c, path(assignmentId, 'drop'))).status).toBe(200);
+    const rebooked = await post(c, '/volunteer/assignments', { slotId, startDate: date, recurrence: 'once' });
+    expect(rebooked.status).toBe(200); expect(rebooked.data.assignmentId).toBe(assignmentId);
+    expect((await view(c)).assignments.find((a: any) => a.id === assignmentId).nextDates).toHaveLength(1);
+  });
+  it('serializes simultaneous one-time claims for the final spot', async () => {
+    const lastDate = addCalendarDays(date, 14);
+    const answers = await Promise.all([c, other].map(who =>
+      post(who, '/volunteer/assignments', { slotId, startDate: lastDate, recurrence: 'once' })));
+    expect(answers.map(a => a.status).sort()).toEqual([200, 409]);
+  });
+  it('does not let undoing a week off overfill a date reserved by a one-time volunteer', async () => {
+    const [slot] = await db.insert(shiftSlotsTable).values({ dayOfWeek: 2, startTime: '14:00', endTime: '15:00', capacity: 1, label: tag }).returning();
+    slots.push(slot!.id);
+    const booked = await post(other, '/volunteer/assignments', { slotId: slot!.id });
+    expect(booked.status).toBe(200);
+    const dayOff = addCalendarDays(await first(other, slot!.id), 7);
+    expect((await post(other, path(booked.data.assignmentId, 'skips'), { date: dayOff })).status).toBe(200);
+    expect((await post(c, '/volunteer/assignments', { slotId: slot!.id, startDate: dayOff, recurrence: 'once' })).status).toBe(200);
+    const skip = (await view(other)).assignments.find((a: any) => a.id === booked.data.assignmentId).weeksOff.find((d: any) => d.date === dayOff);
+    expect((await other(`${path(booked.data.assignmentId, 'skips')}/${skip.skipId}`, 'DELETE')).status).toBe(409);
+    expect((await admin(`/admin/schedule/assignments/${booked.data.assignmentId}/skips/${skip.skipId}`, 'DELETE')).status).toBe(409);
+  });
+});

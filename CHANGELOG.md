@@ -4,6 +4,8 @@ User-facing releases and migration/operating changes are recorded here. Add new 
 
 ## Unreleased
 
+- Volunteer shift sign-up now offers Recurring weekly or One time, with date-specific availability, clear confirmation emails and one-time cancellation. One-time bookings do not count toward the weekly shift limit.
+
 - Admins can archive and restore accounts from volunteer details and Team. Archived accounts are hidden from normal lists and new message audiences; hours, messages and history remain available. Archiving disables sign-in, ends sessions and releases future shifts. Restoring does not reactivate sign-in or restore shifts. Self, last-active-admin and built-in QA account protections apply. Additive `users.archived_at` field; no permanent account deletion.
 
 ## v1.4.1 — 2026-10-15

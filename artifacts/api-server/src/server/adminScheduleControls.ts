@@ -6,6 +6,7 @@ import { approvalRequirements, lockedVolunteer, WorkflowError } from '../admin-v
 import { lockSchedule } from './scheduleMutations';
 import { readScheduleData, ongoingForSlot } from './scheduleRepository';
 import { heldAssignments, startDates, volunteerScheduleView } from './volunteerScheduleView';
+import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 import { createScheduleService, pacificDay, calendarDay, addCalendarDays, slotInstant } from './scheduleService';
 import { onAssignmentsReleased } from '../uncovered-shifts';
 import { createEmailTemplate, sendEmail } from '../email';
@@ -34,7 +35,7 @@ export async function adminScheduleControls(filter: { slotId?: string; userId?: 
       `${p.user.firstName} ${p.user.lastName} ${p.user.email}`.toLowerCase().includes(q));
     return { volunteers: candidates.slice(0, 100).map(p => ({
       userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, email: p.user.email, isTestAccount: p.user.isTestAccount,
-      heldCount: held.filter(a => a.volunteerProfileId === p.profile.id).length,
+      heldCount: held.filter(a => a.volunteerProfileId === p.profile.id && !isOneTimeShift(a)).length,
       blockedReasons: approvalRequirements(p.user, p.profile).filter(r => !r.met).map(r => r.label),
     })).sort((a, b) => a.lastName.localeCompare(b.lastName)),
     slots: projected.slots,
@@ -102,7 +103,7 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
         const conflict=customOverlap(data,profile.id,custom.date,slot.startTime,slot.endTime);
         if(conflict?.kind==='custom')throw new WorkflowError(422,overlapMessage(custom.date,conflict.slot.startTime,conflict.slot.endTime));
       }
-      if (own.length >= appConfig.maxShiftsPerVolunteer) overrides.push('volunteer_shift_limit');
+      if (own.filter(a => !isOneTimeShift(a)).length >= appConfig.maxShiftsPerVolunteer) overrides.push('volunteer_shift_limit');
       if (new Set(occupants.map(a => a.volunteerProfileId)).size >= slot.capacity) overrides.push('slot_capacity');
       if (input.override && !input.reason?.trim()) throw new WorkflowError(422, 'Give a reason for the override.');
       if (overrides.length && (!input.override || !input.reason?.trim()))
@@ -148,6 +149,10 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
           eq(shiftSkipsTable.shiftAssignmentId, old!.id)));
         if (!skip) throw new WorkflowError(404, 'This week off could not be found.');
         if (slotInstant(skip.skipDate, slot.endTime) <= now) throw new WorkflowError(422, 'This shift has ended.');
+        const occurrence = createScheduleService(data).getOccurrences(skip.skipDate, skip.skipDate)
+          .find(o => o.slot.id === slot.id);
+        if (occurrence && occurrence.assignedVolunteers.length >= slot.capacity)
+          throw new WorkflowError(409, 'This date has been filled while the volunteer was away. Remove or move the replacement booking before undoing the week off.');
         const conflict=customOverlap(data,profile.id,skip.skipDate,slot.startTime,slot.endTime,slot.id);
         if(conflict)throw new WorkflowError(422,overlapMessage(skip.skipDate,conflict.slot.startTime,conflict.slot.endTime));
         await tx.delete(shiftSkipsTable).where(eq(shiftSkipsTable.id, skip.id));

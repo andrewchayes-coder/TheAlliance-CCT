@@ -10,4 +10,8 @@ One-time shifts do not count toward the two standing-shift cap. Date-specific bl
 
 **Why:** The client distinguishes regular weekly commitments from special events and temporary staff-training/partial-day closures.
 
+Volunteers can choose one-time or recurring bookings on the regular grid, not only claim staff-created custom shifts.
+
+**Why:** The user requested a frequency choice during volunteer sign-up.
+
 **How to apply:** Preserve these distinctions in availability, dispatch, coverage, reminders, exports and cancellation confirmations. Restoring a week off or blocked occurrence must not silently double-book a one-time reservation.
