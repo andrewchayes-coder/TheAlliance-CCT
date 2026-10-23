@@ -1,5 +1,11 @@
 # QA and security review
 
+## Calendar capability URLs (v1.5.0)
+
+The only deliberately public calendar resource is `GET` / `HEAD /api/calendar/{token}.ics`, declared public in the default-deny route policy and mounted before the browser CSRF guard. A 256-bit base64url capability is required; its SHA-256 hash is the lookup key and AES-256-GCM ciphertext is stored at rest with a key derived from SESSION_SECRET. Unknown/malformed links share a 404 body and a database lookup. Limits are 120 requests/hour per valid token and 30/hour per unknown-request IP, with Retry-After.
+
+Only the owner's shifts are queried, using the existing occurrence service. No other volunteer's identity, assignment ID, private profile fields or staff notes are serialized. There are no attendees, organizers, invitations or app-set alarms. Inactive/deactivated/archived owners get an empty calendar. Owners can reset links with CSRF protection; a token-free activity entry records the reset. Staff see only connection time and a coarse calendar-client category, never a URL or token. Tokens are redacted from application request paths; response caching remains no-store. Possession of the link still permits viewing shift times: volunteers are explicitly told to keep it private. Reset QA accounts removes only those personas' feeds in the same transaction.
+
 ## Fixed findings
 
 1. **Critical — recovery/invite links in production logs:** incomplete Postmark configuration previously fell back to logging complete emails in production. Production now fails closed, records a failed notification and returns a safe failure without logging the body or links. Development retains clickable email logging.

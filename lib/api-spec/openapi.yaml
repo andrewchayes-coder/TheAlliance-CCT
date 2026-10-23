@@ -11,6 +11,28 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /volunteer/calendar:
+    get:
+      operationId: getVolunteerCalendar
+      tags: [calendar]
+      responses:
+        '200':
+          description: Private subscription links for the signed-in volunteer
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/VolunteerCalendar'}
+        '403': {description: Completed volunteer profile required}
+  /volunteer/calendar/reset:
+    post:
+      operationId: resetVolunteerCalendar
+      tags: [calendar]
+      responses:
+        '200':
+          description: Rotated private subscription links
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/VolunteerCalendar'}
+        '403': {description: Completed volunteer profile and CSRF token required}
   /admin/reports/hours:
     get:
       operationId: getAdminHoursReport
@@ -1576,6 +1598,28 @@ components:
           schema:
             $ref: "#/components/schemas/AuthResult"
   schemas:
+    CalendarStatus:
+      type: object
+      required: [lastFetchedAt, lastClient]
+      properties:
+        lastFetchedAt: {type: [string, "null"], format: date-time}
+        lastClient: {type: [string, "null"], enum: [google, microsoft, apple, other, null]}
+    VolunteerCalendar:
+      type: object
+      required: [feedUrl, webcalUrl, links, lastFetchedAt, lastClient]
+      properties:
+        feedUrl: {type: string}
+        webcalUrl: {type: string}
+        links:
+          type: object
+          required: [google, outlook, office365, apple]
+          properties:
+            google: {type: string}
+            outlook: {type: string}
+            office365: {type: string}
+            apple: {type: string}
+        lastFetchedAt: {type: [string, "null"], format: date-time}
+        lastClient: {type: [string, "null"], enum: [google, microsoft, apple, other, null]}
     HoursReportTotals:
       type: object
       required: [teamHours, volunteersWithHours, shiftsLogged, otherEntries, shiftsNotLogged]
@@ -2344,6 +2388,7 @@ components:
       type: object
       required: [entry, adminNotes, shifts, assignmentsToRelease, approvalRequirements, activity]
       properties:
+        calendar: {$ref: '#/components/schemas/CalendarStatus'}
         entry: { $ref: "#/components/schemas/VolunteerRosterEntry" }
         adminNotes: { type: [string, "null"] }
         shifts: { type: array, items: { $ref: "#/components/schemas/AdminAssignedShift" } }

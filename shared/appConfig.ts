@@ -9,6 +9,7 @@ export const appConfig = {
   volunteerContactEmail: "cct@defendingthecause.org",
   missionLine: "The Alliance is a united movement of organizations and individuals working together to serve vulnerable kids and families in the Greater Sacramento Area.",
   timezone: "America/Los_Angeles",
+  calendarEventLocation: null as string | null,
   trackCertificationInApp: false,
   trackBackgroundCheckInApp: false,
   trackBackgroundCheckAdminOnly: true,

@@ -5,6 +5,10 @@ import { isQuickLoginEnabled, quickLoginNotFound } from './quick-login-lock';
 
 export type Guard = 'public' | 'public:quick-login' | 'auth' | 'admin' | 'volunteer' | 'onboardedVolunteer' | 'job';
 const declarations: Array<{ method: string; path: string | RegExp; guard: Guard }> = [
+  { method: 'GET', path: /^\/calendar\/[^/]+$/, guard: 'public' },
+  { method: 'HEAD', path: /^\/calendar\/[^/]+$/, guard: 'public' },
+  { method: 'GET', path: '/volunteer/calendar', guard: 'onboardedVolunteer' },
+  { method: 'POST', path: '/volunteer/calendar/reset', guard: 'onboardedVolunteer' },
   { method: 'PATCH', path: /^\/admin\/users\/[^/]+\/archive$/, guard: 'admin' },
   ...['hours', 'hours.csv', 'hour-entries.csv'].map(path => ({ method: 'GET', path: `/admin/reports/${path}`, guard: 'admin' as const })),
   ...['GET', 'PUT'].map(method => ({ method, path: '/volunteer/hours', guard: 'volunteer' as const })),

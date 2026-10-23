@@ -25,3 +25,9 @@ Verify temporary schema removal explicitly after browser smoke runs, including s
 **Why:** a successful focused browser process was observed with its isolated fixture schema still present; a passing UI assertion or exit code alone does not prove cleanup.
 
 **How to apply:** check that the exact run-owned schema is absent before reporting cleanup complete. If needed, remove only that verified synthetic development scope, never unrelated schemas.
+
+An isolated regression schema is shared by serial test files, not recreated for each file. Suite-owned calendar-wide fixtures must be removed at suite teardown, even though the runner eventually drops the schema.
+
+**Why:** a calendar-feed suite left a closed date behind, making a later one-time booking test reject a valid-looking week-off request. Isolation from real data does not imply isolation between suites.
+
+**How to apply:** clean global scheduling fixtures (especially closed dates) and scoped rate-limit counters along with owned users and assignments. Do not change booking rules to accommodate leaked test fixtures.

@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray, isNull, ne, or } from 'drizzle-orm';
-import { db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable, activityLogTable } from '@workspace/db';
+import { db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable, activityLogTable, calendarFeedsTable } from '@workspace/db';
 import { GetAdminVolunteerResponse } from '@workspace/api-zod';
 import { rosterEntry, rosterSnapshot } from './admin-roster';
 import { pacificDay } from './volunteer-shifts';
@@ -48,6 +48,8 @@ export async function loadAdminVolunteerDetail(userId: string) {
   const person = (await rosterSnapshot()).find(row => row.user.id === userId);
   if (!person) throw new WorkflowError(404, 'Volunteer not found.');
   const today = pacificDay(new Date());
+  const [calendar] = await db.select({ lastFetchedAt: calendarFeedsTable.lastFetchedAt, lastClient: calendarFeedsTable.lastClient })
+    .from(calendarFeedsTable).where(eq(calendarFeedsTable.volunteerProfileId, person.profile.id));
   const releases = await releasePreview(db, person.profile.id, today);
   const skips = releases.length ? await db.select().from(shiftSkipsTable)
     .where(and(inArray(shiftSkipsTable.shiftAssignmentId, releases.map(row => row.assignmentId)), gte(shiftSkipsTable.skipDate, today))).orderBy(shiftSkipsTable.skipDate) : [];
@@ -57,6 +59,7 @@ export async function loadAdminVolunteerDetail(userId: string) {
   }).from(activityLogTable).innerJoin(usersTable, eq(usersTable.id, activityLogTable.actorUserId))
     .where(eq(activityLogTable.volunteerProfileId, person.profile.id)).orderBy(desc(activityLogTable.createdAt), desc(activityLogTable.id)).limit(50);
   return GetAdminVolunteerResponse.parse({
+    calendar: calendar ?? { lastFetchedAt: null, lastClient: null },
     entry: rosterEntry(person), adminNotes: person.profile.adminNotes, shifts: person.shifts,
     assignmentsToRelease: releases.map(({ shiftSlotId: _, ...shift }) => ({
       ...shift, upcomingSkipDates: skips.filter(skip => skip.shiftAssignmentId === shift.assignmentId &&

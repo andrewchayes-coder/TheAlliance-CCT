@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'wouter';
+import { CalendarCard, CalendarConfirmRow } from '@/components/calendar-links';
 import { CheckCircle2 } from 'lucide-react';
 import {
   getGetVolunteerDashboardQueryKey, getGetVolunteerScheduleQueryKey, useBookVolunteerShift, useChangeVolunteerShift,
@@ -23,12 +24,13 @@ import { slotTitle } from '@/lib/shift-utils';
 import { ShiftFrequency } from '@/components/shift-frequency';
 import { isOneTimeShift } from '@workspace/shared/schedule-copy';
 
-function Confirmation({ r, onBack }: { r: VolunteerShiftResult; onBack: () => void }) {
+function Confirmation({ r, onBack, calendar }: { r: VolunteerShiftResult; onBack: () => void; calendar: boolean }) {
   return (
     <section className="rounded-2xl bg-navy p-6 text-white shadow-md" data-testid="screen-shift-confirmation" role="status">
       <CheckCircle2 size={28} aria-hidden="true" />
       <h2 className="alliance-display mt-3" tabIndex={-1} ref={el => el?.focus()}>{r.message}</h2>
       {r.emailWarning && <p className="mt-3 rounded-lg bg-white/15 px-3 py-2 text-sm" data-testid="text-email-warning">{r.emailWarning}</p>}
+      {calendar && <CalendarConfirmRow />}
       <div className="mt-5 flex flex-wrap gap-3">
         <button type="button" onClick={onBack} className="alliance-button alliance-button-primary" data-testid="button-back-to-shifts">Back to my shifts</button>
         <Link href="/dashboard" className="alliance-button alliance-button-secondary" data-testid="link-go-dashboard">Go to home</Link>
@@ -64,6 +66,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
   const [once, setOnce] = useState(false);
   const [changing, setChanging] = useState<VolunteerStandingShift | null>(null);
   const [done, setDone] = useState<VolunteerShiftResult | null>(null);
+  const booked = useRef(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const s = q.data;
@@ -116,10 +119,10 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
     } finally { setBusy(false); }
   }
   const act: Actions = {
-    book: (slotId, startDate, recurrence) => { void run(() => book.mutateAsync({ data: { slotId, startDate, recurrence } })); },
-    change: (assignmentId, slotId, startDate) => { void run(() => change.mutateAsync({ assignmentId, data: { slotId, startDate } })); },
-    drop: assignmentId => { void run(() => drop.mutateAsync({ assignmentId })); },
-    skip: (assignmentId, date) => { void run(() => skip.mutateAsync({ assignmentId, data: { date } })); },
+    book: (slotId, startDate, recurrence) => { booked.current = true; void run(() => book.mutateAsync({ data: { slotId, startDate, recurrence } })); },
+    change: (assignmentId, slotId, startDate) => { booked.current = false; void run(() => change.mutateAsync({ assignmentId, data: { slotId, startDate } })); },
+    drop: assignmentId => { booked.current = false; void run(() => drop.mutateAsync({ assignmentId })); },
+    skip: (assignmentId, date) => { booked.current = false; void run(() => skip.mutateAsync({ assignmentId, data: { date } })); },
     startChange: a => startChange(a, 'drop'),
   };
   const open = (d: Dlg | null) => { setErr(null); setDlg(d); };
@@ -127,7 +130,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
   return (
     <VolunteerPage kicker="My shifts" title="Your shifts">
       <span id="shifts-heading" tabIndex={-1} className="sr-only">Shifts</span>
-      {done ? <Confirmation r={done} onBack={() => setDone(null)} /> : q.isPending ? <LoadingBlock /> : !s ? <ErrorBlock what="your shifts" onRetry={() => { void q.refetch(); }} /> : (
+      {done ? <Confirmation r={done} calendar={booked.current} onBack={() => setDone(null)} /> : q.isPending ? <LoadingBlock /> : !s ? <ErrorBlock what="your shifts" onRetry={() => { void q.refetch(); }} /> : (
         <>
           {q.isError && <Notice>This page may be out of date: we couldn't refresh your shifts. <button type="button" className="font-bold underline" onClick={() => { void q.refetch(); }}>Try again</button></Notice>}
           {err && !dlg && <Notice>{err}</Notice>}
@@ -149,6 +152,7 @@ function ShiftsBody({ onboarding }: { onboarding: boolean }) {
                 onUndo={(a, d) => { if (d.skipId) { const skipId = d.skipId; void run(() => undo.mutateAsync({ assignmentId: a.id, skipId })); } }} />
             )}
           </section>
+          {(s.canBook || s.assignments.length > 0 || (s.customShifts ?? []).some(c => c.ownAssignmentId)) && <CalendarCard />}
           {(s.customShifts?.length ?? 0) > 0 && (
             <section aria-labelledby="one-time-h" data-testid="section-one-time-shifts">
               <h2 id="one-time-h" className="alliance-section-kicker mb-3">One-time shifts</h2>

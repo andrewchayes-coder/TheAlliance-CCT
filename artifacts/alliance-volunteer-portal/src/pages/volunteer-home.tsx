@@ -1,6 +1,7 @@
 import { ContactLink } from '@/components/shift-cards';
 import { PageHeader } from '@/components/page-header';
 import { Link } from 'wouter';
+import { HomeCalendarLink } from '@/components/calendar-links';
 import { CheckCircle2, Circle, ExternalLink, Mail } from 'lucide-react';
 import { getGetVolunteerDashboardQueryKey, useGetVolunteerDashboard, type Me } from '@workspace/api-client-react';
 import { FETCH_CREDS } from '@/auth/auth-context';
@@ -59,7 +60,7 @@ function Home({ me }: { me: Me }) {
       </section>
     );
     if (!d) return null;
-    if (d.shiftCount === 0) return (
+    if (d.shiftCount === 0 && !d.nextShift) return (
       <section className="rounded-2xl bg-navy p-6 text-white shadow-md" data-testid="card-choose-shift">
         <h2 className="alliance-display">Choose your weekly shift</h2>
         <p className="mt-2">{appConfig.autoActivateOnProfileComplete
@@ -92,6 +93,7 @@ function Home({ me }: { me: Me }) {
         ) : (
           <>
             <Top />
+            {status === 'active' && d && (d.shiftCount > 0 || !!d.nextShift) && <HomeCalendarLink href="/shifts#calendar" />}
             <HomeHoursCard enabled={status !== 'onboarding'} />
             {m && (
               <section className="rounded-2xl bg-white p-5 shadow-sm" data-testid="card-unread-message">

@@ -7,6 +7,7 @@ import { chromium, expect, type Browser, type Page } from '@playwright/test';
 import { checkReports } from './reports-smoke';
 import { checkClaimButtons } from './claim-buttons-smoke';
 import { checkArchiveAccounts } from './archive-accounts-smoke';
+import { checkCalendar } from './calendar-smoke';
 import bcrypt from 'bcrypt';
 import { testProfileFields } from '@workspace/shared/testAccounts';
 import lighthouse from 'lighthouse';
@@ -23,8 +24,9 @@ async function main() {
   const profileOnly = process.argv.includes('--profile-only');
   const hoursOnly = process.argv.includes('--hours-only');
   const archiveOnly = process.argv.includes('--archive-only');
+  const calendarOnly = process.argv.includes('--calendar-only');
   if (process.argv.includes('--help')) {
-    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts [--profile-only|--hours-only|--archive-only]');
+    console.log('NODE_ENV=development SMOKE_DATABASE_ENVIRONMENT=development QA_SMOKE_ALLOW_SCHEMA=1 pnpm --filter @workspace/scripts exec tsx src/smoke.ts [--profile-only|--hours-only|--archive-only|--calendar-only]');
     return;
   }
   if (process.env.NODE_ENV !== 'development' || process.env.SMOKE_DATABASE_ENVIRONMENT !== 'development'
@@ -132,13 +134,17 @@ async function main() {
       }, { path, method, body });
       expect(result.ok, `${method} ${path}: ${result.status}`).toBe(true); return result.data;
     }
-    if (hoursOnly || archiveOnly) {
+    if (hoursOnly || archiveOnly || calendarOnly) {
       const admin = await page();
       await admin.goto(`${base}/signin`);
       await admin.getByTestId('button-quick-admin').click();
       await expect(admin).toHaveURL(/\/admin$/);
       const adminMe = await call(admin, '/me');
       expect(adminMe.user.role).toBe('admin');
+      if (calendarOnly) {
+        await checkCalendar(admin, await page(), base, api);
+        return;
+      }
       if (archiveOnly) {
         const fixture = await pool.query<{ id: string }>(`INSERT INTO ${qschema}.users
           (email,password_hash,first_name,last_name,role,email_verified_at,is_active)

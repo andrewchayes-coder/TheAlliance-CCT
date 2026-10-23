@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { and, eq, inArray, isNull, or, gte, sql } from 'drizzle-orm';
 import {
   db, usersTable, volunteerProfilesTable, shiftAssignmentsTable, shiftSlotsTable, shiftSkipsTable,
-  messageRecipientsTable, activityLogTable, authTokensTable, customShiftAssignmentsTable, volunteerHoursTable,
+  messageRecipientsTable, activityLogTable, authTokensTable, customShiftAssignmentsTable, volunteerHoursTable, calendarFeedsTable,
 } from '@workspace/db';
 import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
 import { normalizeVolunteerStatus } from '@workspace/shared/profileFields';
@@ -87,6 +87,7 @@ export function createTestAccountService(personas: readonly Persona[] = testAcco
         .where(inArray(volunteerProfilesTable.userId, ids));
       const allProfiles = [...new Set([...profiles, ...ownedProfiles.map(p => p.id)])];
       if (allProfiles.length) {
+        await tx.delete(calendarFeedsTable).where(inArray(calendarFeedsTable.volunteerProfileId, allProfiles));
         await tx.delete(volunteerHoursTable).where(inArray(volunteerHoursTable.volunteerProfileId, allProfiles));
         await tx.update(customShiftAssignmentsTable).set({ cancelledAt: now })
           .where(and(inArray(customShiftAssignmentsTable.volunteerProfileId, allProfiles),

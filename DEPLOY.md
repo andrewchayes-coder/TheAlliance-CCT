@@ -1,5 +1,17 @@
 # Community Care Team Volunteer Portal — production deployment
 
+## Calendar feeds (v1.5.0)
+
+Publish adds only `calendar_feeds` for this feature; no new secrets or dependencies. Replit Publish continues to manage production schema changes. The SQL file is an additive record, not a startup migration.
+
+- Public subscription route: `GET` / `HEAD /api/calendar/{token}.ics`. Calendar providers fetch without sessions or cookies; the unguessable link itself grants read access to that volunteer's shift times only. Browser link management remains signed-in, onboarded-volunteer-only, with CSRF protection on reset.
+- A feed includes Pacific today minus 30 days through today plus 180 days, using the portal's occurrence service. Closed/blocked dates, weeks off, ended/cancelled shifts are reflected on the next fetch. Inactive, deactivated and archived accounts return a valid empty calendar. The feed is not an invitation and sets no alarms.
+- Tokens are 256-bit, looked up by SHA-256, and encrypted at rest with AES-256-GCM using a key derived from `SESSION_SECRET`. **Rotating SESSION_SECRET breaks every existing calendar link.** Volunteers can Reset their link or simply reopen My Shifts to get a new one when the stored token cannot be decrypted. They must then subscribe again; old subscriptions will not start working again.
+- Reset invalidates the old URL immediately. The reset dialog explains that old calendar subscriptions stop updating and already imported events may remain there until removed by the calendar owner.
+- Providers control refresh timing, despite the feed's one-hour refresh hint: Apple often checks within minutes; Outlook generally within a few hours; Google can take up to a day. These are not guaranteed intervals. The portal and reminder emails remain authoritative. Android users may need to add the subscription in Google Calendar on a computer first.
+- `last_fetched_at` and a coarse client category update only on GET, at most once every ten minutes; HEAD does not count as connected. No full User-Agent is stored. Portal request logs redact the capability path. Avoid pasting private links in tickets, screenshots or emails.
+- Production UAT must verify real Google, Outlook and Apple subscriptions and allow time for their refreshes. This release's automated/browser checks exercise the feed, not the providers' external account flows.
+
 ## Web app / home-screen icon
 
 The home-screen icon is the Community Care Team stacked logo, centered on opaque white.

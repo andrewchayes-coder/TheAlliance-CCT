@@ -2,7 +2,9 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
-## Unreleased
+## v1.5.0 — 2026-10-23
+
+- Add to Calendar: each Resource Coordinator gets a private calendar link for Google Calendar, Outlook, Apple Calendar or any app that subscribes by URL; it updates on its own as shifts change. Volunteers can reset their link; staff can see whether it's connected. New table calendar_feeds (additive).
 
 - Volunteer shift sign-up now offers Recurring weekly or One time, with date-specific availability, clear confirmation emails and one-time cancellation. One-time bookings do not count toward the weekly shift limit.
 

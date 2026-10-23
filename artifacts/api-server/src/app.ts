@@ -35,7 +35,8 @@ app.use(
         return {
           id: req.id,
           method: req.method,
-          url: req.url?.split("?")[0],
+          // Calendar paths are bearer capabilities; never retain their tokens in request logs.
+          url: req.url?.split("?")[0]?.replace(/^(\/api\/calendar\/)[^/]+$/, '$1[private].ics'),
         };
       },
       res(res) {

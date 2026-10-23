@@ -86,6 +86,7 @@ export async function customAssignmentAction(actor:ScheduleActor,input:CustomAct
   if(result.changed) {
     const subject=result.remove?'Your one-time shift has been released':"You're on the schedule: one-time shift";
     await sendScheduleNotice(result.user,subject,[`${result.shift.date}, ${result.shift.startTime}–${result.shift.endTime} (Pacific time).`,
+      ...(!result.remove ? ['Want your shifts in Google, Outlook or Apple Calendar? Open My shifts in the portal and choose Add to calendar. It updates on its own.'] : []),
       result.remove?'Thank you for keeping your schedule up to date. Your regular weekly shifts are unchanged.'
         :'Thank you for helping local families. This shift happens once; your weekly shifts are unchanged.'],result.eventId);
     if(result.remove) try {await notifyCustomReduction(result.shift.id,result.eventId,'A volunteer released a one-time shift',now);}

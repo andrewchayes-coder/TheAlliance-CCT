@@ -124,6 +124,7 @@ import type {
   UploadAccountPhotoBody,
   UploadManagedAccountPhotoBody,
   VolunteerBookingInput,
+  VolunteerCalendar,
   VolunteerDashboard,
   VolunteerHoursResponse,
   VolunteerMessage,
@@ -165,6 +166,145 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetVolunteerCalendarUrl = () => {
+
+
+
+
+  return `/api/volunteer/calendar`
+}
+
+export const getVolunteerCalendar = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerCalendar> => {
+
+  return customFetch<VolunteerCalendar>(getGetVolunteerCalendarUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVolunteerCalendarQueryKey = () => {
+    return [
+    `/api/volunteer/calendar`
+    ] as const;
+    }
+
+
+export const getGetVolunteerCalendarQueryOptions = <TData = Awaited<ReturnType<typeof getVolunteerCalendar>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerCalendar>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVolunteerCalendarQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVolunteerCalendar>>> = ({ signal }) => getVolunteerCalendar({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVolunteerCalendar>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVolunteerCalendarQueryResult = NonNullable<Awaited<ReturnType<typeof getVolunteerCalendar>>>
+export type GetVolunteerCalendarQueryError = ErrorType<void>
+
+
+
+export function useGetVolunteerCalendar<TData = Awaited<ReturnType<typeof getVolunteerCalendar>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVolunteerCalendar>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVolunteerCalendarQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getResetVolunteerCalendarUrl = () => {
+
+
+
+
+  return `/api/volunteer/calendar/reset`
+}
+
+export const resetVolunteerCalendar = async ( options?: Parameters<typeof customFetch>[1]): Promise<VolunteerCalendar> => {
+
+  return customFetch<VolunteerCalendar>(getResetVolunteerCalendarUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getResetVolunteerCalendarMutationKey = () => ['resetVolunteerCalendar'] as const;
+
+export const getResetVolunteerCalendarMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetVolunteerCalendar>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetVolunteerCalendar>>, TError,void, TContext> => {
+
+const mutationKey = getResetVolunteerCalendarMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetVolunteerCalendar>>, void> = () => {
+
+
+          return  resetVolunteerCalendar(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetVolunteerCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof resetVolunteerCalendar>>>
+
+    export type ResetVolunteerCalendarMutationError = ErrorType<void>
+
+
+    export const useResetVolunteerCalendar = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetVolunteerCalendar>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetVolunteerCalendar>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getResetVolunteerCalendarMutationOptions(options));
+    }
 
 export const getGetAdminHoursReportUrl = (params?: GetAdminHoursReportParams,) => {
   const normalizedParams = new URLSearchParams();

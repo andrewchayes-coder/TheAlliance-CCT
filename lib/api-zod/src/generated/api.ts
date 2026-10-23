@@ -8,6 +8,34 @@
 import * as zod from 'zod';
 
 
+export const GetVolunteerCalendarResponse = zod.object({
+  "feedUrl": zod.string(),
+  "webcalUrl": zod.string(),
+  "links": zod.object({
+  "google": zod.string(),
+  "outlook": zod.string(),
+  "office365": zod.string(),
+  "apple": zod.string()
+}),
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+})
+
+
+export const ResetVolunteerCalendarResponse = zod.object({
+  "feedUrl": zod.string(),
+  "webcalUrl": zod.string(),
+  "links": zod.object({
+  "google": zod.string(),
+  "outlook": zod.string(),
+  "office365": zod.string(),
+  "apple": zod.string()
+}),
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+})
+
+
 export const getAdminHoursReportQueryMonthRegExp = new RegExp('^\\d{4}-\\d{2}$');
 export const getAdminHoursReportQueryIncludeTestDefault = false;
 
@@ -2562,6 +2590,10 @@ export const GetAdminVolunteerParams = zod.object({
 })
 
 export const GetAdminVolunteerResponse = zod.object({
+  "calendar": zod.object({
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+}).optional(),
   "entry": zod.object({
   "user": zod.object({
   "id": zod.string().uuid(),
@@ -2658,6 +2690,10 @@ export const ChangeVolunteerStatusBody = zod.object({
 
 export const ChangeVolunteerStatusResponse = zod.object({
   "detail": zod.object({
+  "calendar": zod.object({
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+}).optional(),
   "entry": zod.object({
   "user": zod.object({
   "id": zod.string().uuid(),
@@ -2793,6 +2829,10 @@ export const UpdateVolunteerTrackingBody = zod.object({
 })
 
 export const UpdateVolunteerTrackingResponse = zod.object({
+  "calendar": zod.object({
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+}).optional(),
   "entry": zod.object({
   "user": zod.object({
   "id": zod.string().uuid(),
@@ -2891,6 +2931,10 @@ export const UpdateVolunteerNotesBody = zod.object({
 })
 
 export const UpdateVolunteerNotesResponse = zod.object({
+  "calendar": zod.object({
+  "lastFetchedAt": zod.coerce.date().nullable(),
+  "lastClient": zod.union([zod.literal('google'),zod.literal('microsoft'),zod.literal('apple'),zod.literal('other'),zod.literal(null)]).nullable()
+}).optional(),
   "entry": zod.object({
   "user": zod.object({
   "id": zod.string().uuid(),

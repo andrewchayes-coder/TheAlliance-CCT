@@ -56,3 +56,17 @@ mtime_ms = 1791739138428
 storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/92cf60df-2598-4012-80f4-8082d2432ecf/d9995be0-1122-4124-85b6-029d580a30fd"
 storage_version_token = "1791739143350206"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "nyTjv2ra__h1b9haXfBQZ"
+uri = "file://generated-artifacts/calendar/volunteer-active-feed.txt"
+type = "text"
+title = "Volunteer · Active — sample calendar feed"
+description = "Complete development QA feed. Private subscription tokens are not included."
+logical_id = "9bae6469-5abd-4f28-a8a5-8627f1c7270d"
+content_hash = "sha256:eb01a5912d163378ea1632f71f4364ce41ee9dc40266cb4f5944211c55bb6332"
+size = 19916
+mtime_ms = 1792769608248
+storage_uri = "gcs://replit-rams-assets-reed/rams/assets/repl:677184c5-aca3-4323-93f5-6b96d50ca3a4/9bae6469-5abd-4f28-a8a5-8627f1c7270d/9802e239-b2c7-4de4-9c0f-5dc4a3f90be4"
+storage_version_token = "1792769608766644"
+content_type = "text/plain"

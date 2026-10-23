@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, inArray } from 'drizzle-orm';
 import { db, pool, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable,
   messagesTable, messageRecipientsTable, activityLogTable, notificationLogTable, authTokensTable,
-  customShiftsTable, customShiftAssignmentsTable, volunteerHoursTable } from '@workspace/db';
+  customShiftsTable, customShiftAssignmentsTable, volunteerHoursTable, calendarFeedsTable } from '@workspace/db';
 import { testAccounts, testProfileFields } from '@workspace/shared/testAccounts';
 import { retiredVolunteerStatuses } from '@workspace/shared/legacy-compatibility';
 import { createTestAccountService, isQuickLoginEnabled } from './testAccounts';
@@ -159,6 +159,8 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   const [custom] = await db.insert(customShiftsTable).values({date:'2030-01-15',startTime:'10:00',endTime:'12:00',
     capacity:2,openToVolunteers:true,createdByUserId:ids[0]!}).returning();
   const [ordinaryProfile] = await db.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId,ordinary));
+  const feeds = await db.insert(calendarFeedsTable).values([active.profileId!, ordinaryProfile!.id].map((volunteerProfileId, i) =>
+    ({ volunteerProfileId, tokenHash: `${tag}-feed-${i}`, tokenCiphertext: 'fixture-not-used' }))).returning();
   await db.insert(volunteerHoursTable).values([
     { volunteerProfileId: active.profileId!, shiftDate: '2026-10-01', source: 'standing', shiftSlotId: slotId, hours: '2', enteredByUserId: active.userId },
     { volunteerProfileId: active.profileId!, shiftDate: '2030-01-15', source: 'one_time', customShiftId: custom!.id, hours: '2', enteredByUserId: active.userId },
@@ -177,6 +179,8 @@ it('resets only QA shifts, skips, inbox membership and profile changes, and logs
   await db.update(volunteerProfilesTable).set({ onboardingAnswers: { fixture: 'edited' }, adminNotes: 'Fixture note', availabilityNotes: 'Edited' })
     .where(eq(volunteerProfilesTable.id, active.profileId!));
   await service.reset(ids[0]!);
+  expect(await db.select().from(calendarFeedsTable).where(eq(calendarFeedsTable.id, feeds[0]!.id))).toHaveLength(0);
+  expect(await db.select().from(calendarFeedsTable).where(eq(calendarFeedsTable.id, feeds[1]!.id))).toHaveLength(1);
   expect(await db.select().from(volunteerHoursTable).where(eq(volunteerHoursTable.volunteerProfileId, active.profileId!))).toHaveLength(0);
   expect(await db.select().from(volunteerHoursTable).where(eq(volunteerHoursTable.volunteerProfileId, ordinaryProfile!.id))).toHaveLength(1);
   const savedSeats = await db.select().from(customShiftAssignmentsTable).where(eq(customShiftAssignmentsTable.customShiftId,custom!.id));

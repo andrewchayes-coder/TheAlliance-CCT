@@ -7,10 +7,12 @@
  */
 import type { AdminAssignedShift } from './adminAssignedShift';
 import type { ApprovalRequirement } from './approvalRequirement';
+import type { CalendarStatus } from './calendarStatus';
 import type { VolunteerActivity } from './volunteerActivity';
 import type { VolunteerRosterEntry } from './volunteerRosterEntry';
 
 export interface AdminVolunteerDetail {
+  calendar?: CalendarStatus;
   entry: VolunteerRosterEntry;
   /** @nullable */
   adminNotes: string | null;

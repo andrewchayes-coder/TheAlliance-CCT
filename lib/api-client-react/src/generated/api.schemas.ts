@@ -5,6 +5,56 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * @nullable
+ */
+export type CalendarStatusLastClient = typeof CalendarStatusLastClient[keyof typeof CalendarStatusLastClient] | null;
+
+
+export const CalendarStatusLastClient = {
+  google: 'google',
+  microsoft: 'microsoft',
+  apple: 'apple',
+  other: 'other',
+} as const;
+
+export interface CalendarStatus {
+  /** @nullable */
+  lastFetchedAt: string | null;
+  /** @nullable */
+  lastClient: CalendarStatusLastClient;
+}
+
+export type VolunteerCalendarLinks = {
+  google: string;
+  outlook: string;
+  office365: string;
+  apple: string;
+};
+
+/**
+ * @nullable
+ */
+export type VolunteerCalendarLastClient = typeof VolunteerCalendarLastClient[keyof typeof VolunteerCalendarLastClient] | null;
+
+
+export const VolunteerCalendarLastClient = {
+  google: 'google',
+  microsoft: 'microsoft',
+  apple: 'apple',
+  other: 'other',
+} as const;
+
+export interface VolunteerCalendar {
+  feedUrl: string;
+  webcalUrl: string;
+  links: VolunteerCalendarLinks;
+  /** @nullable */
+  lastFetchedAt: string | null;
+  /** @nullable */
+  lastClient: VolunteerCalendarLastClient;
+}
+
 export interface HoursReportTotals {
   teamHours: number;
   volunteersWithHours: number;
@@ -1020,6 +1070,7 @@ export interface VolunteerActivity {
 }
 
 export interface AdminVolunteerDetail {
+  calendar?: CalendarStatus;
   entry: VolunteerRosterEntry;
   /** @nullable */
   adminNotes: string | null;

@@ -145,6 +145,9 @@ export function VolunteerDetail() {
                 ))}
               </ul>
             )}
+            <p className="mt-3 text-sm font-bold" data-testid="text-admin-calendar-status">{d.calendar?.lastFetchedAt
+              ? `Calendar: Connected to ${({ google: 'Google Calendar', microsoft: 'Outlook', apple: 'Apple Calendar' } as Record<string, string>)[d.calendar.lastClient ?? ''] ?? 'a calendar app'} · last checked ${stamp(d.calendar.lastFetchedAt)}`
+              : 'Calendar: Not added to a calendar'}</p>
             <AdminScheduleControls userId={userId} />
           </section>
 

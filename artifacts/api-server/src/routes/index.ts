@@ -25,6 +25,7 @@ import { csrfGuard } from "../auth/session";
 import { apiAccessPolicy } from "../auth/access-policy";
 import { validateWriteBoundary } from '../middlewares/request-hardening';
 import { apiRouteCatalog, mountApiRouter } from '../auth/route-catalog';
+import { calendarFeedRouter, volunteerCalendarRouter } from './calendar';
 
 const router: IRouter = Router();
 function mount(prefix: string, child: IRouter) {
@@ -40,9 +41,11 @@ router.use(apiAccessPolicy);
 router.use(validateWriteBoundary);
 mount('', jobsTriggerRouter);
 mount('', healthRouter);
+mount('', calendarFeedRouter);
 mount('/auth', authRouter);
 
 router.use(csrfGuard);
+mount('/volunteer', volunteerCalendarRouter);
 mount('', hoursRouter);
 mount('', reportsRouter);
 if (process.env.NODE_ENV === 'development') mount('', devEmailRouter);

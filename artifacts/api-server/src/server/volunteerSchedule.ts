@@ -191,6 +191,7 @@ export async function volunteerScheduleAction(actor: Actor, input: Action, testN
   if (result.confirmed) {
     const mail = createEmailTemplate({ heading: "You're on the schedule", paragraphs: [
       `Hi ${result.user.firstName},`, result.message,
+      'Want your shifts in Google, Outlook or Apple Calendar? Open My shifts in the portal and choose Add to calendar. It updates on its own.',
       result.once
         ? 'Thank you for sharing your time and care with local families. This booking is for this date only and does not repeat. You can view it in the portal.'
         : 'Thank you for sharing your time and care with local families. Your shift repeats each week, and you can manage it or request a week off in the portal.',

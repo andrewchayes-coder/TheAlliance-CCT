@@ -401,6 +401,17 @@ export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
 export type AuthToken = typeof authTokensTable.$inferSelect;
 export type InsertAuthToken = z.infer<typeof insertAuthTokenSchema>;
 
+export const calendarFeedsTable = pgTable('calendar_feeds', {
+  id: primaryKey(),
+  volunteerProfileId: uuid('volunteer_profile_id').notNull().unique().references(() => volunteerProfilesTable.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull().unique(),
+  tokenCiphertext: text('token_ciphertext').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  rotatedAt: timestamp('rotated_at', { withTimezone: true }),
+  lastFetchedAt: timestamp('last_fetched_at', { withTimezone: true }),
+  lastClient: text('last_client'),
+}, table => [check('calendar_feeds_last_client_check', sql`${table.lastClient} IN ('google', 'microsoft', 'apple', 'other')`)]);
+
 // Own-profile/admin use ONLY: these columns include sensitive DOB, address and emergency contact.
 // Never reuse this projection to expose another volunteer's record.
 const profileColumns = getTableColumns(volunteerProfilesTable);

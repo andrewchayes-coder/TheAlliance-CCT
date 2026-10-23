@@ -66,7 +66,7 @@ it('confirms two hours, changes to 1.5 and 3, and upserts one row with activity 
   }
   const rows = await db.select().from(hours).where(eq(hours.volunteerProfileId, profile));
   expect(rows).toHaveLength(1);
-  const actions = await db.select().from(activity).where(eq(activity.volunteerProfileId, profile));
+  const actions = await db.select().from(activity).where(eq(activity.volunteerProfileId, profile)).orderBy(activity.createdAt, activity.id);
   expect(actions.map(a => a.action)).toEqual(['hours_logged', 'hours_updated', 'hours_updated']);
   expect(actions[2]!.details).toMatchObject({ shiftDate: '2026-10-20', hours: 3, by: 'volunteer' });
 });
