@@ -23,6 +23,8 @@ export async function checkCalendar(admin: Page, volunteer: Page, base: string, 
   const scheduleBefore = await call(volunteer, '/volunteer/schedule');
   if (!scheduleBefore.assignments.some((a: { slotId: string }) => a.slotId === slot.id))
     await call(volunteer, '/volunteer/assignments', 'POST', { slotId: slot.id });
+  await volunteer.goto(`${base}/dashboard`);
+  await expect(volunteer.getByTestId('link-home-calendar')).toBeVisible();
   await volunteer.setViewportSize({ width: 375, height: 812 });
   await volunteer.goto(`${base}/shifts`);
   await expect(volunteer.getByTestId('card-calendar')).toBeVisible();
@@ -44,6 +46,14 @@ export async function checkCalendar(admin: Page, volunteer: Page, base: string, 
   const date = assignment.nextDates.find((d: { canSkip: boolean; skipped: boolean }) => d.canSkip && !d.skipped).date as string;
   const uid = `UID:cct-shift-${assignment.id}-${date.replace(/-/g, '')}@`;
   expect(await fetchFeed(calendar.feedUrl)).toContain(uid);
+  // Return immediately, within the old 30-second cache window.
+  const refreshedCalendar = volunteer.waitForResponse(r =>
+    r.url().endsWith('/api/volunteer/calendar') && r.request().method() === 'GET');
+  await volunteer.locator('a[href="/dashboard"]:visible').first().click();
+  expect((await (await refreshedCalendar).json()).lastFetchedAt).toBeTruthy();
+  await expect(volunteer.getByTestId('link-home-calendar')).toHaveCount(0);
+  await volunteer.goto(`${base}/shifts`);
+  await expect(volunteer.getByTestId('card-calendar')).toBeVisible();
   await volunteer.getByTestId(`button-skip-${assignment.id}`).click();
   await volunteer.getByTestId('select-skip-date').selectOption(date);
   await volunteer.getByTestId('button-confirm-skip').click();

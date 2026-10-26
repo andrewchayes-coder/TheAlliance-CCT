@@ -9,7 +9,10 @@ import { ShiftModal } from '@/components/shift-modal';
 
 export function useCalendar(enabled: boolean) {
   return useGetVolunteerCalendar({
-    query: { queryKey: getGetVolunteerCalendarQueryKey(), enabled, staleTime: 30_000 }, request: FETCH_CREDS,
+    query: {
+      queryKey: getGetVolunteerCalendarQueryKey(), enabled, staleTime: 0,
+      refetchOnMount: 'always', refetchOnWindowFocus: 'always', refetchInterval: 30_000,
+    }, request: FETCH_CREDS,
   });
 }
 
@@ -146,7 +149,7 @@ export function CalendarConfirmRow() {
 
 export function HomeCalendarLink({ href }: { href: string }) {
   const q = useCalendar(true);
-  if (!q.data || q.data.lastFetchedAt) return null;
+  if (!q.isFetchedAfterMount || q.isError || !q.data || q.data.lastFetchedAt) return null;
   return (
     <a href={href} className="font-bold text-blue underline underline-offset-4 lg:col-span-2" data-testid="link-home-calendar">Add your shifts to your calendar</a>
   );
