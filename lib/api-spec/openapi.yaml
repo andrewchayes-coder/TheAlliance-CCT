@@ -2079,6 +2079,7 @@ components:
               lastName: { type: string }
               email: { type: string }
               heldCount: { type: integer }
+              role: { type: string, enum: [admin, volunteer] }
               isTestAccount: { type: boolean }
               blockedReasons: { type: array, items: { type: string } }
         slots:
@@ -2201,6 +2202,7 @@ components:
         phone: { type: [string, 'null'] }
         skipped: { type: boolean }
         accountActive: { type: boolean }
+        role: { type: string, enum: [admin, volunteer] }
         isTestAccount: { type: boolean }
     CoordinatorBlock:
       type: object
@@ -2254,6 +2256,7 @@ components:
         id: { type: string }
         userId: { type: string }
         volunteerName: { type: string }
+        targetRole: { type: string, enum: [admin, volunteer] }
         actorName: { type: string }
         action: { type: string }
         createdAt: { type: string, format: date-time }

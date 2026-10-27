@@ -587,12 +587,21 @@ export interface CoverageAlertSettings {
   lastDigestDate: string | null;
 }
 
+export type AdminScheduleControlsVolunteersItemRole = typeof AdminScheduleControlsVolunteersItemRole[keyof typeof AdminScheduleControlsVolunteersItemRole];
+
+
+export const AdminScheduleControlsVolunteersItemRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
 export type AdminScheduleControlsVolunteersItem = {
   userId: string;
   firstName: string;
   lastName: string;
   email: string;
   heldCount: number;
+  role?: AdminScheduleControlsVolunteersItemRole;
   isTestAccount?: boolean;
   blockedReasons: string[];
 };
@@ -714,6 +723,14 @@ export interface VolunteerSchedule {
   customShifts?: VolunteerCustomShift[];
 }
 
+export type CoordinatorVolunteerRole = typeof CoordinatorVolunteerRole[keyof typeof CoordinatorVolunteerRole];
+
+
+export const CoordinatorVolunteerRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
 export interface CoordinatorVolunteer {
   assignmentId: string;
   userId: string;
@@ -724,6 +741,7 @@ export interface CoordinatorVolunteer {
   phone: string | null;
   skipped: boolean;
   accountActive: boolean;
+  role?: CoordinatorVolunteerRole;
   isTestAccount?: boolean;
 }
 
@@ -787,10 +805,19 @@ export interface CoordinatorWeek {
   underCoveredShifts: number;
 }
 
+export type CoordinatorActivityTargetRole = typeof CoordinatorActivityTargetRole[keyof typeof CoordinatorActivityTargetRole];
+
+
+export const CoordinatorActivityTargetRole = {
+  admin: 'admin',
+  volunteer: 'volunteer',
+} as const;
+
 export interface CoordinatorActivity {
   id: string;
   userId: string;
   volunteerName: string;
+  targetRole?: CoordinatorActivityTargetRole;
   actorName: string;
   action: string;
   createdAt: string;

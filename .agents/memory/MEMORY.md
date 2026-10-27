@@ -28,3 +28,4 @@
 - [Merge verification](merge-verification.md) — rerun full workspace and affected API checks after automatic reconciliation, including files not reported as conflicts.
 - [OpenAPI parameter names](openapi-parameter-names.md) — Orval path schemas and query interfaces can collide; resolve exports in the handwritten Zod barrel.
 - [Home calendar link](calendar-home-link.md) — the Home prompt is shown only until a volunteer connects a calendar, not as a permanent shortcut.
+- [Staff shift participation](staff-shift-participation.md) — admins take shifts through admin scheduling without widening volunteer-only access or requiring duplicate accounts.

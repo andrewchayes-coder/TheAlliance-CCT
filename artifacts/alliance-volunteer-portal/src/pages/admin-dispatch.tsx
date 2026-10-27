@@ -54,7 +54,7 @@ function Body() {
                     <p className="font-bold" data-testid={`text-ends-${b.slotId}`}>Shift ends {clock(b.endTime)}{b.label ? ` (${b.label})` : ''}{b.kind === 'custom' && <OneTimeTag className="ml-2 align-middle" />}</p>
                     {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-on-shift-${b.slotId}`}>Empty shift: no one assigned</p> : v.map(p => (
                       <div key={p.assignmentId} className="mt-3 border-t border-gray pt-3" data-testid={`card-on-shift-${p.userId}`}>
-                        <Link href={`/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{fullName(p)}<TestBadge test={p.isTestAccount} /></Link>
+                        <Link href={p.role === 'admin' ? '/admin/team' : `/admin/volunteers/${p.userId}`} className="text-lg font-bold text-navy underline-offset-4 hover:underline">{fullName(p)}{p.role === 'admin' && <span className="ml-2 text-xs">Admin</span>}<TestBadge test={p.isTestAccount} /></Link>
                         <div className="mt-2 grid gap-2 sm:grid-cols-2">
                           {p.phone ? <a href={`tel:${p.phone}`} data-testid={`link-tel-${p.userId}`} className="flex min-h-11 items-center gap-2 rounded-lg bg-navy px-3 font-bold text-white"><Phone size={18} aria-hidden="true" />{formatPhone(p.phone) || p.phone}</a>
                             : <span className="flex min-h-11 items-center rounded-lg bg-gray px-3 text-sm">No phone on file</span>}
@@ -78,7 +78,7 @@ function Body() {
                   <li key={`${b.slotId}-${b.date}`} className="alliance-card" data-testid={`card-up-next-${b.slotId}`}>
                     <p className="font-bold">{dayLabel(b.date, { weekday: 'long', month: 'short', day: 'numeric' })}, {range(b)}{b.label ? ` · ${b.label}` : ''}{b.kind === 'custom' && <OneTimeTag className="ml-2 align-middle" />}</p>
                     {v.length === 0 ? <p className="mt-2 inline-block rounded-md bg-[var(--alliance-amber)] px-2 py-1 text-sm font-bold text-[var(--alliance-amber-ink)]" data-testid={`text-empty-shift-${b.slotId}`}>Empty shift: no one assigned</p>
-                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={`/admin/volunteers/${x.userId}`} className="font-bold text-blue underline underline-offset-4">{fullName(x)}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
+                      : <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">{v.map(x => <li key={x.assignmentId}><Link href={x.role === 'admin' ? '/admin/team' : `/admin/volunteers/${x.userId}`} className="font-bold text-blue underline underline-offset-4">{fullName(x)}{x.role === 'admin' && <span className="ml-2 text-xs">Admin</span>}<TestBadge test={x.isTestAccount} /></Link></li>)}</ul>}
                   </li>
                 );
               })}
@@ -100,7 +100,7 @@ function Body() {
             <ul className="alliance-card divide-y divide-gray py-0">
               {d.recentActivity.map(a => (
                 <li key={a.id} className="py-3" data-testid={`row-activity-${a.id}`}>
-                  <p><span className="font-bold">{humanize(a.action)}</span> for <Link href={`/admin/volunteers/${a.userId}`} className="font-bold text-blue underline underline-offset-4">{a.volunteerName}</Link></p>
+                  <p><span className="font-bold">{humanize(a.action)}</span> for <Link href={a.targetRole === 'admin' ? '/admin/team' : `/admin/volunteers/${a.userId}`} className="font-bold text-blue underline underline-offset-4">{a.volunteerName}</Link></p>
                   <p className="text-xs text-navy-soft">By {a.actorName} · {activityTime(a.createdAt)}</p>
                 </li>
               ))}

@@ -5,11 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CoordinatorActivityTargetRole } from './coordinatorActivityTargetRole';
 
 export interface CoordinatorActivity {
   id: string;
   userId: string;
   volunteerName: string;
+  targetRole?: CoordinatorActivityTargetRole;
   actorName: string;
   action: string;
   createdAt: Date;

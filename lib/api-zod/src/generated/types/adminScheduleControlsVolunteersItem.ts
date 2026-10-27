@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminScheduleControlsVolunteersItemRole } from './adminScheduleControlsVolunteersItemRole';
 
 export type AdminScheduleControlsVolunteersItem = {
   userId: string;
@@ -12,6 +13,7 @@ export type AdminScheduleControlsVolunteersItem = {
   lastName: string;
   email: string;
   heldCount: number;
+  role?: AdminScheduleControlsVolunteersItemRole;
   isTestAccount?: boolean;
   blockedReasons: string[];
 };

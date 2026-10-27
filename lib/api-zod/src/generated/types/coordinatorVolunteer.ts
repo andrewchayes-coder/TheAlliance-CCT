@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { CoordinatorVolunteerRole } from './coordinatorVolunteerRole';
 
 export interface CoordinatorVolunteer {
   assignmentId: string;
@@ -16,5 +17,6 @@ export interface CoordinatorVolunteer {
   phone: string | null;
   skipped: boolean;
   accountActive: boolean;
+  role?: CoordinatorVolunteerRole;
   isTestAccount?: boolean;
 }

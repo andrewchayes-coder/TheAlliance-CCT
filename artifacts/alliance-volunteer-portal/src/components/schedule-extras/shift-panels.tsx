@@ -107,16 +107,16 @@ export function CustomPanel({ shiftId }: { shiftId: string }) {
         </ul>
       )}
       <div className="mt-4 space-y-2 border-t border-gray pt-4">
-        <label className="block text-sm font-bold" htmlFor="cs-search">Assign a volunteer</label>
+        <label className="block text-sm font-bold" htmlFor="cs-search">Assign a volunteer or admin</label>
         <input id="cs-search" type="search" className="alliance-input" placeholder="Search by name" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-custom-search" />
-        {ctl.isError && <Notice>Could not load volunteers.</Notice>}
-        <ul className="max-h-52 overflow-y-auto rounded-lg border border-gray" role="listbox" aria-label="Volunteers">
-          {ctl.isPending ? <li className="p-3 text-sm">Loading...</li> : vols.length === 0 ? <li className="p-3 text-sm">No volunteers found.</li> : vols.map(v => {
+        {ctl.isError && <Notice>Could not load team members.</Notice>}
+        <ul className="max-h-52 overflow-y-auto rounded-lg border border-gray" role="listbox" aria-label="Volunteers and admins">
+          {ctl.isPending ? <li className="p-3 text-sm">Loading...</li> : vols.length === 0 ? <li className="p-3 text-sm">No team members found.</li> : vols.map(v => {
             const reasons = eligibility(v.blockedReasons); const off = reasons.length > 0 || held.has(v.userId);
             return (
               <li key={v.userId}><button type="button" disabled={off} role="option" aria-selected={pick === v.userId} onClick={() => setPick(v.userId)} data-testid={`option-custom-vol-${v.userId}`}
                 className={`block min-h-11 w-full px-3 py-2 text-left text-sm ${pick === v.userId ? 'bg-blue/10 font-bold' : ''} disabled:opacity-60`}>
-                {v.firstName} {v.lastName}<TestBadge test={v.isTestAccount} />
+                {v.firstName} {v.lastName}{v.role === 'admin' && <span className="ml-2 rounded bg-gray px-2 py-1 text-xs font-bold">Admin</span>}<TestBadge test={v.isTestAccount} />
                 {held.has(v.userId) && <span className="block text-xs font-bold">Already assigned</span>}
                 {reasons.length > 0 && <span className="block text-xs font-bold text-[var(--alliance-amber-ink)]">Not eligible: {reasons.join('; ')}</span>}
               </button></li>

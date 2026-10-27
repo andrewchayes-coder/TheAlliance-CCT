@@ -116,7 +116,10 @@ it('guards all new API methods and persists the staff digest setting', async () 
     expect((await vol(p, method, method === 'GET' ? undefined : {})).status).toBe(403);
   }
   const list = await admin(`/admin/schedule/controls?q=${tag}`); expect(list.status).toBe(200);
-  expect(list.data.volunteers).toHaveLength(3);
+  expect(list.data.volunteers).toHaveLength(4);
+  expect(list.data.volunteers).toEqual(expect.arrayContaining([
+    expect.objectContaining({ userId: ids[0], role: 'admin', blockedReasons: [] }),
+  ]));
   expect((await admin('/admin/schedule/alerts', 'PATCH', { dailyDigestEnabled: false })).data.dailyDigestEnabled).toBe(false);
   expect((await admin('/admin/schedule/alerts')).data.dailyDigestEnabled).toBe(false);
 });
@@ -193,7 +196,8 @@ it('processes an empty digest without email and deduplicates a nonempty digest b
   } finally {
     mock.mockRestore();
     await db.delete(notificationLogTable).where(and(eq(notificationLogTable.type, 'admin_alert'), eq(notificationLogTable.relatedId, date)));
-    await db.update(appSettingsTable).set(savedSettings).where(eq(appSettingsTable.id, 'schedule'));
+    if (savedSettings) await db.update(appSettingsTable).set(savedSettings).where(eq(appSettingsTable.id, 'schedule'));
+    else await db.delete(appSettingsTable).where(eq(appSettingsTable.id, 'schedule'));
   }
 });
 it('account deactivation ends reservations, invalidates sessions, and checks the resulting coverage', async () => {

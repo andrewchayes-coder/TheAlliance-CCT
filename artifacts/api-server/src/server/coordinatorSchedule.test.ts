@@ -18,6 +18,11 @@ const base = (): CoordinatorData => ({
   skips: [], closedDates: [],
 });
 describe('Coordinator projection', () => {
+  it('does not treat staff without shifts as volunteers needing attention', () => {
+    const staff: CoordinatorPerson = { ...people[0]!, role: 'admin', userId: 'staff', profileId: 'staff' };
+    const result = coordinatorProjection(base(), [staff], new Date('2026-03-09T17:30:00Z')).overview();
+    expect(result.needsAttention).toBe(0);
+  });
   it('counts fresh and completed onboarding once, excludes test accounts, and retains no-shift after approval',()=>{
     const fresh={...people[0]!,userId:'fresh',profileId:'fresh',profile:{...people[0]!.profile,status:'onboarding',createdAt:new Date('2026-03-09T17:00:00Z'),onboardingCompletedAt:null}} as CoordinatorPerson;
     const ready={...fresh,userId:'ready',profileId:'ready',profile:{...fresh.profile,onboardingCompletedAt:new Date()}};

@@ -31,3 +31,9 @@ An isolated regression schema is shared by serial test files, not recreated for 
 **Why:** a calendar-feed suite left a closed date behind, making a later one-time booking test reject a valid-looking week-off request. Isolation from real data does not imply isolation between suites.
 
 **How to apply:** clean global scheduling fixtures (especially closed dates) and scoped rate-limit counters along with owned users and assignments. Do not change booking rules to accommodate leaked test fixtures.
+
+Fresh isolated schemas may have no settings row, even when the working development database has one.
+
+**Why:** cleanup that unconditionally restores a captured row can fail depending on test order when no row existed at suite setup.
+
+**How to apply:** preserve original row presence as well as values; restore the captured row when present, otherwise remove only the setting created by the test.

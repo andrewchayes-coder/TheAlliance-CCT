@@ -3,7 +3,7 @@ import { volunteerContactText } from '@workspace/shared/appConfig';
 import { createScheduleService, pacificDay, addCalendarDays, TIME_ZONE, type ScheduleData, type Occurrence } from './scheduleService';
 
 export type ReminderConfig = { reminderHoursBefore: number; sameMorningReminder: boolean; sameMorningReminderHour: number };
-export type ReminderPerson = { profileId: string; userId: string; email: string; firstName: string; status: string; isActive: boolean; verified: boolean };
+export type ReminderPerson = { profileId: string; userId: string; email: string; firstName: string; status: string; isActive: boolean; verified: boolean; role?: 'admin' | 'volunteer' };
 export type ReminderSnapshot = { schedule: ScheduleData; people: ReminderPerson[]; links: { label: string; url: string }[] };
 export type ReminderCandidate = {
   occurrence: Occurrence; assignmentId: string; person: ReminderPerson; variant: '24h' | 'am'; relatedId: string;
@@ -67,7 +67,7 @@ export function reminderEmail(candidate: ReminderCandidate, links: ReminderSnaps
       'Need the week off? Update it in the portal or let us know as soon as you can.',
       ...(test ? [] : [`If your shift is less than 24 hours away, please contact ${volunteerContactText} so we can help arrange coverage.`]),
     ],
-    ctas: [...safeLinks, { label: 'Manage my shifts', url: `${origin}/shifts` }],
+    ctas: [...safeLinks, { label: 'Manage my shifts', url: `${origin}${candidate.person.role === 'admin' ? '/admin/schedule' : '/shifts'}` }],
   });
   return { subject, ...copy };
 }

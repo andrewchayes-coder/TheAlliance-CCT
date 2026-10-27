@@ -10,6 +10,17 @@ function data(): ReminderSnapshot {
     people: [{ ...person }], links: [{ label: 'Find Help', url: 'https://example.org/help' }, { label: 'Phone Portal', url: 'https://example.org/phone' }] };
 }
 describe('Pacific shift reminder selection and copy', () => {
+  it('includes assigned admins and links them to the admin schedule', () => {
+    const snapshot = data();
+    snapshot.people = [{ ...person, role: 'admin' }];
+    const candidates = selectReminders(snapshot, slotInstant('2026-10-12', '09:00'), config, true);
+    expect(candidates).toHaveLength(1);
+    const copy = reminderEmail(candidates[0]!, snapshot.links, slotInstant('2026-10-12', '09:00'), 'https://portal.example.org');
+    expect(copy.html).toContain('https://portal.example.org/admin/schedule');
+    expect(copy.text).toContain('https://portal.example.org/admin/schedule');
+    snapshot.people[0]!.isActive = false;
+    expect(selectReminders(snapshot, slotInstant('2026-10-12', '09:00'), config, true)).toHaveLength(0);
+  });
   it('catches reminders 15/30 minutes and hours late, but never before due or after shift start', () => {
     const due = slotInstant('2026-10-12', '09:00');
     expect(selectReminders(data(), new Date(due.getTime() - 1), config, true)).toHaveLength(0);

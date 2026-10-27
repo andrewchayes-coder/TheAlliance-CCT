@@ -1756,6 +1756,7 @@ export const GetAdminScheduleControlsResponse = zod.object({
   "lastName": zod.string(),
   "email": zod.string(),
   "heldCount": zod.number().int(),
+  "role": zod.enum(['admin', 'volunteer']).optional(),
   "isTestAccount": zod.boolean().optional(),
   "blockedReasons": zod.array(zod.string())
 })),
@@ -2059,6 +2060,7 @@ export const GetAdminOverviewResponse = zod.object({
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
   "accountActive": zod.boolean(),
+  "role": zod.enum(['admin', 'volunteer']).optional(),
   "isTestAccount": zod.boolean().optional()
 }))
 })),
@@ -2088,6 +2090,7 @@ export const GetAdminOverviewResponse = zod.object({
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
   "accountActive": zod.boolean(),
+  "role": zod.enum(['admin', 'volunteer']).optional(),
   "isTestAccount": zod.boolean().optional()
 }))
 })),
@@ -2098,6 +2101,7 @@ export const GetAdminOverviewResponse = zod.object({
   "id": zod.string(),
   "userId": zod.string(),
   "volunteerName": zod.string(),
+  "targetRole": zod.enum(['admin', 'volunteer']).optional(),
   "actorName": zod.string(),
   "action": zod.string(),
   "createdAt": zod.coerce.date()
@@ -2147,6 +2151,7 @@ export const GetAdminScheduleWeekResponse = zod.object({
   "phone": zod.string().nullable(),
   "skipped": zod.boolean(),
   "accountActive": zod.boolean(),
+  "role": zod.enum(['admin', 'volunteer']).optional(),
   "isTestAccount": zod.boolean().optional()
 }))
 })),

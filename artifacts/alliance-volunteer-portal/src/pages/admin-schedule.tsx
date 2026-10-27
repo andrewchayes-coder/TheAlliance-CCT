@@ -80,7 +80,7 @@ function Drawer({ block, gone, onClose, returnFocus }: { block: CoordinatorBlock
             <ul className="mt-2 divide-y divide-gray">
               {block.volunteers.map(v => (
                 <li key={v.assignmentId} className="py-3" data-testid={`row-drawer-vol-${v.userId}`}>
-                  <Link href={`/admin/volunteers/${v.userId}`} className={`font-bold text-blue underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}<TestBadge test={v.isTestAccount} /></Link>
+                  <Link href={v.role === 'admin' ? '/admin/team' : `/admin/volunteers/${v.userId}`} className={`font-bold text-blue underline underline-offset-4 ${v.skipped ? 'line-through' : ''}`}>{fullName(v)}{v.role === 'admin' && <span className="ml-2 text-xs">Admin</span>}<TestBadge test={v.isTestAccount} /></Link>
                   {v.skipped && <span className="ml-2 text-xs font-bold">Off this week</span>}
                   {!v.accountActive && <span className="ml-2 text-xs font-bold">Inactive account</span>}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">

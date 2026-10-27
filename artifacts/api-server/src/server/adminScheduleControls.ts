@@ -2,7 +2,7 @@ import { and, eq, gte } from 'drizzle-orm';
 import { volunteerContactText } from '@workspace/shared/appConfig';
 import { db, usersTable, volunteerProfilesTable, shiftSlotsTable, shiftAssignmentsTable, shiftSkipsTable, activityLogTable } from '@workspace/db';
 import { appConfig } from '@workspace/shared/appConfig';
-import { approvalRequirements, lockedVolunteer, WorkflowError } from '../admin-volunteer-detail';
+import { WorkflowError } from '../admin-volunteer-detail';
 import { lockSchedule } from './scheduleMutations';
 import { readScheduleData, ongoingForSlot } from './scheduleRepository';
 import { heldAssignments, startDates, volunteerScheduleView } from './volunteerScheduleView';
@@ -13,6 +13,7 @@ import { createEmailTemplate, sendEmail } from '../email';
 import { appOrigin } from '../auth/session';
 import { logger } from '../lib/logger';
 import {customOverlap,overlapMessage} from './customShiftService';
+import { lockedScheduleParticipant, scheduleParticipantBlockers } from './scheduleParticipants';
 
 type Actor = { id: string; sessionVersion: number };
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -26,21 +27,20 @@ export async function adminScheduleControls(filter: { slotId?: string; userId?: 
   return db.transaction(async tx => {
     const data = await readScheduleData(tx), held = heldAssignments(data, now), today = pacificDay(now);
     const people = await tx.select({ user: usersTable, profile: volunteerProfilesTable })
-      .from(volunteerProfilesTable).innerJoin(usersTable, eq(usersTable.id, volunteerProfilesTable.userId))
-      .where(eq(usersTable.role, 'volunteer'));
+      .from(usersTable).leftJoin(volunteerProfilesTable, eq(usersTable.id, volunteerProfilesTable.userId));
     const projected = volunteerScheduleView(data, undefined, undefined, null, now);
     const q = filter.q?.trim().toLowerCase() ?? '';
-    const candidates = people.filter(p => p.profile.status === 'active' && p.user.isActive &&
+    const candidates = people.filter(p => (p.user.role === 'admin' || p.profile?.status === 'active') && p.user.isActive && !p.user.archivedAt &&
       (!filter.userId || p.user.id === filter.userId) &&
       `${p.user.firstName} ${p.user.lastName} ${p.user.email}`.toLowerCase().includes(q));
     return { volunteers: candidates.slice(0, 100).map(p => ({
-      userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, email: p.user.email, isTestAccount: p.user.isTestAccount,
-      heldCount: held.filter(a => a.volunteerProfileId === p.profile.id && !isOneTimeShift(a)).length,
-      blockedReasons: approvalRequirements(p.user, p.profile).filter(r => !r.met).map(r => r.label),
+      userId: p.user.id, firstName: p.user.firstName, lastName: p.user.lastName, email: p.user.email, isTestAccount: p.user.isTestAccount, role: p.user.role,
+      heldCount: held.filter(a => a.volunteerProfileId === p.profile?.id && !isOneTimeShift(a)).length,
+      blockedReasons: scheduleParticipantBlockers(p.user, p.profile),
     })).sort((a, b) => a.lastName.localeCompare(b.lastName)),
     slots: projected.slots,
     assignments: held.flatMap(a => {
-      const p = people.find(p => p.profile.id === a.volunteerProfileId), s = data.slots.find(s => s.id === a.shiftSlotId)!;
+      const p = people.find(p => p.profile?.id === a.volunteerProfileId), s = data.slots.find(s => s.id === a.shiftSlotId)!;
       if (!p || filter.slotId && s.id !== filter.slotId || filter.userId && p.user.id !== filter.userId) return [];
       const from = a.startDate > today ? a.startDate : today;
       const horizon = addCalendarDays(today, 35);
@@ -76,7 +76,7 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
       if (!target) throw new WorkflowError(404, 'This assignment could not be found.');
       targetId = target.userId;
     }
-    const { user, profile } = await lockedVolunteer(tx, targetId);
+    const { user, profile } = await lockedScheduleParticipant(tx, targetId);
     const data = await readScheduleData(tx), held = heldAssignments(data, now), own = held.filter(a => a.volunteerProfileId === profile.id);
     const today = pacificDay(now);
     const old = input.kind === 'assign' ? undefined : data.assignments.find(a =>
@@ -86,9 +86,9 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
     let assignmentId = old?.id ?? '', message = '', released = false;
     let overrides: string[] = [], reactivatedFrom: unknown;
     if (input.kind === 'assign') {
-      const missing = approvalRequirements(user, profile).filter(r => !r.met);
-      if (!user.isActive || profile.status !== 'active' || missing.length)
-        throw new WorkflowError(422, `Only eligible active volunteers can be assigned. ${missing.map(r => r.label).join('; ')}`);
+      const missing = scheduleParticipantBlockers(user, profile);
+      if (missing.length)
+        throw new WorkflowError(422, `Only eligible active team members can be assigned. ${missing.join('; ')}`);
       const [slot] = await tx.select().from(shiftSlotsTable).where(eq(shiftSlotsTable.id, input.slotId)).for('update');
       if (!slot) throw new WorkflowError(404, 'This slot could not be found.');
       const dates = startDates(data, slot, now), first = input.startDate ?? dates[0];
@@ -177,7 +177,7 @@ export async function adminScheduleAction(actor: Actor, input: Action, now = new
     const copy = createEmailTemplate({ heading: input.kind === 'assign' ? 'Your weekly shift is confirmed' : 'Your schedule has been updated',
       firstName: result.user.firstName, paragraphs: [result.message,
         `Thank you for the care you share with local families. Please contact ${volunteerContactText} if you have questions about this change.`],
-      cta: { label: 'View my shifts', url: `${appOrigin}/shifts` } });
+      cta: { label: 'View my shifts', url: `${appOrigin}${result.user.role === 'admin' ? '/admin/schedule' : '/shifts'}` } });
     const sent = await sendEmail({ type: 'shift', to: result.user.email, toUserId: result.user.id,
       subject: input.kind === 'assign' ? 'Your weekly shift is confirmed' : 'Your weekly shift has been released',
       ...copy, relatedId: result.activityId });

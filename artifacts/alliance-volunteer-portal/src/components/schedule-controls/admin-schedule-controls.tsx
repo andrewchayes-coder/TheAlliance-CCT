@@ -130,17 +130,18 @@ export function AdminScheduleControls({ slotId, userId, closed, closedReason }: 
           <h3 className="alliance-label">Assign a shift</h3>
           {closed && <p className="text-sm font-bold" data-testid="text-closed-assign">This date is closed{closedReason ? ` (${closedReason})` : ''}. You can still assign the next open date below.</p>}
           {!userId && (<div>
-            <label htmlFor="ctl-search" className="text-sm font-bold">Find a volunteer</label>
+            <label htmlFor="ctl-search" className="text-sm font-bold">Find a volunteer or admin</label>
+            <p className="text-sm">To take this shift yourself, search for your name and select your admin account.</p>
             <input id="ctl-search" type="search" className={`${field} mt-1`} value={search} onChange={e => setSearch(e.target.value)} placeholder="Name or email" maxLength={120} data-testid="input-volunteer-search" />
-            <ul className="mt-2 max-h-52 overflow-y-auto rounded-lg bg-white" role="radiogroup" aria-label="Volunteers" data-testid="list-volunteers">
-              {data.volunteers.length === 0 && <li className="p-3 text-sm" data-testid="text-no-volunteers">No active volunteers match.</li>}
+            <ul className="mt-2 max-h-52 overflow-y-auto rounded-lg bg-white" role="radiogroup" aria-label="Volunteers and admins" data-testid="list-volunteers">
+              {data.volunteers.length === 0 && <li className="p-3 text-sm" data-testid="text-no-volunteers">No active team members match.</li>}
               {data.volunteers.map(v => {
                 const off = v.blockedReasons.length > 0; const on = pickUser === v.userId;
                 return (
                   <li key={v.userId} className="border-b border-gray last:border-0">
                     <button type="button" role="radio" aria-checked={on} disabled={off} onClick={() => setPickUser(v.userId)} data-testid={`option-volunteer-${v.userId}`}
                       className={`block min-h-11 w-full px-3 py-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-blue disabled:opacity-60 ${on ? 'bg-blue/10 font-bold' : ''}`}>
-                      <span className="block">{who(v)}<TestBadge test={v.isTestAccount} /> <span className="font-normal">holds {v.heldCount}</span></span>
+                      <span className="block">{who(v)}{v.role === 'admin' && <span className="ml-2 rounded bg-white px-2 py-1 text-xs font-bold">Admin</span>}<TestBadge test={v.isTestAccount} /> <span className="font-normal">holds {v.heldCount}</span></span>
                       <span className="block break-all text-xs">{v.email}</span>
                       {off && <span className="block text-xs font-bold text-[var(--alliance-amber-ink)]">Not eligible: {v.blockedReasons.join('; ')}</span>}
                     </button>

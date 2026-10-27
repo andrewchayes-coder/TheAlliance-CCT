@@ -28,10 +28,10 @@ async function snapshot(from: string, to: string, profileId?: string): Promise<R
     const schedule = await readScheduleData(tx, profileId, { from, to });
     const ids = [...new Set([...schedule.assignments,...schedule.customAssignments].map(a => a.volunteerProfileId))];
     const people = ids.length ? await tx.select({ profileId: volunteerProfilesTable.id, userId: usersTable.id,
-      email: usersTable.email, firstName: usersTable.firstName, status: volunteerProfilesTable.status,
+      email: usersTable.email, firstName: usersTable.firstName, role: usersTable.role, status: volunteerProfilesTable.status,
       isActive: usersTable.isActive, verifiedAt: usersTable.emailVerifiedAt }).from(volunteerProfilesTable)
       .innerJoin(usersTable, eq(usersTable.id, volunteerProfilesTable.userId))
-      .where(and(inArray(volunteerProfilesTable.id, ids), eq(usersTable.role, 'volunteer'))) : [];
+      .where(inArray(volunteerProfilesTable.id, ids)) : [];
     return { schedule, people: people.map(p => ({ ...p, verified: !!p.verifiedAt })), links: [] };
   }, { isolationLevel: 'repeatable read' });
 }

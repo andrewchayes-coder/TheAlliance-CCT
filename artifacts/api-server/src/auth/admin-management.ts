@@ -134,7 +134,7 @@ export async function setAccountActive(actor: AdminActor, userId: string, isActi
         .where(and(eq(authTokensTable.userId, userId), isNull(authTokensTable.usedAt)));
     }
     if (!isActive && target.isActive) {
-      if (target.role === 'volunteer') {
+      if (target.role === 'volunteer' || target.role === 'admin') {
         const [profile] = await tx.select().from(volunteerProfilesTable).where(eq(volunteerProfilesTable.userId, userId)).for('update');
         if (profile) {
           const today = pacificDay(new Date());

@@ -1,6 +1,6 @@
 import {and,eq,isNull} from 'drizzle-orm';
 import {db,usersTable,volunteerProfilesTable,customShiftsTable,customShiftAssignmentsTable,activityLogTable} from '@workspace/db';
-import {WorkflowError,lockedVolunteer,approvalRequirements} from '../admin-volunteer-detail';
+import {WorkflowError,lockedVolunteer} from '../admin-volunteer-detail';
 import {lockSchedule} from './scheduleMutations';
 import {readScheduleData,type ScheduleTransaction} from './scheduleRepository';
 import {createScheduleService,pacificDay,slotInstant,type ScheduleData} from './scheduleService';
@@ -11,6 +11,7 @@ import {appOrigin} from '../auth/session';
 import {volunteerContactText} from '@workspace/shared/appConfig';
 import {notifyCustomReduction} from './coverageAlerts';
 import {logger} from '../lib/logger';
+import {lockedScheduleParticipant,scheduleParticipantBlockers} from './scheduleParticipants';
 export type ScheduleActor={id:string;sessionVersion:number};
 export async function checkScheduleActor(tx:ScheduleTransaction,actor:ScheduleActor,role:'admin'|'volunteer') {
   const [user]=await tx.select().from(usersTable).where(eq(usersTable.id,actor.id)).for('update');
@@ -27,8 +28,8 @@ export function overlapMessage(date:string,start:string,end:string) {
   const fmt=(s:string)=>new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${s}:00Z`));
   return `That time overlaps with your ${day} ${fmt(start)}–${fmt(end)} shift.`;
 }
-export async function sendScheduleNotice(user:{id:string;email:string},subject:string,paragraphs:string[],relatedId:string) {
-  const copy=createEmailTemplate({heading:subject,paragraphs,cta:{label:'View my shifts',url:`${appOrigin}/shifts`}});
+export async function sendScheduleNotice(user:{id:string;email:string;role?:string},subject:string,paragraphs:string[],relatedId:string) {
+  const copy=createEmailTemplate({heading:subject,paragraphs,cta:{label:'View my shifts',url:`${appOrigin}${user.role === 'admin' ? '/admin/schedule' : '/shifts'}`}});
   return sendEmail({type:'shift',to:user.email,toUserId:user.id,subject,...copy,relatedId});
 }
 type CustomAction={kind:'assign';customShiftId:string;userId?:string;override?:boolean;reason?:string}
@@ -49,16 +50,16 @@ export async function customAssignmentAction(actor:ScheduleActor,input:CustomAct
       target=row?.userId;
     }
     if(!target) throw new WorkflowError(404,'Choose a volunteer assigned to this shift.');
-    const {user,profile}=await lockedVolunteer(tx,target);
+    const {user,profile}=staff ? await lockedScheduleParticipant(tx,target) : await lockedVolunteer(tx,target);
     const active=await tx.select().from(customShiftAssignmentsTable).where(and(eq(customShiftAssignmentsTable.customShiftId,shift.id),isNull(customShiftAssignmentsTable.cancelledAt)));
     const existing=active.find(a=>a.volunteerProfileId===profile.id);
     const data=await readScheduleData(tx);
     let id:string,reason:Record<string,unknown>;
     if(input.kind==='assign') {
-      if(!user.isActive || !user.emailVerifiedAt || user.role!=='volunteer' || profile.status!=='active')
-        throw new WorkflowError(422,'Only active, verified volunteers can join this shift.');
+      if(!user.isActive || !user.emailVerifiedAt || (!staff && user.role!=='volunteer') || profile.status!=='active' || user.archivedAt)
+        throw new WorkflowError(422,'Only active, verified team members can join this shift.');
       if(!staff && !shift.openToVolunteers) throw new WorkflowError(403,'This one-time shift is assigned by Alliance staff.');
-      const blockers=staff?approvalRequirements(user,profile).filter(r=>!r.met).map(r=>r.label)
+      const blockers=staff?scheduleParticipantBlockers(user,profile)
         :bookingBlockers(profile,await lockAgreementVersion(tx));
       if(blockers.length) throw new WorkflowError(422,blockers.join('; '));
       if(slotInstant(shift.date,shift.startTime)<=now || data.closedDates.some(c=>c.date===shift.date))
@@ -86,7 +87,7 @@ export async function customAssignmentAction(actor:ScheduleActor,input:CustomAct
   if(result.changed) {
     const subject=result.remove?'Your one-time shift has been released':"You're on the schedule: one-time shift";
     await sendScheduleNotice(result.user,subject,[`${result.shift.date}, ${result.shift.startTime}–${result.shift.endTime} (Pacific time).`,
-      ...(!result.remove ? ['Want your shifts in Google, Outlook or Apple Calendar? Open My shifts in the portal and choose Add to calendar. It updates on its own.'] : []),
+      ...(!result.remove && result.user.role === 'volunteer' ? ['Want your shifts in Google, Outlook or Apple Calendar? Open My shifts in the portal and choose Add to calendar. It updates on its own.'] : []),
       result.remove?'Thank you for keeping your schedule up to date. Your regular weekly shifts are unchanged.'
         :'Thank you for helping local families. This shift happens once; your weekly shifts are unchanged.'],result.eventId);
     if(result.remove) try {await notifyCustomReduction(result.shift.id,result.eventId,'A volunteer released a one-time shift',now);}

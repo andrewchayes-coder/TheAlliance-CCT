@@ -2,6 +2,10 @@
 
 User-facing releases and migration/operating changes are recorded here. Add new releases above older entries with Added / Changed / Fixed / Security sections as applicable.
 
+## Unreleased
+
+- Active, verified admins can take weekly and one-time shifts using their existing admin account. Schedule assignment pickers include staff with an Admin label; assignments count toward coverage and appear in dispatch, receive reminders, and are released when the staff account is deactivated. Volunteer onboarding and access restrictions remain unchanged. No schema changes.
+
 ## v1.5.0 — 2026-10-23
 
 - Add to Calendar: each Resource Coordinator gets a private calendar link for Google Calendar, Outlook, Apple Calendar or any app that subscribes by URL; it updates on its own as shifts change. Volunteers can reset their link; staff can see whether it's connected. New table calendar_feeds (additive).
