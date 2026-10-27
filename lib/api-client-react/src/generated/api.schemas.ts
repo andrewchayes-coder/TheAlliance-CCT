@@ -77,12 +77,32 @@ export interface HoursReportVolunteer {
 }
 
 export interface HoursReportTrend {
+  startDate: string;
+  endDate: string;
+  partial: boolean;
   month: string;
   teamHours: number;
   volunteersWithHours: number;
 }
 
+export type ReportingPeriodMode = typeof ReportingPeriodMode[keyof typeof ReportingPeriodMode];
+
+
+export const ReportingPeriodMode = {
+  range: 'range',
+  'legacy-month': 'legacy-month',
+} as const;
+
+export interface ReportingPeriod {
+  startDate: string;
+  endDate: string;
+  today: string;
+  timezone: string;
+  mode: ReportingPeriodMode;
+}
+
 export interface HoursReport {
+  period: ReportingPeriod;
   month: string;
   currentMonth: string;
   totals: HoursReportTotals;
@@ -1830,6 +1850,14 @@ export type AuthSuccessResponse = AuthResult;
 
 export type GetAdminHoursReportParams = {
 /**
+ * Inclusive Pacific service date; requires endDate and excludes month
+ */
+startDate?: string;
+/**
+ * Inclusive Pacific service date through today
+ */
+endDate?: string;
+/**
  * @pattern ^\d{4}-\d{2}$
  */
 month?: string;
@@ -1838,6 +1866,8 @@ at?: string;
 };
 
 export type DownloadAdminHoursReportParams = {
+startDate?: string;
+endDate?: string;
 /**
  * @pattern ^\d{4}-\d{2}$
  */
@@ -1847,9 +1877,27 @@ at?: string;
 };
 
 export type DownloadAdminHourEntriesParams = {
+startDate?: string;
+endDate?: string;
 /**
  * @pattern ^\d{4}-\d{2}$
  */
+month?: string;
+includeTest?: boolean;
+at?: string;
+};
+
+export type DownloadAdminHoursExcelParams = {
+startDate?: string;
+endDate?: string;
+month?: string;
+includeTest?: boolean;
+at?: string;
+};
+
+export type DownloadAdminHourEntriesExcelParams = {
+startDate?: string;
+endDate?: string;
 month?: string;
 includeTest?: boolean;
 at?: string;

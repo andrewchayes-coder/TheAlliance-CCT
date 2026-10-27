@@ -106,6 +106,20 @@ onboarding volunteers see no hours UI. Staff can add, correct or remove any past
 There is no clock-in/clock-out or hour-related email. Replit Publish creates this one
 additive table; no existing table/column/enum changes and no startup migrations.
 
+## Reporting periods
+
+Reporting defaults to This Month through Pacific today. Weeks are Monday–Sunday
+with no scheduling weekend roll-forward. Custom periods include both service-date
+endpoints through today; one applied period governs totals, follow-up recipients,
+monthly breakdown and CSV/Excel downloads. Draft edits do not change the applied
+report. Test accounts are excluded unless explicitly selected.
+Legacy month-only API requests retain full-month and historical-trend semantics;
+explicit date ranges return only intersecting, appropriately clipped monthly rows.
+Exports remain admin-only and no-store, with shared CSV/Excel row projections.
+This is volunteer-hours reporting: admin profiles created for staff shift bookings
+are excluded, even when test accounts are selected. Staff hours/logging remain
+separate work; staff shifts must not become volunteer follow-up recipients.
+
 ## Release documentation
 
 QA-CHECKLIST.md is the workflow-based UAT tracker; docs/Alliance Persona Test Run.md is the unchanged master. Keep matching IDs, NEW/CHANGED tags, optional milestone/notification tests and a complete coverage table.

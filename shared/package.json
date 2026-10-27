@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./reportingPeriod": "./reportingPeriod.ts",
     "./appConfig": "./appConfig.ts",
     "./schema": "./schema.ts",
     "./time": "./time.ts",

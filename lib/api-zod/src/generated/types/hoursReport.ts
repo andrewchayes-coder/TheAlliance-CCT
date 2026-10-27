@@ -8,8 +8,10 @@
 import type { HoursReportTotals } from './hoursReportTotals';
 import type { HoursReportTrend } from './hoursReportTrend';
 import type { HoursReportVolunteer } from './hoursReportVolunteer';
+import type { ReportingPeriod } from './reportingPeriod';
 
 export interface HoursReport {
+  period: ReportingPeriod;
   month: string;
   currentMonth: string;
   totals: HoursReportTotals;

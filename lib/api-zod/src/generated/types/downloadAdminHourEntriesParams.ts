@@ -7,6 +7,8 @@
  */
 
 export type DownloadAdminHourEntriesParams = {
+startDate?: string;
+endDate?: string;
 /**
  * @pattern ^\d{4}-\d{2}$
  */

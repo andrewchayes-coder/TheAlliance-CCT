@@ -7,6 +7,9 @@
  */
 
 export interface HoursReportTrend {
+  startDate: string;
+  endDate: string;
+  partial: boolean;
   month: string;
   teamHours: number;
   volunteersWithHours: number;

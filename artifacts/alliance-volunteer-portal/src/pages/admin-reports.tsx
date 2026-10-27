@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Download, Mail } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Mail } from 'lucide-react';
 import { getGetAdminHoursReportQueryKey, useGetAdminHoursReport, type GetAdminHoursReportParams, type HoursReportVolunteer } from '@workspace/api-client-react';
 import { AppLayout, Button, EmptyState, StatusBadge } from '@/components/brand-system';
 import { PageHeader } from '@/components/page-header';
@@ -10,14 +10,9 @@ import { Notice } from '@/auth/auth-ui';
 import { RequireAdmin } from '@/auth/guards';
 import { FETCH_CREDS } from '@/auth/auth-context';
 import { Skeleton } from '@/components/ui/skeleton';
-import { appConfig } from '@workspace/shared/appConfig';
+import { REPORT_PRESETS, pacificReportDay, presetReportRange, reportingRangeError, type ReportPreset } from '@workspace/shared/reportingPeriod';
 import { onMessageSelected } from '@/lib/messaging';
 
-const pacificMonth = (d: Date) => {
-  const p = new Intl.DateTimeFormat('en-CA', { timeZone: appConfig.timezone, year: 'numeric', month: '2-digit' }).formatToParts(d);
-  return `${p.find(x => x.type === 'year')?.value}-${p.find(x => x.type === 'month')?.value}`;
-};
-const shiftMonth = (m: string, n: number) => { const [y, mo] = m.split('-').map(Number); const d = new Date(Date.UTC(y, mo - 1 + n, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 const monthLabel = (m: string, style: 'long' | 'short' = 'long') => new Date(`${m}-01T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', month: style, year: 'numeric' });
 const hrs = (n: number) => String(Math.round(n * 100) / 100);
 const day = (d: string | null) => d ? new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', dateStyle: 'medium' }) : 'None yet';
@@ -39,17 +34,23 @@ function Tile({ id, label, value, amber }: { id: string; label: string; value: s
 function Body() {
   const [, nav] = useLocation();
   const at = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('at') ?? undefined : undefined;
-  const [baseline] = useState(() => pacificMonth(at && !Number.isNaN(Date.parse(at)) ? new Date(at) : new Date()));
-  const [month, setMonth] = useState(baseline);
+  const today = pacificReportDay(at && !Number.isNaN(Date.parse(at)) ? new Date(at) : new Date());
+  const [preset, setPreset] = useState<ReportPreset>('This Month');
+  const [applied, setApplied] = useState(() => presetReportRange('This Month', today));
+  const [draft, setDraft] = useState(applied);
+  const [attempted, setAttempted] = useState(false);
+  const rangeError = reportingRangeError(draft.startDate, draft.endDate, today);
+  const dirty = draft.startDate !== applied.startDate || draft.endDate !== applied.endDate;
+  const periodLabel = `${day(applied.startDate)} – ${day(applied.endDate)}`;
   const [tests, setTests] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('name');
   const [dir, setDir] = useState<'asc' | 'desc'>('asc');
-  const params: GetAdminHoursReportParams = { month, ...(tests ? { includeTest: true } : {}), ...(at ? { at } : {}) };
+  const params: GetAdminHoursReportParams = { ...applied, ...(tests ? { includeTest: true } : {}), ...(at ? { at } : {}) };
   const q = useGetAdminHoursReport(params, { query: { queryKey: getGetAdminHoursReportQueryKey(params), staleTime: 15_000, refetchOnWindowFocus: 'always', retry: false }, request: FETCH_CREDS });
-  const d = q.data;
-  const current = d?.currentMonth ?? baseline;
+  const d = q.data?.period.startDate === applied.startDate && q.data?.period.endDate === applied.endDate ? q.data : undefined;
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-  const qs = new URLSearchParams({ month, ...(tests ? { includeTest: 'true' } : {}), ...(at ? { at } : {}) }).toString();
+  const qs = new URLSearchParams({ ...applied, ...(tests ? { includeTest: 'true' } : {}), ...(at ? { at } : {}) }).toString();
+  const canExport = Boolean(d) && !q.isFetching && !q.isError && !rangeError && !dirty;
   const rows = useMemo(() => {
     const r = [...(d?.volunteers ?? [])];
     const val = (v: HoursReportVolunteer) => v[sortBy] ?? '';
@@ -68,13 +69,29 @@ function Body() {
     <AppLayout role="admin">
       <PageHeader eyebrow="Admin" title="Volunteer hours" description={<p>Hours come from what Resource Coordinators confirm after each shift, plus any time staff add on a volunteer's page. Shifts not logged yet are past shifts with no hours recorded; Cindi can follow up or add them.</p>} />
       <section className="alliance-card" aria-label="Report controls">
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="secondary" onClick={() => setMonth(shiftMonth(month, -1))} data-testid="button-report-prev"><ChevronLeft size={16} aria-hidden="true" className="mr-1" />Previous</Button>
-          <h2 className="alliance-display min-w-[10rem] text-center" aria-live="polite" data-testid="report-month">{monthLabel(month)}</h2>
-          <Button type="button" variant="secondary" disabled={month >= current} onClick={() => setMonth(shiftMonth(month, 1))} data-testid="button-report-next">Next<ChevronRight size={16} aria-hidden="true" className="ml-1" /></Button>
+        <form noValidate onSubmit={e => { e.preventDefault(); setAttempted(true); if (!rangeError) { setApplied({ ...draft }); setAttempted(false); } }}>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="min-w-0 text-sm font-bold">Reporting period
+            <select className="alliance-input mt-1" value={preset} data-testid="select-report-period" onChange={e => {
+              const next = e.target.value as ReportPreset; setPreset(next); setAttempted(false);
+              if (next !== 'Custom Range') setDraft(presetReportRange(next, today));
+            }}>{REPORT_PRESETS.map(p => <option key={p}>{p}</option>)}</select>
+          </label>
+          {preset === 'Custom Range' && (['startDate', 'endDate'] as const).map(key => <label key={key} className="min-w-0 text-sm font-bold">
+            {key === 'startDate' ? 'Start date' : 'End date'}
+            <input type="date" min="0001-01-01" max={today} required value={draft[key]} className="alliance-input mt-1"
+              data-testid={`input-report-${key}`} aria-invalid={Boolean(rangeError)} aria-describedby={rangeError ? 'report-range-error' : undefined}
+              onChange={e => setDraft({ ...draft, [key]: e.target.value })} />
+          </label>)}
+          <Button type="submit" data-testid="button-apply-report">Apply range</Button>
           <label className="ml-auto flex min-h-11 items-center gap-3 text-sm font-bold">
             <input type="checkbox" className="h-5 w-5" checked={tests} onChange={e => setTests(e.target.checked)} data-testid="toggle-report-test" />Show test accounts</label>
         </div>
+        {rangeError && (attempted || preset === 'Custom Range') && <p id="report-range-error" role="alert" className="mt-3 font-bold">{rangeError}</p>}
+        {dirty && !rangeError && <p className="mt-3 text-sm">Apply this range to update the report and enable downloads.</p>}
+        </form>
+        <h2 className="mt-4 font-bold" aria-live="polite" data-testid="report-period">Applied: {periodLabel}</h2>
+        <p className="text-sm">Pacific time (America/Los_Angeles). Both dates included; today is {day(today)}.</p>
       </section>
 
       {q.isPending ? (
@@ -95,10 +112,10 @@ function Body() {
             <h2 id="by-vol" className="alliance-display">Hours by Resource Coordinator</h2>
             {d.totals.shiftsNotLogged > 0 && <Button type="button" onClick={() => onMessageSelected(unlogged, nav)} data-testid="button-message-unlogged"><Mail size={16} aria-hidden="true" className="mr-2 inline" />Message volunteers with unlogged shifts</Button>}
           </div>
-          {empty ? <div className="mt-4"><EmptyState title="Nothing logged yet" description={`No hours have been logged for ${monthLabel(month)} yet.`} /></div> : (<>
+          {empty ? <div className="mt-4"><EmptyState title="Nothing logged yet" description={`No hours or unlogged shifts for ${periodLabel}.`} /></div> : (<>
             <div className="mt-4 hidden overflow-x-auto rounded-lg border border-gray md:block">
               <table className="w-full text-left text-sm" data-testid="table-hours-by-volunteer">
-                <caption className="sr-only">Hours by Resource Coordinator, {monthLabel(month)}</caption>
+                <caption className="sr-only">Hours by Resource Coordinator, {periodLabel}, Pacific time</caption>
                 <thead><tr>{COLS.map(([k, l]) => (
                   <th key={k} scope="col" aria-sort={sortBy === k ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'} className="border-b border-gray px-3 py-1">
                     <button type="button" onClick={() => sortOn(k)} data-testid={`sort-report-${k}`} className="inline-flex min-h-11 items-center gap-1 whitespace-nowrap font-bold focus-visible:outline-2 focus-visible:outline-blue">{l}
@@ -148,13 +165,14 @@ function Body() {
           <h2 id="trend-h" className="alliance-display">Team hours by month</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm" data-testid="table-team-trend">
-              <caption className="sr-only">Team hours for the 12 months ending {monthLabel(month)}</caption>
+              <caption className="sr-only">Team hours within {periodLabel}, Pacific time</caption>
               <thead><tr className="text-sm font-bold text-blue [overflow-wrap:normal]"><th scope="col" className="py-2 pr-3">Month</th><th scope="col" className="px-2 py-2 whitespace-nowrap">Hours</th><th scope="col" className="py-2 pl-2 whitespace-nowrap"><span>Resource </span><span className="block sm:inline">Coordinators</span></th></tr></thead>
               <tbody>
                 {d.trend.map(t => (
-                  <tr key={t.month} data-testid={`row-trend-${t.month}`} className={t.month === month ? 'font-bold' : ''}>
+                  <tr key={t.month} data-testid={`row-trend-${t.month}`}>
                     <th scope="row" className="w-full whitespace-nowrap border-b border-gray py-2 pr-3 font-inherit">
                       <span className="inline-block sm:w-24">{monthLabel(t.month, 'short')}</span>
+                       {t.partial && <span className="block text-xs font-normal">Partial month: {day(t.startDate)} – {day(t.endDate)}</span>}
                       <span className="mt-1 block h-2 rounded-full bg-gray sm:ml-3 sm:inline-block sm:w-[min(30vw,20rem)]" aria-hidden="true"><span className="block h-2 rounded-full bg-blue" style={{ width: `${(t.teamHours / maxTrend) * 100}%` }} /></span>
                     </th>
                     <td className="border-b border-gray px-2 tabular-nums">{hrs(t.teamHours)}</td>
@@ -166,8 +184,11 @@ function Body() {
         </section>
 
         <section className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-sm" aria-label="Exports">
-          <a href={`${base}/api/admin/reports/hours.csv?${qs}`} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-report-hours-csv"><Download size={16} aria-hidden="true" />Download hours by volunteer (CSV)</a>
-          <a href={`${base}/api/admin/reports/hour-entries.csv?${qs}`} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid="link-report-entries-csv"><Download size={16} aria-hidden="true" />Download all hour entries (CSV)</a>
+          {(['csv', 'xlsx'] as const).flatMap(format => (['hours', 'hour-entries'] as const).map(kind => {
+            const label = `Download ${kind === 'hours' ? 'hours by volunteer' : 'all hour entries'} (${format === 'xlsx' ? 'Excel' : 'CSV'})`;
+            return canExport ? <a key={`${kind}-${format}`} href={`${base}/api/admin/reports/${kind}.${format}?${qs}`} download className="inline-flex min-h-11 items-center gap-1 font-bold text-blue underline underline-offset-4" data-testid={`link-report-${kind === 'hours' ? 'hours' : 'entries'}-${format}`}><Download size={16} aria-hidden="true" />{label}</a>
+              : <span key={`${kind}-${format}`} aria-disabled="true" className="inline-flex min-h-11 items-center gap-1 text-muted-foreground">{label}</span>;
+          }))}
         </section>
       </>)}
     </AppLayout>

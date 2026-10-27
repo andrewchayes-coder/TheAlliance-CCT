@@ -52,7 +52,9 @@ import type {
   DeleteResource200,
   DevEmailCheck,
   DevEmailCheckError,
+  DownloadAdminHourEntriesExcelParams,
   DownloadAdminHourEntriesParams,
+  DownloadAdminHoursExcelParams,
   DownloadAdminHoursReportParams,
   EmailInput,
   ExportVolunteerRosterParams,
@@ -528,6 +530,162 @@ export function useDownloadAdminHourEntries<TData = Awaited<ReturnType<typeof do
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getDownloadAdminHourEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadAdminHoursExcelUrl = (params?: DownloadAdminHoursExcelParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/hours.xlsx?${stringifiedParams}` : `/api/admin/reports/hours.xlsx`
+}
+
+export const downloadAdminHoursExcel = async (params?: DownloadAdminHoursExcelParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminHoursExcelUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminHoursExcelQueryKey = (params?: DownloadAdminHoursExcelParams,) => {
+    return [
+    `/api/admin/reports/hours.xlsx`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadAdminHoursExcelQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminHoursExcel>>, TError = ErrorType<void>>(params?: DownloadAdminHoursExcelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursExcel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminHoursExcelQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminHoursExcel>>> = ({ signal }) => downloadAdminHoursExcel(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursExcel>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminHoursExcelQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminHoursExcel>>>
+export type DownloadAdminHoursExcelQueryError = ErrorType<void>
+
+
+
+export function useDownloadAdminHoursExcel<TData = Awaited<ReturnType<typeof downloadAdminHoursExcel>>, TError = ErrorType<void>>(
+ params?: DownloadAdminHoursExcelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHoursExcel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminHoursExcelQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadAdminHourEntriesExcelUrl = (params?: DownloadAdminHourEntriesExcelParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/hour-entries.xlsx?${stringifiedParams}` : `/api/admin/reports/hour-entries.xlsx`
+}
+
+export const downloadAdminHourEntriesExcel = async (params?: DownloadAdminHourEntriesExcelParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminHourEntriesExcelUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminHourEntriesExcelQueryKey = (params?: DownloadAdminHourEntriesExcelParams,) => {
+    return [
+    `/api/admin/reports/hour-entries.xlsx`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDownloadAdminHourEntriesExcelQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>, TError = ErrorType<void>>(params?: DownloadAdminHourEntriesExcelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminHourEntriesExcelQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>> = ({ signal }) => downloadAdminHourEntriesExcel(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminHourEntriesExcelQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>>
+export type DownloadAdminHourEntriesExcelQueryError = ErrorType<void>
+
+
+
+export function useDownloadAdminHourEntriesExcel<TData = Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>, TError = ErrorType<void>>(
+ params?: DownloadAdminHourEntriesExcelParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminHourEntriesExcel>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminHourEntriesExcelQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

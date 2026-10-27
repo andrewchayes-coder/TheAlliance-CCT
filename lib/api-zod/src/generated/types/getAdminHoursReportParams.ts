@@ -8,6 +8,14 @@
 
 export type GetAdminHoursReportParams = {
 /**
+ * Inclusive Pacific service date; requires endDate and excludes month
+ */
+startDate?: string;
+/**
+ * Inclusive Pacific service date through today
+ */
+endDate?: string;
+/**
  * @pattern ^\d{4}-\d{2}$
  */
 month?: string;
